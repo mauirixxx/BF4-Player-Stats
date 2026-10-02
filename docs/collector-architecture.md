@@ -1,6 +1,6 @@
 # BF4PS Collector Architecture
 
-This document records the collector/work-queue architecture decisions made during BF4PS design. It complements `docs/database-schema.md`. Queue-table details remain deliberately open until job-creation/materialization behavior is settled.
+This document records the collector/work-queue architecture decisions made during BF4PS design. It complements `docs/database-schema.md`.
 
 ## Confirmed work-unit model
 
@@ -25,6 +25,20 @@ Examples:
 - For a manual/interactive full collection, after `Player_X / detailed` succeeds the collector may continue with the other eligible high-priority resources for Player_X, subject to the rate gate and queue policy.
 
 Successful resources are committed independently. Failure of one resource must not invalidate successful collection of another resource or erase last-known-good data.
+
+## Job materialization policy
+
+`collection_state` is the durable source of truth. `collection_jobs` represents **actionable work**, not a permanent four-row shadow of every soldier.
+
+For a newly discovered BF4SW soldier, BF4PS creates/updates the identity and provenance records, initializes collection state, and makes the initial `detailed` resource actionable. The remaining bootstrap resources are progressively materialized as policy/capacity permits rather than eagerly creating four permanent jobs for every member of the initial 175k+ population.
+
+For a valid manual/interactive submission, all missing or sufficiently stale resources needed for the requested full collection (`detailed`, `profile`, `weapons`, `vehicles`) become high-priority interactive work immediately.
+
+Steady-state refresh jobs are materialized when a resource becomes eligible because of activity/freshness policy, due time, retry/backoff expiry, or an explicit request. A parked/current inactive soldier has no dormant gameplay job merely waiting in the live queue.
+
+At most one actionable job may exist for a `(soldier_id, resource)` pair. Repeated demand is coalesced. If equivalent background work already exists and a manual/interactive request arrives, BF4PS promotes the existing work rather than creating duplicate Battlelog traffic.
+
+Completed/failed execution history is not represented by keeping completed jobs forever in the live queue; operational history is recorded separately in `collection_events`.
 
 ## Background lane
 
@@ -57,6 +71,61 @@ worker/collector B -> egress IP B -> rate gate B
 Collectors sharing an egress IP must share that IP's request budget. Adding another process behind an existing egress does not imply additional Battlelog capacity. Independent egress IPs may provide additional safe capacity, subject to conservative measured limits.
 
 BF4PS must still perform its own endpoint/rate reconnaissance before production scaling. Exact BF4SW rate constants are not copied blindly into BF4PS because stats endpoints and payload sizes differ from BF4SW's workload.
+
+## Priority classes and fairness
+
+Eligibility and priority are separate decisions:
+
+- **eligibility** asks whether a resource actually needs collection;
+- **priority** asks which eligible work should run first.
+
+BF4SW `last_seen`/activity information influences background priority but does not override freshness rules. For example, an actively observed soldier whose detailed stats were successfully refreshed less than 60 minutes ago is not eligible merely because the player remains active.
+
+Initial scheduling uses priority classes with FIFO ordering inside each class rather than a global `ORDER BY last_seen DESC`.
+
+Conceptual classes, highest first:
+
+1. **interactive** — explicit manual/user-requested work;
+2. **active** — eligible resources for soldiers currently or very recently observed by BF4SW;
+3. **recent** — eligible resources for recently observed soldiers;
+4. **bootstrap** — older initial/background population.
+
+Exact active/recent time windows and numeric weights are intentionally deferred until collector throughput and BF4SW activity integration are measured.
+
+Pure `last_seen DESC` scheduling is rejected because continuously active/new players could indefinitely starve the old bootstrap. Pure global FIFO is also rejected because it would ignore useful evidence that a recently active soldier is more immediately relevant than an old never-returned bootstrap identity.
+
+The scheduler must include aging/weighted fairness so lower-priority bootstrap work continues to drain even under sustained active/recent demand. Exact weights are operational tuning, not schema semantics. The dedicated interactive lane further isolates human-requested work from the background bootstrap.
+
+## Structured collector event log
+
+Collector actions are recorded from day one in an **append-only structured database event log** for troubleshooting and operational analysis. Do not store only preformatted prose messages; human-readable messages are generated from structured fields when displayed.
+
+The table is conceptually `collection_events` and should include enough information to reconstruct what a collector did, including fields such as:
+
+- `event_id`;
+- `occurred_at timestamptz` (UTC);
+- stable `collector_id` / worker identity;
+- `job_id` when applicable;
+- `soldier_id`;
+- `persona_id`;
+- `platform`;
+- `resource` (`detailed`, `profile`, `weapons`, `vehicles`);
+- `event_type` (for example `claimed`, `started`, `succeeded`, `failed`, `lease_expired`, `retry_scheduled`, `promoted`);
+- attempt number;
+- result/status;
+- request/operation duration where applicable;
+- HTTP status where applicable;
+- error class and concise error message where applicable.
+
+Persona ID + platform are retained in the event because they are stable external identity values useful during troubleshooting; current player name can be joined for presentation and must not be the audit identity.
+
+The event log records **what BF4PS collectors do**, not raw Battlelog payload bodies. In particular, large weapons/vehicles JSON responses must never be copied into this log.
+
+Useful queries should include: history for one persona/resource, actions by one collector, HTTP 403/rate-limit events by collector/egress, average resource duration, lease recovery, failures by endpoint/resource, and events within a UTC time window.
+
+Retention is configurable. During the initial seed/bootstrap, the starting operational target is **180 days** so long-running bootstrap behavior can be investigated retrospectively. After the initial seed is complete and steady-state behavior is understood, the normal retention target may be reduced substantially (for example 30 days or 14 days). The final steady-state value is an operational configuration decision, not hard-coded schema behavior.
+
+Retention cleanup must never delete gameplay/stat history; it applies only to collector operational events after their configured retention horizon.
 
 ## Coordination and failure behavior
 
@@ -94,17 +163,17 @@ SUCCESS
 
 Collectors need stable worker identities, lease expiry/recovery, graceful drain/upgrade behavior, retry/backoff, and observability for queue depth, throughput, backlog age, failures, and rate-gate behavior.
 
-## Still open: when resource jobs are created
+## Remaining queue/scheduler design work
 
-The next architecture decision is **job materialization**.
+The high-level materialization and priority policies are now locked. Remaining implementation design includes:
 
-Two broad models remain under discussion:
+- exact `collection_jobs` columns, indexes, state machine, claim query, and lease semantics;
+- exact `collection_events` schema/indexes and retention cleanup mechanism;
+- how progressive bootstrap materialization selects profile/weapons/vehicles work after initial detailed collection;
+- active/recent time windows and fairness/aging weights;
+- retry/backoff timings and classification;
+- how the dedicated interactive collector and background collectors select/chain work without duplicate claims;
+- ETA calculation for interactive requests;
+- metrics and health surfaces derived from jobs/events/state.
 
-1. **Eager materialization:** when a soldier becomes known, immediately create all four resource jobs (`detailed`, `profile`, `weapons`, `vehicles`) with different priorities/eligibility times.
-2. **Demand/eligibility materialization:** keep `collection_state` as the durable source of truth and create/claim queue work only when a resource actually becomes eligible or is explicitly requested.
-
-A hybrid is also possible—for example, eagerly materializing initial bootstrap work while generating later refresh jobs from collection state/activity events.
-
-This decision must account for the existing 175k+ BF4SW seed population, ongoing BF4SW discoveries, active-player refreshes, post-activity finalization, 30-day profile checks, retries/backoff, manual high-priority full collections, duplicate/coalesced requests, queue observability, and crash/failover recovery.
-
-Do not freeze the final queue table in migration `0001` until this behavior is settled and documented.
+These details should be settled before migration `0001` freezes the queue/event tables.
