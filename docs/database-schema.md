@@ -5,7 +5,7 @@ This document defines the initial PostgreSQL data model for BF4 Player Stats (BF
 ## Goals
 
 - Keep BF4SW operational data separate from BF4PS-owned data.
-- Use BF4SW read-only as a seed/discovery source for known soldiers.
+- Use BF4SW read-only as a continuous discovery source for known soldiers.
 - Make BF4 soldier identity independent of mutable player names and Battlelog profile privacy.
 - Retain compact historical overall-stat snapshots.
 - Keep weapon and vehicle data as replaceable current state in v1.
@@ -246,11 +246,25 @@ BF4PS has two first-class discovery paths in v1: continuous BF4SW discovery and 
 
 ### Continuous BF4SW discovery
 
-BF4SW is an ongoing source, not a one-time import. A BF4PS discovery job periodically queries the BF4SW database using a dedicated read-only account for newly observed or changed soldier identities. The job upserts BF4PS `soldiers`, `soldier_names`, and `soldier_sources` records and schedules newly discovered soldiers for Battlelog collection.
+BF4SW is an ongoing source, not a one-time import. A BF4PS discovery job periodically queries the BF4SW database using a dedicated read-only account. Production reconnaissance established that `bf4_player_aliases` is the v1 identity-discovery contract; BF4PS does not use the much larger `bf4_player_sessions` table as its normal identity feed.
 
-The discovery process must be incremental and idempotent. Re-reading an already-known `(persona_id, platform)` must not create duplicates. The implementation should use a durable BF4PS-side discovery cursor/watermark where the BF4SW source data provides a suitable monotonic timestamp or identifier; otherwise it may safely rescan the relevant identity set and rely on upserts. The exact cadence belongs to collector configuration rather than schema v1.
+The authoritative BF4SW discovery row supplies `id`, `platform`, `persona_id`, `player_name`, `normalized_name`, `first_seen`, and `last_seen`. BF4PS upserts these observations into its own `soldiers`, `soldier_names`, and `soldier_sources` records.
 
-A temporary BF4SW/database outage delays discovery only. It must not prevent BF4PS from serving existing data or collecting Battlelog statistics for already-known soldiers.
+Discovery is incremental and idempotent. The durable BF4PS-side discovery cursor is the monotonically increasing `bf4_player_aliases.id`. Normal polling selects rows with `id > last_bf4sw_alias_id`, ordered by `id`, in bounded batches. The cursor advances to the highest successfully processed alias ID only in the same successful BF4PS transaction as the corresponding upserts. A crash or BF4PS transaction failure therefore causes harmless reprocessing rather than silently skipped identities.
+
+A new alias row for an already-known `(persona_id, platform)` updates/creates name provenance without creating a duplicate soldier. This naturally captures later BF4SW persona enrichment because BF4PS consumes only resolved alias rows, rather than trying to reproduce BF4SW's unresolved-session/enrichment logic.
+
+### BF4SW platform normalization
+
+The integration uses an explicit mapping and does not persist BF4SW's display-oriented labels as BF4PS platform identity values:
+
+| BF4SW | BF4PS | Battlelog integer |
+| --- | --- | ---: |
+| `PC` | `pc` | 1 |
+| `PS4/5` | `ps4` | 32 |
+| `XBox` | `xboxone` | 64 |
+
+Unknown/unmapped source platform values are an importer error and must not be guessed.
 
 ### Manual submission
 
@@ -264,21 +278,23 @@ Submitting an identity already present from BF4SW does not duplicate it; it adds
 
 Once accepted, manually seeded soldiers participate in normal collector scheduling. Collection cadence may later back off substantially for inactive/manual-only soldiers whose cumulative stats remain unchanged, while recent BF4SW activity can justify faster refreshes. That is scheduling policy, not identity semantics.
 
-## Discovery cadence and activity signal
+## Discovery cadence, production scale, and collection separation
 
-BF4SW discovery is continuous rather than a one-time seed operation. The initial target cadence is **every 5 minutes (300 seconds)** and must be configurable rather than hard-coded.
-
-Suggested configuration:
+BF4SW discovery is continuous rather than a one-time seed operation. The initial target cadence is **every 5 minutes (300 seconds)** and must be configurable rather than hard-coded:
 
 ```text
 BF4SW_DISCOVERY_INTERVAL_SECONDS=300
 ```
 
-The discovery query should be incremental and inexpensive. BF4PS should prefer a durable watermark/cursor based on a trustworthy BF4SW timestamp or monotonic identifier once the relevant BF4SW tables have been inspected. If no suitable cursor exists, an idempotent scan of the relevant identity set is acceptable. BF4PS must not repeatedly scan the entire historical player-session dataset merely to discover new identities.
+Production reconnaissance on 2026-10-02 found **178,211 alias rows / 175,730 unique persona-platform identities** before the arrival-rate sample, split across 114,290 PC, 29,324 PS4/5, and 32,116 Xbox identities. A later sample during the same reconnaissance showed `MAX(bf4_player_aliases.id) = 178449`. Recent arrival measurements showed 14 new alias rows in 5 minutes, 148 in one hour, and 2,542 in 24 hours. Daily new-alias counts over the sampled two-week period were commonly in the low thousands and reached more than 4,500 on the busiest sampled day.
 
-The discovery watermark advances only after the corresponding BF4PS transaction succeeds. This prevents a BF4PS failure from silently skipping identities.
+The five-minute discovery interval is therefore operationally modest. Discovery consists of small indexed BF4SW reads plus local BF4PS upserts; it is not permission to immediately issue Battlelog requests for every imported identity.
 
-BF4SW observations also provide a useful **activity/freshness signal**. Re-observing a known soldier can refresh that soldier's BF4SW source `last_seen_at`. Future collection policy may use this signal to prioritize recently active players while backing off inactive/manual-only players. Activity-based scheduling is deliberately separate from identity/discovery semantics.
+**Discovery and Battlelog collection are separate queues/concepts.** BF4PS should import the complete known identity population, including the large initial BF4SW bootstrap, without generating a Battlelog request storm. Initial/backlog collection must be paced independently according to measured Battlelog capacity.
+
+Manual submissions are explicitly user/operator requested and should be eligible for prompt high-priority collection. Recently active BF4SW identities may receive higher collection priority than old/inactive BF4SW-only identities. The large pre-existing BF4SW population is a low-priority bootstrap backlog that can be worked down safely over time.
+
+BF4SW activity/freshness is also separate from alias-ID discovery. `bf4_player_aliases.id` answers **what identity/name observations are new to BF4PS**. Re-observation/activity information such as BF4SW `last_seen` may later be consumed by a separate mechanism to influence collection priority. Do not replace the alias-ID discovery cursor with a `last_seen` timestamp cursor: BF4SW continually updates active aliases, which would repeatedly reread large sets of already-known identities.
 
 The five-minute value is an initial operational default, not a permanent architectural requirement. Production evidence may justify a shorter or longer interval.
 
@@ -308,6 +324,8 @@ The physical/runtime placement and number of Battlelog collectors is intentional
 This future design discussion must explicitly cover:
 
 - measured Battlelog throttling/rate-limit behavior at production scale;
+- initial collection/bootstrap policy for the existing ~175k+ identities;
+- ongoing discovery arrival rates in the thousands of aliases per day;
 - total detailed/weapon/vehicle/profile request workload;
 - whether detailed and large weapon/vehicle requests need separate queues/cadences;
 - single versus multiple collector processes/nodes;
@@ -316,9 +334,10 @@ This future design discussion must explicitly cover:
 - database-backed claiming/leases and recovery of abandoned work;
 - retry/backoff behavior;
 - prioritization using recent BF4SW activity;
+- manual-submission priority;
 - aggressive backoff for long-inactive/manual-only soldiers;
 - deployment/upgrade/drain behavior;
-- metrics, logging, health checks, and operator visibility;
+- metrics, logging, health checks, queue depth/backlog age, and operator visibility;
 - isolation between the public web application and collectors;
 - behavior during Battlelog, BF4SW, PostgreSQL, DNS, or inter-site outages;
 - whether collectors should be site-aware or distributed across different egress IPs.
@@ -377,7 +396,10 @@ Every later schema migration must include a documentation update when it changes
 
 The following are not required to create schema v1:
 
-- exact polling cadence and rate limiting;
+- exact Battlelog polling cadence and rate limiting;
+- BF4SW activity-feed implementation beyond alias-ID discovery;
+- collector topology and placement;
+- exact bootstrap/backlog prioritization algorithm;
 - whether old history eventually needs partitioning/retention limits;
 - weapon/vehicle history;
 - presentation prose;
