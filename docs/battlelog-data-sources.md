@@ -236,19 +236,122 @@ BF4PS should preferentially retain compact, authoritative cumulative counters an
 
 Static weapon/vehicle metadata should be normalized into catalog/reference data instead of duplicated for every player snapshot.
 
+
+## Detailed Stats Retention Contract v1
+
+This section defines the BF4 detailed-statistics values BF4PS intends to support. The mapping is based on the captured representative Battlelog payloads and the detailed-statistics presentation selected as the BF4PS baseline. Source field names below are the observed Battlelog names; earlier guessed names are intentionally not used.
+
+### Multiplayer score
+
+| BF4PS display | Battlelog source | Retention |
+| --- | --- | --- |
+| Assault Score | `assault` | RAW |
+| Engineer Score | `engineer` | RAW |
+| Support Score | `support` | RAW |
+| Recon Score | `recon` | RAW |
+| Commander Score | `commander` | RAW |
+| Squad Score | `sc_squad` | RAW |
+| Vehicle Score | `sc_vehicle` | RAW |
+| Award Score | `sc_award` | RAW |
+| Unlock Score | `sc_unlock` | RAW |
+| Total Score | `score` | RAW |
+| Score/Min | `score / (timePlayed / 60)` | DERIVED |
+| Combat Score | `combatScore` | RAW |
+| Combat Score/Min | `combatScore / (timePlayed / 60)` | DERIVED |
+
+### Game modes
+
+Battlelog exposes friendly top-level fields for the supported game modes. BF4PS therefore does not need the duplicate numeric-keyed `gameModesScore` object for this display contract.
+
+| BF4PS display | Battlelog source | Retention |
+| --- | --- | --- |
+| Conquest | `conquest` | RAW |
+| Rush | `rush` | RAW |
+| Deathmatch | `teamdeathmatch` | RAW |
+| Domination | `domination` | RAW |
+| Obliteration | `obliteration` | RAW |
+| Defuse | `elimination` | RAW |
+| Capture the Flag | `capturetheflag` | RAW |
+| Air Superiority | `airsuperiority` | RAW |
+| Carrier Assault | `carrierassault` | RAW |
+| Chain Link | `chainlink` | RAW |
+| Gun Master | `gunmaster` | RAW |
+
+### General
+
+| BF4PS display | Battlelog source | Retention |
+| --- | --- | --- |
+| Kills | `kills` | RAW |
+| Deaths | `deaths` | RAW |
+| Kill Assists | `killAssists` | RAW |
+| K/D Ratio | `kills / deaths` | DERIVED |
+| Kills/Min | `kills / (timePlayed / 60)` | DERIVED |
+| Wins | `numWins` | RAW |
+| Losses | `numLosses` | RAW |
+| Shots Fired | `shotsFired` | RAW |
+| Shots Hit | `shotsHit` | RAW |
+| Accuracy | `shotsHit / shotsFired` | DERIVED |
+
+`timePlayed` is RAW and mandatory even when not shown in this particular presentation section. It is required for KPM/SPM calculations and is useful directly.
+
+### Team and objectives
+
+| BF4PS display | Battlelog source | Retention |
+| --- | --- | --- |
+| Repairs | `repairs` | RAW |
+| Revives | `revives` | RAW |
+| Heals | `heals` | RAW |
+| Resupplies | `resupplies` | RAW |
+| Avenger Kills | `avengerKills` | RAW |
+| Savior Kills | `saviorKills` | RAW |
+| Suppression Assists | `suppressionAssists` | RAW |
+| Quits | `quitPercentage` | RAW |
+| Flags Captured | `flagCaptures` | RAW |
+| Flags Defended | `flagDefend` | RAW |
+
+Although quit percentage is conceptually derived, Battlelog directly supplies `quitPercentage`. Until the exact authoritative source counters/definition for a quit are established, BF4PS retains Battlelog's supplied value.
+
+### Extra
+
+| BF4PS display | Battlelog source | Retention |
+| --- | --- | --- |
+| Dogtags Taken | `dogtagsTaken` | RAW |
+| Vehicles Destroyed | `vehiclesDestroyed` | RAW |
+| Vehicle Damage | `vehicleDamage` | RAW |
+| Headshots | `headshots` | RAW |
+| Longest Headshot | `longestHeadshot` | RAW |
+| Highest Kill Streak | `killStreakBonus` | RAW |
+| Nemesis Kills | `nemesisKills` | RAW |
+| Highest Nemesis Streak | `nemesisStreak` | RAW |
+
+`rank` is also RAW and retained even though it is not part of the selected detailed-statistics panel.
+
+### Historical retention rule
+
+BF4PS will retain history for the overall detailed-statistics state. Historical snapshots should contain the RAW fields in this contract, allowing progression and interval calculations without storing redundant ratios. A new historical snapshot is needed only when the supported overall state meaningfully changes.
+
+Examples of values calculated from snapshots include lifetime and interval K/D, KPM, SPM, accuracy, playtime gained, score gained, revives gained, and other counter deltas.
+
+Weapons and vehicles are initially **current-state data only**. BF4PS does not require historical weapon/vehicle snapshots in the initial schema. This can be added later if a concrete use case justifies the storage and collection cost.
+
+### Duplicate and excluded source structures
+
+The captured payload demonstrates duplicate representations. For example, named kit-score fields correspond to entries in `kitScores`, and named game-mode fields correspond to the numeric-keyed `gameModesScore` structure. BF4PS should retain the explicit named fields required by this contract and not duplicate those nested structures merely because Battlelog returns them.
+
+Hardline/legacy fields such as cash statistics and `sc_heist`, `sc_hostage`, `sc_hotwire`, `sc_bloodmoney`, `sc_bountyhunter`, `sc_squadheist`, and `sc_turfwar` are explicitly outside the BF4PS retention contract.
+
 ## Known unknowns
 
 The following remain intentionally unresolved and must not be converted into assumptions:
 
 - Whether friends-only is Battlelog's default profile-sharing setting.
-- Exact semantics of every detailed-statistics field and which subset BF4PS will retain.
 - Why one tested Xbox One weapon response contained 173 weapon entries while PC/PS4 samples contained 174.
 - Final polling cadence for detailed versus weapon versus vehicle statistics.
 - Whether Battlelog profile user IDs need to be persisted.
 - How account/soldier renames should be represented historically.
 - Final behavior for deleted/nonexistent Battlelog profiles.
 - Rate limits/throttling characteristics of these endpoints at production collection scale.
-- Final PostgreSQL schema. Schema design begins only after the source contract and retention decisions are sufficiently stable.
+- Final PostgreSQL schema. The schema must be documented in-repository alongside the implementation, including table purpose, keys, relationships, retention/history behavior, and migration rationale.
 
 ## Current reconnaissance conclusion
 
