@@ -225,20 +225,30 @@ Vehicle KPM and formatted time are derived. No vehicle history table exists in s
 
 Operational state belongs outside gameplay-stat rows.
 
-One row per soldier:
+One row per soldier. Each resource (`detailed`, `weapons`, `vehicles`, `profile`) must independently distinguish at least:
 
-- `soldier_id bigint` PK/FK;
-- `detailed_last_attempt_at`, `detailed_last_success_at`, `detailed_next_due_at`;
-- `weapons_last_attempt_at`, `weapons_last_success_at`, `weapons_next_due_at`;
-- `vehicles_last_attempt_at`, `vehicles_last_success_at`, `vehicles_next_due_at`;
-- `profile_last_attempt_at`, `profile_last_success_at`, `profile_next_due_at`;
-- per-source consecutive failure counters;
-- per-source last error class/message as needed;
+- `never_attempted`;
+- `success`;
+- `temporary_failure`;
+- `unavailable` only when Battlelog returns a understood, meaningful unavailable result rather than an arbitrary transport/parser failure.
+
+Per-resource bookkeeping includes:
+
+- last result/state;
+- `*_last_attempt_at`;
+- `*_last_success_at`;
+- `*_next_due_at`;
+- consecutive failure count;
+- last error class/message as needed;
 - `updated_at timestamptz NOT NULL`.
 
-This separates scheduling/failure bookkeeping from the authoritative last-good statistics. A failed Battlelog request must not overwrite or invalidate the last known good stats.
+Profile access semantics remain in `battlelog_profiles.access_state`; a successful request that establishes `friends_only` or `public_no_country` is still a successful collection attempt rather than an operational failure.
+
+This separates scheduling/failure bookkeeping from the authoritative last-good statistics. A failed Battlelog request must never overwrite or invalidate the last known good stats. A successful response containing legitimate zero/empty gameplay data is also not a failure.
 
 Indexes on the `*_next_due_at` columns support efficient collector work selection.
+
+The exact work-queue table/schema is intentionally not frozen yet. Collection-state semantics are required for migration 0001; queue representation will be finalized after collector scheduling/claiming behavior is settled.
 
 ## Discovery and seeding
 
@@ -272,11 +282,13 @@ Manual submission exists specifically so BF4PS can collect valid Battlelog soldi
 
 Preferred input is a normal BF4 Battlelog soldier URL because it encodes the soldier name, persona ID, and platform. Administrative/API input may also accept an explicit name, persona ID, and platform tuple.
 
-Before a previously unknown manual identity is accepted, BF4PS validates the persona/platform against Battlelog's lightweight detailed-statistics endpoint. A successful valid response creates/upserts the soldier, records `source_type = manual`, and schedules detailed, weapon, vehicle, and optional profile enrichment. Invalid/unresolvable submissions do not create a normal collectable soldier record.
+Before a previously unknown manual identity is accepted, BF4PS validates the persona/platform against Battlelog's lightweight detailed-statistics endpoint. A successful valid response creates/upserts the soldier, records `source_type = manual`, and requests a complete detailed/profile/weapons/vehicles collection. Invalid/unresolvable submissions do not create a normal collectable soldier record.
 
-Submitting an identity already present from BF4SW does not duplicate it; it adds/refreshes manual provenance and may request a prompt refresh. Names remain mutable observations and are never identity keys.
+Submitting an identity already present from BF4SW does not duplicate it; it adds/refreshes manual provenance and may promote stale/missing resource work. Names remain mutable observations and are never identity keys.
 
-Once accepted, manually seeded soldiers participate in normal collector scheduling. Collection cadence may later back off substantially for inactive/manual-only soldiers whose cumulative stats remain unchanged, while recent BF4SW activity can justify faster refreshes. That is scheduling policy, not identity semantics.
+Manual submissions are an interactive/high-priority workload class. They should be serviced as soon as technically practical after already in-flight work, subject to the same measured Battlelog safety limits as all other traffic. Manual demand must not bypass throttling or create unbounded concurrent requests.
+
+The exact public input workflow is deferred. It must later define accepted identifiers, name/platform ambiguity resolution, validation, duplicate handling, abuse/rate limiting, and user-visible queue/ETA behavior.
 
 ## Discovery cadence, production scale, and collection separation
 
@@ -298,6 +310,49 @@ BF4SW activity/freshness is also separate from alias-ID discovery. `bf4_player_a
 
 The five-minute value is an initial operational default, not a permanent architectural requirement. Production evidence may justify a shorter or longer interval.
 
+## Collection policy v1
+
+### Initial BF4SW bootstrap
+
+The existing BF4SW identity population is a large background bootstrap workload. Initial collection priority is:
+
+1. detailed statistics;
+2. profile/country;
+3. weapons;
+4. vehicles.
+
+This ordering is **priority-based, not a global phase barrier**. Lower-priority work may begin whenever capacity is available; BF4PS does not need every soldier's detailed request to finish before the first profile/weapon request can occur.
+
+Detailed statistics are intentionally first because the endpoint is small and makes a discovered soldier broadly useful/searchable without immediately paying the much larger weapon/vehicle transfer cost. Raw large Battlelog responses are parsed into the retention contract and discarded; they are not stored simply because they were expensive to download.
+
+### Activity-aware gameplay freshness
+
+For a player currently/recently observed by BF4SW on monitored servers, gameplay-stat refreshes have an initial **60-minute minimum interval**. A player still active does not become eligible for another normal gameplay refresh merely because a page was viewed if the last successful refresh is less than 60 minutes old.
+
+When BF4SW no longer observes the player, BF4PS should obtain a successful post-observation/final collection after the player's latest known BF4SW activity. If the relevant gameplay stats were successfully collected after that last-observed timestamp, the player is considered current/parked and requires no periodic gameplay refresh until new activity or an explicit high-priority request makes collection appropriate again.
+
+BF4SW observation is deliberately described as **last observed on monitored servers**, not proof of the player's globally exact BF4 play/stop time. Website wording must preserve that distinction. Final presentation wording is deferred.
+
+### Profile/country freshness
+
+A successful profile/country collection has an initial refresh interval of **30 days**. This applies to stable successful outcomes such as a known country, a public profile with no country configured, or a successfully recognized restricted/friends-only profile.
+
+Operational failures do not inherit the 30-day success interval; they use retry/backoff policy. Other terminal-looking states such as `not_found` may receive their own interval after Battlelog behavior is better characterized.
+
+### Manual/interactive collection
+
+A manually submitted player requests a complete collection: detailed statistics, profile/country, weapons, and vehicles. Interactive work should normally be selected ahead of background bootstrap/scheduled work once the collector finishes its current in-flight request, but it must remain subject to Battlelog rate limits and global safety controls.
+
+Multiple users requesting the same soldier/resource must be coalesced/promoted rather than generating duplicate Battlelog traffic. A fresh resource should be served from BF4PS rather than forcing another Battlelog request solely because a page was viewed.
+
+The website should eventually expose a best-effort estimate for when queued manual collection is expected to be attempted, especially under concurrent demand. ETA calculation and wording are deferred until measured collector throughput/rate limits exist.
+
+### Last-good data and stats resets
+
+Failed, throttled, malformed, or partial Battlelog responses never erase last-known-good BF4PS statistics.
+
+A genuine Battlelog/player stats reset is different: the new lower cumulative values become the current Battlelog truth, while BF4PS preserves all pre-reset detailed-stat history and records a reset boundary/event so historical graphs and analysis can distinguish a reset from ordinary progression. The exact BF4 stats-reset semantics and reset-detection algorithm require dedicated reconnaissance before implementation; decreases in cumulative counters must not be blindly interpreted as normal gameplay.
+
 ## PostgreSQL HA requirements
 
 BF4PS owns a separate PostgreSQL database (for example `bf4_playerstats`) while sharing the existing BF4 PostgreSQL HA infrastructure with BF4SW. Database separation is logical/operational; it does not require a separate PostgreSQL server fleet.
@@ -317,34 +372,43 @@ A BF4SW database outage must pause only BF4SW-origin discovery/activity updates.
 
 A BF4PS database outage/failover must never cause BF4PS to write into BF4SW. The integration remains a one-way read-only boundary.
 
-## Collector/scanner deployment: deliberately deferred
+## Collector/scanner deployment direction
 
-The physical/runtime placement and number of Battlelog collectors is intentionally **not decided before schema v1**. Plausible future designs include a simple process on the web host, a dedicated collector VM, active/passive collectors, or multiple distributed collectors.
+BF4PS should reuse the operational lessons and distributed footprint already established by BF4SW while remaining a separate application/container and workload.
 
-This future design discussion must explicitly cover:
+The preferred architecture to evaluate is a **24/7 BF4PS background collector deployed on the same eight worker nodes that currently run BF4SW**, using its own Docker image/processes and BF4PS database coordination. The intent is to reuse existing hosts/network reachability while spreading BF4PS collection load rather than creating a single collector bottleneck. This is a deployment direction to test, not an assumption that BF4PS may consume unlimited resources on those hosts.
 
-- measured Battlelog throttling/rate-limit behavior at production scale;
-- initial collection/bootstrap policy for the existing ~175k+ identities;
-- ongoing discovery arrival rates in the thousands of aliases per day;
-- total detailed/weapon/vehicle/profile request workload;
-- whether detailed and large weapon/vehicle requests need separate queues/cadences;
-- single versus multiple collector processes/nodes;
-- collector HA and failover;
-- duplicate-work prevention;
-- database-backed claiming/leases and recovery of abandoned work;
+Distributed background collectors require database-backed coordination so that one logical unit of work is claimed by only one collector at a time, with leases/expiry so abandoned work can be recovered after process/node failure. Collectors must support graceful drain/upgrade behavior and stable worker identities. Exact work-unit granularity (per resource versus bundled player work) remains open pending further collection discussion.
+
+### Dedicated website/manual collector lane
+
+The website/manual-submission path should have a **dedicated interactive collector lane** that only services user-requested/manual collection work rather than consuming the normal bootstrap backlog. This may be a dedicated collector process/container on the web host or another dedicated node; physical placement remains to be tested.
+
+The interactive lane remains queue-driven. It must not let a web request synchronously hammer Battlelog or bypass rate controls. When multiple users submit work faster than Battlelog can safely service it, requests wait in priority order/coalesce as appropriate and the website reports a best-effort estimated attempt time based on measured throughput and work already ahead of the request.
+
+Background collectors and the interactive collector may share the same BF4PS queue/coordination database while selecting different workload classes. Interactive/manual work is normally preferred over background bootstrap work, but it must not interrupt an already in-flight Battlelog request.
+
+### Battlelog egress and interference testing
+
+Before production collection is allowed to scale, BF4PS must measure Battlelog throttling behavior and explicitly test whether BF4PS statistics traffic interferes with BF4SW's production server-monitoring/Keeper traffic when sharing an egress IP.
+
+Testing should characterize at least source-IP sensitivity, endpoint/request-class sensitivity, safe sustained request rate, burst behavior, HTTP/redirect/throttle responses, and recovery/cooldown behavior. BF4SW production monitoring has priority over BF4PS enrichment traffic.
+
+If shared-IP interference is observed, BF4PS collectors should use independent egress/static IPs. Spare static IPs are available as an architectural option. The design must therefore not assume collectors share BF4SW's egress or that all BF4PS collectors share one egress IP.
+
+The eight-node deployment also creates an opportunity to accelerate the initial seed, but concurrency must be controlled by measured Battlelog limits rather than simply multiplying a per-process request rate by eight. Global/per-egress rate coordination may be required.
+
+Future collector design/testing must also cover:
+
+- total detailed/profile/weapon/vehicle request workload;
+- whether endpoint classes need independent rate gates;
+- collector HA/failover and duplicate-work prevention;
 - retry/backoff behavior;
 - prioritization using recent BF4SW activity;
-- manual-submission priority;
-- aggressive backoff for long-inactive/manual-only soldiers;
-- deployment/upgrade/drain behavior;
-- metrics, logging, health checks, queue depth/backlog age, and operator visibility;
-- isolation between the public web application and collectors;
-- behavior during Battlelog, BF4SW, PostgreSQL, DNS, or inter-site outages;
-- whether collectors should be site-aware or distributed across different egress IPs.
-
-Schema v1 must therefore avoid assuming exactly one collector. Operational collection state should support later atomic work claiming/leases without requiring soldier/stat identity redesign. The first implementation may still run a single collector; that is a deployment choice, not a schema invariant.
-
-The web frontend and collector are separate logical components even if an early deployment happens to place them on the same machine.
+- aggressive backoff/parking for inactive players;
+- metrics, logs, health checks, queue depth, throughput, and backlog age;
+- behavior during Battlelog, BF4SW, PostgreSQL, DNS, network, or inter-site outages;
+- resource isolation so BF4PS CPU/memory/network usage cannot materially degrade BF4SW on shared nodes.
 
 ## BF4SW integration boundary
 
@@ -394,12 +458,15 @@ Every later schema migration must include a documentation update when it changes
 
 ## Deliberately deferred decisions
 
-The following are not required to create schema v1:
+The following are not required to create schema v1 or remain deliberately open pending measurement/design:
 
-- exact Battlelog polling cadence and rate limiting;
-- BF4SW activity-feed implementation beyond alias-ID discovery;
-- collector topology and placement;
-- exact bootstrap/backlog prioritization algorithm;
+- exact Battlelog polling/rate limits and whether limits are global, per egress, or endpoint-specific;
+- exact BF4SW activity-feed implementation beyond alias-ID discovery;
+- final work-queue schema and work-unit granularity;
+- exact bootstrap/backlog prioritization algorithm beyond the documented ordering;
+- exact physical placement of the interactive/manual collector;
+- manual player-submission UI/API, accepted identifiers, ambiguity handling, abuse controls, and ETA wording;
+- stats-reset semantics and detection algorithm;
 - whether old history eventually needs partitioning/retention limits;
 - weapon/vehicle history;
 - presentation prose;
