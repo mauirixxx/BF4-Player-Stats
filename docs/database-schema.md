@@ -264,6 +264,69 @@ Submitting an identity already present from BF4SW does not duplicate it; it adds
 
 Once accepted, manually seeded soldiers participate in normal collector scheduling. Collection cadence may later back off substantially for inactive/manual-only soldiers whose cumulative stats remain unchanged, while recent BF4SW activity can justify faster refreshes. That is scheduling policy, not identity semantics.
 
+## Discovery cadence and activity signal
+
+BF4SW discovery is continuous rather than a one-time seed operation. The initial target cadence is **every 5 minutes (300 seconds)** and must be configurable rather than hard-coded.
+
+Suggested configuration:
+
+```text
+BF4SW_DISCOVERY_INTERVAL_SECONDS=300
+```
+
+The discovery query should be incremental and inexpensive. BF4PS should prefer a durable watermark/cursor based on a trustworthy BF4SW timestamp or monotonic identifier once the relevant BF4SW tables have been inspected. If no suitable cursor exists, an idempotent scan of the relevant identity set is acceptable. BF4PS must not repeatedly scan the entire historical player-session dataset merely to discover new identities.
+
+The discovery watermark advances only after the corresponding BF4PS transaction succeeds. This prevents a BF4PS failure from silently skipping identities.
+
+BF4SW observations also provide a useful **activity/freshness signal**. Re-observing a known soldier can refresh that soldier's BF4SW source `last_seen_at`. Future collection policy may use this signal to prioritize recently active players while backing off inactive/manual-only players. Activity-based scheduling is deliberately separate from identity/discovery semantics.
+
+The five-minute value is an initial operational default, not a permanent architectural requirement. Production evidence may justify a shorter or longer interval.
+
+## PostgreSQL HA requirements
+
+BF4PS owns a separate PostgreSQL database (for example `bf4_playerstats`) while sharing the existing BF4 PostgreSQL HA infrastructure with BF4SW. Database separation is logical/operational; it does not require a separate PostgreSQL server fleet.
+
+Because the existing BF4 PostgreSQL topology uses physical streaming replication, the BF4PS database will be replicated with the cluster when created in that cluster. BF4PS must nevertheless treat **database replication** and **client connection failover** as separate concerns.
+
+BF4PS components that write to `bf4_playerstats` must not permanently hard-code a specific database VM such as `mak-db-01` as the writable primary. The eventual deployment must use the BF4 infrastructure's stable current-primary/failover mechanism so that a PostgreSQL promotion does not require application redesign.
+
+BF4PS has two conceptually different database connection paths:
+
+1. **BF4PS-owned database:** read/write access to the current writable primary for stats, discovery state, collector coordination, migrations, and manual submissions.
+2. **BF4SW database:** strictly read-only access used for soldier discovery/activity observations.
+
+The BF4SW read path may eventually be able to use a suitable replica, but replica selection, acceptable replication lag, DNS/service discovery, failover behavior, and read-after-failover semantics are deferred until the existing BF4 PostgreSQL HA client-routing design is reviewed. Do not embed an assumption in v1 that BF4SW reads always target the primary or always target a replica.
+
+A BF4SW database outage must pause only BF4SW-origin discovery/activity updates. It must not stop the BF4PS website from serving stored data or Battlelog collectors from updating already-known soldiers.
+
+A BF4PS database outage/failover must never cause BF4PS to write into BF4SW. The integration remains a one-way read-only boundary.
+
+## Collector/scanner deployment: deliberately deferred
+
+The physical/runtime placement and number of Battlelog collectors is intentionally **not decided before schema v1**. Plausible future designs include a simple process on the web host, a dedicated collector VM, active/passive collectors, or multiple distributed collectors.
+
+This future design discussion must explicitly cover:
+
+- measured Battlelog throttling/rate-limit behavior at production scale;
+- total detailed/weapon/vehicle/profile request workload;
+- whether detailed and large weapon/vehicle requests need separate queues/cadences;
+- single versus multiple collector processes/nodes;
+- collector HA and failover;
+- duplicate-work prevention;
+- database-backed claiming/leases and recovery of abandoned work;
+- retry/backoff behavior;
+- prioritization using recent BF4SW activity;
+- aggressive backoff for long-inactive/manual-only soldiers;
+- deployment/upgrade/drain behavior;
+- metrics, logging, health checks, and operator visibility;
+- isolation between the public web application and collectors;
+- behavior during Battlelog, BF4SW, PostgreSQL, DNS, or inter-site outages;
+- whether collectors should be site-aware or distributed across different egress IPs.
+
+Schema v1 must therefore avoid assuming exactly one collector. Operational collection state should support later atomic work claiming/leases without requiring soldier/stat identity redesign. The first implementation may still run a single collector; that is a deployment choice, not a schema invariant.
+
+The web frontend and collector are separate logical components even if an early deployment happens to place them on the same machine.
+
 ## BF4SW integration boundary
 
 BF4PS must not add foreign keys into the BF4 Server Watcher database and must not write to BF4SW tables.
