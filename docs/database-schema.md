@@ -37,7 +37,6 @@ Core columns:
 - `current_name text NOT NULL`;
 - `first_seen_at timestamptz NOT NULL`;
 - `last_seen_at timestamptz NOT NULL`;
-- `source text NOT NULL` (initially typically BF4SW);
 - `created_at timestamptz NOT NULL`;
 - `updated_at timestamptz NOT NULL`.
 
@@ -47,6 +46,21 @@ Constraints/indexes:
 - CHECK platform in the supported set;
 - index on case-insensitive current-name lookup (for example `lower(current_name)`);
 - index on `last_seen_at` for collector prioritization.
+
+### soldier_sources
+
+Records every independent way a soldier became known to BF4PS. Discovery provenance is many-to-one: the same soldier may be discovered manually and later observed by BF4SW without changing identity or losing either fact.
+
+Core columns:
+
+- `soldier_id bigint` FK -> soldiers ON DELETE CASCADE;
+- `source_type text NOT NULL`;
+- `first_seen_at timestamptz NOT NULL`;
+- `last_seen_at timestamptz NOT NULL`.
+
+Primary key: `(soldier_id, source_type)`. Initial source types are `bf4sw` and `manual`. Future discovery mechanisms may add source types without altering the soldier identity model.
+
+A manual submission of an already-known BF4SW soldier adds/refreshes the `manual` provenance row rather than creating a duplicate soldier. Likewise, a manually seeded inactive soldier can later acquire a `bf4sw` source if that player returns to the game.
 
 ### soldier_names
 
@@ -226,11 +240,35 @@ This separates scheduling/failure bookkeeping from the authoritative last-good s
 
 Indexes on the `*_next_due_at` columns support efficient collector work selection.
 
+## Discovery and seeding
+
+BF4PS has two first-class discovery paths in v1: continuous BF4SW discovery and explicit manual submission. Neither source owns the soldier record.
+
+### Continuous BF4SW discovery
+
+BF4SW is an ongoing source, not a one-time import. A BF4PS discovery job periodically queries the BF4SW database using a dedicated read-only account for newly observed or changed soldier identities. The job upserts BF4PS `soldiers`, `soldier_names`, and `soldier_sources` records and schedules newly discovered soldiers for Battlelog collection.
+
+The discovery process must be incremental and idempotent. Re-reading an already-known `(persona_id, platform)` must not create duplicates. The implementation should use a durable BF4PS-side discovery cursor/watermark where the BF4SW source data provides a suitable monotonic timestamp or identifier; otherwise it may safely rescan the relevant identity set and rely on upserts. The exact cadence belongs to collector configuration rather than schema v1.
+
+A temporary BF4SW/database outage delays discovery only. It must not prevent BF4PS from serving existing data or collecting Battlelog statistics for already-known soldiers.
+
+### Manual submission
+
+Manual submission exists specifically so BF4PS can collect valid Battlelog soldiers that BF4SW has never observed, including players inactive for years.
+
+Preferred input is a normal BF4 Battlelog soldier URL because it encodes the soldier name, persona ID, and platform. Administrative/API input may also accept an explicit name, persona ID, and platform tuple.
+
+Before a previously unknown manual identity is accepted, BF4PS validates the persona/platform against Battlelog's lightweight detailed-statistics endpoint. A successful valid response creates/upserts the soldier, records `source_type = manual`, and schedules detailed, weapon, vehicle, and optional profile enrichment. Invalid/unresolvable submissions do not create a normal collectable soldier record.
+
+Submitting an identity already present from BF4SW does not duplicate it; it adds/refreshes manual provenance and may request a prompt refresh. Names remain mutable observations and are never identity keys.
+
+Once accepted, manually seeded soldiers participate in normal collector scheduling. Collection cadence may later back off substantially for inactive/manual-only soldiers whose cumulative stats remain unchanged, while recent BF4SW activity can justify faster refreshes. That is scheduling policy, not identity semantics.
+
 ## BF4SW integration boundary
 
 BF4PS must not add foreign keys into the BF4 Server Watcher database and must not write to BF4SW tables.
 
-The BF4PS importer/discovery process connects to BF4SW with a read-only account and copies/updates identity observations into BF4PS-owned `soldiers` and `soldier_names` rows. This is an application-level integration boundary, not a cross-database relational dependency.
+The BF4PS importer/discovery process connects to BF4SW with a read-only account and copies/updates identity observations into BF4PS-owned `soldiers`, `soldier_names`, and `soldier_sources` rows. This is an application-level integration boundary, not a cross-database relational dependency.
 
 BF4PS remains usable if BF4SW is temporarily unavailable; existing BF4PS identities and statistics remain queryable and collectable.
 
