@@ -80,9 +80,9 @@ Player-specific raw fields observed include:
 
 Catalog/presentation material is also returned, including weapon name/slug/category, image configuration, unlock definitions, progression information, suggestions, and other Battlelog UI metadata. Much of the approximately 0.6 MB response is not appropriate for repeated historical storage.
 
-### Current retention direction
+### Weapon Retention Contract v1
 
-The minimal useful historical weapon counters are expected to include:
+Weapons are **current-state data only** in the initial BF4PS schema. The retained player-specific counters are:
 
 - kills;
 - headshots;
@@ -92,7 +92,7 @@ The minimal useful historical weapon counters are expected to include:
 
 Weapon GUID is the stable catalog identity. Display name, slug, and category belong in catalog/reference data rather than being duplicated in every player observation.
 
-Final retention decisions are intentionally deferred until schema design.
+BF4PS does not initially retain weapon history, Battlelog accuracy, score, deaths, service-star data, unlock/progression state, suggestions, image configuration, or other presentation metadata. Historical weapon tracking may be added later only for a concrete use case.
 
 ### Derived weapon statistics
 
@@ -110,7 +110,9 @@ Rates and ratios that can be reproduced exactly from retained cumulative counter
 
 ## Vehicle statistics
 
-The tested vehicle payloads contained 82 vehicle entries across PC, PS4, and Xbox One and were structurally consistent.
+### Vehicle Retention Contract v1
+
+The tested vehicle payloads contained 82 vehicle entries across PC, PS4, and Xbox One and were structurally consistent. Vehicles are **current-state data only** in the initial BF4PS schema.
 
 Useful player-specific fields observed include:
 
@@ -130,6 +132,8 @@ TIME = formatted time_in_seconds
 ```
 
 Battlelog groups individual vehicles into categories such as Main Battle Tank. Because individual vehicle rows include their category, BF4PS can calculate category totals from individual vehicle statistics rather than storing redundant category totals.
+
+The initial retained player-specific vehicle state is vehicle GUID, kills, and `timeIn`. `destroyXinY` is retained only if subsequent implementation work demonstrates that it is required to reproduce a supported BF4PS display; service-star, unlock/progression, suggestion, image, and other UI metadata are excluded. BF4PS does not initially retain vehicle history.
 
 ## Battlelog profile/account reconnaissance
 
@@ -220,6 +224,20 @@ This gives BF4PS a confirmed distinction between at least:
 2. public profile with no country configured;
 3. profile metadata restricted to friends;
 4. fetch/parsing failure (operational error, not a profile state).
+
+## Profile/Country Retention Contract v1
+
+Profile data is optional enrichment and never gates statistics collection. BF4PS retains the Battlelog username used for profile lookup, nullable two-letter country code, nullable country name, a profile access/result state, and timestamps for the last profile check and last successful profile enrichment.
+
+The profile state must distinguish at minimum: public profile with country, public profile with no country configured, profile restricted to friends, and operational fetch/parser failure. An absent country must therefore never be represented in a way that makes it indistinguishable from a restricted profile or failed request.
+
+Country is self-selected Battlelog metadata, not verified geolocation. Country code should be normalized to uppercase for storage/querying while preserving the Battlelog country name as observed. This supports future country-based player discovery without repeatedly scraping profiles.
+
+The account-to-soldier relationship is one Battlelog account/profile to zero or more BF4 soldiers. Soldier identity remains `(persona_id, platform)` and must not depend on Battlelog username. BF4PS should preserve current soldier display names separately from account identity so that a profile rename cannot change the soldier's primary identity.
+
+The numeric Battlelog profile user ID is not required by any confirmed collector endpoint or requested display feature. It is therefore not mandatory in schema v1; the schema may provide a nullable field if implementation evidence shows it can be captured reliably at negligible cost.
+
+Presentation/profile prose is explicitly excluded from initial collection and storage.
 
 ## Retention philosophy
 
