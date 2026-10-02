@@ -1,0 +1,257 @@
+# Battlelog Data Sources
+
+This document records Battlelog behavior verified during initial BF4 Player Stats (BF4PS) reconnaissance. It is intended to be the source contract for collector and database design. Do not treat Battlelog's response schema as BF4PS's database schema.
+
+## Design principles established by reconnaissance
+
+- BF4 Server Watcher (BF4SW) is the initial source of known BF4 soldier identities.
+- BF4PS should treat `(persona_id, platform)` as the minimum stable soldier identity required for Battlelog statistics requests.
+- Battlelog account/profile data is optional enrichment and must never block gameplay-statistics collection.
+- Store authoritative cumulative counters where practical; calculate deterministic rates/ratios for presentation rather than persisting redundant derived values.
+- Do not persist Battlelog UI/presentation metadata or legacy fields merely because Battlelog returns them.
+- Schema design follows source reconnaissance and retention decisions, not the reverse.
+
+## Confirmed BF4 platform mapping
+
+Battlelog embeds the following platform mapping in its page configuration:
+
+| BF4PS platform | Battlelog slug | `platformInt` |
+| --- | --- | ---: |
+| PC | `pc` | 1 |
+| PlayStation 4 | `ps4` | 32 |
+| Xbox One | `xboxone` | 64 |
+
+Battlelog also exposes legacy mappings such as Xbox 360 = 2 and PS3 = 4, but BF4PS initial scope is PC, PS4, and Xbox One.
+
+## Confirmed structured statistics endpoints
+
+The following endpoints were successfully requested anonymously for representative PC, PS4, and Xbox One personas:
+
+```text
+/bf4/warsawdetailedstatspopulate/{persona_id}/{platformInt}/
+/bf4/warsawWeaponsPopulateStats/{persona_id}/{platformInt}/stats/
+/bf4/warsawvehiclesPopulateStats/{persona_id}/{platformInt}/stats/
+```
+
+All three return structured JSON. Core statistics therefore do not require scraping rendered HTML.
+
+Representative test soldiers:
+
+| Platform | Soldier | Persona ID |
+| --- | --- | ---: |
+| PC | mauirixxx | 236753552 |
+| PS4 | xSilverMystx | 303498475 |
+| Xbox One | S0UL OF STEEL | 928420744 |
+
+Observed approximate response sizes for the initial console samples were:
+
+- detailed statistics: about 5.5-5.7 KB;
+- weapon statistics: about 582-588 KB;
+- vehicle statistics: about 453-454 KB.
+
+This large difference matters for future polling strategy. Weapon and vehicle requests should not automatically be assumed to need the same refresh frequency as the small detailed-statistics request.
+
+## Detailed statistics
+
+The detailed response contains `personaId`, `platformInt`, `generalStats`, `mySoldier`, and `statsTemplate` in the tested payloads.
+
+Useful cumulative/general fields observed include kills, deaths, score, rank, time played, shots, revives, repairs, resupplies, kit statistics, game-mode scores, and weapon-category kills.
+
+The payload also contains fields that are irrelevant to BF4PS. Examples observed include Hardline-oriented names such as `sc_heist`, `sc_hostage`, `sc_hotwire`, `sc_bloodmoney`, `sc_bountyhunter`, `sc_squadheist`, `sc_turfwar`, and cash-related fields. These must not be copied blindly into the BF4PS schema.
+
+Battlelog is also inconsistent about JSON datatypes in some statistics. Collector normalization must therefore be explicit rather than relying on source types as database types.
+
+## Weapon statistics
+
+The tested weapon payloads contain roughly 173-174 weapon entries depending on the player. The reason for the one-entry difference has not yet been established.
+
+Player-specific raw fields observed include:
+
+- weapon GUID;
+- kills;
+- headshots;
+- shots fired;
+- shots hit;
+- accuracy;
+- time equipped;
+- score;
+- deaths;
+- service-star data.
+
+Catalog/presentation material is also returned, including weapon name/slug/category, image configuration, unlock definitions, progression information, suggestions, and other Battlelog UI metadata. Much of the approximately 0.6 MB response is not appropriate for repeated historical storage.
+
+### Current retention direction
+
+The minimal useful historical weapon counters are expected to include:
+
+- kills;
+- headshots;
+- shots fired;
+- shots hit;
+- time equipped.
+
+Weapon GUID is the stable catalog identity. Display name, slug, and category belong in catalog/reference data rather than being duplicated in every player observation.
+
+Final retention decisions are intentionally deferred until schema design.
+
+### Derived weapon statistics
+
+Useful display statistics can be calculated from raw counters:
+
+```text
+KPM  = kills / (time_equipped_seconds / 60)
+ACC  = shots_hit / shots_fired
+HSKR = headshots / kills
+```
+
+A third-party stats display examined during reconnaissance labels a value `KPH`; its observed value corresponds to kills per hit (`kills / shots_hit`), not kills per hour. BF4PS should use unambiguous labels if it ever exposes such a metric.
+
+Rates and ratios that can be reproduced exactly from retained cumulative counters should normally be calculated for presentation rather than stored redundantly.
+
+## Vehicle statistics
+
+The tested vehicle payloads contained 82 vehicle entries across PC, PS4, and Xbox One and were structurally consistent.
+
+Useful player-specific fields observed include:
+
+- vehicle GUID;
+- kills;
+- time in vehicle (`timeIn`);
+- `destroyXinY`;
+- service-star data.
+
+Catalog/reference fields include vehicle name, slug, and category. Battlelog also returns unlock/progression/UI structures that BF4PS does not need to snapshot repeatedly.
+
+The most important vehicle display values can be derived from kills and time:
+
+```text
+KPM = kills / (time_in_seconds / 60)
+TIME = formatted time_in_seconds
+```
+
+Battlelog groups individual vehicles into categories such as Main Battle Tank. Because individual vehicle rows include their category, BF4PS can calculate category totals from individual vehicle statistics rather than storing redundant category totals.
+
+## Battlelog profile/account reconnaissance
+
+Battlelog user profiles are available at:
+
+```text
+/bf4/user/{battlelog_username}/
+```
+
+Unlike the core statistics endpoints, profile enrichment currently relies on information present in the returned HTML.
+
+### Country
+
+For profiles that expose a country, Battlelog renders it directly in HTML. A representative structure is:
+
+```html
+<span class="location-information">
+  <img src=".../common/flags/us.gif"
+       alt="United States"
+       data-tooltip="United States" />
+</span>
+```
+
+This provides both a two-letter country code (from the flag filename) and a human-readable name.
+
+Verified examples:
+
+| Battlelog account | Country code | Country |
+| --- | --- | --- |
+| mauirixxx | us | United States |
+| MorsecodeAUS | au | Australia |
+| TrizepsTiger385 | de | Germany |
+| Lucasss12343 | br | Brazil |
+
+Country is user-supplied profile metadata and must not be treated as authoritative physical location.
+
+A public profile with no country configured was subsequently identified (`zgr1mm`). The profile is anonymously viewable, contains a Presentation section, and does not expose a country/location value. This confirms that a missing country is a legitimate public-profile state and is distinct from profile restriction.
+
+### Battlelog account versus BF4 soldier
+
+Battlelog account identity and BF4 soldier/persona identity are distinct concepts.
+
+A Battlelog profile can expose one or more BF4 soldiers. For example, reconnaissance observed one account with both:
+
+- `TrizepsTiger385`, PC persona `318582368`;
+- `TrizepsTiger`, Xbox One persona `1008642814155`.
+
+A restricted TEAM-AJAX account exposed three BF4 soldiers:
+
+- `TEAM-AJAX`, PC persona `1003662931478`;
+- `AJAX4239`, Xbox One persona `1006883131478`;
+- `champ1-shannsort`, PS4 persona `1980099105`.
+
+Therefore a Battlelog username is not a safe BF4 soldier primary key. The conceptual relationship is one Battlelog account to zero or more BF4 soldiers/personas.
+
+Battlelog pages also expose a Battlelog/profile user ID distinct from BF4 persona IDs. Whether BF4PS needs to persist that ID remains a schema-design question.
+
+### Profile privacy
+
+Anonymous requests to profiles such as `IIIParadoxonIII` and `TEAM-AJAX` returned HTTP 200 but rendered the message that the user is only sharing the profile with friends.
+
+Even in that restricted state, the profile HTML still exposed associated BF4 soldier names, persona IDs, and platforms.
+
+More importantly, profile privacy did not prevent anonymous access to the detailed gameplay-statistics endpoint for the associated personas. Successful anonymous detailed-statistics requests were verified for:
+
+- `IIIParadoxonIII`, PC persona `366128672`;
+- `TEAM-AJAX`, PC persona `1003662931478`;
+- `AJAX4239`, Xbox One persona `1006883131478`;
+- `champ1-shannsort`, PS4 persona `1980099105`.
+
+Observed behavior therefore shows that Battlelog social/profile privacy and BF4 gameplay-statistics availability are independent.
+
+**Collector mandate:** profile enrichment must never be a prerequisite for statistics collection. A restricted, missing, renamed, or temporarily unavailable profile must not make a known `(persona_id, platform)` soldier untrackable.
+
+### Public profile with no country: zgr1mm
+
+`zgr1mm` provides a useful negative country case:
+
+- the profile is anonymously viewable;
+- it does not show the friends-only restriction message;
+- no country/location value is presented;
+- it contains a user Presentation section;
+- it exposes BF4 soldiers.
+
+This gives BF4PS a confirmed distinction between at least:
+
+1. country observed on a public profile;
+2. public profile with no country configured;
+3. profile metadata restricted to friends;
+4. fetch/parsing failure (operational error, not a profile state).
+
+## Retention philosophy
+
+Battlelog is the source, not the BF4PS database model.
+
+BF4PS should preferentially retain compact, authoritative cumulative counters and stable catalog identities. It should avoid repeated storage of:
+
+- unlock definitions;
+- image configuration;
+- suggestion structures;
+- Battlelog rendering metadata;
+- legacy/non-BF4 statistics;
+- deterministic ratios/rates that can be calculated from retained counters.
+
+Static weapon/vehicle metadata should be normalized into catalog/reference data instead of duplicated for every player snapshot.
+
+## Known unknowns
+
+The following remain intentionally unresolved and must not be converted into assumptions:
+
+- Whether friends-only is Battlelog's default profile-sharing setting.
+- Exact semantics of every detailed-statistics field and which subset BF4PS will retain.
+- Why one tested Xbox One weapon response contained 173 weapon entries while PC/PS4 samples contained 174.
+- Final polling cadence for detailed versus weapon versus vehicle statistics.
+- Whether Battlelog profile user IDs need to be persisted.
+- How account/soldier renames should be represented historically.
+- Final behavior for deleted/nonexistent Battlelog profiles.
+- Rate limits/throttling characteristics of these endpoints at production collection scale.
+- Final PostgreSQL schema. Schema design begins only after the source contract and retention decisions are sufficiently stable.
+
+## Current reconnaissance conclusion
+
+Battlelog provides structured anonymous JSON endpoints for the core BF4 gameplay statistics needed by BF4PS across PC, PS4, and Xbox One. Profile HTML provides optional account-level enrichment such as self-selected country and account-to-soldier relationships. Profile privacy does not, based on tested examples, prevent gameplay-statistics collection.
+
+This is sufficient to proceed to explicit retention decisions and evidence-based schema design without HTML scraping for core gameplay statistics.
