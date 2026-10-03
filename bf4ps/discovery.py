@@ -10,7 +10,6 @@ from sqlalchemy.engine import Connection
 
 from bf4ps.config import database_url
 
-SOURCE_NAME = "bf4sw"
 PLATFORM_MAP = {
     "PC": "pc",
     "PS4/5": "ps4",
@@ -35,36 +34,50 @@ def bf4sw_database_url() -> str:
     return value
 
 
-def load_alias(source: Connection, *, persona_id: int, platform: str) -> AliasRow:
-    row = source.execute(
+def load_aliases(source: Connection, *, persona_id: int, platform: str) -> list[AliasRow]:
+    rows = source.execute(
         text(
             """
             SELECT id, platform, persona_id, player_name, first_seen, last_seen
             FROM bf4_player_aliases
             WHERE persona_id = :persona_id
               AND platform = :platform
-            ORDER BY last_seen DESC, id DESC
-            LIMIT 1
+            ORDER BY first_seen, id
             """
         ),
         {"persona_id": persona_id, "platform": platform},
-    ).mappings().one_or_none()
-    if row is None:
-        raise LookupError(f"BF4SW alias not found for platform={platform!r}, persona_id={persona_id}")
-    return AliasRow(
-        alias_id=row["id"],
-        platform=row["platform"],
-        persona_id=row["persona_id"],
-        player_name=row["player_name"],
-        first_seen=row["first_seen"],
-        last_seen=row["last_seen"],
-    )
+    ).mappings().all()
+    if not rows:
+        raise LookupError(f"BF4SW aliases not found for platform={platform!r}, persona_id={persona_id}")
+    return [
+        AliasRow(
+            alias_id=row["id"],
+            platform=row["platform"],
+            persona_id=row["persona_id"],
+            player_name=row["player_name"],
+            first_seen=row["first_seen"],
+            last_seen=row["last_seen"],
+        )
+        for row in rows
+    ]
 
 
-def import_alias(destination: Connection, alias: AliasRow) -> int:
-    platform = PLATFORM_MAP.get(alias.platform)
+def import_aliases(destination: Connection, aliases: list[AliasRow]) -> int:
+    if not aliases:
+        raise ValueError("At least one BF4SW alias is required")
+
+    identity = {(alias.platform, alias.persona_id) for alias in aliases}
+    if len(identity) != 1:
+        raise ValueError("All aliases must belong to the same platform/persona identity")
+
+    source_platform, persona_id = next(iter(identity))
+    platform = PLATFORM_MAP.get(source_platform)
     if platform is None:
-        raise ValueError(f"Unsupported BF4SW platform {alias.platform!r}")
+        raise ValueError(f"Unsupported BF4SW platform {source_platform!r}")
+
+    earliest_seen = min(alias.first_seen for alias in aliases)
+    latest_seen = max(alias.last_seen for alias in aliases)
+    current_alias = max(aliases, key=lambda alias: (alias.last_seen, alias.alias_id))
 
     soldier_id = destination.execute(
         text(
@@ -76,7 +89,11 @@ def import_alias(destination: Connection, alias: AliasRow) -> int:
                 :persona_id, :platform, :name, :first_seen, :last_seen
             )
             ON CONFLICT (persona_id, platform) DO UPDATE SET
-                current_name = EXCLUDED.current_name,
+                current_name = CASE
+                    WHEN EXCLUDED.last_seen_at >= soldiers.last_seen_at
+                    THEN EXCLUDED.current_name
+                    ELSE soldiers.current_name
+                END,
                 first_seen_at = LEAST(soldiers.first_seen_at, EXCLUDED.first_seen_at),
                 last_seen_at = GREATEST(soldiers.last_seen_at, EXCLUDED.last_seen_at),
                 updated_at = now()
@@ -84,31 +101,32 @@ def import_alias(destination: Connection, alias: AliasRow) -> int:
             """
         ),
         {
-            "persona_id": alias.persona_id,
+            "persona_id": persona_id,
             "platform": platform,
-            "name": alias.player_name,
-            "first_seen": alias.first_seen,
-            "last_seen": alias.last_seen,
+            "name": current_alias.player_name,
+            "first_seen": earliest_seen,
+            "last_seen": latest_seen,
         },
     ).scalar_one()
 
-    destination.execute(
-        text(
-            """
-            INSERT INTO soldier_names (soldier_id, name, first_seen_at, last_seen_at)
-            VALUES (:soldier_id, :name, :first_seen, :last_seen)
-            ON CONFLICT (soldier_id, name) DO UPDATE SET
-                first_seen_at = LEAST(soldier_names.first_seen_at, EXCLUDED.first_seen_at),
-                last_seen_at = GREATEST(soldier_names.last_seen_at, EXCLUDED.last_seen_at)
-            """
-        ),
-        {
-            "soldier_id": soldier_id,
-            "name": alias.player_name,
-            "first_seen": alias.first_seen,
-            "last_seen": alias.last_seen,
-        },
-    )
+    for alias in aliases:
+        destination.execute(
+            text(
+                """
+                INSERT INTO soldier_names (soldier_id, name, first_seen_at, last_seen_at)
+                VALUES (:soldier_id, :name, :first_seen, :last_seen)
+                ON CONFLICT (soldier_id, name) DO UPDATE SET
+                    first_seen_at = LEAST(soldier_names.first_seen_at, EXCLUDED.first_seen_at),
+                    last_seen_at = GREATEST(soldier_names.last_seen_at, EXCLUDED.last_seen_at)
+                """
+            ),
+            {
+                "soldier_id": soldier_id,
+                "name": alias.player_name,
+                "first_seen": alias.first_seen,
+                "last_seen": alias.last_seen,
+            },
+        )
 
     destination.execute(
         text(
@@ -122,8 +140,8 @@ def import_alias(destination: Connection, alias: AliasRow) -> int:
         ),
         {
             "soldier_id": soldier_id,
-            "first_seen": alias.first_seen,
-            "last_seen": alias.last_seen,
+            "first_seen": earliest_seen,
+            "last_seen": latest_seen,
         },
     )
 
@@ -142,7 +160,7 @@ def import_alias(destination: Connection, alias: AliasRow) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Import one known BF4SW alias into BF4PS.")
+    parser = argparse.ArgumentParser(description="Import one known BF4SW soldier and complete alias history into BF4PS.")
     parser.add_argument("--persona-id", type=int, required=True)
     parser.add_argument("--platform", choices=sorted(PLATFORM_MAP), required=True)
     args = parser.parse_args()
@@ -151,15 +169,16 @@ def main() -> None:
     destination_engine = create_engine(database_url())
 
     with source_engine.connect() as source:
-        alias = load_alias(source, persona_id=args.persona_id, platform=args.platform)
+        aliases = load_aliases(source, persona_id=args.persona_id, platform=args.platform)
 
     with destination_engine.begin() as destination:
-        soldier_id = import_alias(destination, alias)
+        soldier_id = import_aliases(destination, aliases)
 
+    current_alias = max(aliases, key=lambda alias: (alias.last_seen, alias.alias_id))
     print(
-        f"Imported BF4SW alias id={alias.alias_id} "
-        f"persona_id={alias.persona_id} platform={alias.platform} "
-        f"name={alias.player_name!r} as BF4PS soldier_id={soldier_id}"
+        f"Imported BF4SW persona_id={current_alias.persona_id} platform={current_alias.platform} "
+        f"aliases={len(aliases)} current_name={current_alias.player_name!r} "
+        f"as BF4PS soldier_id={soldier_id}"
     )
 
 
