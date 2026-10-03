@@ -40,6 +40,62 @@ At most one actionable job may exist for a `(soldier_id, resource)` pair. Repeat
 
 Completed/failed execution history is not represented by keeping completed jobs forever in the live queue; operational history is recorded separately in `collection_events`.
 
+## Bounded bootstrap feeder / working set
+
+The large initial BF4SW population is **not** represented by eagerly inserting every missing resource into `collection_jobs`. Durable `collection_state` is itself the authoritative total backlog: it records which resources have never been attempted, are current, are due, are retryable/deferred, or are unavailable/terminal.
+
+A scheduler/feeder maintains only a **bounded working set** of actionable background jobs. The working-set target is configurable and will be tuned from real throughput; example depths such as 100, 500, or 1,000 are illustrative only and are not schema constants.
+
+Conceptually:
+
+```text
+soldiers + collection_state + BF4SW activity
+                    |
+                    v
+            scheduler / feeder
+                    |
+       replenish only the deficit
+                    |
+                    v
+        bounded collection_jobs
+                    |
+                    v
+               collectors
+```
+
+If the configured ready-depth target were 500 and only 347 background jobs were currently pending/claimed/running, the feeder would select and materialize only enough eligible work to replenish the deficit rather than enqueueing the entire remaining population.
+
+The feeder does not require a fragile external cursor such as "last processed soldier ID." PostgreSQL durable state answers what remains eligible. This makes scheduler restart/failover naturally recoverable and avoids duplicating the total backlog in the live queue.
+
+Operationally, **queue depth means immediate/actionable workload**, while **collection-state coverage means total remaining backlog**. These must remain separate metrics.
+
+### Progressive bootstrap resource mix
+
+Initial bootstrap begins heavily biased toward `detailed`, because it is small and provides the headline player statistics. BF4PS does not require every single detailed request to succeed before any later resource can begin; otherwise a small number of broken/unavailable identities could block global progress.
+
+Later resources (`profile`, `weapons`, `vehicles`) are introduced progressively as bootstrap coverage advances and/or measured capacity permits. This may be implemented with configurable coverage watermarks, configurable resource weights, or a combination. Exact percentages/weights are operational tuning and are deliberately not frozen into the schema.
+
+Illustrative resource mixes only:
+
+```text
+early:       detailed dominant; small profile capacity
+middle:      detailed + profile; weapons begins
+later:       remaining detailed/profile + weapons + vehicles
+steady:      whatever is actually eligible under freshness policy
+```
+
+The resource mix must be tunable without schema migration or mass queue surgery. If weapons prove expensive or throttle-prone, their feeder weight/capacity can be reduced; if profile requests are inexpensive, profile capacity can be increased.
+
+Bootstrap coverage/progress must distinguish at least successful/current, attempted-but-unavailable/terminal, retry/deferred, and never-attempted work. Global phase advancement must not require an impossible 100% success rate.
+
+### Activity and manual work bypass bootstrap age
+
+BF4SW activity can elevate otherwise-missing resources into active/recent priority without waiting for the old bootstrap population to reach that resource globally. Thus currently playing soldiers can become richly populated while the historical population continues draining in the background.
+
+Manual website submissions bypass bootstrap progression entirely: all missing/stale resources required for the requested full collection become interactive work immediately, subject to deduplication/coalescing and the interactive rate gate.
+
+The bounded feeder must preserve the previously defined fairness rule: active/recent work can receive preference, but old bootstrap work must continue to drain and cannot starve indefinitely.
+
 ## Background lane
 
 The preferred background architecture is **eight distributed BF4PS collectors running 24/7 on the existing eight BF4SW worker nodes**, in BF4PS's own Docker image/processes.
@@ -247,12 +303,13 @@ Collectors need stable worker identities, lease expiry/recovery, graceful drain/
 
 ## Remaining queue/scheduler design work
 
-The high-level materialization, priority, lease, liveness-event, and claim policies are now locked. Remaining implementation design includes:
+The high-level materialization, bounded-feeder, priority, lease, liveness-event, and claim policies are now locked. Remaining implementation design includes:
 
 - exact `collection_jobs` SQL columns, indexes, constraints, and atomic claim query;
 - exact `collection_events` SQL schema/indexes and retention cleanup mechanism;
 - exact lease duration and heartbeat/renewal timing after measuring endpoint duration;
-- how progressive bootstrap materialization selects profile/weapons/vehicles work after initial detailed collection;
+- exact working-set target and replenishment cadence;
+- bootstrap resource watermarks/weights after measuring collector throughput;
 - active/recent time windows and fairness/aging weights;
 - retry/backoff timings and classification details;
 - how the dedicated interactive collector and background collectors select/chain work without duplicate claims;
