@@ -81,6 +81,18 @@ The reconciliation implementation was then exercised directly against the dispos
 
 The unattended runner was then validated manually against the disposable destination. It caught up new aliases, continued incremental discovery, reconciled on schedule, rejected a concurrent second instance through the advisory lock, resumed durable checkpoints after clean restart, survived repeated source-connection failures without terminating, and automatically caught up and resumed reconciliation after the source connection was restored. SIGINT produced orderly shutdowns throughout validation.
 
+### 15-hour unattended systemd soak
+
+A subsequent unattended systemd soak ran continuously for approximately 15 hours against the disposable BF4PS test database. At the audit checkpoint the service remained on its original process with zero systemd restarts, no warning-or-higher journal entries, stable memory use, and both discovery and reconciliation continuing on schedule.
+
+At that checkpoint the new-alias cursor caught BF4SW completely (`cursor gap = 0`). BF4SW and BF4PS contained exactly 179,665 identities through the cursor, with zero missing and zero extra identities. Immutable name history also reconciled exactly at 182,249 keys on each side, with zero missing and zero extra keys. No audited BF4PS `last_seen` value was newer than its BF4SW source value.
+
+A live comparison immediately after reconciliation still showed source-newer rows, but 2,947 of 2,992 (98.50%) were less than five minutes newer. Follow-up inspection of the apparent greater-than-24-hour outliers showed that their BF4SW `last_seen` mutations occurred roughly 24–26 seconds after the most recent successful reconciliation watermark. Earlier large-lag examples had disappeared on later sweeps. This demonstrates that those large timestamp deltas represented returning players receiving a new source observation after the completed reconciliation cutoff, not records that reconciliation had failed to process.
+
+Operational audits must therefore distinguish **timestamp delta** from **reconciliation staleness**. A row is a candidate for a missed reconciliation only when BF4SW is newer than BF4PS **and** the BF4SW `last_seen` is at or before the most recent successful reconciliation source watermark. If BF4SW `last_seen` is newer than that watermark, the mutation happened after the completed sweep and is expected to be consumed by a subsequent overlapping run. A player returning after days or weeks can consequently show a very large BF4PS-to-BF4SW timestamp delta while being only seconds old as synchronization work.
+
+The 15-hour unattended discovery/reconciliation soak is considered a pass. This validates the service behavior on the disposable destination; it does not by itself authorize changing `BF4PS_DATABASE_URL` to a production destination.
+
 The synchronization target is therefore bounded eventual consistency, not a permanently zero-difference comparison against a source database that continues to mutate during and after each reconciliation transaction.
 
 The application host and PostgreSQL host may display different local time zones without affecting reconciliation correctness. Validation used an application host displaying HST and a PostgreSQL host displaying UTC; reconciliation boundaries are derived from the BF4SW PostgreSQL source clock and timezone-aware timestamps rather than the application's displayed wall-clock time. Hosts should still maintain normal clock synchronization.
