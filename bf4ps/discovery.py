@@ -247,11 +247,41 @@ def run_discovery_batch(source: Connection, destination: Connection, *, batch_si
     return last_alias_id, new_last_alias_id, len(batch), len(identities)
 
 
+def run_catch_up(source_engine, destination_engine, *, batch_size: int) -> None:
+    batch_number = 0
+    total_alias_rows = 0
+    total_identities = 0
+
+    while True:
+        with source_engine.connect() as source:
+            with destination_engine.begin() as destination:
+                old_cursor, new_cursor, alias_rows, identities = run_discovery_batch(
+                    source, destination, batch_size=batch_size
+                )
+
+        if alias_rows == 0:
+            print(
+                f"BF4SW discovery caught up at cursor={new_cursor}: "
+                f"batches={batch_number} alias_rows={total_alias_rows} "
+                f"identity_visits={total_identities}"
+            )
+            return
+
+        batch_number += 1
+        total_alias_rows += alias_rows
+        total_identities += identities
+        print(
+            f"Batch {batch_number}: cursor={old_cursor}->{new_cursor} "
+            f"alias_rows={alias_rows} identities={identities}"
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Import BF4SW soldiers into BF4PS.")
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--persona-id", type=int, help="Import one known BF4SW persona and complete alias history.")
     mode.add_argument("--discover", action="store_true", help="Run one bounded BF4SW discovery batch.")
+    mode.add_argument("--discover-until-caught-up", action="store_true", help="Run bounded discovery batches until BF4SW has no rows beyond the cursor.")
     parser.add_argument("--platform", choices=sorted(PLATFORM_MAP), help="BF4SW platform; required with --persona-id.")
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help=f"Alias rows per discovery batch (default: {DEFAULT_BATCH_SIZE}).")
     args = parser.parse_args()
@@ -276,6 +306,10 @@ def main() -> None:
 
     if args.platform is not None:
         parser.error("--platform is only valid with --persona-id")
+
+    if args.discover_until_caught_up:
+        run_catch_up(source_engine, destination_engine, batch_size=args.batch_size)
+        return
 
     with source_engine.connect() as source:
         with destination_engine.begin() as destination:
