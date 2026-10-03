@@ -10,6 +10,8 @@ from sqlalchemy.engine import Connection
 
 from bf4ps.config import database_url
 
+SOURCE_NAME = "bf4sw"
+DEFAULT_BATCH_SIZE = 100
 PLATFORM_MAP = {
     "PC": "pc",
     "PS4/5": "ps4",
@@ -34,6 +36,17 @@ def bf4sw_database_url() -> str:
     return value
 
 
+def _alias_from_mapping(row) -> AliasRow:
+    return AliasRow(
+        alias_id=row["id"],
+        platform=row["platform"],
+        persona_id=row["persona_id"],
+        player_name=row["player_name"],
+        first_seen=row["first_seen"],
+        last_seen=row["last_seen"],
+    )
+
+
 def load_aliases(source: Connection, *, persona_id: int, platform: str) -> list[AliasRow]:
     rows = source.execute(
         text(
@@ -49,17 +62,23 @@ def load_aliases(source: Connection, *, persona_id: int, platform: str) -> list[
     ).mappings().all()
     if not rows:
         raise LookupError(f"BF4SW aliases not found for platform={platform!r}, persona_id={persona_id}")
-    return [
-        AliasRow(
-            alias_id=row["id"],
-            platform=row["platform"],
-            persona_id=row["persona_id"],
-            player_name=row["player_name"],
-            first_seen=row["first_seen"],
-            last_seen=row["last_seen"],
-        )
-        for row in rows
-    ]
+    return [_alias_from_mapping(row) for row in rows]
+
+
+def load_discovery_batch(source: Connection, *, after_alias_id: int, batch_size: int) -> list[AliasRow]:
+    rows = source.execute(
+        text(
+            """
+            SELECT id, platform, persona_id, player_name, first_seen, last_seen
+            FROM bf4_player_aliases
+            WHERE id > :after_alias_id
+            ORDER BY id
+            LIMIT :batch_size
+            """
+        ),
+        {"after_alias_id": after_alias_id, "batch_size": batch_size},
+    ).mappings().all()
+    return [_alias_from_mapping(row) for row in rows]
 
 
 def import_aliases(destination: Connection, aliases: list[AliasRow]) -> int:
@@ -159,26 +178,114 @@ def import_aliases(destination: Connection, aliases: list[AliasRow]) -> int:
     return soldier_id
 
 
+def ensure_discovery_state(destination: Connection) -> int:
+    destination.execute(
+        text(
+            """
+            INSERT INTO discovery_state (source_name, last_alias_id)
+            VALUES (:source_name, 0)
+            ON CONFLICT (source_name) DO NOTHING
+            """
+        ),
+        {"source_name": SOURCE_NAME},
+    )
+    return destination.execute(
+        text("SELECT last_alias_id FROM discovery_state WHERE source_name = :source_name"),
+        {"source_name": SOURCE_NAME},
+    ).scalar_one()
+
+
+def run_discovery_batch(source: Connection, destination: Connection, *, batch_size: int) -> tuple[int, int, int, int]:
+    if batch_size < 1:
+        raise ValueError("batch_size must be at least 1")
+
+    last_alias_id = ensure_discovery_state(destination)
+    destination.execute(
+        text(
+            """
+            UPDATE discovery_state
+            SET last_poll_at = now(), updated_at = now()
+            WHERE source_name = :source_name
+            """
+        ),
+        {"source_name": SOURCE_NAME},
+    )
+
+    batch = load_discovery_batch(source, after_alias_id=last_alias_id, batch_size=batch_size)
+    if not batch:
+        destination.execute(
+            text(
+                """
+                UPDATE discovery_state
+                SET last_success_at = now(), last_error = NULL, updated_at = now()
+                WHERE source_name = :source_name
+                """
+            ),
+            {"source_name": SOURCE_NAME},
+        )
+        return last_alias_id, last_alias_id, 0, 0
+
+    identities = sorted({(alias.platform, alias.persona_id) for alias in batch})
+    for platform, persona_id in identities:
+        aliases = load_aliases(source, persona_id=persona_id, platform=platform)
+        import_aliases(destination, aliases)
+
+    new_last_alias_id = batch[-1].alias_id
+    destination.execute(
+        text(
+            """
+            UPDATE discovery_state
+            SET last_alias_id = :last_alias_id,
+                last_success_at = now(),
+                last_error = NULL,
+                updated_at = now()
+            WHERE source_name = :source_name
+            """
+        ),
+        {"source_name": SOURCE_NAME, "last_alias_id": new_last_alias_id},
+    )
+    return last_alias_id, new_last_alias_id, len(batch), len(identities)
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Import one known BF4SW soldier and complete alias history into BF4PS.")
-    parser.add_argument("--persona-id", type=int, required=True)
-    parser.add_argument("--platform", choices=sorted(PLATFORM_MAP), required=True)
+    parser = argparse.ArgumentParser(description="Import BF4SW soldiers into BF4PS.")
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--persona-id", type=int, help="Import one known BF4SW persona and complete alias history.")
+    mode.add_argument("--discover", action="store_true", help="Run one bounded BF4SW discovery batch.")
+    parser.add_argument("--platform", choices=sorted(PLATFORM_MAP), help="BF4SW platform; required with --persona-id.")
+    parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help=f"Alias rows per discovery batch (default: {DEFAULT_BATCH_SIZE}).")
     args = parser.parse_args()
 
     source_engine = create_engine(bf4sw_database_url())
     destination_engine = create_engine(database_url())
 
+    if args.persona_id is not None:
+        if args.platform is None:
+            parser.error("--platform is required with --persona-id")
+        with source_engine.connect() as source:
+            aliases = load_aliases(source, persona_id=args.persona_id, platform=args.platform)
+        with destination_engine.begin() as destination:
+            soldier_id = import_aliases(destination, aliases)
+        current_alias = max(aliases, key=lambda alias: (alias.last_seen, alias.alias_id))
+        print(
+            f"Imported BF4SW persona_id={current_alias.persona_id} platform={current_alias.platform} "
+            f"aliases={len(aliases)} current_name={current_alias.player_name!r} "
+            f"as BF4PS soldier_id={soldier_id}"
+        )
+        return
+
+    if args.platform is not None:
+        parser.error("--platform is only valid with --persona-id")
+
     with source_engine.connect() as source:
-        aliases = load_aliases(source, persona_id=args.persona_id, platform=args.platform)
+        with destination_engine.begin() as destination:
+            old_cursor, new_cursor, alias_rows, identities = run_discovery_batch(
+                source, destination, batch_size=args.batch_size
+            )
 
-    with destination_engine.begin() as destination:
-        soldier_id = import_aliases(destination, aliases)
-
-    current_alias = max(aliases, key=lambda alias: (alias.last_seen, alias.alias_id))
     print(
-        f"Imported BF4SW persona_id={current_alias.persona_id} platform={current_alias.platform} "
-        f"aliases={len(aliases)} current_name={current_alias.player_name!r} "
-        f"as BF4PS soldier_id={soldier_id}"
+        f"BF4SW discovery batch complete: cursor={old_cursor}->{new_cursor} "
+        f"alias_rows={alias_rows} identities={identities}"
     )
 
 
