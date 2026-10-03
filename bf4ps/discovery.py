@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import os
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection
@@ -11,7 +11,10 @@ from sqlalchemy.engine import Connection
 from bf4ps.config import database_url
 
 SOURCE_NAME = "bf4sw"
+RECONCILE_SOURCE_NAME = "bf4sw_reconcile"
 DEFAULT_BATCH_SIZE = 100
+DEFAULT_RECONCILE_WINDOW_HOURS = 24
+DEFAULT_RECONCILE_OVERLAP_MINUTES = 15
 PLATFORM_MAP = {
     "PC": "pc",
     "PS4/5": "ps4",
@@ -77,6 +80,28 @@ def load_discovery_batch(source: Connection, *, after_alias_id: int, batch_size:
             """
         ),
         {"after_alias_id": after_alias_id, "batch_size": batch_size},
+    ).mappings().all()
+    return [_alias_from_mapping(row) for row in rows]
+
+
+def load_reconciliation_rows(
+    source: Connection,
+    *,
+    since: datetime,
+    through: datetime,
+) -> list[AliasRow]:
+    rows = source.execute(
+        text(
+            """
+            SELECT id, platform, persona_id, player_name, first_seen, last_seen
+            FROM bf4_player_aliases
+            WHERE persona_id IS NOT NULL
+              AND last_seen >= :since
+              AND last_seen <= :through
+            ORDER BY last_seen, id
+            """
+        ),
+        {"since": since, "through": through},
     ).mappings().all()
     return [_alias_from_mapping(row) for row in rows]
 
@@ -195,6 +220,23 @@ def ensure_discovery_state(destination: Connection) -> int:
     ).scalar_one()
 
 
+def ensure_reconciliation_state(destination: Connection) -> datetime | None:
+    destination.execute(
+        text(
+            """
+            INSERT INTO discovery_state (source_name, last_alias_id)
+            VALUES (:source_name, 0)
+            ON CONFLICT (source_name) DO NOTHING
+            """
+        ),
+        {"source_name": RECONCILE_SOURCE_NAME},
+    )
+    return destination.execute(
+        text("SELECT last_success_at FROM discovery_state WHERE source_name = :source_name"),
+        {"source_name": RECONCILE_SOURCE_NAME},
+    ).scalar_one()
+
+
 def run_discovery_batch(source: Connection, destination: Connection, *, batch_size: int) -> tuple[int, int, int, int]:
     if batch_size < 1:
         raise ValueError("batch_size must be at least 1")
@@ -247,6 +289,67 @@ def run_discovery_batch(source: Connection, destination: Connection, *, batch_si
     return last_alias_id, new_last_alias_id, len(batch), len(identities)
 
 
+def run_reconciliation(
+    source: Connection,
+    destination: Connection,
+    *,
+    initial_window_hours: int = DEFAULT_RECONCILE_WINDOW_HOURS,
+    overlap_minutes: int = DEFAULT_RECONCILE_OVERLAP_MINUTES,
+) -> tuple[datetime, datetime, int, int]:
+    if initial_window_hours < 1:
+        raise ValueError("initial_window_hours must be at least 1")
+    if overlap_minutes < 0:
+        raise ValueError("overlap_minutes cannot be negative")
+
+    previous_success = ensure_reconciliation_state(destination)
+    source_now = source.execute(text("SELECT clock_timestamp()")) .scalar_one()
+
+    if previous_success is None:
+        since = source_now - timedelta(hours=initial_window_hours)
+    else:
+        since = previous_success - timedelta(minutes=overlap_minutes)
+
+    destination.execute(
+        text(
+            """
+            UPDATE discovery_state
+            SET last_poll_at = now(), updated_at = now()
+            WHERE source_name = :source_name
+            """
+        ),
+        {"source_name": RECONCILE_SOURCE_NAME},
+    )
+
+    rows = load_reconciliation_rows(source, since=since, through=source_now)
+    grouped: dict[tuple[str, int], list[AliasRow]] = {}
+    for alias in rows:
+        grouped.setdefault((alias.platform, alias.persona_id), []).append(alias)
+
+    for aliases in grouped.values():
+        import_aliases(destination, aliases)
+
+    # Store the source database's timestamp as the watermark. This deliberately
+    # avoids depending on the application host and source DB sharing a display
+    # timezone or perfectly identical wall-clock configuration.
+    destination.execute(
+        text(
+            """
+            UPDATE discovery_state
+            SET last_success_at = :source_watermark,
+                last_error = NULL,
+                updated_at = now()
+            WHERE source_name = :source_name
+            """
+        ),
+        {
+            "source_name": RECONCILE_SOURCE_NAME,
+            "source_watermark": source_now,
+        },
+    )
+
+    return since, source_now, len(rows), len(grouped)
+
+
 def run_catch_up(source_engine, destination_engine, *, batch_size: int) -> None:
     batch_number = 0
     total_alias_rows = 0
@@ -282,8 +385,11 @@ def main() -> None:
     mode.add_argument("--persona-id", type=int, help="Import one known BF4SW persona and complete alias history.")
     mode.add_argument("--discover", action="store_true", help="Run one bounded BF4SW discovery batch.")
     mode.add_argument("--discover-until-caught-up", action="store_true", help="Run bounded discovery batches until BF4SW has no rows beyond the cursor.")
+    mode.add_argument("--reconcile", action="store_true", help="Refresh mutable BF4SW alias observations using a source-time watermark.")
     parser.add_argument("--platform", choices=sorted(PLATFORM_MAP), help="BF4SW platform; required with --persona-id.")
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help=f"Alias rows per discovery batch (default: {DEFAULT_BATCH_SIZE}).")
+    parser.add_argument("--reconcile-window-hours", type=int, default=DEFAULT_RECONCILE_WINDOW_HOURS, help=f"Initial reconciliation activity window in hours (default: {DEFAULT_RECONCILE_WINDOW_HOURS}).")
+    parser.add_argument("--reconcile-overlap-minutes", type=int, default=DEFAULT_RECONCILE_OVERLAP_MINUTES, help=f"Reconciliation watermark overlap in minutes (default: {DEFAULT_RECONCILE_OVERLAP_MINUTES}).")
     args = parser.parse_args()
 
     source_engine = create_engine(bf4sw_database_url())
@@ -309,6 +415,22 @@ def main() -> None:
 
     if args.discover_until_caught_up:
         run_catch_up(source_engine, destination_engine, batch_size=args.batch_size)
+        return
+
+    if args.reconcile:
+        with source_engine.connect() as source:
+            with destination_engine.begin() as destination:
+                since, through, alias_rows, identities = run_reconciliation(
+                    source,
+                    destination,
+                    initial_window_hours=args.reconcile_window_hours,
+                    overlap_minutes=args.reconcile_overlap_minutes,
+                )
+        print(
+            f"BF4SW reconciliation complete: since={since.isoformat()} "
+            f"through={through.isoformat()} alias_rows={alias_rows} "
+            f"identities={identities}"
+        )
         return
 
     with source_engine.connect() as source:
