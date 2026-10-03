@@ -72,6 +72,36 @@ def seconds_until_due(now: float, discovery_due: float, reconcile_due: float) ->
     return max(0.0, min(discovery_due, reconcile_due) - now)
 
 
+class CycleFailureLogger:
+    """Log the first consecutive failure with traceback, then stay concise until recovery."""
+
+    def __init__(self, operation: str):
+        self.operation = operation
+        self.consecutive_failures = 0
+
+    def failed(self, exc: Exception) -> None:
+        self.consecutive_failures += 1
+        if self.consecutive_failures == 1:
+            LOGGER.exception("BF4SW %s cycle failed", self.operation)
+        else:
+            LOGGER.error(
+                "BF4SW %s cycle still failing: consecutive_failures=%d error=%s: %s",
+                self.operation,
+                self.consecutive_failures,
+                type(exc).__name__,
+                exc,
+            )
+
+    def succeeded(self) -> None:
+        if self.consecutive_failures:
+            LOGGER.info(
+                "BF4SW %s cycle recovered after %d consecutive failure(s)",
+                self.operation,
+                self.consecutive_failures,
+            )
+            self.consecutive_failures = 0
+
+
 def run_service(
     source_engine,
     destination_engine,
@@ -88,6 +118,8 @@ def run_service(
         raise ValueError("reconcile_interval_seconds must be at least 1")
 
     stopping = False
+    discovery_failures = CycleFailureLogger("discovery")
+    reconciliation_failures = CycleFailureLogger("reconciliation")
 
     def request_stop(signum, frame):  # noqa: ARG001
         nonlocal stopping
@@ -111,8 +143,10 @@ def run_service(
         # from running or advance the failed operation's durable state.
         try:
             run_discovery_cycle(source_engine, destination_engine, batch_size=batch_size)
-        except Exception:
-            LOGGER.exception("BF4SW discovery startup cycle failed")
+        except Exception as exc:
+            discovery_failures.failed(exc)
+        else:
+            discovery_failures.succeeded()
 
         try:
             run_reconciliation_cycle(
@@ -121,8 +155,10 @@ def run_service(
                 initial_window_hours=initial_window_hours,
                 overlap_minutes=overlap_minutes,
             )
-        except Exception:
-            LOGGER.exception("BF4SW reconciliation startup cycle failed")
+        except Exception as exc:
+            reconciliation_failures.failed(exc)
+        else:
+            reconciliation_failures.succeeded()
 
         now = time.monotonic()
         discovery_due = now + discovery_interval_seconds
@@ -133,8 +169,10 @@ def run_service(
             if now >= discovery_due:
                 try:
                     run_discovery_cycle(source_engine, destination_engine, batch_size=batch_size)
-                except Exception:
-                    LOGGER.exception("BF4SW discovery cycle failed")
+                except Exception as exc:
+                    discovery_failures.failed(exc)
+                else:
+                    discovery_failures.succeeded()
                 discovery_due = time.monotonic() + discovery_interval_seconds
 
             now = time.monotonic()
@@ -146,8 +184,10 @@ def run_service(
                         initial_window_hours=initial_window_hours,
                         overlap_minutes=overlap_minutes,
                     )
-                except Exception:
-                    LOGGER.exception("BF4SW reconciliation cycle failed")
+                except Exception as exc:
+                    reconciliation_failures.failed(exc)
+                else:
+                    reconciliation_failures.succeeded()
                 reconcile_due = time.monotonic() + reconcile_interval_seconds
 
             if stopping:
