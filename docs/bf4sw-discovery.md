@@ -38,4 +38,17 @@ Live-source validation on 2026-10-02/03 established the following behavior at th
 - aliases still receiving updates were as old as approximately 44 days, demonstrating that alias age or a numeric-ID overlap is not a safe reconciliation criterion; and
 - all 4,779 stale observations in that measurement had BF4SW activity within the preceding six hours, supporting recent `last_seen` activity as the reconciliation selector while retaining a more conservative 24-hour initial window.
 
-These measurements describe the validation dataset at that point in time; they are evidence for the design, not permanent assumptions about BF4SW activity distribution.
+The reconciliation implementation was then exercised directly against the disposable BF4PS test database while BF4SW remained live:
+
+- the initial 24-hour reconciliation selected 26,800 alias rows representing 26,768 identities and completed in approximately 44.2 seconds;
+- the first steady-state incremental run used the prior source watermark plus the configured 15-minute overlap, selected 1,792 aliases/identities, and completed in approximately 3.9 seconds;
+- the next incremental run again used the overlapping watermark window, selected 1,666 aliases/identities, and completed in approximately 3.3 seconds;
+- the normal `bf4sw` discovery cursor remained unchanged at 179647 throughout reconciliation, confirming that discovery and reconciliation maintain independent progress state;
+- no audited BF4PS observation was newer than its corresponding BF4SW source observation; and
+- rows reported as BF4SW-newer immediately after a reconciliation were verified to include source mutations occurring after that run's source-database cutoff. Those rows are expected to be consumed by a later overlapping reconciliation run rather than indicating a missed boundary update.
+
+The synchronization target is therefore bounded eventual consistency, not a permanently zero-difference comparison against a source database that continues to mutate during and after each reconciliation transaction.
+
+The application host and PostgreSQL host may display different local time zones without affecting reconciliation correctness. Validation used an application host displaying HST and a PostgreSQL host displaying UTC; reconciliation boundaries are derived from the BF4SW PostgreSQL source clock and timezone-aware timestamps rather than the application's displayed wall-clock time. Hosts should still maintain normal clock synchronization.
+
+These measurements describe the validation dataset at that point in time; they are evidence for the design, not permanent assumptions about BF4SW activity distribution or runtime performance.
