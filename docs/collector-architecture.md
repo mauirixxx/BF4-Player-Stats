@@ -110,7 +110,7 @@ The table is conceptually `collection_events` and should include enough informat
 - `persona_id`;
 - `platform`;
 - `resource` (`detailed`, `profile`, `weapons`, `vehicles`);
-- `event_type` (for example `claimed`, `started`, `succeeded`, `failed`, `lease_expired`, `retry_scheduled`, `promoted`);
+- `event_type` (for example `created`, `promoted`, `claimed`, `started`, `succeeded`, `failed`, `retry_scheduled`, `lease_expired`, `reclaimed`, `heartbeat_lost`, `heartbeat_restored`);
 - attempt number;
 - result/status;
 - request/operation duration where applicable;
@@ -126,6 +126,88 @@ Useful queries should include: history for one persona/resource, actions by one 
 Retention is configurable. During the initial seed/bootstrap, the starting operational target is **180 days** so long-running bootstrap behavior can be investigated retrospectively. After the initial seed is complete and steady-state behavior is understood, the normal retention target may be reduced substantially (for example 30 days or 14 days). The final steady-state value is an operational configuration decision, not hard-coded schema behavior.
 
 Retention cleanup must never delete gameplay/stat history; it applies only to collector operational events after their configured retention horizon.
+
+## Job state machine and leases
+
+The live job lifecycle is intentionally small. `collection_jobs` contains actionable work with states such as `pending`, `claimed`, and `running`. Success/failure outcomes are written to `collection_state` and `collection_events`; successful jobs do not remain forever as completed rows in the live queue.
+
+A retryable failure updates durable collection state and makes/re-makes work eligible at `next_attempt_at` according to retry/backoff policy. Terminal/unavailable conditions are represented by collection state rather than immortal failed queue rows.
+
+Claims must be atomic and safe across all distributed collectors. The intended PostgreSQL implementation uses row locking such as `FOR UPDATE SKIP LOCKED` (or an equivalent atomic claim operation) so concurrent collectors cannot claim the same resource job.
+
+A claim records at least:
+
+- stable `collector_id`;
+- `claimed_at`;
+- `lease_expires_at`;
+- a unique `lease_token` (UUID or equivalent).
+
+The lease token is required to prevent a stale/zombie collector from finalizing a job after its lease expired and another collector reclaimed it. Any state-changing completion/finalization must verify current lease ownership, not merely collector name.
+
+If a collector disappears while holding work, the job remains unavailable until its lease expires. After expiry it becomes reclaimable. Reclamation is recorded as meaningful operational history. A dead collector should normally strand at most one Battlelog resource job, because collectors should not hoard batches of claimed jobs.
+
+Successful finalization should be atomic: parsed authoritative stats/current-state writes, collection-state updates, the success event, and removal/completion of the live actionable job must commit together. A crash before commit therefore leaves the old job reclaimable rather than producing partially finalized state.
+
+`claimed` and `running` remain distinguishable so BF4PS can measure time spent waiting after claim (for example at an egress rate gate) separately from the actual Battlelog request/processing duration.
+
+The conceptual `collection_jobs` row includes fields such as:
+
+- job ID;
+- `soldier_id`;
+- resource;
+- lane/workload class;
+- priority class / ordering value;
+- live status;
+- `eligible_at`;
+- attempt count;
+- `collector_id`;
+- `lease_token`;
+- `claimed_at`;
+- `started_at`;
+- `lease_expires_at`;
+- creation/update timestamps;
+- last error class/time as useful live-queue diagnostics;
+- reason/source for the work (for example `bootstrap`, `bf4sw_discovery`, `active_refresh`, `final_refresh`, `scheduled_profile`, `manual`, `retry`).
+
+Exact SQL types/indexes remain to be frozen in migration `0001` after the remaining scheduling semantics are settled.
+
+## Collector liveness / heartbeat logging
+
+Lease heartbeat/renewal traffic is **not logged on every successful heartbeat**. Routine successful heartbeats update current liveness/lease state only; logging each renewal would create high-volume operational noise without adding useful troubleshooting history.
+
+BF4PS will, however, record **state transitions in heartbeat health**:
+
+- the first transition from healthy to failed/missed heartbeat is logged once as `heartbeat_lost` (or equivalent);
+- repeated failures while already in the failed state are not repeatedly logged;
+- the first subsequent successful renewal/heartbeat is logged once as `heartbeat_restored`;
+- ordinary successful heartbeats after restoration remain unlogged.
+
+This provides useful outage/recovery boundaries without heartbeat spam and can support approximate collector-availability/troubleshooting timelines.
+
+Heartbeat-transition events are operational evidence, not the authoritative source for exact node uptime. A collector process may be alive while database/network heartbeat delivery fails, and a host-level outage may require infrastructure monitoring to establish exact machine uptime. If exact node uptime becomes a requirement, BF4PS should expose/use a dedicated collector-health table/metric rather than deriving it solely from collection events.
+
+## Collector claim behavior around the rate gate
+
+A collector should generally own **one Battlelog resource job at a time**. It must not claim large batches and hold them while waiting for its egress rate gate.
+
+Prefer waiting until the collector's egress gate indicates it can service another request reasonably soon before claiming the next job. This keeps leases meaningful, minimizes stranded work after collector failure, prevents queue hoarding, and makes interactive queue/ETA estimates more representative of actual service order.
+
+If a claimed job must wait briefly at the rate gate, its `claimed` state captures that delay. Once Battlelog work actually begins it transitions to `running`.
+
+Exact lease duration, heartbeat/renewal interval, and the maximum acceptable claim-to-start delay remain operational values to determine from measured detailed/profile/weapons/vehicles request durations and failure behavior. They must be configurable rather than hard-coded into schema semantics.
+
+## Retry/failure classification
+
+Failures are classified rather than treated identically. At minimum the implementation must be able to distinguish categories such as:
+
+- Battlelog rate-limit/throttle response (including observed 403/other relevant responses);
+- timeout/connection/network failure;
+- Battlelog HTTP 5xx/transient service failure;
+- meaningful not-found/unavailable identity/resource response;
+- malformed/parse/schema failure;
+- BF4PS/PostgreSQL/infrastructure failure.
+
+Retryable failures schedule later eligibility with backoff. Exact retry intervals are deliberately deferred until Battlelog behavior is measured. Failures never erase last-known-good statistics.
 
 ## Coordination and failure behavior
 
@@ -165,13 +247,14 @@ Collectors need stable worker identities, lease expiry/recovery, graceful drain/
 
 ## Remaining queue/scheduler design work
 
-The high-level materialization and priority policies are now locked. Remaining implementation design includes:
+The high-level materialization, priority, lease, liveness-event, and claim policies are now locked. Remaining implementation design includes:
 
-- exact `collection_jobs` columns, indexes, state machine, claim query, and lease semantics;
-- exact `collection_events` schema/indexes and retention cleanup mechanism;
+- exact `collection_jobs` SQL columns, indexes, constraints, and atomic claim query;
+- exact `collection_events` SQL schema/indexes and retention cleanup mechanism;
+- exact lease duration and heartbeat/renewal timing after measuring endpoint duration;
 - how progressive bootstrap materialization selects profile/weapons/vehicles work after initial detailed collection;
 - active/recent time windows and fairness/aging weights;
-- retry/backoff timings and classification;
+- retry/backoff timings and classification details;
 - how the dedicated interactive collector and background collectors select/chain work without duplicate claims;
 - ETA calculation for interactive requests;
 - metrics and health surfaces derived from jobs/events/state.
