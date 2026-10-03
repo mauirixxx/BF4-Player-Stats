@@ -26,17 +26,37 @@ The overlap is deliberate. Reprocessing is idempotent, while overlapping the pre
 
 ## Unattended service loop
 
-`python -m bf4ps.discovery_service` combines the two validated operations into a foreground service suitable for later supervision by systemd.
+`python -m bf4ps.discovery_service` combines the two validated operations into a foreground service suitable for supervision by systemd.
 
 On startup the service first runs discovery until caught up, then immediately runs reconciliation. In steady state it catches discovery up every 60 seconds and reconciles every five minutes by default. These intervals can be changed with `--discovery-interval-seconds` and `--reconcile-interval-seconds` during validation.
 
-Discovery and reconciliation remain independent failure domains. An exception in one cycle is logged and that operation is retried on its next scheduled cycle; it does not intentionally advance the failed operation's durable checkpoint and does not prevent the other operation from running.
+Discovery and reconciliation remain independent failure domains. An exception in one cycle is logged and that operation is retried on its next scheduled cycle; it does not intentionally advance the failed operation's durable checkpoint and does not prevent the other operation from running. The first consecutive failure for each operation includes its traceback. Repeated failures are logged as concise error messages until that operation succeeds again, at which point the service logs a recovery message and resets the failure counter.
 
 The service obtains a session-level PostgreSQL advisory lock on the BF4PS destination before doing any work. A second service process targeting the same destination database exits instead of creating two concurrent discovery/reconciliation loops. The lock is held by a dedicated destination connection for the lifetime of the process and PostgreSQL also releases it automatically if that connection disappears.
 
 SIGINT and SIGTERM request an orderly shutdown. The runner remains a foreground process; daemonization and restart policy belong to the process supervisor rather than the application.
 
-Before production deployment, validate the service loop against a disposable/test BF4PS database. Recommended soak validation includes several normal discovery and reconciliation cycles, a clean stop/restart, confirmation that both `discovery_state` rows resume from their existing checkpoints, and at least one induced source-connection failure followed by recovery.
+## systemd test-soak deployment
+
+The repository includes `deploy/systemd/bf4ps-discovery.service`. It is intended first for an unattended soak against a disposable BF4PS test database, not as authorization to switch the destination to production.
+
+The unit expects the checkout at `/var/www/bf4playerstats.com`, its virtual environment at `/var/www/bf4playerstats.com/.venv`, a dedicated `bf4ps` service account, and an environment file at `/etc/bf4-player-stats/discovery.env`. The environment file must define both `BF4PS_DATABASE_URL` and `BF4PS_BF4SW_DATABASE_URL`; credentials must not be committed to the repository. During the soak, `BF4PS_DATABASE_URL` must continue to target the disposable/test BF4PS database.
+
+A typical installation after creating the service account and protected environment file is:
+
+```sh
+install -m 0644 deploy/systemd/bf4ps-discovery.service /etc/systemd/system/bf4ps-discovery.service
+systemctl daemon-reload
+systemctl enable --now bf4ps-discovery.service
+systemctl status bf4ps-discovery.service
+journalctl -u bf4ps-discovery.service -f
+```
+
+The unit runs the application in the foreground, starts after network-online, restarts on failure after five seconds, and allows up to 30 seconds for orderly shutdown. The PostgreSQL advisory lock remains the authoritative protection against accidentally running a second discovery loop against the same BF4PS destination.
+
+For upgrades, pull the validated repository branch, run the test suite, then restart the service and inspect its journal. A repository update alone does not change the running process until it is restarted.
+
+Before any production destination is configured, soak validation should include sustained normal operation, reboot/startup behavior, journal review, continued movement of both discovery-state checkpoints, source-to-destination reconciliation audits, and confirmation that source outages recover without operator state repair.
 
 ## Validation record
 
@@ -58,6 +78,8 @@ The reconciliation implementation was then exercised directly against the dispos
 - the normal `bf4sw` discovery cursor remained unchanged at 179647 throughout reconciliation, confirming that discovery and reconciliation maintain independent progress state;
 - no audited BF4PS observation was newer than its corresponding BF4SW source observation; and
 - rows reported as BF4SW-newer immediately after a reconciliation were verified to include source mutations occurring after that run's source-database cutoff. Those rows are expected to be consumed by a later overlapping reconciliation run rather than indicating a missed boundary update.
+
+The unattended runner was then validated manually against the disposable destination. It caught up new aliases, continued incremental discovery, reconciled on schedule, rejected a concurrent second instance through the advisory lock, resumed durable checkpoints after clean restart, survived repeated source-connection failures without terminating, and automatically caught up and resumed reconciliation after the source connection was restored. SIGINT produced orderly shutdowns throughout validation.
 
 The synchronization target is therefore bounded eventual consistency, not a permanently zero-difference comparison against a source database that continues to mutate during and after each reconciliation transaction.
 
