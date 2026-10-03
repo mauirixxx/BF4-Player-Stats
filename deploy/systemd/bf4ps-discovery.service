@@ -1,0 +1,30 @@
+[Unit]
+Description=BF4 Player Stats BF4SW discovery and reconciliation service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bf4ps
+Group=bf4ps
+WorkingDirectory=/var/www/bf4playerstats.com
+EnvironmentFile=/etc/bf4-player-stats/discovery.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/var/www/bf4playerstats.com/.venv/bin/python -m bf4ps.discovery_service
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
