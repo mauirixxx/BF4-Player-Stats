@@ -24,7 +24,19 @@ The reconciliation watermark is stored as a second `discovery_state` row named `
 
 The overlap is deliberate. Reprocessing is idempotent, while overlapping the previous watermark protects boundary updates from being missed.
 
-Discovery and reconciliation are separate explicit operations at this stage. Reconciliation should be validated against a disposable/test BF4PS database before it is placed into an automatic service loop.
+## Unattended service loop
+
+`python -m bf4ps.discovery_service` combines the two validated operations into a foreground service suitable for later supervision by systemd.
+
+On startup the service first runs discovery until caught up, then immediately runs reconciliation. In steady state it catches discovery up every 60 seconds and reconciles every five minutes by default. These intervals can be changed with `--discovery-interval-seconds` and `--reconcile-interval-seconds` during validation.
+
+Discovery and reconciliation remain independent failure domains. An exception in one cycle is logged and that operation is retried on its next scheduled cycle; it does not intentionally advance the failed operation's durable checkpoint and does not prevent the other operation from running.
+
+The service obtains a session-level PostgreSQL advisory lock on the BF4PS destination before doing any work. A second service process targeting the same destination database exits instead of creating two concurrent discovery/reconciliation loops. The lock is held by a dedicated destination connection for the lifetime of the process and PostgreSQL also releases it automatically if that connection disappears.
+
+SIGINT and SIGTERM request an orderly shutdown. The runner remains a foreground process; daemonization and restart policy belong to the process supervisor rather than the application.
+
+Before production deployment, validate the service loop against a disposable/test BF4PS database. Recommended soak validation includes several normal discovery and reconciliation cycles, a clean stop/restart, confirmation that both `discovery_state` rows resume from their existing checkpoints, and at least one induced source-connection failure followed by recovery.
 
 ## Validation record
 
