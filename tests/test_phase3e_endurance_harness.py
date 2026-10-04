@@ -7,15 +7,19 @@ import sys
 
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 SCRIPT = SCRIPTS_DIR / "phase3e_endurance_worker.py"
+MODULE_NAME = "phase3e_endurance_worker"
 
 # The live harness is executed as ``python scripts/phase3e_endurance_worker.py``,
 # which puts ``scripts/`` on sys.path. Reproduce that import environment when
-# loading the script directly for unit-level regression coverage.
+# loading the script directly for unit-level regression coverage. Register the
+# module before exec_module(), matching normal import semantics required by
+# dataclasses while class decorators inspect the module namespace.
 sys.path.insert(0, str(SCRIPTS_DIR))
 try:
-    SPEC = importlib.util.spec_from_file_location("phase3e_endurance_worker", SCRIPT)
+    SPEC = importlib.util.spec_from_file_location(MODULE_NAME, SCRIPT)
     assert SPEC is not None and SPEC.loader is not None
     MODULE = importlib.util.module_from_spec(SPEC)
+    sys.modules[MODULE_NAME] = MODULE
     SPEC.loader.exec_module(MODULE)
 finally:
     sys.path.remove(str(SCRIPTS_DIR))
