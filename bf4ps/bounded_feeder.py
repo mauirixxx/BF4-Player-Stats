@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Sequence
 
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
@@ -22,12 +23,17 @@ def replenish_detailed_bootstrap(
     *,
     target_depth: int,
     max_soldier_id: int | None,
+    allowed_soldier_ids: Sequence[int] | None = None,
 ) -> FeederResult:
     """Replenish a bounded background/detailed bootstrap working set.
 
     Phase 2 deliberately requires an explicit soldier boundary.  ``None`` is
     rejected rather than meaning "all soldiers" so a development invocation
     cannot accidentally materialize the complete BF4PS backlog.
+
+    ``allowed_soldier_ids`` optionally narrows that already-bounded population
+    to an explicit validation cohort.  It never expands the max-soldier safety
+    boundary and is primarily useful for controlled cross-platform exercises.
     """
     if target_depth <= 0:
         raise ValueError("target_depth must be positive")
@@ -35,6 +41,16 @@ def replenish_detailed_bootstrap(
         raise ValueError("max_soldier_id is required for the Phase 2 safety boundary")
     if max_soldier_id <= 0:
         raise ValueError("max_soldier_id must be positive")
+
+    allowed_ids: tuple[int, ...] | None = None
+    if allowed_soldier_ids is not None:
+        allowed_ids = tuple(dict.fromkeys(int(value) for value in allowed_soldier_ids))
+        if not allowed_ids:
+            raise ValueError("allowed_soldier_ids must not be empty when provided")
+        if any(value <= 0 for value in allowed_ids):
+            raise ValueError("allowed_soldier_ids must contain only positive IDs")
+        if any(value > max_soldier_id for value in allowed_ids):
+            raise ValueError("allowed_soldier_ids cannot exceed max_soldier_id")
 
     # Serialize feeder passes.  This lock is transaction-scoped, so crashes do
     # not leave a separate coordinator/lease to repair.
@@ -57,12 +73,21 @@ def replenish_detailed_bootstrap(
 
     created = 0
     if deficit:
-        # Never-attempted state is the Phase 2 eligibility boundary.  Existing
+        cohort_clause = ""
+        params: dict[str, object] = {
+            "max_soldier_id": max_soldier_id,
+            "deficit": deficit,
+        }
+        if allowed_ids is not None:
+            cohort_clause = "AND s.soldier_id = ANY(:allowed_soldier_ids)"
+            params["allowed_soldier_ids"] = list(allowed_ids)
+
+        # Never-attempted state is the Phase 2 eligibility boundary. Existing
         # actionable work is excluded explicitly in addition to the queue's
         # unique constraint so repeated feeder passes are naturally idempotent.
         rows = conn.execute(
             text(
-                """
+                f"""
                 SELECT s.soldier_id
                 FROM soldiers AS s
                 JOIN collection_state AS cs
@@ -70,6 +95,7 @@ def replenish_detailed_bootstrap(
                 WHERE s.soldier_id <= :max_soldier_id
                   AND s.platform IN ('pc', 'ps4', 'xboxone')
                   AND cs.detailed_state = 'never_attempted'
+                  {cohort_clause}
                   AND NOT EXISTS (
                         SELECT 1
                         FROM collection_jobs AS j
@@ -80,7 +106,7 @@ def replenish_detailed_bootstrap(
                 LIMIT :deficit
                 """
             ),
-            {"max_soldier_id": max_soldier_id, "deficit": deficit},
+            params,
         ).scalars().all()
 
         for soldier_id in rows:
