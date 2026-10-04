@@ -58,3 +58,54 @@ def test_feeder_attempt_ceiling_requires_explicit_cohort():
             max_soldier_id=10,
             max_total_attempts=10,
         )  # type: ignore[arg-type]
+
+
+class _ScalarResult:
+    def __init__(self, value):
+        self.value = value
+
+    def scalar_one(self):
+        return self.value
+
+
+class _ScalarsResult:
+    def __init__(self, values):
+        self.values = values
+
+    def scalars(self):
+        return self
+
+    def all(self):
+        return self.values
+
+
+class _ConcurrentDepthConnection:
+    """Minimal feeder connection that simulates collector-side depth movement."""
+
+    def __init__(self):
+        self.depth_reads = iter((5, 7))
+
+    def execute(self, statement, params=None):
+        sql = str(statement)
+        if "pg_advisory_xact_lock" in sql:
+            return _ScalarResult(None)
+        if "SELECT COUNT(*)" in sql and "FROM collection_jobs" in sql:
+            return _ScalarResult(next(self.depth_reads))
+        if "SELECT s.soldier_id" in sql:
+            return _ScalarsResult([])
+        raise AssertionError(f"unexpected SQL in regression fixture: {sql}")
+
+
+def test_feeder_post_depth_above_target_is_telemetry_not_failure():
+    conn = _ConcurrentDepthConnection()
+
+    result = replenish_detailed_bootstrap(
+        conn,  # type: ignore[arg-type]
+        target_depth=6,
+        max_soldier_id=10,
+    )
+
+    assert result.actionable_before == 5
+    assert result.deficit == 1
+    assert result.created == 0
+    assert result.actionable_after == 7
