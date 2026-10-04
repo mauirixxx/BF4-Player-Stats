@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the committed Phase 3E frozen cohort against the test database.
+"""Validate the committed Phase 3E round-two frozen cohort against the test database.
 
 Read-only: no queue write, collector registration, job claim, state mutation, or
 Battlelog request is performed.
@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 from sqlalchemy import bindparam, create_engine, text
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from phase3e_frozen_cohort import (  # noqa: E402
+from phase3e_frozen_cohort_round2 import (  # noqa: E402
     COHORT_BY_PLATFORM,
     COHORT_SOLDIER_IDS,
     GLOBAL_ATTEMPT_CEILING,
@@ -113,10 +113,10 @@ def main() -> int:
         "exact frozen platform assignment": not platform_mismatches
             and platform_counts == Counter({p: PER_PLATFORM for p in PLATFORMS}),
         "collection-state rows present": not missing_state,
-        "frozen cohort still pristine": not non_pristine,
+        "round-two cohort still pristine": not non_pristine,
     }
 
-    print("===== BF4PS PHASE 3E FROZEN-COHORT PREFLIGHT =====\n")
+    print("===== BF4PS PHASE 3E ROUND-TWO FROZEN-COHORT PREFLIGHT =====\n")
     print("READ-ONLY FROZEN MANIFEST VALIDATION")
     print("No queue write, collector registration, job claim, state mutation, or Battlelog request is performed.\n")
     print(f"database:       {target['database_name']}")
@@ -140,7 +140,7 @@ def main() -> int:
     if missing_state:
         print(f"missing collection_state rows: {missing_state}")
     if non_pristine:
-        print(f"non-pristine frozen soldiers: {non_pristine}")
+        print(f"non-pristine round-two soldiers: {non_pristine}")
 
     print("\n===== SAFETY DECISION =====")
     for label, ok in checks.items():
@@ -149,9 +149,9 @@ def main() -> int:
     print("database writes:                           0")
 
     if all(checks.values()):
-        print("\nPHASE 3E FROZEN-COHORT PREFLIGHT: PASS")
+        print("\nPHASE 3E ROUND-TWO FROZEN-COHORT PREFLIGHT: PASS")
         return 0
-    print("\nPHASE 3E FROZEN-COHORT PREFLIGHT: FAIL")
+    print("\nPHASE 3E ROUND-TWO FROZEN-COHORT PREFLIGHT: FAIL")
     return 1
 
 
