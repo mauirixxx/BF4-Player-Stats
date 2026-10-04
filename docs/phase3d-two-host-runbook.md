@@ -1,16 +1,18 @@
-# BF4PS Phase 3D two-host distributed proof runbook
+# BF4PS Phase 3D three-host distributed proof runbook
 
-Status: **PRE-EXECUTION RUNBOOK — derived from frozen Phase 3 design**
+Status: **PRE-EXECUTION RUNBOOK — amended and re-frozen before live execution**
 
 Phase 3 design reference: `docs/phase3-distributed-collector-design.md`
+
+Frozen topology: `docs/phase3d-frozen-topology.md`
 
 Current Alembic head: `0003_request_gates`
 
 ## Objective
 
-Move the already-proven Phase 3 coordination properties off a single operating system and prove them across two actual BF4PS-capable hosts sharing the same PostgreSQL primary.
+Move the already-proven Phase 3 coordination properties off a single operating system and prove them across three actual BF4PS-capable hosts sharing the same PostgreSQL primary.
 
-Phase 3D remains a bounded validation. It does not authorize unrestricted bootstrap collection or an eight-node rollout.
+The original two-host proof was deliberately expanded before live execution to `tcou`, `hnl-01`, and `kah-01`. Phase 3D remains bounded and does not authorize unrestricted bootstrap collection or a full fleet rollout.
 
 ## Entry criteria
 
@@ -20,45 +22,32 @@ The retained Phase 3 evidence must show:
 - Phase 3B lease expiry/reclamation/fencing: PASS
 - Phase 3C operator lifecycle: PASS
 - canonical database schema reference still matches current Alembic head
+- all three Phase 3D hosts pass deployment/database preflight appropriate to their role
 
-## Host prerequisites
+## Host and egress prerequisites
 
-Before choosing the frozen cohort or making any queue mutation, identify two actual BF4PS-capable hosts and record for each:
+Use the exact identities and egress mapping frozen in `docs/phase3d-frozen-topology.md`.
 
-- hostname
-- stable collector UUID
-- collector name
-- lane (`background`)
-- PostgreSQL connection target
-- real public egress/rate-limit domain
-- resulting `egress_key`
+`egress_key` models the real Battlelog rate-limit domain, not merely a collector label. The three BF4PS hosts currently have distinct observed public IPv4 egresses and therefore use distinct BF4PS request gates.
 
-Collector UUIDs must be distinct and stable. Collector names must be distinct.
-
-## Egress rule
-
-`egress_key` models the real Battlelog rate-limit domain, not a host or collector label.
-
-- If the two hosts use different public egress IPs, use distinct egress keys.
-- If the two hosts actually share one public egress IP, use the same egress key.
-
-Do not manufacture separate egress keys merely to increase request throughput.
+`tcou` shares its public egress with BF4 Server Watcher host `mak-01`. BF4PS request-gate coordination does not include BF4SW traffic, so throttle evidence from that egress requires explicit preservation and interpretation.
 
 The initial 3D run keeps conservative request pacing. Rate-limit envelope testing is explicitly later work.
 
 ## Frozen workload boundary
 
-The first two-host run uses only:
+The first three-host run uses only:
 
 - resource: `detailed`
 - lane: `background`
 - BF4PS test database
-- one explicit frozen cohort
-- a hard global attempt/job ceiling across both hosts
+- one explicit frozen cohort of 36 fresh soldiers
+- 12 PC + 12 PS4 + 12 Xbox One
+- a hard global attempt/job ceiling of 36 across all three hosts
 
-Prefer a fresh mixed-platform cohort containing PC, PS4, and Xbox One soldiers where eligible data permits.
+All three hosts compete for the same shared eligible queue. Do not partition the cohort by platform or host.
 
-Both hosts compete for the same shared eligible queue. Do not partition the cohort by platform or host.
+Thirty-six jobs are chosen to provide repeated claim/finalize cycles and meaningful overlap across three processes while remaining a bounded correctness experiment. It is not a throughput or Battlelog-limit experiment.
 
 ## Required preflight
 
@@ -69,46 +58,55 @@ Before external collection begins, verify read-only:
 - Alembic is `0003_request_gates`
 - chosen collector identities do not conflict with unrelated active collectors
 - resource/lane are exactly `detailed/background`
-- frozen cohort is explicit and pristine for the proof
+- frozen cohort is explicit, pristine, and exactly 12/12/12 by platform
 - existing queue state is compatible with the test
-- global attempt/job ceiling is explicit
+- hard global attempt/job ceiling is exactly 36
 - work outside the cohort cannot be materialized or claimed
 - each host's configured egress key matches its actual egress domain
 
 Preflight performs no Battlelog requests.
 
-## Execution sequence
+## Normal three-host execution sequence
 
-1. Start/register host A and host B under their frozen stable identities.
+1. Register/start `tcou`, `hnl-01`, and `kah-01` under their frozen stable identities.
 2. Materialize only bounded frozen-cohort work.
-3. Allow both hosts to compete for the same PostgreSQL queue.
-4. Confirm both hosts obtain work while preserving exclusive ownership.
-5. Observe collection events and request-gate behavior for the real egress configuration.
-6. Drain or stop one host while the other remains active; verify the survivor continues.
-7. Include a controlled abandoned-work/recovery exercise using a deliberately short test lease or other deterministic method already consistent with Phase 3B semantics.
-8. Verify the surviving/second host can reclaim expired work under a new lease token and stale ownership cannot mutate the reclaimed job.
-9. Stop both collectors cleanly after the hard global boundary is reached.
-10. Preserve database/event evidence before cleanup if anything unexpected occurs.
+3. Allow all three hosts to compete for the same PostgreSQL queue.
+4. Confirm all three hosts obtain and finalize work while preserving exclusive ownership.
+5. Observe collection events and independent request-gate behavior for all three real egress domains.
+6. Stop all collectors cleanly at the hard global boundary.
+7. Preserve database/event evidence before cleanup if anything unexpected occurs.
 
-## Required PASS evidence
+## Required normal-run PASS evidence
 
-The final validation must account for all of the following:
+The normal run must account for all of the following:
 
-- both physical hosts register as distinct collector identities
-- both hosts claim work from the same PostgreSQL queue
+- all three physical hosts register as distinct collector identities
+- all three hosts claim and successfully finalize at least one job from the same PostgreSQL queue
 - no job has duplicate simultaneous ownership
 - lease tokens remain unique per claim attempt
-- stale-owner fencing remains valid across hosts
 - all attempted soldiers remain inside the frozen cohort
-- hard global attempt/job ceiling is obeyed
-- request gates correspond to actual egress domains
+- no more than 36 global attempts/jobs occur
+- request gates correspond to the three actual BF4PS egress domains
 - bounded feeder replenishment remains correct
-- draining/stopping one host does not stop the other
-- abandoned work becomes recoverable after lease expiry
-- reclaimed work receives current ownership/new lease token semantics
 - final jobs/events/state account for every bounded attempt
 - clean collector shutdown clears live current-job ownership as defined by runtime behavior
 - operator `enabled`/`drained` state is not silently overwritten
+- 403/429/throttle evidence is explicitly reported and reconciled
+
+A Battlelog source failure alone is not automatically a distributed-coordination failure. Source outcome and scheduler/ownership correctness are reported separately.
+
+## Follow-on physical-host lifecycle proof
+
+After the normal 36-job run is preserved/documented, Phase 3D continues with bounded failure/recovery exercises rather than increasing request volume:
+
+1. run a fresh bounded cohort;
+2. drain or stop one physical host while the other two remain active;
+3. verify survivors continue to claim/finalize work;
+4. restart/rejoin the stopped host under the same stable identity and preserved operator controls;
+5. deliberately create one abandoned leased job using a deterministic short test lease consistent with Phase 3B semantics;
+6. allow another physical host to reclaim the expired logical job;
+7. verify the reclaim increments the attempt, rotates the lease token, and stale ownership cannot mutate/finalize the reclaimed job;
+8. preserve evidence and stop cleanly.
 
 ## Hard failures
 
@@ -123,16 +121,12 @@ Stop and preserve evidence on:
 - queue corruption
 - unexplained event/job/state mismatch
 
-A Battlelog source failure alone is not automatically a distributed-coordination failure. Report source outcome separately from scheduler/ownership correctness, as in Phase 3A.
+A 403/429 is a source/throttle signal that must be preserved and reported. It is not by itself proof of distributed-coordination failure unless the runtime mishandles it or violates the bounded experiment.
 
-## Information required before building the host-specific harness
+## Database/network policy
 
-The frozen Phase 3 design intentionally does not invent deployment details. Before implementation of the actual 3D harness, record:
+All three hosts target the same BF4PS test PostgreSQL primary using `mak-db-02.bf4statusbot.com`. Use the FQDN in BF4PS configuration; do not depend on short-name resolution across sites.
 
-1. the two hosts to use;
-2. their stable collector UUIDs/names, or the approved method for creating those identities;
-3. whether their real public Battlelog egress is shared or independent;
-4. how the same BF4PS repository/virtualenv/runtime will be made available on both hosts;
-5. how both hosts reach the same `bf4_playerstats_test` PostgreSQL primary.
+## Safety rule
 
-Once those facts are known, build the host-specific preflight/harness against this runbook rather than guessing infrastructure values.
+Three collectors and three BF4PS request gates do not authorize higher per-egress request rates. Phase 3D proves distributed correctness. Battlelog safe-envelope testing and intentional BF4PS/BF4SW coexistence/load testing remain separate later experiments.
