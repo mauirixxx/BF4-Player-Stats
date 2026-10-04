@@ -60,7 +60,8 @@ def main() -> int:
     counts = Counter(str(row["platform"]) for row in rows)
     selected = []
     for platform in PLATFORMS:
-        selected.extend(row for row in rows if row["platform"] == platform)[:PER_PLATFORM]
+        platform_rows = [row for row in rows if row["platform"] == platform]
+        selected.extend(platform_rows[:PER_PLATFORM])
 
     checks = {
         "expected BF4PS test database": target["database_name"] == EXPECTED_DATABASE,
