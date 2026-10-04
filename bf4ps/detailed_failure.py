@@ -31,10 +31,14 @@ def classify_detailed_failure(exc: Exception) -> DetailedFailure:
     Phase 1 deliberately does not infer terminal/unavailable semantics from a
     generic HTTP response. Until Battlelog not-found behavior is established
     live, HTTP failures remain retryable and preserve last-known-good state.
+
+    HTTP 403 and 429 are both explicit throttle signals.  Keeping them under
+    one durable error class makes Phase 3 distributed-runtime evidence easy to
+    identify while preserving the exact HTTP status in collection_events.
     """
     message = str(exc).strip() or exc.__class__.__name__
     if isinstance(exc, DetailedStatsHTTPError):
-        if exc.status == 403:
+        if exc.status in (403, 429):
             return DetailedFailure("battlelog_throttle", message, exc.status)
         if 500 <= exc.status <= 599:
             return DetailedFailure("battlelog_http_5xx", message, exc.status)
