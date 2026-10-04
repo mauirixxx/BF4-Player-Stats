@@ -36,6 +36,20 @@ def test_bounded_runtime_accepts_conservative_validation_config():
     _validate_config(valid_config())
 
 
+def test_bounded_runtime_accepts_explicit_cohort_within_boundary():
+    _validate_config(valid_config(max_soldier_id=107, allowed_soldier_ids=(17, 93, 105)))
+
+
+def test_bounded_runtime_rejects_empty_explicit_cohort():
+    with pytest.raises(ValueError, match="allowed_soldier_ids must not be empty"):
+        _validate_config(valid_config(allowed_soldier_ids=()))
+
+
+def test_bounded_runtime_rejects_cohort_beyond_boundary():
+    with pytest.raises(ValueError, match="allowed_soldier_ids cannot exceed"):
+        _validate_config(valid_config(max_soldier_id=100, allowed_soldier_ids=(17, 105)))
+
+
 def test_collector_identity_fixture_is_stable_and_background():
     collector_uuid = uuid4()
     identity = CollectorIdentity(
