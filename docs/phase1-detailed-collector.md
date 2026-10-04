@@ -143,6 +143,16 @@ The validation harness `scripts/phase1_queue_race.py` registered two temporary c
 
 This live test demonstrates the PostgreSQL contention, lease-expiry recovery, and stale-owner fencing behavior required by the Phase 1 contract. It supplements the unit tests rather than replacing them.
 
+## Live request-gate validation
+
+The PostgreSQL-coordinated outbound request gate was validated live against `bf4_playerstats_test` on `tcou` before being connected to the collector HTTP path. Migration `0003_request_gates` created one durable gate row per `egress_key`; the request budget therefore follows the egress identity rather than the number of collector processes.
+
+The live race used five independent PostgreSQL transactions contending simultaneously for the same synthetic egress key with an intentionally obvious 2-second interval. The five reserved request times were exactly 2.000000 seconds apart. Reported waits stair-stepped from approximately 0 to 2, 4, 6, and 8 seconds, and the persisted `next_request_at` was exactly one additional 2-second interval after the fifth reservation. No duplicate slot was issued and the test gate row was removed after validation.
+
+The reusable validation harness is `scripts/phase1_request_gate_race.py`. It refuses to run unless `current_database()` contains `test`, uses no Battlelog requests, and cleans up its synthetic gate row after a successful run.
+
+This demonstrates that multiple collectors sharing one `egress_key` consume one serialized outbound request budget. Adding collector processes behind the same egress therefore does not multiply the configured Battlelog request rate.
+
 ## Phase 1 acceptance gate
 
 Phase 1 is successful only after live test-database validation demonstrates all of the following:
