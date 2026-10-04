@@ -61,6 +61,37 @@ def test_normalizer_maps_retained_fields_and_accepts_numeric_strings():
     assert result["engineer_score"] is None
 
 
+def test_normalizer_unwraps_live_battlelog_data_envelope():
+    payload = {
+        "type": "success",
+        "message": "OK",
+        "data": {
+            "personaId": "236753552",
+            "platformInt": 1,
+            "generalStats": {
+                "rank": 140,
+                "kills": "123",
+                "quitPercentage": "0.5",
+            },
+        },
+    }
+
+    result = normalize_detailed_stats(
+        payload,
+        expected_persona_id=236753552,
+        expected_platform_int=1,
+    )
+
+    assert result["rank"] == 140
+    assert result["kills"] == 123
+    assert result["quit_percentage"] == Decimal("0.5")
+
+
+def test_normalizer_rejects_non_object_data_envelope():
+    with pytest.raises(DetailedStatsNormalizationError, match="data is present but is not an object"):
+        normalize_detailed_stats({"type": "success", "data": []})
+
+
 def test_normalizer_rejects_fractional_integer_counter():
     payload = {"generalStats": {"kills": "1.5"}}
     with pytest.raises(DetailedStatsNormalizationError, match="kills: expected integer"):
