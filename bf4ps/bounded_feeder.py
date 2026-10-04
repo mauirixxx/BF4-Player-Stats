@@ -27,13 +27,19 @@ def replenish_detailed_bootstrap(
 ) -> FeederResult:
     """Replenish a bounded background/detailed bootstrap working set.
 
-    Phase 2 deliberately requires an explicit soldier boundary.  ``None`` is
+    Phase 2 deliberately requires an explicit soldier boundary. ``None`` is
     rejected rather than meaning "all soldiers" so a development invocation
     cannot accidentally materialize the complete BF4PS backlog.
 
     ``allowed_soldier_ids`` optionally narrows that already-bounded population
-    to an explicit validation cohort.  It never expands the max-soldier safety
+    to an explicit validation cohort. It never expands the max-soldier safety
     boundary and is primarily useful for controlled cross-platform exercises.
+
+    Working depth means work that can consume a collector *now*: claimed and
+    running jobs plus pending jobs whose ``eligible_at`` has arrived. Pending
+    retry jobs in cooldown remain preserved in the queue but do not block the
+    feeder from materializing another never-attempted soldier. When an explicit
+    cohort is supplied, depth accounting is scoped to that same cohort.
     """
     if target_depth <= 0:
         raise ValueError("target_depth must be positive")
@@ -52,23 +58,32 @@ def replenish_detailed_bootstrap(
         if any(value > max_soldier_id for value in allowed_ids):
             raise ValueError("allowed_soldier_ids cannot exceed max_soldier_id")
 
-    # Serialize feeder passes.  This lock is transaction-scoped, so crashes do
+    # Serialize feeder passes. This lock is transaction-scoped, so crashes do
     # not leave a separate coordinator/lease to repair.
     conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:phase2:detailed-feeder'))"))
 
-    actionable_before = int(
-        conn.execute(
-            text(
-                """
-                SELECT COUNT(*)
-                FROM collection_jobs
-                WHERE resource = 'detailed'
-                  AND lane = 'background'
-                  AND status IN ('pending', 'claimed', 'running')
-                """
-            )
-        ).scalar_one()
+    depth_cohort_clause = ""
+    depth_params: dict[str, object] = {"max_soldier_id": max_soldier_id}
+    if allowed_ids is not None:
+        depth_cohort_clause = "AND soldier_id = ANY(:allowed_soldier_ids)"
+        depth_params["allowed_soldier_ids"] = list(allowed_ids)
+
+    depth_sql = text(
+        f"""
+        SELECT COUNT(*)
+        FROM collection_jobs
+        WHERE resource = 'detailed'
+          AND lane = 'background'
+          AND soldier_id <= :max_soldier_id
+          {depth_cohort_clause}
+          AND (
+                status IN ('claimed', 'running')
+                OR (status = 'pending' AND eligible_at <= now())
+          )
+        """
     )
+
+    actionable_before = int(conn.execute(depth_sql, depth_params).scalar_one())
     deficit = max(0, target_depth - actionable_before)
 
     created = 0
@@ -83,8 +98,8 @@ def replenish_detailed_bootstrap(
             params["allowed_soldier_ids"] = list(allowed_ids)
 
         # Never-attempted state is the Phase 2 eligibility boundary. Existing
-        # actionable work is excluded explicitly in addition to the queue's
-        # unique constraint so repeated feeder passes are naturally idempotent.
+        # queue work is excluded explicitly in addition to the queue's unique
+        # constraint so repeated feeder passes are naturally idempotent.
         rows = conn.execute(
             text(
                 f"""
@@ -126,19 +141,7 @@ def replenish_detailed_bootstrap(
             )
             created += int(result.rowcount or 0)
 
-    actionable_after = int(
-        conn.execute(
-            text(
-                """
-                SELECT COUNT(*)
-                FROM collection_jobs
-                WHERE resource = 'detailed'
-                  AND lane = 'background'
-                  AND status IN ('pending', 'claimed', 'running')
-                """
-            )
-        ).scalar_one()
-    )
+    actionable_after = int(conn.execute(depth_sql, depth_params).scalar_one())
 
     if actionable_after > target_depth:
         raise RuntimeError(
