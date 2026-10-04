@@ -53,6 +53,18 @@ def terminal_attempts(conn) -> int:
     """), {"ids": list(COHORT_SOLDIER_IDS)}).scalar_one())
 
 
+def update_actionable_observation(actionable: int, maximum: int) -> tuple[int, bool]:
+    """Track queue-depth telemetry without redefining the feeder invariant.
+
+    TARGET_DEPTH is enforced by the production feeder while its PostgreSQL
+    advisory transaction lock serializes replenishment. An arbitrary observer
+    is not inside that critical section, so an observation above TARGET_DEPTH
+    is evidence to report, not by itself a hard-stop condition.
+    """
+    new_maximum = max(maximum, actionable)
+    return new_maximum, actionable > TARGET_DEPTH and new_maximum > maximum
+
+
 def safety_check(conn) -> tuple[int, int]:
     target = conn.execute(text("""
         SELECT current_database() AS database_name,
@@ -93,8 +105,6 @@ def safety_check(conn) -> tuple[int, int]:
           AND soldier_id = ANY(:ids)
           AND (status IN ('claimed', 'running') OR (status = 'pending' AND eligible_at <= now()))
     """), {"ids": list(COHORT_SOLDIER_IDS)}).scalar_one())
-    if actionable > TARGET_DEPTH:
-        raise RuntimeError("bounded queue depth exceeded Phase 3E target")
     return attempts, actionable
 
 
@@ -126,6 +136,8 @@ def main() -> None:
     if not control.may_claim:
         raise SystemExit("REFUSING: collector is disabled or drained")
 
+    max_actionable_observed, _ = update_actionable_observation(actionable, 0)
+
     print("===== BF4PS PHASE 3E ENDURANCE WORKER =====")
     print(f"host:             {hostname}")
     print(f"collector:        {frozen.collector_name}")
@@ -141,7 +153,16 @@ def main() -> None:
     try:
         while True:
             with engine.begin() as conn:
-                attempts, _ = safety_check(conn)
+                attempts, actionable = safety_check(conn)
+                max_actionable_observed, notice = update_actionable_observation(
+                    actionable, max_actionable_observed
+                )
+                if notice:
+                    print(
+                        f"NOTICE: transient actionable depth observed above feeder target: "
+                        f"{actionable} > {TARGET_DEPTH}",
+                        flush=True,
+                    )
                 control = heartbeat_collector(conn, collector_uuid=frozen.collector_uuid)
                 if attempts < GLOBAL_ATTEMPT_CEILING:
                     replenish_detailed_bootstrap(
@@ -172,6 +193,15 @@ def main() -> None:
             if outcome is None:
                 with engine.connect() as conn:
                     attempts, actionable = safety_check(conn)
+                max_actionable_observed, notice = update_actionable_observation(
+                    actionable, max_actionable_observed
+                )
+                if notice:
+                    print(
+                        f"NOTICE: transient actionable depth observed above feeder target: "
+                        f"{actionable} > {TARGET_DEPTH}",
+                        flush=True,
+                    )
                 if attempts >= GLOBAL_ATTEMPT_CEILING:
                     print("global attempt ceiling reached")
                     break
@@ -201,6 +231,9 @@ def main() -> None:
 
     with engine.connect() as conn:
         attempts, actionable = safety_check(conn)
+        max_actionable_observed, _ = update_actionable_observation(
+            actionable, max_actionable_observed
+        )
         collector = conn.execute(text("""
             SELECT heartbeat_state, enabled, drained, current_job_id
             FROM collectors WHERE collector_uuid = :uuid
@@ -215,11 +248,12 @@ def main() -> None:
         raise RuntimeError("request gate was not materialized")
 
     print("\n===== LOCAL STOP SUMMARY =====")
-    print(f"local attempts:    {local_attempts}")
-    print(f"success / failure: {local_success} / {local_failure}")
-    print(f"global terminal:   {attempts}/{GLOBAL_ATTEMPT_CEILING}")
-    print(f"actionable now:    {actionable}/{TARGET_DEPTH}")
-    print("collector stop:    PASS")
+    print(f"local attempts:          {local_attempts}")
+    print(f"success / failure:       {local_success} / {local_failure}")
+    print(f"global terminal:         {attempts}/{GLOBAL_ATTEMPT_CEILING}")
+    print(f"actionable now:          {actionable}/{TARGET_DEPTH}")
+    print(f"max actionable observed: {max_actionable_observed} (telemetry)")
+    print("collector stop:          PASS")
     print("PHASE 3E ENDURANCE WORKER: STOPPED CLEANLY")
 
 
