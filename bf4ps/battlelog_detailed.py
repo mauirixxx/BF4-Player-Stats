@@ -192,6 +192,21 @@ def _integer(value: Any, source_name: str) -> int | None:
     return int(integral)
 
 
+def _stats_payload(payload: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Return the statistics object from Battlelog's live response envelope.
+
+    The live endpoint returns ``{"type": ..., "message": ..., "data": {...}}``.
+    Keeping the unwrapping at the normalization boundary also permits fixture
+    payloads that already represent the inner data object.
+    """
+    data = payload.get("data")
+    if data is None:
+        return payload
+    if not isinstance(data, Mapping):
+        raise DetailedStatsNormalizationError("data is present but is not an object")
+    return data
+
+
 def normalize_detailed_stats(
     payload: Mapping[str, Any],
     *,
@@ -199,19 +214,20 @@ def normalize_detailed_stats(
     expected_platform_int: int | None = None,
 ) -> dict[str, int | Decimal | None]:
     """Normalize Battlelog JSON to Detailed Stats Retention Contract v1."""
-    general = payload.get("generalStats")
+    stats = _stats_payload(payload)
+    general = stats.get("generalStats")
     if not isinstance(general, Mapping):
         raise DetailedStatsNormalizationError("generalStats is missing or is not an object")
 
-    if expected_persona_id is not None and "personaId" in payload:
-        observed = _integer(payload.get("personaId"), "personaId")
+    if expected_persona_id is not None and "personaId" in stats:
+        observed = _integer(stats.get("personaId"), "personaId")
         if observed != expected_persona_id:
             raise DetailedStatsNormalizationError(
                 f"personaId mismatch: expected {expected_persona_id}, observed {observed}"
             )
 
-    if expected_platform_int is not None and "platformInt" in payload:
-        observed = _integer(payload.get("platformInt"), "platformInt")
+    if expected_platform_int is not None and "platformInt" in stats:
+        observed = _integer(stats.get("platformInt"), "platformInt")
         if observed != expected_platform_int:
             raise DetailedStatsNormalizationError(
                 f"platformInt mismatch: expected {expected_platform_int}, observed {observed}"
