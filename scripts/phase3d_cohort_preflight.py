@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only control-side preflight for the Phase 3D two-host frozen cohort."""
+"""Read-only control-side preflight for the Phase 3D three-host frozen cohort."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, text
 
 EXPECTED_DATABASE = "bf4_playerstats_test"
 EXPECTED_REVISION = "0003_request_gates"
-PER_PLATFORM = 4
+PER_PLATFORM = 12
 PLATFORMS = ("pc", "ps4", "xboxone")
 RESOURCE = "detailed"
 LANE = "background"
@@ -18,6 +18,7 @@ MAX_ATTEMPTS = PER_PLATFORM * len(PLATFORMS)
 FROZEN_COLLECTORS = (
     ("b2b3ef60-62e8-4d4a-91b0-41a2e2a3d001", "phase3d-hnl-01", "hnl-01", "phase3d-hnl-01"),
     ("b2b3ef60-62e8-4d4a-91b0-41a2e2a3d002", "phase3d-kah-01", "kah-01", "phase3d-kah-01"),
+    ("b2b3ef60-62e8-4d4a-91b0-41a2e2a3d003", "phase3d-tcou", "tcou", "phase3d-tcou"),
 )
 
 
@@ -46,22 +47,25 @@ def main() -> None:
             SELECT collector_uuid::text AS collector_uuid, collector_name, hostname,
                    lane, egress_key, enabled, drained, retired_at
             FROM collectors
-            WHERE collector_uuid::text IN (:uuid_a, :uuid_b)
-               OR lower(collector_name) IN (:name_a, :name_b)
+            WHERE collector_uuid::text IN (:uuid_a, :uuid_b, :uuid_c)
+               OR lower(collector_name) IN (:name_a, :name_b, :name_c)
             ORDER BY collector_name
         """), {
             "uuid_a": FROZEN_COLLECTORS[0][0], "uuid_b": FROZEN_COLLECTORS[1][0],
+            "uuid_c": FROZEN_COLLECTORS[2][0],
             "name_a": FROZEN_COLLECTORS[0][1], "name_b": FROZEN_COLLECTORS[1][1],
+            "name_c": FROZEN_COLLECTORS[2][1],
         }).mappings().all()
 
         gates = conn.execute(text("""
             SELECT egress_key, next_request_at, updated_at
             FROM request_gates
-            WHERE egress_key IN (:egress_a, :egress_b)
+            WHERE egress_key IN (:egress_a, :egress_b, :egress_c)
             ORDER BY egress_key
         """), {
             "egress_a": FROZEN_COLLECTORS[0][3],
             "egress_b": FROZEN_COLLECTORS[1][3],
+            "egress_c": FROZEN_COLLECTORS[2][3],
         }).mappings().all()
 
         rows = conn.execute(text("""
@@ -96,7 +100,7 @@ def main() -> None:
                      END, soldier_id ASC
         """), {"per_platform": PER_PLATFORM}).mappings().all()
 
-    print("===== BF4PS PHASE 3D FROZEN-COHORT PREFLIGHT =====\n")
+    print("===== BF4PS PHASE 3D THREE-HOST FROZEN-COHORT PREFLIGHT =====\n")
     print("READ-ONLY CONTROL-SIDE PREFLIGHT")
     print("No collector registration, feeder pass, queue write, job claim, or Battlelog request is performed.\n")
     print(f"database:       {target['database_name']}")
@@ -106,6 +110,7 @@ def main() -> None:
     print(f"read only:      {target['read_only']}")
     print(f"alembic:        {revision}")
     print(f"resource/lane:  {RESOURCE}/{LANE}")
+    print(f"collectors:     {len(FROZEN_COLLECTORS)}")
     print(f"platform mix:   {PER_PLATFORM}/{PER_PLATFORM}/{PER_PLATFORM}")
     print(f"global ceiling: {MAX_ATTEMPTS}")
 
@@ -117,11 +122,14 @@ def main() -> None:
         raise SystemExit(f"REFUSING: expected Alembic {EXPECTED_REVISION}, found {revision}")
 
     print("\n===== FROZEN COLLECTOR IDENTITIES =====")
+    for uuid, name, hostname, egress in FROZEN_COLLECTORS:
+        print(f"{hostname:<8} {uuid} name={name} egress={egress}")
     if identities:
+        print("existing conflicts: PRESENT")
         for row in identities:
             print(dict(row))
     else:
-        print("(none materialized — expected before execution)")
+        print("existing conflicts: NONE")
 
     print("\n===== FROZEN EGRESS GATES =====")
     if gates:
@@ -141,10 +149,7 @@ def main() -> None:
     counts = {platform: 0 for platform in PLATFORMS}
     for row in rows:
         counts[row["platform"]] += 1
-        print(
-            f"soldier={row['soldier_id']:<7} {row['platform']:<8} "
-            f"persona={row['persona_id']:<13} {row['current_name']!r}"
-        )
+        print(f"soldier={row['soldier_id']:<7} {row['platform']:<8} persona={row['persona_id']:<13} {row['current_name']!r}")
 
     exact_mix = all(counts[p] == PER_PLATFORM for p in PLATFORMS)
     exact_size = len(rows) == MAX_ATTEMPTS
@@ -167,8 +172,8 @@ def main() -> None:
     print(f"existing detailed/background queue: {'EMPTY' if not queue else 'NOT EMPTY'}")
     print(f"frozen collector conflicts:          {'NONE' if not identities else 'PRESENT'}")
     print(f"frozen request gates pre-existing:   {'NONE' if not gates else 'PRESENT'}")
-    print(f"exact 4/4/4 platform mix:            {'PASS' if exact_mix else 'FAIL'}")
-    print(f"exactly 12 candidates found:         {'PASS' if exact_size else 'FAIL'}")
+    print(f"exact 12/12/12 platform mix:         {'PASS' if exact_mix else 'FAIL'}")
+    print(f"exactly 36 candidates found:         {'PASS' if exact_size else 'FAIL'}")
     print(f"cohort pristine:                     {'PASS' if pristine else 'FAIL'}")
     print(f"hard global attempt/job ceiling:     {MAX_ATTEMPTS}")
     print("external Battlelog requests:         0")
@@ -181,9 +186,9 @@ def main() -> None:
     if gates:
         raise SystemExit("PREFLIGHT FAIL: frozen request gate already materialized")
     if not exact_mix or not exact_size or not pristine:
-        raise SystemExit("PREFLIGHT FAIL: exact pristine 4 PC / 4 PS4 / 4 Xbox One cohort unavailable")
+        raise SystemExit("PREFLIGHT FAIL: exact pristine 12 PC / 12 PS4 / 12 Xbox One cohort unavailable")
 
-    print("\nPHASE 3D FROZEN-COHORT PREFLIGHT: PASS")
+    print("\nPHASE 3D THREE-HOST FROZEN-COHORT PREFLIGHT: PASS")
 
 
 if __name__ == "__main__":
