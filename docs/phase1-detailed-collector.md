@@ -153,6 +153,32 @@ The reusable validation harness is `scripts/phase1_request_gate_race.py`. It ref
 
 This demonstrates that multiple collectors sharing one `egress_key` consume one serialized outbound request budget. Adding collector processes behind the same egress therefore does not multiply the configured Battlelog request rate.
 
+## Live Patient Zero end-to-end validation
+
+On 2026-10-03/04, the first complete Phase 1 detailed-statistics collection was executed on `tcou` against `bf4_playerstats_test` using PC soldier `mauirixxx`, persona `236753552`, as Patient Zero. The reusable harness is `scripts/phase1_patient_zero.py`.
+
+The run exercised the real end-to-end path rather than mocks: one manually enqueued detailed job was claimed and transitioned to running under a fenced lease; a PostgreSQL request-gate slot was reserved and committed; one live Battlelog detailed-statistics request was issued; the payload was normalized; and the atomic success transaction populated current statistics, appended the first history snapshot, updated collection state, appended a structured success event, and finalized the queue job.
+
+Observed validation results were:
+
+- database `bf4_playerstats_test`, writable primary (`pg_is_in_recovery() = false`);
+- soldier ID `1`, persona `236753552`, platform `pc`;
+- job ID `7`;
+- Battlelog/collection duration `1118 ms`;
+- history append occurred (`history_appended = true`) and history count became `1`;
+- `detailed_stats_current` contained the normalized live snapshot;
+- `collection_state.detailed_state` became `success`;
+- a `collection_success` event was written with HTTP status `200`;
+- the actionable queue row was removed;
+- the temporary request-gate and collector-registry rows were removed;
+- the authoritative Patient Zero current/history/state/event records were intentionally retained for subsequent recollection validation.
+
+Selected values from the first persisted snapshot were rank `140`, time played `17,231,500` seconds, total score `163,074,106`, kills `256,100`, and deaths `211,800`.
+
+A read-only live fetch performed earlier in development had reported total score `163,070,806`, kills `256,099`, and deaths `211,798`. The later Patient Zero snapshot therefore also incidentally demonstrated real stat movement after gameplay: +3,300 total score, +1 kill, and +2 deaths. This comparison is observational only; the earlier read-only fetch was not a persisted BF4PS history snapshot.
+
+The next Patient Zero validation is deliberate recollection of the same soldier. It must prove the steady-state history rule: a successful unchanged fetch refreshes current/state/event data without appending history, while any changed retained field appends exactly one additional history snapshot.
+
 ## Phase 1 acceptance gate
 
 Phase 1 is successful only after live test-database validation demonstrates all of the following:
