@@ -41,14 +41,15 @@ def main() -> None:
             {"resource": RESOURCE, "lane": LANE},
         ).mappings().all()
 
-        # IMPORTANT: mirror bounded_feeder.py eligibility exactly. collection_state
-        # is one row per soldier with resource-prefixed columns; it is not a
-        # (soldier_id, resource) row model.
+        # Mirror bounded_feeder.py eligibility exactly. collection_state is one
+        # row per soldier with resource-prefixed columns. detailed_stats_current
+        # records its source observation time as source_fetched_at; observed_at
+        # belongs to detailed_stats_history.
         candidates = conn.execute(
             text(
                 """
                 SELECT s.soldier_id, s.persona_id, s.platform, s.current_name,
-                       dsc.observed_at AS current_observed_at,
+                       dsc.source_fetched_at AS current_source_fetched_at,
                        cs.detailed_last_success_at AS last_success_at,
                        cs.detailed_state AS collection_state
                 FROM soldiers AS s
@@ -104,7 +105,7 @@ def main() -> None:
                 f"persona={row['persona_id']!s:<14} {row['current_name']!r}"
             )
             print(
-                f"         detailed_current={row['current_observed_at']} "
+                f"         detailed_current={row['current_source_fetched_at']} "
                 f"last_success={row['last_success_at']} "
                 f"state={row['collection_state']}"
             )
