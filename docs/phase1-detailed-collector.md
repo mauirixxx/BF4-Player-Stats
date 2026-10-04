@@ -81,6 +81,8 @@ Either all of those effects commit or none do. A crash before commit must leave 
 
 `detailed_stats_history` is append-only and receives a new snapshot only when one or more retained detailed-stat fields differ from the most recent snapshot. Poll time alone is not a meaningful change and must not create duplicate history.
 
+Decimal fields must be compared in the same canonical representation BF4PS persists. Battlelog may provide more decimal precision than the PostgreSQL schema retains; comparing the uncoerced source value against an already-stored value can therefore produce a false change even though PostgreSQL would store an identical snapshot. Phase 1 canonicalizes retained decimal values to the schema scale before history comparison and persistence.
+
 ## Collector registration
 
 The Phase 1 process uses a stable collector identity and the existing BF4PS collector registry semantics. Startup registers/refreshes the collector and current liveness is maintained without generating an event for every successful heartbeat.
@@ -177,7 +179,28 @@ Selected values from the first persisted snapshot were rank `140`, time played `
 
 A read-only live fetch performed earlier in development had reported total score `163,070,806`, kills `256,099`, and deaths `211,798`. The later Patient Zero snapshot therefore also incidentally demonstrated real stat movement after gameplay: +3,300 total score, +1 kill, and +2 deaths. This comparison is observational only; the earlier read-only fetch was not a persisted BF4PS history snapshot.
 
-The next Patient Zero validation is deliberate recollection of the same soldier. It must prove the steady-state history rule: a successful unchanged fetch refreshes current/state/event data without appending history, while any changed retained field appends exactly one additional history snapshot.
+### Patient Zero unchanged-recollection precision finding
+
+The first deliberate recollection at `2026-10-04 04:42:18 UTC` exposed a real history-idempotency bug. BF4PS reported `history_appended = true` and increased Patient Zero history from one row to two even though a direct comparison of every retained field in the two persisted snapshots found **zero differences**.
+
+The cause was the decimal comparison boundary. Battlelog can return `quit_percentage` and `longest_headshot` with greater precision than BF4PS retains, while PostgreSQL stores those fields at the schema's declared numeric scales. The fresh high-precision `Decimal` values were being compared to values already coerced by PostgreSQL. A source value could therefore compare unequal before insertion and then become identical after PostgreSQL stored it.
+
+The fix canonicalizes retained decimal fields to the PostgreSQL schema scale before both history comparison and persistence. Regression tests cover the canonicalization boundary. The known false duplicate, snapshot ID `4`, was removed from `bf4_playerstats_test` after a retained-field comparison proved it identical to snapshot ID `3`.
+
+A second unchanged live recollection at `2026-10-04 04:47:43 UTC` then validated the fix end to end:
+
+- 30 automated tests passed before the live run;
+- Battlelog collection succeeded in `677 ms`;
+- rank remained `140`, time played `17,231,500`, total score `163,074,106`, kills `256,100`, and deaths `211,800`;
+- `history_appended = false`;
+- Patient Zero history remained exactly one row;
+- `detailed_stats_current` refreshed successfully;
+- `collection_state.detailed_state` remained `success`;
+- a new successful collection event was still appended (`event_id = 6`, HTTP `200`);
+- the actionable queue job was finalized;
+- temporary request-gate and collector-registry rows were cleaned up.
+
+This validates the steady-state history invariant: **successful observation freshness and event history advance independently of statistical history; `detailed_stats_history` grows only when the canonical retained BF4PS state changes.**
 
 ## Phase 1 acceptance gate
 
