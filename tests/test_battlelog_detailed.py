@@ -61,6 +61,13 @@ def test_normalizer_maps_retained_fields_and_accepts_numeric_strings():
     assert result["engineer_score"] is None
 
 
+def test_normalizer_excludes_nonfunctional_gun_master_score():
+    result = normalize_detailed_stats({"generalStats": {"gunmaster": 999999}})
+
+    assert "gun_master_score" not in result
+    assert len(result) == 48
+
+
 def test_normalizer_unwraps_live_battlelog_data_envelope():
     payload = {
         "type": "success",
