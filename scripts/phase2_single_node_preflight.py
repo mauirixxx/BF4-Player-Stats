@@ -41,28 +41,31 @@ def main() -> None:
             {"resource": RESOURCE, "lane": LANE},
         ).mappings().all()
 
+        # IMPORTANT: mirror bounded_feeder.py eligibility exactly. collection_state
+        # is one row per soldier with resource-prefixed columns; it is not a
+        # (soldier_id, resource) row model.
         candidates = conn.execute(
             text(
                 """
                 SELECT s.soldier_id, s.persona_id, s.platform, s.current_name,
                        dsc.observed_at AS current_observed_at,
-                       cs.last_success_at,
-                       cs.state AS collection_state
+                       cs.detailed_last_success_at AS last_success_at,
+                       cs.detailed_state AS collection_state
                 FROM soldiers AS s
+                JOIN collection_state AS cs
+                  ON cs.soldier_id = s.soldier_id
                 LEFT JOIN detailed_stats_current AS dsc
                   ON dsc.soldier_id = s.soldier_id
-                LEFT JOIN collection_state AS cs
-                  ON cs.soldier_id = s.soldier_id
-                 AND cs.resource = 'detailed'
                 WHERE s.soldier_id <= :max_soldier_id
+                  AND s.platform IN ('pc', 'ps4', 'xboxone')
+                  AND cs.detailed_state = 'never_attempted'
                   AND NOT EXISTS (
                       SELECT 1
                       FROM collection_jobs AS j
                       WHERE j.soldier_id = s.soldier_id
                         AND j.resource = 'detailed'
                   )
-                  AND dsc.soldier_id IS NULL
-                ORDER BY s.soldier_id
+                ORDER BY s.soldier_id ASC
                 LIMIT :target_depth
                 """
             ),
