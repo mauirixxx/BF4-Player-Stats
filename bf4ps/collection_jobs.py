@@ -85,10 +85,10 @@ def claim_next_job(
 
     ``allowed_soldier_ids`` narrows claims to an explicit cohort. When
     ``max_total_attempts`` is supplied, claims are serialized with a
-    transaction-scoped advisory lock and the sum of ``attempt_count`` for that
-    same cohort/resource/lane is checked before ownership changes. This makes
-    the ceiling global across concurrent collectors without adding a second
-    scheduling authority or experiment-only schema.
+    transaction-scoped advisory lock. Completed attempts are counted from the
+    durable event ledger and currently owned claimed/running jobs count as
+    reserved attempts. This remains correct after successful jobs are deleted
+    and while failures are returned to pending for retry.
     """
     if resource not in SUPPORTED_RESOURCES:
         raise ValueError(f"unsupported resource: {resource}")
@@ -126,11 +126,19 @@ def claim_next_job(
             conn.execute(
                 text(
                     f"""
-                    SELECT COALESCE(SUM(attempt_count), 0)
-                    FROM collection_jobs
-                    WHERE resource = :resource
-                      AND lane = :lane
-                      {cohort_clause}
+                    SELECT
+                        (SELECT COUNT(*)
+                         FROM collection_events
+                         WHERE resource = :resource
+                           AND lane = :lane
+                           {cohort_clause}
+                           AND event_type IN ('collection_success', 'collection_failure'))
+                      + (SELECT COUNT(*)
+                         FROM collection_jobs
+                         WHERE resource = :resource
+                           AND lane = :lane
+                           {cohort_clause}
+                           AND status IN ('claimed', 'running'))
                     """
                 ),
                 params,
