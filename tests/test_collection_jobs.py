@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 
-from bf4ps.collection_jobs import ClaimedJob, enqueue_job
+from bf4ps.collection_jobs import ClaimedJob, claim_next_job, enqueue_job
 
 
 def test_enqueue_rejects_unknown_resource():
@@ -19,6 +19,31 @@ def test_enqueue_rejects_unknown_lane():
 def test_enqueue_rejects_unknown_priority_class():
     with pytest.raises(ValueError, match="unsupported priority class"):
         enqueue_job(None, soldier_id=1, resource="detailed", priority_class="bogus")  # type: ignore[arg-type]
+
+
+def test_claim_rejects_empty_explicit_cohort():
+    with pytest.raises(ValueError, match="must not be empty"):
+        claim_next_job(None, collector_uuid=uuid4(), allowed_soldier_ids=[])  # type: ignore[arg-type]
+
+
+def test_claim_rejects_nonpositive_cohort_id():
+    with pytest.raises(ValueError, match="only positive IDs"):
+        claim_next_job(None, collector_uuid=uuid4(), allowed_soldier_ids=[1, 0])  # type: ignore[arg-type]
+
+
+def test_claim_rejects_nonpositive_global_ceiling():
+    with pytest.raises(ValueError, match="max_total_attempts must be positive"):
+        claim_next_job(
+            None,  # type: ignore[arg-type]
+            collector_uuid=uuid4(),
+            allowed_soldier_ids=[1],
+            max_total_attempts=0,
+        )
+
+
+def test_claim_requires_cohort_for_global_ceiling():
+    with pytest.raises(ValueError, match="requires allowed_soldier_ids"):
+        claim_next_job(None, collector_uuid=uuid4(), max_total_attempts=120)  # type: ignore[arg-type]
 
 
 def test_claimed_job_token_is_part_of_ownership_identity():
