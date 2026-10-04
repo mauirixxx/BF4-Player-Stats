@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_EVEN
 from typing import Mapping
 
 from sqlalchemy import text
@@ -13,6 +13,14 @@ from bf4ps.battlelog_detailed import DECIMAL_FIELDS, INTEGER_FIELDS
 from bf4ps.collection_jobs import ClaimedJob
 
 DETAILED_FIELDS = tuple(INTEGER_FIELDS) + tuple(DECIMAL_FIELDS)
+
+# These scales are part of the retained PostgreSQL representation defined by
+# the schema. History change detection must compare the representation BF4PS
+# can actually persist, not Battlelog's potentially higher-precision Decimal.
+DECIMAL_QUANTA = {
+    "quit_percentage": Decimal("0.000001"),  # NUMERIC(10, 6)
+    "longest_headshot": Decimal("0.0001"),   # NUMERIC(14, 4)
+}
 
 
 def _validate_stats(stats: Mapping[str, int | Decimal | None]) -> None:
@@ -27,6 +35,26 @@ def _validate_stats(stats: Mapping[str, int | Decimal | None]) -> None:
         if extra:
             parts.append(f"unexpected fields: {', '.join(sorted(extra))}")
         raise ValueError("invalid detailed-stat field set (" + "; ".join(parts) + ")")
+
+
+def _canonicalize_stats(
+    stats: Mapping[str, int | Decimal | None],
+) -> dict[str, int | Decimal | None]:
+    """Return values in the canonical representation persisted by PostgreSQL.
+
+    Integer fields already have an exact representation. Decimal fields are
+    quantized to the scale declared by the detailed-statistics schema so a
+    higher-precision Battlelog value cannot manufacture an identical history
+    snapshot merely because comparison happened before PostgreSQL coercion.
+    """
+    canonical = dict(stats)
+    for field, quantum in DECIMAL_QUANTA.items():
+        value = canonical[field]
+        if value is not None:
+            if not isinstance(value, Decimal):
+                raise TypeError(f"{field} must be Decimal or None")
+            canonical[field] = value.quantize(quantum, rounding=ROUND_HALF_EVEN)
+    return canonical
 
 
 def persist_detailed_success(
@@ -60,6 +88,7 @@ def persist_detailed_success(
     if not 100 <= http_status <= 599:
         raise ValueError("http_status must be between 100 and 599")
     _validate_stats(stats)
+    canonical_stats = _canonicalize_stats(stats)
 
     ownership = conn.execute(
         text(
@@ -86,7 +115,7 @@ def persist_detailed_success(
     if ownership is None:
         raise RuntimeError("detailed success rejected: job lease is no longer owned")
 
-    bind = {"soldier_id": job.soldier_id, "source_fetched_at": source_fetched_at, **stats}
+    bind = {"soldier_id": job.soldier_id, "source_fetched_at": source_fetched_at, **canonical_stats}
     field_list = ", ".join(DETAILED_FIELDS)
     value_list = ", ".join(f":{field}" for field in DETAILED_FIELDS)
     update_list = ", ".join(f"{field} = EXCLUDED.{field}" for field in DETAILED_FIELDS)
@@ -104,7 +133,9 @@ def persist_detailed_success(
         {"soldier_id": job.soldier_id},
     ).mappings().one_or_none()
 
-    changed = previous is None or any(previous[field] != stats[field] for field in DETAILED_FIELDS)
+    changed = previous is None or any(
+        previous[field] != canonical_stats[field] for field in DETAILED_FIELDS
+    )
     if changed:
         conn.execute(
             text(
