@@ -1,6 +1,6 @@
 # BF4PS Phase 3E third endurance run
 
-Status: **LIVE RUN COMPLETE — global reconciliation pending**
+Status: **PASS — live run and durable global reconciliation complete**
 
 Date: 2026-10-04 UTC
 
@@ -10,6 +10,8 @@ Previous evidence: `docs/phase3e-second-endurance-run.md`
 
 Code under test before launch: `3861233`
 
+Reconciliation harness commit: `2e0d50b`
+
 Current Alembic head: `0003_request_gates`
 
 ## Purpose
@@ -18,7 +20,7 @@ Round Three was the first live rerun after changing the bounded feeder so its ta
 
 Round Two demonstrated that three concurrent workers can transiently observe actionable depth 7 while the configured feeder target is 6. The previous implementation raised an exception in that condition. Round Three deliberately exercised the same three-host concurrency after the production feeder patch.
 
-This document records observed worker-console evidence only. Durable database reconciliation remains required before Round Three is declared globally reconciled.
+Round Three is now closed with both worker-console evidence and durable read-only database reconciliation.
 
 ## Frozen workload
 
@@ -74,52 +76,81 @@ This is the key Round Three result: actionable depth 7 above target 6 is now tre
 
 Neither `tcou` nor `kah-01` observed a depth above 6 in their local telemetry, while `hnl-01` observed 7. This is consistent with the race being transient and observer-dependent rather than a persistent queue state.
 
-## Source-level result
+## Durable global reconciliation
 
-Worker-console evidence reported:
+After all three collectors stopped, `scripts/phase3e_reconcile_round3.py` performed a read-only reconciliation against the BF4PS test PostgreSQL primary. The reconciliation performed zero Battlelog requests and no database mutations.
 
-- 120 local collection attempts in aggregate;
-- 120 successes;
-- zero failures;
-- no visible 403/429/throttle result;
-- exact 40/40/40 work distribution across the three physical collectors.
+Observed durable result:
 
-These values are not yet substitutes for durable ledger reconciliation.
+```text
+exactly 120 terminal attempt events:             PASS
+exactly 120 collection successes:                PASS
+zero collection failures:                        PASS
+zero 403/429/throttle signals:                   PASS
+exactly 120 unique soldiers:                     PASS
+exact frozen round-three cohort covered:         PASS
+exactly 120 unique logical jobs:                 PASS
+attempt numbers all exactly one:                 PASS
+all three collectors attempted 40:               PASS
+all event snapshots match frozen hosts:          PASS
+round-three queue finalized:                     PASS
+all three collector rows present:                PASS
+all collectors cleanly stopped:                  PASS
+operator controls preserved:                     PASS
+all three request gates materialized:            PASS
+120 detailed states successful:                  PASS
+```
 
-## What Round Three proves at the harness level
+Collector distribution reconciled exactly:
 
-The live run provides positive evidence that the production feeder patch fixes the Round Two failure mode under real three-host concurrency:
+| Host | Collector | Durable attempts |
+|---|---|---:|
+| `hnl-01` | `phase3e-hnl-01` | 40 |
+| `kah-01` | `phase3e-kah-01` | 40 |
+| `tcou` | `phase3e-tcou` | 40 |
 
-1. multiple workers concurrently consumed and replenished the bounded queue;
-2. a transient actionable depth of 7 was reproduced with target 6;
-3. that transient depth no longer crashed the feeder;
-4. all three workers continued useful work;
-5. all three observed the 120-attempt global boundary;
-6. all three stopped cleanly;
-7. no worker-console collection failure was reported.
+The Round Three queue was empty after finalization. All three request-gate rows were present. All 120 frozen soldiers had successful detailed collection state. No persisted source-level failure or throttle evidence was found.
 
-## What remains unproven until reconciliation
+Final reconciliation result:
 
-Round Three is not globally PASS solely from console output. Read-only reconciliation must verify durable database truth, including at minimum:
+```text
+BF4PS PHASE 3E ROUND-THREE GLOBAL RECONCILIATION: PASS
+```
 
-- exactly 120 terminal Round Three attempt events;
-- exact coverage of the frozen Round Three cohort and no soldier outside it;
-- no duplicate logical job attempts/finalizations inconsistent with the frozen ceiling;
-- attempt accounting consistent with the 120-attempt boundary;
-- zero persisted collection failures and zero persisted 403/429/throttle signals for this run;
-- correct collector, hostname, and egress snapshots;
-- finalized `detailed/background` queue state;
-- all three collector rows present and cleanly stopped;
-- persistent operator controls preserved;
-- all three request-gate rows present;
-- Round Three detailed collection state consistent with the event ledger.
+## Round Three conclusion
 
-The reconciliation must be read-only and perform zero Battlelog requests.
+Round Three closes the bounded-feeder concurrency defect discovered in Round Two.
+
+The evidence demonstrates that:
+
+1. multiple workers can concurrently consume and replenish the bounded queue;
+2. the configured depth of 6 functions as a replenishment target rather than an impossible instantaneous distributed invariant;
+3. transient actionable depth 7 is tolerated safely;
+4. all three workers continue useful work after that condition;
+5. the frozen global attempt ceiling remains exact;
+6. no duplicate logical jobs or soldiers appear in durable attempt accounting;
+7. the event ledger, collector identity snapshots, request gates, queue convergence, and detailed collection state reconcile cleanly;
+8. all three collectors stop cleanly.
+
+No fourth ordinary endurance repetition is required to prove this same feeder property again.
 
 ## Phase 3E scope note
 
-Round Three validates sustained concurrent bounded-feeder behavior and the specific Round Two race fix. It does **not by itself** satisfy every frozen Phase 3E lifecycle requirement. The frozen Phase 3E design separately requires deliberate drain/restart/undrain behavior and abrupt owner-loss/reclamation/stale-owner fencing evidence before Phase 3E as a whole can be closed.
+Round Three validates sustained concurrent bounded-feeder behavior and the specific Round Two race fix. It does **not by itself** satisfy every frozen Phase 3E lifecycle requirement.
+
+The frozen Phase 3E design still requires deliberate evidence for:
+
+- graceful drain while useful work remains;
+- survivor progress while one collector is drained;
+- clean restart under the same stable collector identity;
+- persistence of the operator `drained` state across restart;
+- explicit undrain and safe rejoin;
+- abrupt owner loss with an outstanding leased job;
+- lease expiration and reclamation by a different physical collector;
+- incremented attempt number and rotated lease token on reclamation;
+- rejection of stale-owner mark-running, renew, release, and finalize mutations;
+- final lifecycle reconciliation.
 
 ## Next step
 
-Build and run a schema-verified, read-only Round Three global reconciliation harness. Preserve its output as evidence before deciding the next Phase 3E lifecycle experiment.
+Proceed to a separately staged Phase 3E lifecycle validation. First validate graceful drain/restart/undrain/rejoin. Then validate abrupt owner loss, cross-host lease reclamation, and stale-owner fencing with a deliberately short test lease.
