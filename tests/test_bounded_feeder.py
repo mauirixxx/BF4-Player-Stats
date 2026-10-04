@@ -37,3 +37,24 @@ def test_feeder_rejects_explicit_cohort_beyond_boundary():
         replenish_detailed_bootstrap(
             None, target_depth=1, max_soldier_id=10, allowed_soldier_ids=(3, 11)
         )  # type: ignore[arg-type]
+
+
+def test_feeder_rejects_nonpositive_attempt_ceiling():
+    with pytest.raises(ValueError, match="max_total_attempts must be positive"):
+        replenish_detailed_bootstrap(
+            None,
+            target_depth=1,
+            max_soldier_id=10,
+            allowed_soldier_ids=(3,),
+            max_total_attempts=0,
+        )  # type: ignore[arg-type]
+
+
+def test_feeder_attempt_ceiling_requires_explicit_cohort():
+    with pytest.raises(ValueError, match="max_total_attempts requires allowed_soldier_ids"):
+        replenish_detailed_bootstrap(
+            None,
+            target_depth=1,
+            max_soldier_id=10,
+            max_total_attempts=10,
+        )  # type: ignore[arg-type]
