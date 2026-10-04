@@ -1,7 +1,7 @@
 """Drop unusable Gun Master score columns.
 
-Revision ID: 0002
-Revises: 0001
+Revision ID: 0002_drop_gun_master_score
+Revises: 0001_initial_schema
 
 Live Battlelog validation established that generalStats.gunmaster remains zero
 for players known to play and win Gun Master rounds. BF4PS therefore does not
@@ -12,8 +12,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "0002"
-down_revision = "0001"
+revision = "0002_drop_gun_master_score"
+down_revision = "0001_initial_schema"
 branch_labels = None
 depends_on = None
 
