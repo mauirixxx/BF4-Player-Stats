@@ -41,6 +41,7 @@ class SingleNodeRuntimeConfig:
     timeout_seconds: float = 15.0
     retry_after_seconds: int = 300
     software_version: str | None = None
+    allowed_soldier_ids: tuple[int, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,13 @@ def _validate_config(config: SingleNodeRuntimeConfig) -> None:
         raise ValueError("timeout_seconds must be positive")
     if config.retry_after_seconds < 0:
         raise ValueError("retry_after_seconds must be non-negative")
+    if config.allowed_soldier_ids is not None:
+        if not config.allowed_soldier_ids:
+            raise ValueError("allowed_soldier_ids must not be empty when provided")
+        if any(value <= 0 for value in config.allowed_soldier_ids):
+            raise ValueError("allowed_soldier_ids must contain only positive IDs")
+        if any(value > config.max_soldier_id for value in config.allowed_soldier_ids):
+            raise ValueError("allowed_soldier_ids cannot exceed max_soldier_id")
 
 
 def _register(
@@ -108,6 +116,7 @@ def _feed(engine: Engine, config: SingleNodeRuntimeConfig) -> FeederResult:
             conn,
             target_depth=config.target_depth,
             max_soldier_id=config.max_soldier_id,
+            allowed_soldier_ids=config.allowed_soldier_ids,
         )
 
 
@@ -148,10 +157,6 @@ def run_bounded_single_node(
                 control = _heartbeat(engine, identity, config)
                 last_heartbeat = now
             else:
-                # Control state is deliberately refreshed every loop even when
-                # a heartbeat write is not yet due.  For the first single-node
-                # runtime, correctness/operator responsiveness matters more
-                # than shaving one tiny SELECT/UPDATE transaction.
                 control = _heartbeat(engine, identity, config)
                 last_heartbeat = now
 
@@ -166,9 +171,6 @@ def run_bounded_single_node(
                 materialized += feed.created
                 last_feeder = now
 
-            # Re-read operator control immediately before entering the claim
-            # path so a drain/disable issued during feeder work blocks the next
-            # claim.  Queue ownership itself remains PostgreSQL-fenced.
             control = _heartbeat(engine, identity, config)
             last_heartbeat = monotonic()
             if not control.may_claim:
