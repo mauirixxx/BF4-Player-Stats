@@ -10,8 +10,9 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
-from bf4ps.battlelog_detailed import fetch_detailed_stats, normalize_detailed_stats
-from bf4ps.collection_jobs import ClaimedJob, claim_next_job, mark_job_running
+from bf4ps.battlelog_detailed import DetailedStatsError, fetch_detailed_stats, normalize_detailed_stats
+from bf4ps.collection_jobs import claim_next_job, mark_job_running
+from bf4ps.detailed_failure import classify_detailed_failure, persist_detailed_retry_failure
 from bf4ps.detailed_persistence import persist_detailed_success
 from bf4ps.request_gate import reserve_request_slot
 
@@ -32,6 +33,18 @@ class CollectedJob:
     persona_id: int
     platform: str
     history_appended: bool
+    duration_ms: int
+
+
+@dataclass(frozen=True)
+class FailedJob:
+    job_id: int
+    soldier_id: int
+    persona_id: int
+    platform: str
+    error_class: str
+    http_status: int | None
+    retry_after_seconds: int
     duration_ms: int
 
 
@@ -59,12 +72,17 @@ def collect_one_detailed_job(
     request_interval_seconds: float,
     lease_seconds: int = 120,
     timeout_seconds: float = 15.0,
-) -> CollectedJob | None:
-    """Claim, fetch, normalize, and atomically persist at most one detailed job.
+    retry_after_seconds: int = 300,
+) -> CollectedJob | FailedJob | None:
+    """Claim and execute at most one detailed job.
 
-    Phase 1 deliberately performs no worker loop here.  The caller invokes this
-    function once; no job means a clean ``None`` return.
+    Source/HTTP failures are classified, recorded, and returned to pending with
+    future eligibility. BF4PS/database/programming exceptions still propagate:
+    pretending an infrastructure failure was safely persisted would be wrong.
     """
+    if retry_after_seconds < 0:
+        raise ValueError("retry_after_seconds must be non-negative")
+
     with engine.begin() as conn:
         job = claim_next_job(
             conn,
@@ -93,16 +111,46 @@ def collect_one_detailed_job(
         sleep(permit.wait_seconds)
 
     started = monotonic()
-    fetched = fetch_detailed_stats(
-        persona_id,
-        platform,
-        timeout_seconds=timeout_seconds,
-    )
-    stats = normalize_detailed_stats(
-        fetched.payload,
-        expected_persona_id=persona_id,
-        expected_platform_int=fetched.platform_int,
-    )
+    try:
+        fetched = fetch_detailed_stats(
+            persona_id,
+            platform,
+            timeout_seconds=timeout_seconds,
+        )
+        stats = normalize_detailed_stats(
+            fetched.payload,
+            expected_persona_id=persona_id,
+            expected_platform_int=fetched.platform_int,
+        )
+    except DetailedStatsError as exc:
+        duration_ms = max(0, int((monotonic() - started) * 1000))
+        attempted_at = datetime.now(timezone.utc)
+        failure = classify_detailed_failure(exc)
+        with engine.begin() as conn:
+            persist_detailed_retry_failure(
+                conn,
+                job=job,
+                failure=failure,
+                attempted_at=attempted_at,
+                persona_id=persona_id,
+                platform=platform,
+                collector_name=identity.collector_name,
+                hostname=identity.hostname,
+                egress_key=identity.egress_key,
+                duration_ms=duration_ms,
+                retry_after_seconds=retry_after_seconds,
+            )
+        return FailedJob(
+            job_id=job.job_id,
+            soldier_id=job.soldier_id,
+            persona_id=persona_id,
+            platform=platform,
+            error_class=failure.error_class,
+            http_status=failure.http_status,
+            retry_after_seconds=retry_after_seconds,
+            duration_ms=duration_ms,
+        )
+
     duration_ms = max(0, int((monotonic() - started) * 1000))
     source_fetched_at = datetime.now(timezone.utc)
 
