@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only Phase 3E cohort/capacity preflight.
-
-Inspects the BF4PS test database and reports pristine mixed-platform capacity for
-Phase 3E without materializing work, registering collectors, or making external
-requests.
-"""
+"""Read-only Phase 3E cohort/capacity preflight."""
 from __future__ import annotations
 
 import os
@@ -27,30 +22,30 @@ def main() -> int:
 
     engine = create_engine(url)
     with engine.connect() as conn:
-        db = conn.execute(text("SELECT current_database()" )).scalar_one()
-        recovery = conn.execute(text("SELECT pg_is_in_recovery()" )).scalar_one()
-        alembic = conn.execute(text("SELECT version_num FROM alembic_version" )).scalar_one()
+        target = conn.execute(text("""
+            SELECT current_database() AS database_name,
+                   pg_is_in_recovery() AS recovery,
+                   current_setting('transaction_read_only') AS read_only
+        """)).mappings().one()
+        alembic = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
 
-        # Schema names are taken from docs/database-schema-reference.md and the
-        # current Alembic migrations. A pristine candidate has no detailed
-        # collection state and has never appeared in a detailed collection job.
         rows = conn.execute(text("""
-            SELECT s.id, s.platform, s.persona_id, s.player_name
+            SELECT s.soldier_id, s.platform, s.persona_id, s.current_name
             FROM soldiers AS s
+            JOIN collection_state AS cs ON cs.soldier_id = s.soldier_id
+            LEFT JOIN detailed_stats_current AS dsc ON dsc.soldier_id = s.soldier_id
             WHERE s.platform IN ('pc', 'ps4', 'xboxone')
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM collection_state AS cs
-                  WHERE cs.soldier_id = s.id
-                    AND cs.resource = 'detailed'
-              )
+              AND cs.detailed_state = 'never_attempted'
+              AND cs.detailed_last_attempt_at IS NULL
+              AND cs.detailed_last_success_at IS NULL
+              AND dsc.soldier_id IS NULL
               AND NOT EXISTS (
                   SELECT 1
                   FROM collection_jobs AS cj
-                  WHERE cj.soldier_id = s.id
+                  WHERE cj.soldier_id = s.soldier_id
                     AND cj.resource = 'detailed'
               )
-            ORDER BY s.platform, s.id
+            ORDER BY s.platform, s.soldier_id
         """)).mappings().all()
 
     counts = Counter(r["platform"] for r in rows)
@@ -60,8 +55,9 @@ def main() -> int:
     print("===== BF4PS PHASE 3E COHORT / CAPACITY PREFLIGHT =====\n")
     print("READ-ONLY PREFLIGHT")
     print("No queue write, collector registration, feeder pass, job claim, or Battlelog request is performed.\n")
-    print(f"database:       {db}")
-    print(f"recovery:       {recovery}")
+    print(f"database:       {target['database_name']}")
+    print(f"recovery:       {target['recovery']}")
+    print(f"read only:      {target['read_only']}")
     print(f"alembic:        {alembic}")
     print("resource/lane:  detailed/background")
     print(f"design minimum: {TARGET_MINIMUM} attempts ({target_each}/{target_each}/{target_each})\n")
@@ -77,11 +73,11 @@ def main() -> int:
     for p in PLATFORMS:
         selected.extend([r for r in rows if r["platform"] == p][:target_each])
     for r in selected:
-        print(f"soldier={r['id']:<7} {r['platform']:<8} persona={str(r['persona_id']):<13} {r['player_name']!r}")
+        print(f"soldier={r['soldier_id']:<7} {r['platform']:<8} persona={str(r['persona_id']):<13} {r['current_name']!r}")
 
     checks = {
-        "expected BF4PS test database": db == EXPECTED_DB,
-        "writable PostgreSQL primary": not recovery,
+        "expected BF4PS test database": target["database_name"] == EXPECTED_DB,
+        "writable PostgreSQL primary": not target["recovery"] and target["read_only"] == "off",
         "expected Alembic head": alembic == EXPECTED_ALEMBIC,
         f"at least {target_each} pristine PC soldiers": counts["pc"] >= target_each,
         f"at least {target_each} pristine PS4 soldiers": counts["ps4"] >= target_each,
