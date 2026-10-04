@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Seed the first bounded Phase 3E actionable working set.
+"""Seed the first bounded Phase 3E round-two actionable working set.
 
 This is intentionally NOT a full 120-job queue preparation step. The frozen
 Phase 3E design requires normal bounded feeder replenishment, so this harness
-performs exactly one production feeder pass against the committed cohort.
-No Battlelog request is performed.
+performs exactly one production feeder pass against the committed round-two
+cohort. No Battlelog request is performed.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 from sqlalchemy import bindparam, create_engine, text
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from phase3e_frozen_cohort import (  # noqa: E402
+from phase3e_frozen_cohort_round2 import (  # noqa: E402
     COHORT_BY_PLATFORM,
     COHORT_SOLDIER_IDS,
     GLOBAL_ATTEMPT_CEILING,
@@ -128,7 +128,7 @@ def main() -> int:
         }
 
         if not all(prechecks.values()):
-            print("===== BF4PS PHASE 3E INITIAL QUEUE SEED =====\n")
+            print("===== BF4PS PHASE 3E ROUND-TWO INITIAL QUEUE SEED =====\n")
             print("REFUSING: pre-mutation safety check failed\n")
             for label, ok in prechecks.items():
                 print(f"{label:<42} {'PASS' if ok else 'FAIL'}")
@@ -164,7 +164,7 @@ def main() -> int:
             "no work outside frozen cohort": not foreign_after,
         }
 
-    print("===== BF4PS PHASE 3E INITIAL QUEUE SEED =====\n")
+    print("===== BF4PS PHASE 3E ROUND-TWO INITIAL QUEUE SEED =====\n")
     print("DATABASE-MUTATING BOUNDED FEEDER PASS")
     print("No collector registration, job claim, or Battlelog request is performed.\n")
     print(f"database:        {target['database_name']}")
@@ -189,10 +189,10 @@ def main() -> int:
     print("database writes:                           bounded feeder only")
 
     if all(checks.values()):
-        print("\nPHASE 3E INITIAL QUEUE SEED: PASS")
+        print("\nPHASE 3E ROUND-TWO INITIAL QUEUE SEED: PASS")
         print("Queue is intentionally only six jobs deep; do NOT materialize all 120.")
         return 0
-    print("\nPHASE 3E INITIAL QUEUE SEED: FAIL")
+    print("\nPHASE 3E ROUND-TWO INITIAL QUEUE SEED: FAIL")
     return 1
 
 
