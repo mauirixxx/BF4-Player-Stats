@@ -8,6 +8,7 @@ claim a collection job, or persist the Battlelog payload/statistics.
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Mapping
 
 from bf4ps.battlelog_detailed import fetch_detailed_stats, normalize_detailed_stats
 
@@ -40,8 +41,14 @@ def main() -> None:
     print(f"platformInt: {result.platform_int}")
     print(f"payload root keys: {', '.join(sorted(result.payload.keys()))}")
 
-    general = result.payload.get("generalStats")
-    if isinstance(general, dict):
+    data = result.payload.get("data")
+    if isinstance(data, Mapping):
+        print(f"data keys: {', '.join(sorted(data.keys()))}")
+        general = data.get("generalStats")
+    else:
+        general = result.payload.get("generalStats")
+
+    if isinstance(general, Mapping):
         print(f"generalStats source fields: {len(general)}")
     else:
         print("generalStats source fields: unavailable")
