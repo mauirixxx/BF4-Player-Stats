@@ -14,7 +14,7 @@ from sqlalchemy import create_engine, text
 from bf4ps.bounded_feeder import replenish_detailed_bootstrap
 from bf4ps.collector_runtime import heartbeat_collector, register_collector, stop_collector
 from bf4ps.detailed_collector import CollectedJob, CollectorIdentity, FailedJob, collect_one_detailed_job
-from phase3e_frozen_cohort import COHORT_SOLDIER_IDS, GLOBAL_ATTEMPT_CEILING
+from phase3e_frozen_cohort_round2 import COHORT_SOLDIER_IDS, GLOBAL_ATTEMPT_CEILING
 
 EXPECTED_DATABASE = "bf4_playerstats_test"
 EXPECTED_DB_HOST = "mak-db-02.bf4statusbot.com"
@@ -132,13 +132,13 @@ def main() -> None:
 
     with engine.begin() as conn:
         attempts, actionable = safety_check(conn)
-        control = register_collector(conn, identity=identity, software_version="phase3e-endurance")
+        control = register_collector(conn, identity=identity, software_version="phase3e-endurance-round2")
     if not control.may_claim:
         raise SystemExit("REFUSING: collector is disabled or drained")
 
     max_actionable_observed, _ = update_actionable_observation(actionable, 0)
 
-    print("===== BF4PS PHASE 3E ENDURANCE WORKER =====")
+    print("===== BF4PS PHASE 3E ENDURANCE WORKER — ROUND TWO =====")
     print(f"host:             {hostname}")
     print(f"collector:        {frozen.collector_name}")
     print(f"collector UUID:   {frozen.collector_uuid}")
