@@ -46,6 +46,13 @@ def replenish_detailed_bootstrap(
     retry jobs in cooldown remain preserved in the queue but do not block the
     feeder from materializing another never-attempted soldier. When an explicit
     cohort is supplied, depth accounting is scoped to that same cohort.
+
+    ``target_depth`` is a replenishment target, not a globally exclusive queue
+    invariant. Feeder passes are serialized, but collectors may concurrently
+    change job state around a feeder transaction. Consequently the final depth
+    is returned as telemetry and may transiently exceed the target; the feeder
+    itself only materializes the deficit observed while holding its advisory
+    transaction lock.
     """
     if target_depth <= 0:
         raise ValueError("target_depth must be positive")
@@ -189,12 +196,10 @@ def replenish_detailed_bootstrap(
             )
             created += int(result.rowcount or 0)
 
+    # This is intentionally observational. A collector can change queue state
+    # concurrently with the serialized feeder pass, so target_depth cannot be
+    # enforced as a global instantaneous postcondition here.
     actionable_after = int(conn.execute(depth_sql, depth_params).scalar_one())
-
-    if actionable_after > target_depth:
-        raise RuntimeError(
-            "bounded feeder invariant violated: actionable depth exceeds target"
-        )
 
     return FeederResult(
         target_depth=target_depth,
