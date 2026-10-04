@@ -35,6 +35,7 @@ HOSTS = {
     "kah-01": FrozenHost(UUID("b2b3ef60-62e8-4d4a-91b0-41a2e2a3d002"), "phase3d-kah-01", "phase3d-kah-01"),
     "tcou": FrozenHost(UUID("b2b3ef60-62e8-4d4a-91b0-41a2e2a3d003"), "phase3d-tcou", "phase3d-tcou"),
 }
+FROZEN_COLLECTOR_UUIDS = frozenset(host.collector_uuid for host in HOSTS.values())
 
 
 def main() -> None:
@@ -64,7 +65,7 @@ def main() -> None:
         recovery = conn.execute(text("SELECT pg_is_in_recovery()" )).scalar_one()
         revision = conn.execute(text("SELECT version_num FROM alembic_version" )).scalar_one()
         queue = conn.execute(text("""
-            SELECT soldier_id, status, attempt_count
+            SELECT soldier_id, status, attempt_count, collector_uuid
             FROM collection_jobs
             WHERE resource = 'detailed' AND lane = 'background'
             ORDER BY job_id
@@ -79,11 +80,17 @@ def main() -> None:
     if db != EXPECTED_DATABASE or recovery or revision != EXPECTED_REVISION:
         raise SystemExit("REFUSING: database safety boundary failed")
     if not queue:
-        raise SystemExit("REFUSING: frozen Phase 3D queue is not armed")
+        raise SystemExit("REFUSING: no frozen Phase 3D work remains")
     if any(int(row["soldier_id"]) not in COHORT_IDS for row in queue):
         raise SystemExit("REFUSING: detailed/background queue contains work outside frozen cohort")
-    if any(int(row["attempt_count"]) != 0 or row["status"] != "pending" for row in queue):
-        raise SystemExit("REFUSING: queue is not pristine pending Phase 3D work")
+    if any(int(row["attempt_count"]) > 1 for row in queue):
+        raise SystemExit("REFUSING: Phase 3D queue contains unexpectedly retried work")
+    if any(
+        row["status"] in {"claimed", "running"}
+        and row["collector_uuid"] not in FROZEN_COLLECTOR_UUIDS
+        for row in queue
+    ):
+        raise SystemExit("REFUSING: Phase 3D work is owned by a non-frozen collector")
     if prior:
         raise SystemExit(f"REFUSING: {frozen.collector_name} already has Phase 3D attempt events")
 
@@ -99,7 +106,7 @@ def main() -> None:
     print(f"egress gate:      {frozen.egress_key}")
     print(f"request interval: {REQUEST_INTERVAL_SECONDS:.1f}s")
     print(f"local ceiling:    {LOCAL_ATTEMPT_CEILING}")
-    print(f"armed queue seen: {len(queue)} frozen job(s)")
+    print(f"remaining queue:  {len(queue)} frozen job(s)")
 
     attempted = succeeded = failed = 0
     throttles = []
