@@ -126,6 +126,23 @@ Before any feeder exists, manually enqueue approximately 5-10 known soldiers. Th
 
 The cohort should also include at least one already-known BF4PS soldier that can be recollected so current/history idempotency can be inspected.
 
+## Live queue/lease validation
+
+The queue ownership primitives were validated live against the `bf4_playerstats_test` PostgreSQL database on `tcou` before wiring the Battlelog collector.
+
+The validation harness `scripts/phase1_queue_race.py` registered two temporary collectors and made both contend concurrently for one `detailed` collection job. The observed result satisfied the Phase 1 ownership contract:
+
+- exactly one collector won the simultaneous claim and the other received no job;
+- the winning claim transitioned successfully from `claimed` to `running`;
+- after the deliberately short lease expired, the other collector reclaimed the same job;
+- reclamation rotated the `lease_token` and incremented `attempt_count`;
+- the stale original owner was rejected when it attempted to finalize using its old fencing token;
+- the current owner was allowed to transition to running and finalize the job;
+- finalization removed the actionable queue row;
+- both temporary collector-registry rows were removed after validation.
+
+This live test demonstrates the PostgreSQL contention, lease-expiry recovery, and stale-owner fencing behavior required by the Phase 1 contract. It supplements the unit tests rather than replacing them.
+
 ## Phase 1 acceptance gate
 
 Phase 1 is successful only after live test-database validation demonstrates all of the following:
