@@ -16,3 +16,24 @@ def test_feeder_refuses_unbounded_population():
 def test_feeder_requires_positive_population_boundary():
     with pytest.raises(ValueError, match="max_soldier_id must be positive"):
         replenish_detailed_bootstrap(None, target_depth=10, max_soldier_id=0)  # type: ignore[arg-type]
+
+
+def test_feeder_rejects_empty_explicit_cohort():
+    with pytest.raises(ValueError, match="allowed_soldier_ids must not be empty"):
+        replenish_detailed_bootstrap(
+            None, target_depth=1, max_soldier_id=10, allowed_soldier_ids=()
+        )  # type: ignore[arg-type]
+
+
+def test_feeder_rejects_nonpositive_explicit_cohort_id():
+    with pytest.raises(ValueError, match="only positive IDs"):
+        replenish_detailed_bootstrap(
+            None, target_depth=1, max_soldier_id=10, allowed_soldier_ids=(0, 3)
+        )  # type: ignore[arg-type]
+
+
+def test_feeder_rejects_explicit_cohort_beyond_boundary():
+    with pytest.raises(ValueError, match="cannot exceed max_soldier_id"):
+        replenish_detailed_bootstrap(
+            None, target_depth=1, max_soldier_id=10, allowed_soldier_ids=(3, 11)
+        )  # type: ignore[arg-type]
