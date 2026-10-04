@@ -73,7 +73,6 @@ INTEGER_FIELDS = {
     "air_superiority_score": "airsuperiority",
     "carrier_assault_score": "carrierassault",
     "chain_link_score": "chainlink",
-    "gun_master_score": "gunmaster",
     "kills": "kills",
     "deaths": "deaths",
     "kill_assists": "killAssists",
