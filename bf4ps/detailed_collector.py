@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from time import monotonic, sleep
+from typing import Sequence
 from uuid import UUID
 
 from sqlalchemy import text
@@ -73,8 +74,13 @@ def collect_one_detailed_job(
     lease_seconds: int = 120,
     timeout_seconds: float = 15.0,
     retry_after_seconds: int = 300,
+    allowed_soldier_ids: Sequence[int] | None = None,
+    max_total_attempts: int | None = None,
 ) -> CollectedJob | FailedJob | None:
     """Claim and execute at most one detailed job.
+
+    Optional cohort/attempt bounds are enforced atomically by the durable queue
+    claim before any request-gate reservation or Battlelog request occurs.
 
     Source/HTTP failures are classified, recorded, and returned to pending with
     future eligibility. BF4PS/database/programming exceptions still propagate:
@@ -90,6 +96,8 @@ def collect_one_detailed_job(
             lane=identity.lane,
             resource="detailed",
             lease_seconds=lease_seconds,
+            allowed_soldier_ids=allowed_soldier_ids,
+            max_total_attempts=max_total_attempts,
         )
         if job is None:
             return None
