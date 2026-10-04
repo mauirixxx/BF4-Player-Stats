@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Sequence
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
@@ -77,24 +78,78 @@ def claim_next_job(
     lane: str = "background",
     resource: str = "detailed",
     lease_seconds: int = 120,
+    allowed_soldier_ids: Sequence[int] | None = None,
+    max_total_attempts: int | None = None,
 ) -> ClaimedJob | None:
-    """Atomically claim one pending or expired job with a unique fencing token."""
+    """Atomically claim one pending/expired job with optional experiment bounds.
+
+    ``allowed_soldier_ids`` narrows claims to an explicit cohort. When
+    ``max_total_attempts`` is supplied, claims are serialized with a
+    transaction-scoped advisory lock and the sum of ``attempt_count`` for that
+    same cohort/resource/lane is checked before ownership changes. This makes
+    the ceiling global across concurrent collectors without adding a second
+    scheduling authority or experiment-only schema.
+    """
     if resource not in SUPPORTED_RESOURCES:
         raise ValueError(f"unsupported resource: {resource}")
     if lane not in SUPPORTED_LANES:
         raise ValueError(f"unsupported lane: {lane}")
     if lease_seconds <= 0:
         raise ValueError("lease_seconds must be positive")
+    if max_total_attempts is not None and max_total_attempts <= 0:
+        raise ValueError("max_total_attempts must be positive")
+
+    allowed_ids: tuple[int, ...] | None = None
+    if allowed_soldier_ids is not None:
+        allowed_ids = tuple(dict.fromkeys(int(value) for value in allowed_soldier_ids))
+        if not allowed_ids:
+            raise ValueError("allowed_soldier_ids must not be empty when provided")
+        if any(value <= 0 for value in allowed_ids):
+            raise ValueError("allowed_soldier_ids must contain only positive IDs")
+    if max_total_attempts is not None and allowed_ids is None:
+        raise ValueError("max_total_attempts requires allowed_soldier_ids")
+
+    params: dict[str, object] = {
+        "resource": resource,
+        "lane": lane,
+        "collector_uuid": collector_uuid,
+        "lease_seconds": lease_seconds,
+    }
+    cohort_clause = ""
+    if allowed_ids is not None:
+        cohort_clause = "AND soldier_id = ANY(:allowed_soldier_ids)"
+        params["allowed_soldier_ids"] = list(allowed_ids)
+
+    if max_total_attempts is not None:
+        conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:bounded-claim'))"))
+        used_attempts = int(
+            conn.execute(
+                text(
+                    f"""
+                    SELECT COALESCE(SUM(attempt_count), 0)
+                    FROM collection_jobs
+                    WHERE resource = :resource
+                      AND lane = :lane
+                      {cohort_clause}
+                    """
+                ),
+                params,
+            ).scalar_one()
+        )
+        if used_attempts >= max_total_attempts:
+            return None
 
     lease_token = uuid4()
+    params["lease_token"] = lease_token
     row = conn.execute(
         text(
-            """
+            f"""
             WITH candidate AS (
                 SELECT job_id
                 FROM collection_jobs
                 WHERE resource = :resource
                   AND lane = :lane
+                  {cohort_clause}
                   AND eligible_at <= now()
                   AND (
                         status = 'pending'
@@ -130,13 +185,7 @@ def claim_next_job(
                       j.attempt_count, j.collector_uuid, j.lease_token
             """
         ),
-        {
-            "resource": resource,
-            "lane": lane,
-            "collector_uuid": collector_uuid,
-            "lease_seconds": lease_seconds,
-            "lease_token": lease_token,
-        },
+        params,
     ).one_or_none()
     if row is None:
         return None
