@@ -1,6 +1,6 @@
 # BF4PS Phase 3E lifecycle validation plan
 
-Status: **STAGED implementation input — Lifecycle A first**
+Status: **FROZEN implementation input — Lifecycle A first**
 
 Date: 2026-10-04 UTC
 
@@ -16,7 +16,7 @@ The three-host endurance portion of Phase 3E is complete. Round Three reconciled
 
 Phase 3E is not complete because the frozen design also requires deliberate collector lifecycle evidence. This plan separates the remaining work into two experiments so graceful maintenance behavior is not mixed with abrupt ownership-loss behavior.
 
-- **Lifecycle A:** graceful drain, restart while drained, explicit undrain, safe rejoin.
+- **Lifecycle A:** graceful drain, restart while drained, explicit undrain, safe rejoin under a sustained three-host workload.
 - **Lifecycle B:** abrupt owner loss, lease expiration, cross-host reclamation, stale-owner fencing.
 
 Lifecycle A is implemented and executed first. Lifecycle B is designed in detail only after Lifecycle A evidence is reconciled.
@@ -56,35 +56,47 @@ Stable collector identity must survive restart. Persistent operator controls mus
 
 Prove that one physical collector can be removed from active claiming while useful work remains, restarted under the same stable identity without losing its persistent drain state, explicitly returned to service, and resume useful work while the other two collectors continue uninterrupted.
 
+Lifecycle A is deliberately a **larger sustained workload**, not another ordinary 120-player endurance pass. The workload must remain active long enough for the operator to remove and restore a node while the other collectors continue useful work.
+
+## Frozen workload contract
+
+Lifecycle A uses exactly **360 fresh pristine soldiers**:
+
+- **120 PC**
+- **120 PS4**
+- **120 Xbox One**
+- **360 total**
+
+The frozen cohort must contain 360 unique `soldier_id` values and preserve the exact platform assignment selected by the Lifecycle A manifest generator.
+
+The **hard global terminal-attempt ceiling is 360** for Lifecycle A. A soldier may not be substituted dynamically after the cohort is frozen. Work outside the frozen 360 is a hard failure.
+
+The queue remains bounded. The initial queue and subsequent replenishment use the normal **target depth of 6**; the harness must **not materialize all 360 jobs at once**. As established by Phase 3E endurance testing, target depth 6 is a replenishment target, not an instantaneous distributed invariant: a transient concurrent observation above 6 is telemetry rather than failure when caused by concurrent feeders.
+
+The existing generic `phase3e_freeze_manifest.py` remains the 120-soldier 40/40/40 endurance selector and is **not** the Lifecycle A selector. Lifecycle A requires a dedicated selector/frozen cohort implementing this 120/120/120 contract.
+
 ## Target collector
 
-Use `hnl-01` as the Lifecycle A drain/restart target unless a preflight condition requires selecting another remote collector before the run is armed.
+Use `hnl-01` as the Lifecycle A drain/restart target unless a preflight condition requires selecting another remote collector **before the run is armed**.
 
 The target must be frozen in the harness before queue seeding. Do not dynamically switch targets after the live experiment begins.
-
-## Workload sizing
-
-Lifecycle A requires a fresh mixed-platform cohort large enough that useful work remains throughout drain, restart, and rejoin.
-
-The exact cohort and global ceiling are selected by the read-only manifest/preflight immediately before implementation. The run must remain explicitly bounded. The queue target remains a replenishment target rather than an instantaneous distributed invariant.
-
-The test should not consume the entire workload before the operator can complete the lifecycle sequence. If necessary, use a larger frozen cohort or slower conservative pacing; do not create artificial unbounded work.
 
 ## Required choreography
 
 ### A0 — preflight and arm
 
-1. Freeze a fresh mixed-platform cohort.
+1. Generate and freeze exactly 360 pristine soldiers matching the 120/120/120 platform contract.
 2. Verify every frozen soldier is pristine for detailed collection.
 3. Verify all three collector rows exist with the expected stable UUID/name/hostname/egress identity.
 4. Verify all three are enabled, not drained, not retired, and own no job before launch.
 5. Verify the expected Alembic head and writable BF4PS test primary.
-6. Seed only the bounded initial queue depth.
-7. Start all three collectors.
+6. Verify no actionable Lifecycle A work already exists before initial seeding.
+7. Seed only the bounded initial queue depth of 6.
+8. Start all three collectors.
 
 ### A1 — establish sustained three-host progress
 
-Before draining anything, require durable evidence that all three physical collectors have completed multiple jobs during this lifecycle run.
+Before draining anything, require durable evidence that all three physical collectors have completed multiple jobs during this Lifecycle A run and that substantial frozen work remains.
 
 Do not trigger the drain immediately after startup. The point is to demonstrate a running distributed workload, not merely registration.
 
@@ -111,7 +123,7 @@ Once the drained target has no current job:
 3. restart the worker using the same stable collector UUID;
 4. verify registration/startup does not clear the persistent drain control;
 5. leave it running while drained long enough to demonstrate that it claims no work;
-6. verify the two survivors continue useful work during this interval.
+6. verify `kah-01` and `tcou` continue useful work during this interval.
 
 A restart that creates a new collector UUID, silently clears `drained`, or permits a claim while still drained is a hard failure.
 
@@ -125,16 +137,19 @@ The rejoin proof is not satisfied merely by a heartbeat. At least one post-undra
 
 ### A5 — convergence
 
-Continue until the frozen Lifecycle A completion boundary is reached. Stop all three collectors cleanly and run a read-only global reconciliation before optional cleanup.
+Continue until all **360 frozen Lifecycle A soldiers** have reached the experiment's terminal detailed-collection boundary or the hard attempt ceiling forces a stop. Stop all three collectors cleanly and run a read-only global reconciliation before optional cleanup.
 
 ## Lifecycle A PASS properties
 
 Lifecycle A passes only if durable evidence demonstrates:
 
+- exactly the frozen 360 soldiers were the authorized workload;
+- platform membership is exactly 120 PC / 120 PS4 / 120 Xbox One;
 - all work remained inside the frozen cohort;
-- the hard global attempt ceiling was not exceeded;
+- the hard global attempt ceiling of 360 was not exceeded;
+- the queue was fed through the bounded production feeder rather than pre-materializing 360 jobs;
 - all three collectors made useful progress before drain;
-- the target drain control became persistent while work remained;
+- the target drain control became persistent while substantial work remained;
 - no new target ownership began after the drain became effective;
 - any pre-existing target ownership finalized normally;
 - the two surviving collectors continued progress during drain and restart;
@@ -152,11 +167,12 @@ Lifecycle A passes only if durable evidence demonstrates:
 
 Immediately stop new work and preserve evidence if:
 
+- the frozen cohort is not exactly 360 unique soldiers at 120/120/120;
 - the drained target claims a new job after drain is effective;
 - startup/re-registration silently clears the drain flag;
 - collector UUID changes across restart;
 - survivor progress stalls for an unexplained distributed-runtime reason;
-- work escapes the frozen cohort or attempt ceiling;
+- work escapes the frozen cohort or 360-attempt ceiling;
 - queue/event/state accounting diverges;
 - request-gate identity changes unexpectedly.
 
@@ -184,6 +200,8 @@ Lifecycle B implementation is deferred until Lifecycle A passes, because the own
 
 Lifecycle harnesses must use production collector/queue ownership APIs wherever the behavior under test is a production invariant. Direct SQL is acceptable for read-only validation and explicit operator-control setup only where the production design defines that field as persistent operator state. Harnesses must not invent a second scheduler, ownership model, or cleanup path.
 
+Before writing or modifying schema-dependent Lifecycle A code, consult `docs/database-schema-reference.md` and the complete current Alembic migration chain. If documentation and migrations disagree, stop and reconcile them before implementation.
+
 ## Next implementation step
 
-Build the Lifecycle A preflight and operator choreography around the existing production collector registration, claim, heartbeat, bounded feeder, and finalization paths. Before writing those harnesses, inspect those production modules directly and keep every schema-dependent query aligned with `docs/database-schema-reference.md` and the current Alembic migration chain.
+Build a dedicated read-only Lifecycle A manifest selector for **120/120/120 = 360** pristine soldiers, freeze that exact cohort, then build the preflight and operator choreography around the existing production collector registration, claim, heartbeat, bounded feeder, and finalization paths. The generic 40/40/40 Phase 3E manifest generator must not be reused as the Lifecycle A cohort contract.
