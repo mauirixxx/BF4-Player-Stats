@@ -14,6 +14,12 @@ def test_403_is_classified_as_throttle():
     assert failure.http_status == 403
 
 
+def test_429_is_classified_as_throttle():
+    failure = classify_detailed_failure(DetailedStatsHTTPError(429, "too many requests"))
+    assert failure.error_class == "battlelog_throttle"
+    assert failure.http_status == 429
+
+
 def test_5xx_is_classified_as_transient_http():
     failure = classify_detailed_failure(DetailedStatsHTTPError(503, "unavailable"))
     assert failure.error_class == "battlelog_http_5xx"
