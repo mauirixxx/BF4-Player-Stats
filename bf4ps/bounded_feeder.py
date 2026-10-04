@@ -24,6 +24,7 @@ def replenish_detailed_bootstrap(
     target_depth: int,
     max_soldier_id: int | None,
     allowed_soldier_ids: Sequence[int] | None = None,
+    max_total_attempts: int | None = None,
 ) -> FeederResult:
     """Replenish a bounded background/detailed bootstrap working set.
 
@@ -34,6 +35,11 @@ def replenish_detailed_bootstrap(
     ``allowed_soldier_ids`` optionally narrows that already-bounded population
     to an explicit validation cohort. It never expands the max-soldier safety
     boundary and is primarily useful for controlled cross-platform exercises.
+
+    ``max_total_attempts`` is an additional experiment boundary. Completed
+    attempts come from the event ledger and currently claimed/running jobs are
+    treated as reserved attempts. The feeder will not create more immediately
+    actionable jobs than can still be claimed before that ceiling.
 
     Working depth means work that can consume a collector *now*: claimed and
     running jobs plus pending jobs whose ``eligible_at`` has arrived. Pending
@@ -47,6 +53,8 @@ def replenish_detailed_bootstrap(
         raise ValueError("max_soldier_id is required for the Phase 2 safety boundary")
     if max_soldier_id <= 0:
         raise ValueError("max_soldier_id must be positive")
+    if max_total_attempts is not None and max_total_attempts <= 0:
+        raise ValueError("max_total_attempts must be positive")
 
     allowed_ids: tuple[int, ...] | None = None
     if allowed_soldier_ids is not None:
@@ -57,6 +65,8 @@ def replenish_detailed_bootstrap(
             raise ValueError("allowed_soldier_ids must contain only positive IDs")
         if any(value > max_soldier_id for value in allowed_ids):
             raise ValueError("allowed_soldier_ids cannot exceed max_soldier_id")
+    if max_total_attempts is not None and allowed_ids is None:
+        raise ValueError("max_total_attempts requires allowed_soldier_ids")
 
     # Serialize feeder passes. This lock is transaction-scoped, so crashes do
     # not leave a separate coordinator/lease to repair.
@@ -85,6 +95,44 @@ def replenish_detailed_bootstrap(
 
     actionable_before = int(conn.execute(depth_sql, depth_params).scalar_one())
     deficit = max(0, target_depth - actionable_before)
+
+    if max_total_attempts is not None:
+        event_clause = "AND soldier_id = ANY(:allowed_soldier_ids)"
+        completed_attempts = int(
+            conn.execute(
+                text(
+                    f"""
+                    SELECT COUNT(*)
+                    FROM collection_events
+                    WHERE resource = 'detailed'
+                      AND lane = 'background'
+                      {event_clause}
+                      AND event_type IN ('collection_success', 'collection_failure')
+                    """
+                ),
+                depth_params,
+            ).scalar_one()
+        )
+        active_attempts = int(
+            conn.execute(
+                text(
+                    f"""
+                    SELECT COUNT(*)
+                    FROM collection_jobs
+                    WHERE resource = 'detailed'
+                      AND lane = 'background'
+                      AND soldier_id <= :max_soldier_id
+                      {depth_cohort_clause}
+                      AND status IN ('claimed', 'running')
+                    """
+                ),
+                depth_params,
+            ).scalar_one()
+        )
+        pending_actionable = max(0, actionable_before - active_attempts)
+        remaining_claims = max(0, max_total_attempts - completed_attempts - active_attempts)
+        materialization_budget = max(0, remaining_claims - pending_actionable)
+        deficit = min(deficit, materialization_budget)
 
     created = 0
     if deficit:
