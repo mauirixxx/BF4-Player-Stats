@@ -293,7 +293,8 @@ Battlelog exposes friendly top-level fields for the supported game modes. BF4PS 
 | Air Superiority | `airsuperiority` | RAW |
 | Carrier Assault | `carrierassault` | RAW |
 | Chain Link | `chainlink` | RAW |
-| Gun Master | `gunmaster` | RAW |
+
+Gun Master is intentionally excluded from the retained contract. Live validation against multiple players known to play Gun Master, including a Gun Master server owner known to have multiple round wins, showed Battlelog still returning `generalStats.gunmaster = 0`. BF4PS therefore treats the field as unmaintained/non-authoritative and does not store or infer a Gun Master score from another source.
 
 ### General
 
@@ -357,6 +358,18 @@ Weapons and vehicles are initially **current-state data only**. BF4PS does not r
 The captured payload demonstrates duplicate representations. For example, named kit-score fields correspond to entries in `kitScores`, and named game-mode fields correspond to the numeric-keyed `gameModesScore` structure. BF4PS should retain the explicit named fields required by this contract and not duplicate those nested structures merely because Battlelog returns them.
 
 Hardline/legacy fields such as cash statistics and `sc_heist`, `sc_hostage`, `sc_hotwire`, `sc_bloodmoney`, `sc_bountyhunter`, `sc_squadheist`, and `sc_turfwar` are explicitly outside the BF4PS retention contract.
+
+### Live validation: 48-field contract and schema migration
+
+On 2026-10-03, the live detailed-statistics validation for PC persona `236753552` (`mauirixxx`) returned 191 `generalStats` source fields. The explicit BF4PS normalizer retained 48 fields; all 48 were present and non-null. `gunmaster` was not retained.
+
+The follow-up Alembic migration `0002_drop_gun_master_score` was exercised against `bf4_playerstats_test` through the complete round trip:
+
+1. `0001_initial_schema` -> `0002_drop_gun_master_score`: both obsolete `gun_master_score` columns were absent after upgrade.
+2. `0002_drop_gun_master_score` -> `0001_initial_schema`: both columns were restored after downgrade.
+3. `0001_initial_schema` -> `0002_drop_gun_master_score`: both columns were absent again in the final head state.
+
+The destination was confirmed as writable (`pg_is_in_recovery() = false`) during validation. The test database was intentionally left at `0002_drop_gun_master_score (head)`.
 
 ## Known unknowns
 
