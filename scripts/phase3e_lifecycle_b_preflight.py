@@ -6,6 +6,7 @@ from phase3e_lifecycle_b_common import *
 def main()->int:
     e=create_engine(database_url(),pool_pre_ping=True)
     checks=[]
+    candidate=None
     with e.connect() as c:
         assert_target(c); checks.append(("expected test primary and Alembic head",True))
         foreign=int(c.execute(text("SELECT count(*) FROM collection_jobs WHERE resource=:r AND lane=:l AND status IN ('claimed','running')"),{'r':RESOURCE,'l':LANE}).scalar_one())
@@ -21,10 +22,13 @@ def main()->int:
             JOIN collection_state cs ON cs.soldier_id=s.soldier_id
             LEFT JOIN collection_jobs cj ON cj.soldier_id=s.soldier_id AND cj.resource=:r
             WHERE s.platform='pc' AND cj.job_id IS NULL
-              AND cs.detailed_state='never'
+              AND cs.detailed_state='never_attempted'
               AND cs.detailed_last_attempt_at IS NULL
               AND cs.detailed_last_success_at IS NULL
-              AND cs.detailed_last_error IS NULL
+              AND cs.detailed_next_due_at IS NULL
+              AND cs.detailed_consecutive_failures=0
+              AND cs.detailed_last_error_class IS NULL
+              AND cs.detailed_last_error_message IS NULL
             ORDER BY s.soldier_id
             LIMIT 1
         """),{'r':RESOURCE}).mappings().one_or_none()
