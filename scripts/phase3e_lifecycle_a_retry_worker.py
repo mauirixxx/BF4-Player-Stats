@@ -23,11 +23,10 @@ def retry_terminals(c):
 def safety(c):
  assert_target(c)
  rows=c.execute(text("SELECT job_id,soldier_id,status,attempt_count,collector_uuid,lease_token,claimed_at,started_at,lease_expires_at FROM collection_jobs WHERE job_id=ANY(:jobs) ORDER BY job_id"),{'jobs':list(RETRY_JOB_IDS)}).mappings().all()
- if len(rows)!=8: raise RuntimeError(f'expected 8 residual jobs, found {len(rows)}')
  expected=dict(zip(RETRY_JOB_IDS,RETRY_SOLDIER_IDS,strict=True))
  for r in rows:
   jid=int(r['job_id'])
-  if int(r['soldier_id'])!=expected[jid]: raise RuntimeError(f'identity mismatch job={jid}')
+  if jid not in expected or int(r['soldier_id'])!=expected[jid]: raise RuntimeError(f'identity mismatch job={jid}')
   if r['status']=='pending':
    if int(r['attempt_count']) not in {1,2}: raise RuntimeError(f'unexpected attempt count job={jid}')
    if any(r[k] is not None for k in ('collector_uuid','lease_token','claimed_at','started_at','lease_expires_at')): raise RuntimeError(f'pending job owns lease job={jid}')
@@ -36,6 +35,11 @@ def safety(c):
   else: raise RuntimeError(f'unexpected status job={jid}: {r["status"]}')
  n=retry_terminals(c)
  if n>8: raise RuntimeError(f'retry ceiling exceeded: {n}')
+ # Successful collection finalizes/deletes its queue row.  The durable event
+ # ledger is therefore the authority for completed retry jobs; only unresolved
+ # retries are expected to remain in collection_jobs.
+ if len(rows)+n != 8:
+  raise RuntimeError(f'retry accounting mismatch: queue_rows={len(rows)} attempt2_terminals={n} expected=8')
  return n
 
 def main():
