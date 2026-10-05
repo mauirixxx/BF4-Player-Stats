@@ -1,6 +1,6 @@
 # BF4PS Phase 3E lifecycle validation plan
 
-Status: **LIFECYCLE A COMPLETE — PASS; LIFECYCLE B NEXT**
+Status: **LIFECYCLE A COMPLETE — PASS; LIFECYCLE B COMPLETE — PASS**
 
 Date: 2026-10-05 UTC
 
@@ -14,27 +14,27 @@ Current Alembic head: `0003_request_gates`
 
 The three-host endurance portion of Phase 3E is complete. Round Three reconciled 120/120 successful attempts and closed the bounded-feeder concurrency defect discovered in Round Two.
 
-Lifecycle A has now fully exercised graceful drain/rejoin behavior under a sustained 360-soldier workload and subsequent natural retry convergence. The primary lifecycle reconciliation passed against the observed durable drain acknowledgement boundary. Eight transient `battlelog_normalization` failures were preserved as retryable work, all eight later normalized successfully under a read-only forensic probe, and all eight then succeeded through the normal production retry path on attempt two. Final retry reconciliation passed with no residual queue, no third-or-later attempts, no foreign retry work, successful detailed collection state, and persisted detailed current rows for all eight retry soldiers.
+Lifecycle A fully exercised graceful drain/rejoin behavior under a sustained 360-soldier workload and subsequent natural retry convergence. Lifecycle B then exercised abrupt owner loss, expired-lease cross-host reclamation, lease-token rotation, stale-owner fencing, and successful production-path completion by the surviving owner.
 
 - **Lifecycle A: COMPLETE/PASS** — graceful drain, continued drained state, explicit undrain, safe rejoin, and natural retry convergence.
-- **Lifecycle B: NEXT** — abrupt owner loss, lease expiration, cross-host reclamation, stale-owner fencing.
+- **Lifecycle B: COMPLETE/PASS** — abrupt owner loss, lease expiration, cross-host reclamation, stale-owner fencing, and current-owner completion.
 
 ## Safety boundary shared by both experiments
 
-All lifecycle validation remains restricted to:
+All lifecycle validation remained restricted to:
 
 - database: `bf4_playerstats_test`
 - PostgreSQL target: `mak-db-02.bf4statusbot.com`
 - resource: `detailed`
 - lane: `background`
 - explicit fresh frozen cohort only
-- bounded feeder only
-- explicit hard global attempt ceiling for the primary lifecycle pass
+- bounded feeder/work only
+- explicit hard attempt ceilings
 - conservative per-egress pacing
 
-No full-population bootstrap is authorized. No production BF4PS database is authorized. No intentional Battlelog throttle experiment is authorized.
+No full-population bootstrap was authorized. No production BF4PS database was authorized. No intentional Battlelog throttle experiment was authorized.
 
-Every harness must refuse to run if the database target, Alembic head, frozen cohort, or expected collector identity does not match its frozen configuration.
+Every harness was required to refuse to run if the database target, Alembic head, frozen cohort, or expected collector identity did not match its frozen configuration.
 
 ## Stable physical identities
 
@@ -146,30 +146,132 @@ The reconciliation itself performed zero database writes and zero Battlelog requ
 
 The experiment demonstrated graceful persistent drain, a durable worker acknowledgement boundary, continued survivor progress, explicit undrain/rejoin under the same stable physical identity, safe queue ownership, natural retry preservation after transient source failures, restartable retry execution after a harness-side interruption, and complete retry convergence without manual database cleanup.
 
-# Lifecycle B — abrupt owner loss/reclamation/fencing — NEXT
+# Lifecycle B — abrupt owner loss/reclamation/fencing — COMPLETE/PASS
 
-Lifecycle B remains required and is intentionally separate from Lifecycle A. Lifecycle A is now sufficiently closed to begin its implementation.
+## Frozen contract
 
-Its frozen parent requirements are:
+Lifecycle B deliberately used one pristine PC soldier and one detailed/background queue job so that ownership transitions could be observed without unrelated queue activity obscuring the experiment.
 
-1. arrange one bounded test job to be owned under a deliberately short test lease;
-2. terminate that owner without graceful release/finalization;
-3. prove survivors continue unrelated work;
-4. wait for lease expiration;
-5. require a different physical collector to reclaim the same logical job;
-6. prove attempt number increments and lease token rotates;
-7. attempt stale-owner mark-running, renew, release, and finalize mutations using the former ownership tuple and require rejection;
-8. allow only the current owner to finalize normally;
-9. reconcile the complete durable ownership/event history.
+Frozen workload:
 
-The short lease is test-only and must not redefine normal production lease duration.
+- soldier: **389** (`niteraat`)
+- persona: **1309609549**
+- platform: **pc**
+- job: **813**
+- victim: `hnl-01` / `phase3e-hnl-01`
+- reclaimer: `kah-01` / `phase3e-kah-01`
+- test lease: **30 seconds** for the abrupt-loss/reclaim checkpoints
 
-## Implementation rule
+The short lease was test-only and does not redefine normal production lease duration.
 
-Lifecycle harnesses must use production collector/queue ownership APIs wherever the behavior under test is a production invariant. Direct SQL is acceptable for read-only validation and explicit operator-control setup only where the production design defines that field as persistent operator state. Harnesses must not invent a second scheduler, ownership model, or cleanup path.
+## Executed ownership choreography
+
+### Attempt 1 — abrupt victim loss
+
+`hnl-01` claimed job 813 as attempt 1 under lease token:
+
+`9ad8057a-57fe-4cdb-82fa-49fc58c4ea39`
+
+The victim harness intentionally performed no Battlelog request, no lease renewal, and no clean release. Once armed, the operator terminated it with `Ctrl-C`, producing an actual abrupt process loss while the database still contained the ownership tuple. The 30-second lease then expired naturally.
+
+### Attempt 2 — cross-host reclamation checkpoint
+
+After expiration, `kah-01` reclaimed the same logical job as attempt 2 under a new lease token:
+
+`d912e36b-902f-4b5a-bb52-36576c5d6892`
+
+The reclaim checkpoint verified:
+
+- stale attempt: **1**;
+- stale owner: `hnl-01` stable collector UUID;
+- new attempt: **2**;
+- new owner: `kah-01` stable collector UUID;
+- lease token rotated;
+- no Battlelog request was required to prove reclamation.
+
+Attempt 2 was deliberately left as an ownership/fencing checkpoint rather than being finalized. Its lease was allowed to expire before the controlled production-path completion. This means the durable terminal event ledger does not contain attempt-1 or attempt-2 terminal events; those attempts are ownership transitions established by the harness/operator evidence, not fabricated terminal history.
+
+### Stale-owner fencing — PASS
+
+With attempt 2 owned by `kah-01`, the former attempt-1 `hnl-01` ownership tuple was replayed against all four ownership-sensitive mutations. Every stale mutation was rejected:
+
+- `mark_job_running` — **REJECTED**;
+- `renew_lease` — **REJECTED**;
+- `release_for_retry` — **REJECTED**;
+- `finalize_owned_job` — **REJECTED**.
+
+The probe verified that the queue row was unchanged both inside the transaction and after rollback. It persisted zero database writes and made zero Battlelog requests.
+
+This directly proves that possession of an obsolete collector UUID plus obsolete lease token cannot mutate a job after another owner has reclaimed it.
+
+### Attempt 3 — controlled production-path completion
+
+After the deliberately retained attempt-2 lease expired, `kah-01` reclaimed job 813 again through the production detailed collector path. The claim became attempt 3 and rotated the lease token again to:
+
+`5a02a116-ecd9-4ab2-b5c5-4518ef84bc1b`
+
+Only soldier 389 was authorized and at most one Battlelog request was permitted. The normal request gate, Battlelog detailed fetcher, normalizer, persistence path, collection-state update, event ledger, and queue finalization were used.
+
+The request returned HTTP **200** and produced durable event **811**:
+
+| Event | Job | Soldier | Attempt | Collector | Result |
+|---:|---:|---:|---:|---|---|
+| 811 | 813 | 389 | 3 | `phase3e-kah-01` | `collection_success` |
+
+The completion also reported `history_appended=True`, finalized the queue row, and persisted successful detailed current/state data.
+
+## Final read-only reconciliation — PASS
+
+The dedicated final reconciliation observed one durable ledger event for job 813: event 811, `collection_success`, attempt 3, owned by `phase3e-kah-01` with the attempt-3 lease token.
+
+It passed every final invariant:
+
+- Lifecycle B queue job fully finalized;
+- exactly one successful collection event;
+- success is durable event 811;
+- success occurred only on attempt 3;
+- success owned by the `kah-01` stable collector identity;
+- success used the rotated attempt-3 lease token and neither obsolete token;
+- soldier/persona/platform/resource/lane identity exact;
+- result `success`, HTTP 200, no error class;
+- `collection_state.detailed_state` converged to `success` with a successful timestamp, zero consecutive failures, and no detailed error;
+- `detailed_stats_current` row persisted;
+- at least one `detailed_stats_history` snapshot persisted;
+- victim and reclaimer stable collector identities remained exact;
+- neither lifecycle collector retained `current_job_id` ownership.
+
+The final reconciliation performed zero database writes and zero Battlelog requests.
+
+## Lifecycle B conclusion
+
+**Lifecycle B is closed PASS.**
+
+The experiment demonstrated that abrupt process loss does not require a clean release for recovery; an expired lease permits a different physical collector to reclaim the same logical job; reclamation increments the attempt number and rotates the lease token; an obsolete owner/token tuple is fenced from mark-running, renewal, retry release, and finalization; and a surviving collector can subsequently reclaim and complete the job through the normal production detailed-collection path with correct persistence and queue convergence.
+
+The observed three-attempt sequence is intentionally preserved exactly as executed. Attempt 2 was a controlled reclaim/fencing checkpoint whose lease was allowed to expire; it is not rewritten as a terminal collection attempt after the fact.
+
+# Phase 3E lifecycle validation conclusion
+
+**Both required lifecycle experiments are COMPLETE/PASS.**
+
+Together, Lifecycle A and Lifecycle B provide live test-database evidence for both sides of distributed collector lifecycle behavior:
+
+- graceful administrative drain and rejoin under stable identity;
+- continued useful work by surviving collectors;
+- natural retry convergence after transient source failures;
+- abrupt owner death without graceful cleanup;
+- expired-lease cross-host reclamation;
+- monotonically increasing attempt ownership with lease-token rotation;
+- stale-owner fencing after reclamation;
+- successful current-owner production-path completion;
+- converged queue and detailed persistence state.
+
+## Implementation rule retained for future Phase 3E work
+
+Lifecycle/endurance harnesses must use production collector/queue ownership APIs wherever the behavior under test is a production invariant. Direct SQL is acceptable for read-only validation and explicit operator-control setup only where the production design defines that field as persistent operator state. Harnesses must not invent a second scheduler, ownership model, or cleanup path.
 
 Before writing or modifying schema-dependent code, consult `docs/database-schema-reference.md` and the complete current Alembic migration chain. `docs/database-schema-reference.md` is the repository's human-readable reference for the current Alembic head; the migrations remain the executable source of truth. If documentation and migrations disagree, stop and reconcile them before implementation. Schema changes must update the schema reference in the same change set.
 
-## Next implementation step
+## Next step
 
-Design and build the bounded Lifecycle B harness for abrupt owner loss, lease expiration, cross-host reclamation, and stale-owner fencing. Freeze its exact workload, lease timing, owner/reclaimer identities, kill boundary, expected event sequence, and reconciliation criteria before executing the destructive portion of the experiment.
+Lifecycle A and Lifecycle B no longer block Phase 3E. Return to the frozen Phase 3E parent design and identify the next still-open acceptance requirement before adding new collector behavior or expanding toward production autonomous collection.
