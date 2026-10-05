@@ -33,6 +33,8 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 - Job priority classes: `interactive`, `active`, `recent`, `bootstrap`
 - Job statuses: `pending`, `claimed`, `running`
 
+**Collection-state spelling is schema-significant.** The pristine/unattempted value is exactly `never_attempted`; `never` is not a legal collection-state value. Harnesses and operational SQL must use the exact domain values above rather than abbreviated or remembered spellings.
+
 ## Core identity and discovery tables
 
 ### `soldiers`
@@ -150,7 +152,14 @@ Each resource is represented by a prefixed family of columns. For each of `detai
 
 The table also has `updated_at`.
 
-Example for detailed collection: use `detailed_state`, `detailed_last_success_at`, etc. Do **not** write `WHERE resource = 'detailed'` against this table.
+Every `<resource>_state` column is constrained to exactly one of:
+
+- `never_attempted` — no collection attempt has yet been recorded for that resource;
+- `success` — the latest collection state is successful;
+- `temporary_failure` — the latest attempt failed in a retryable/temporary manner;
+- `unavailable` — the resource is currently classified as unavailable.
+
+Example for detailed collection: use `detailed_state`, `detailed_last_success_at`, etc. Do **not** write `WHERE resource = 'detailed'` against this table. A pristine detailed-state predicate uses `detailed_state = 'never_attempted'`, not `detailed_state = 'never'`.
 
 ## Discovery cursor
 
@@ -262,12 +271,13 @@ This is PostgreSQL-coordinated shared pacing state; it is not collector-local ti
 ## Known SQL foot-guns
 
 1. **Do not assume `collection_state.resource` exists.** It does not. Use resource-prefixed columns.
-2. **Do not assume detailed current/history share timestamp names.** Current = `source_fetched_at`; history = `observed_at`.
-3. **Do not resurrect `gun_master_score`.** It is intentionally absent at current head.
-4. **Do not claim a job with an arbitrary collector UUID.** `collection_jobs.collector_uuid` is FK-constrained to `collectors`; register the collector first.
-5. **Do not bypass the queue ownership tuple.** Job ownership is not merely `job_id`; collector UUID + lease token participate in fencing.
-6. **Do not duplicate feeder eligibility from memory.** When a harness must predict feeder selection, compare its SQL directly with the production feeder implementation.
-7. **Do not assume a migration file alone describes current head.** Apply every later migration mentally/documentarily; e.g. `0001` contains Gun Master columns that `0002` removes.
+2. **Do not abbreviate collection-state domain values.** The pristine value is `never_attempted`; `never` is invalid. Check the exact domain above before writing predicates.
+3. **Do not assume detailed current/history share timestamp names.** Current = `source_fetched_at`; history = `observed_at`.
+4. **Do not resurrect `gun_master_score`.** It is intentionally absent at current head.
+5. **Do not claim a job with an arbitrary collector UUID.** `collection_jobs.collector_uuid` is FK-constrained to `collectors`; register the collector first.
+6. **Do not bypass the queue ownership tuple.** Job ownership is not merely `job_id`; collector UUID + lease token participate in fencing.
+7. **Do not duplicate feeder eligibility from memory.** When a harness must predict feeder selection, compare its SQL directly with the production feeder implementation.
+8. **Do not assume a migration file alone describes current head.** Apply every later migration mentally/documentarily; e.g. `0001` contains Gun Master columns that `0002` removes.
 
 ## Maintenance rule
 
