@@ -21,7 +21,7 @@ def main()->int:
             LEFT JOIN collection_jobs cj ON cj.soldier_id=s.soldier_id AND cj.resource='detailed'
             WHERE s.platform='pc' AND cj.job_id IS NULL
               AND s.soldier_id NOT IN :exclude_ids
-              AND cs.detailed_state='never'
+              AND cs.detailed_state='never_attempted'
               AND cs.detailed_last_attempt_at IS NULL
               AND cs.detailed_last_success_at IS NULL
               AND cs.detailed_last_error_class IS NULL
