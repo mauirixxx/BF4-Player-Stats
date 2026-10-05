@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Any, Mapping
 from urllib.parse import urlsplit
@@ -30,6 +31,7 @@ from bf4ps.battlelog_detailed import (  # noqa: E402
 from phase3e_lifecycle_a_common import (  # noqa: E402
     EXPECTED_DATABASE,
     EXPECTED_DB_HOST,
+    REQUEST_INTERVAL_SECONDS,
     assert_target,
 )
 
@@ -164,9 +166,12 @@ def main() -> None:
     print("===== LIFECYCLE A NORMALIZATION PROBE =====")
     print(f"target_jobs={','.join(str(j) for j in TARGET_JOB_IDS)}")
     print("mode=direct HTTP + production normalizer; database writes=NONE")
+    print(f"request_spacing_seconds={REQUEST_INTERVAL_SECONDS}")
 
     failures = 0
-    for row in identities:
+    for index, row in enumerate(identities):
+        if index:
+            time.sleep(REQUEST_INTERVAL_SECONDS)
         print(
             f"\n--- job={row['job_id']} soldier={row['soldier_id']} "
             f"name={row['current_name']!r} persona={row['persona_id']} "
