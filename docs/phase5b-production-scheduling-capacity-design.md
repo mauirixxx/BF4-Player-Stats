@@ -316,3 +316,46 @@ included in that byte figure.
 The census therefore supports tiered scheduling rather than uniform freshness
 across the entire discovered population. Exact tier boundaries and cadences
 remain unfrozen until the offline capacity calculator is evaluated.
+
+
+## First capacity-model result — fixed recency tiers rejected
+
+The first offline capacity calculation evaluated three intentionally contrasting
+fixed-recency schedules against the accepted three-egress, five-second-gate
+ceiling of 51,840 requests/day.
+
+Results:
+
+| Candidate | Requests/day | Theoretical utilization | Measured weapon+vehicle payload/day |
+|---|---:|---:|---:|
+| conservative hot set | 329,932.4 | 636.4% | 42.14 GiB |
+| balanced hot set | 463,537.8 | 894.2% | 86.49 GiB |
+| aggressive hot set | 821,164.4 | 1,584.0% | 129.73 GiB |
+
+All three candidates are rejected. Even the conservative model exceeds the
+absolute physical request ceiling by approximately 6.36x before retries,
+interactive work, shared-egress pressure, or safety headroom.
+
+This result changes the scheduling design direction. Static source-recency
+buckets are useful for describing the population, but repeatedly refreshing
+every member of a bucket at a fixed cadence is not a viable production
+scheduler for the observed BF4PS population.
+
+### Revised direction: event-driven working set
+
+BF4SW source observations should be treated as scheduling signals that can
+promote/touch a soldier's work rather than as membership in a permanently
+re-polled fixed bucket. Inactivity should naturally reduce background demand.
+
+The next model must therefore work from a **request budget first**:
+
+1. reserve explicit capacity/headroom;
+2. allocate a bounded budget among detailed, weapons, vehicles, retries, and
+   interactive work;
+3. use new/recent BF4SW observations to make soldiers eligible for those
+   budgets;
+4. coalesce repeated observations while a resource remains fresh;
+5. allow inactivity to stop generating recurring expensive work;
+6. preserve resource-specific due times and retries.
+
+No production cadence is frozen by the rejected models.
