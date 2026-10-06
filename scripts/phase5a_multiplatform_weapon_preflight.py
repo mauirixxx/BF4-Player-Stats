@@ -4,12 +4,14 @@
 This script performs zero database writes and zero Battlelog requests. It
 selects exactly ten pristine weapon candidates per supported platform using a
 deterministic soldier_id ordering and prints the proposed frozen cohort.
+Unrelated historical jobs outside the selected cohort are preserved and do
+not block the preflight.
 """
 from __future__ import annotations
 
 from collections import Counter
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from bf4ps.db import make_engine
 
@@ -78,12 +80,15 @@ def main() -> int:
             check(f"{platform} has {PER_PLATFORM} pristine full-stats candidates", len(rows) == PER_PLATFORM, str(len(rows)))
             candidates.extend(rows)
 
-        foreign_jobs = conn.execute(text("""
+        soldier_ids = [int(row["soldier_id"]) for row in candidates]
+        cohort_jobs_stmt = text("""
             SELECT count(*)
             FROM collection_jobs
-            WHERE resource IN ('weapons', 'vehicles')
-        """)).scalar_one()
-        check("no existing weapon/vehicle jobs contaminate preflight", int(foreign_jobs) == 0, str(foreign_jobs))
+            WHERE soldier_id IN :soldier_ids
+              AND resource IN ('weapons', 'vehicles')
+        """).bindparams(bindparam("soldier_ids", expanding=True))
+        cohort_jobs = conn.execute(cohort_jobs_stmt, {"soldier_ids": soldier_ids}).scalar_one()
+        check("selected cohort has no existing weapon/vehicle jobs", int(cohort_jobs) == 0, str(cohort_jobs))
 
     counts = Counter(str(row["platform"]) for row in candidates)
     check("frozen cohort contains exactly 30 soldiers", len(candidates) == 30, str(len(candidates)))
