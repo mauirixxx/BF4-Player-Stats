@@ -87,3 +87,22 @@ def test_stage_a_audit_rejects_persistence_layer_failures():
     assert "event_type='collection_persistence_failure'" in audit
     assert "no persistence-layer failure evidence" in audit
     assert "===== PERSISTENCE FAILURES =====" in audit
+
+
+def test_stage_a_run2_reset_preserves_event_history_and_resets_current_state():
+    reset = Path("scripts/phase5a_stage_a_reset_run2.py").read_text(encoding="utf-8")
+    assert "DELETE FROM collection_events" not in reset.upper()
+    assert "DELETE FROM soldier_weapon_stats" in reset
+    assert "weapons_state='never_attempted'" in reset
+    assert "phase5a_stage_a_run_started" not in reset
+    assert "RUN_MARKER_EVENT_TYPE" in reset
+
+
+def test_stage_a_run_boundary_scopes_attempt_ceiling_and_audit():
+    jobs = Path("bf4ps/collection_jobs.py").read_text(encoding="utf-8")
+    worker = Path("scripts/phase5a_stage_a_worker.py").read_text(encoding="utf-8")
+    audit = Path("scripts/phase5a_stage_a_audit.py").read_text(encoding="utf-8")
+    assert "attempts_after_event_id" in jobs
+    assert "event_id > :attempts_after_event_id" in jobs
+    assert "attempts_after_event_id=run_start_event_id" in worker
+    assert audit.count("event_id > :run_start_event_id") >= 3
