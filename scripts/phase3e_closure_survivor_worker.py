@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Complete only jobs 815/816 on kah-01 while victim job 814 remains abandoned."""
+"""Resume/complete jobs 815/816 on kah-01 while victim job 814 remains abandoned."""
 from __future__ import annotations
 
 import socket
@@ -8,15 +8,20 @@ from sqlalchemy import create_engine, text
 from bf4ps.collector_runtime import heartbeat_collector
 from bf4ps.detailed_collector import CollectorIdentity, CollectedJob, FailedJob, collect_one_detailed_job
 from phase3e_closure_survivor_cohort import SURVIVOR_SOLDIER_IDS, VICTIM_SOLDIER_ID
-from phase3e_lifecycle_b_common import (
-    RECLAIMER_HOST,
-    RECLAIMER_UUID,
-    assert_target,
-    database_url,
-)
+from phase3e_lifecycle_b_common import RECLAIMER_HOST, RECLAIMER_UUID, assert_target, database_url
 
 VICTIM_JOB_ID = 814
 SURVIVOR_JOB_IDS = (815, 816)
+EXPECTED = dict(zip(SURVIVOR_JOB_IDS, SURVIVOR_SOLDIER_IDS))
+
+
+def _event_ok(row) -> bool:
+    return (
+        row['event_type'] == 'collection_success'
+        and int(row['attempt_number']) == 1
+        and row['result'] == 'success'
+        and row['collector_uuid'] == RECLAIMER_UUID
+    )
 
 
 def main() -> int:
@@ -30,7 +35,7 @@ def main() -> int:
         control = heartbeat_collector(
             conn,
             collector_uuid=RECLAIMER_UUID,
-            software_version='phase3e-closure-survivor-worker',
+            software_version='phase3e-closure-survivor-worker-resume',
         )
         if not control.may_claim:
             raise RuntimeError('survivor collector is disabled or drained')
@@ -54,25 +59,50 @@ def main() -> int:
         ):
             raise RuntimeError(f'unexpected abandoned victim shape: {dict(victim)}')
 
-        survivors = conn.execute(text("""
+        jobs = conn.execute(text("""
             SELECT job_id,soldier_id,status,attempt_count,collector_uuid,lease_token,
                    claimed_at,started_at,lease_expires_at
             FROM collection_jobs
             WHERE job_id = ANY(:job_ids)
             ORDER BY job_id
         """), {'job_ids': list(SURVIVOR_JOB_IDS)}).mappings().all()
-        expected = dict(zip(SURVIVOR_JOB_IDS, SURVIVOR_SOLDIER_IDS))
-        if len(survivors) != 2:
-            raise RuntimeError(f'expected two survivor jobs, found {len(survivors)}')
-        for row in survivors:
-            if int(row['soldier_id']) != expected[int(row['job_id'])]:
+        jobs_by_id = {int(row['job_id']): row for row in jobs}
+
+        events = conn.execute(text("""
+            SELECT event_id,job_id,soldier_id,event_type,attempt_number,result,http_status,collector_uuid
+            FROM collection_events
+            WHERE job_id = ANY(:job_ids)
+            ORDER BY event_id
+        """), {'job_ids': list(SURVIVOR_JOB_IDS)}).mappings().all()
+        events_by_job = {}
+        for event in events:
+            events_by_job.setdefault(int(event['job_id']), []).append(event)
+
+        completed_ids = []
+        pending_ids = []
+        for job_id, soldier_id in EXPECTED.items():
+            job_events = events_by_job.get(job_id, [])
+            row = jobs_by_id.get(job_id)
+            if row is None:
+                if len(job_events) != 1 or int(job_events[0]['soldier_id']) != soldier_id or not _event_ok(job_events[0]):
+                    raise RuntimeError(f'finalized survivor {job_id} lacks exact success evidence: {job_events}')
+                completed_ids.append(job_id)
+                continue
+
+            if int(row['soldier_id']) != soldier_id:
                 raise RuntimeError(f'survivor identity drift: {dict(row)}')
+            if job_events:
+                raise RuntimeError(f'survivor {job_id} has both live queue row and terminal events: {job_events}')
             if row['status'] != 'pending' or int(row['attempt_count']) != 0:
                 raise RuntimeError(f'survivor job not pristine pending: {dict(row)}')
             if any(row[k] is not None for k in (
                 'collector_uuid','lease_token','claimed_at','started_at','lease_expires_at'
             )):
                 raise RuntimeError(f'survivor job unexpectedly owned: {dict(row)}')
+            pending_ids.append(job_id)
+
+        if not completed_ids and not pending_ids:
+            raise RuntimeError('no survivor state found')
 
         identity = conn.execute(text("""
             SELECT collector_name,hostname,egress_key,lane
@@ -87,14 +117,15 @@ def main() -> int:
         lane=identity['lane'],
     )
 
-    print('===== BF4PS PHASE 3E SURVIVOR-PROGRESS WORKER =====', flush=True)
+    print('===== BF4PS PHASE 3E SURVIVOR-PROGRESS RESUME =====', flush=True)
     print(f'host: {host}', flush=True)
     print(f'victim job: {VICTIM_JOB_ID} remains abandoned attempt=1', flush=True)
-    print(f'authorized survivor soldiers: {SURVIVOR_SOLDIER_IDS}', flush=True)
-    print('authorized Battlelog requests: at most 2', flush=True)
+    print(f'already completed survivor jobs: {tuple(completed_ids)}', flush=True)
+    print(f'pending survivor jobs: {tuple(pending_ids)}', flush=True)
+    print(f'authorized Battlelog requests this run: at most {len(pending_ids)}', flush=True)
 
-    completed = []
-    for index in range(2):
+    for index, job_id in enumerate(pending_ids, start=1):
+        soldier_id = EXPECTED[job_id]
         result = collect_one_detailed_job(
             engine,
             identity=collector_identity,
@@ -102,12 +133,12 @@ def main() -> int:
             lease_seconds=120,
             timeout_seconds=15.0,
             retry_after_seconds=300,
-            allowed_soldier_ids=SURVIVOR_SOLDIER_IDS,
+            allowed_soldier_ids=(soldier_id,),
             max_total_attempts=1,
         )
         if result is None:
-            raise RuntimeError(f'production collector returned no survivor job at step {index + 1}')
-        if result.job_id not in SURVIVOR_JOB_IDS or result.soldier_id not in SURVIVOR_SOLDIER_IDS:
+            raise RuntimeError(f'production collector returned no job for survivor {job_id}')
+        if result.job_id != job_id or result.soldier_id != soldier_id:
             raise RuntimeError(f'foreign job collected: {result}')
         if isinstance(result, FailedJob):
             raise RuntimeError(
@@ -116,15 +147,11 @@ def main() -> int:
             )
         if not isinstance(result, CollectedJob):
             raise RuntimeError(f'unexpected collector result: {result}')
-        completed.append((result.job_id, result.soldier_id, result.history_appended))
         print(
-            f'[{index + 1}/2] SUCCESS job={result.job_id} soldier={result.soldier_id} '
+            f'[{index}/{len(pending_ids)}] SUCCESS job={result.job_id} soldier={result.soldier_id} '
             f'history_appended={result.history_appended}',
             flush=True,
         )
-
-    if {row[0] for row in completed} != set(SURVIVOR_JOB_IDS):
-        raise RuntimeError(f'did not complete exact survivor job set: {completed}')
 
     with engine.begin() as conn:
         victim_after = conn.execute(text("""
@@ -157,10 +184,7 @@ def main() -> int:
             UPDATE collectors SET current_job_id=NULL, updated_at=now()
             WHERE collector_uuid=:collector_uuid
               AND current_job_id = ANY(:job_ids)
-        """), {
-            'collector_uuid': RECLAIMER_UUID,
-            'job_ids': list(SURVIVOR_JOB_IDS),
-        })
+        """), {'collector_uuid': RECLAIMER_UUID, 'job_ids': list(SURVIVOR_JOB_IDS)})
 
     if victim_after is None or dict(victim_after) != dict(victim):
         raise RuntimeError(
@@ -171,13 +195,10 @@ def main() -> int:
         raise RuntimeError(f'survivor jobs did not finalize: {remaining}')
     if len(events) != 2:
         raise RuntimeError(f'expected exactly two survivor terminal events, found {len(events)}')
+    if {int(row['job_id']) for row in events} != set(SURVIVOR_JOB_IDS):
+        raise RuntimeError(f'survivor event job set mismatch: {[dict(row) for row in events]}')
     for event in events:
-        if (
-            event['event_type'] != 'collection_success'
-            or int(event['attempt_number']) != 1
-            or event['result'] != 'success'
-            or event['collector_uuid'] != RECLAIMER_UUID
-        ):
+        if int(event['soldier_id']) != EXPECTED[int(event['job_id'])] or not _event_ok(event):
             raise RuntimeError(f'unexpected survivor terminal event: {dict(event)}')
     if len(states) != 2 or any(
         row['detailed_state'] != 'success'
@@ -193,12 +214,11 @@ def main() -> int:
     for event in events:
         print(
             f"terminal event: {event['event_id']} job={event['job_id']} "
-            f"soldier={event['soldier_id']} attempt={event['attempt_number']} "
-            f"http={event['http_status']}"
+            f"soldier={event['soldier_id']} attempt={event['attempt_number']} http={event['http_status']}"
         )
     print('survivor jobs finalized: PASS')
     print('survivor detailed state/current: PASS')
-    print('SURVIVOR-PROGRESS WORKER: PASS')
+    print('SURVIVOR-PROGRESS RESUME: PASS')
     return 0
 
 
