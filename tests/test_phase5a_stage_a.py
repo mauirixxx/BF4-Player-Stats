@@ -63,3 +63,11 @@ def test_phase5a_stage_a_audit_reconciles_physical_and_terminal_attempts():
     assert "exactly 30 durable physical weapon attempts exist" in audit
     assert "every physical attempt has exactly one durable terminal outcome" in audit
     assert "all three frozen collectors participated in physical attempts" in audit
+
+
+def test_phase5a_stage_a_audit_reports_all_failures_before_exit():
+    audit = Path("scripts/phase5a_stage_a_audit.py").read_text(encoding="utf-8")
+    assert "failures_found.append" in audit
+    assert "FAIL ({len(failures_found)} check(s))" in audit
+    assert "return 1" in audit
+    assert "raise AssertionError" not in audit
