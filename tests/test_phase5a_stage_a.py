@@ -71,3 +71,19 @@ def test_phase5a_stage_a_audit_reports_all_failures_before_exit():
     assert "FAIL ({len(failures_found)} check(s))" in audit
     assert "return 1" in audit
     assert "raise AssertionError" not in audit
+
+
+def test_weapon_collector_preserves_post_request_persistence_failures():
+    collector = Path("bf4ps/weapon_collector.py").read_text(encoding="utf-8")
+    assert "collection_persistence_failure" in collector
+    assert "'persistence_failure'" in collector
+    assert "'stage', 'persist_weapon_success'" in collector
+    assert "_record_persistence_failure(" in collector
+    assert "raise" in collector
+
+
+def test_stage_a_audit_rejects_persistence_layer_failures():
+    audit = Path("scripts/phase5a_stage_a_audit.py").read_text(encoding="utf-8")
+    assert "event_type='collection_persistence_failure'" in audit
+    assert "no persistence-layer failure evidence" in audit
+    assert "===== PERSISTENCE FAILURES =====" in audit
