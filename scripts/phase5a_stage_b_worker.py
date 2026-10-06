@@ -82,7 +82,7 @@ def main() -> int:
         n = safety(conn, run_start_event_id=run_start_event_id)
         control = register_collector(conn, identity=identity, software_version=SOFTWARE_VERSION)
 
-    print("===== BF4PS PHASE 5A STAGE A DISTRIBUTED VEHICLE WORKER =====", flush=True)
+    print("===== BF4PS PHASE 5A STAGE B DISTRIBUTED VEHICLE WORKER =====", flush=True)
     print(
         f"host={host} collector={frozen.collector_name} egress={frozen.egress_key}\n"
         f"frozen soldiers={len(SOLDIER_IDS)} global attempt ceiling={GLOBAL_ATTEMPT_CEILING}\n"
@@ -148,7 +148,7 @@ def main() -> int:
         with engine.begin() as conn:
             stop_collector(conn, collector_uuid=frozen.collector_uuid)
 
-    print(f"PHASE 5A STAGE A WORKER STOPPED CLEANLY host={host} local_attempts={local_attempts}", flush=True)
+    print(f"PHASE 5A STAGE B WORKER STOPPED CLEANLY host={host} local_attempts={local_attempts}", flush=True)
     return 0
 
 if __name__ == "__main__":
