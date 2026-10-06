@@ -8,6 +8,7 @@ from sqlalchemy import bindparam, text
 
 from bf4ps.db import make_engine
 from bf4ps.phase5a_frozen_cohort import FROZEN_COHORT
+from phase5a_stage_a_common import current_run_start_event_id
 
 EXPECTED_DATABASE = 'bf4_playerstats_test'
 EXPECTED_REVISION = '0003_request_gates'
@@ -68,15 +69,17 @@ def main() -> int:
             check(f'soldier {soldier_id} weapons remain pristine', row['weapons_state'] == 'never_attempted', str(row['weapons_state']))
             check(f'soldier {soldier_id} vehicles remain pristine', row['vehicles_state'] == 'never_attempted', str(row['vehicles_state']))
 
+        run_start_event_id = current_run_start_event_id(conn)
         count_templates = {
             'frozen cohort has no weapon rows': 'SELECT count(*) FROM soldier_weapon_stats WHERE soldier_id IN :soldier_ids',
             'frozen cohort has no vehicle rows': 'SELECT count(*) FROM soldier_vehicle_stats WHERE soldier_id IN :soldier_ids',
             'frozen cohort has no weapon/vehicle jobs': "SELECT count(*) FROM collection_jobs WHERE soldier_id IN :soldier_ids AND resource IN ('weapons','vehicles')",
-            'frozen cohort has no weapon/vehicle events': "SELECT count(*) FROM collection_events WHERE soldier_id IN :soldier_ids AND resource IN ('weapons','vehicles')",
+            'frozen cohort has no current-run weapon/vehicle events': "SELECT count(*) FROM collection_events WHERE soldier_id IN :soldier_ids AND resource IN ('weapons','vehicles') AND event_id > :run_start_event_id",
         }
         for label, sql in count_templates.items():
             stmt = text(sql).bindparams(bindparam('soldier_ids', expanding=True))
-            count = int(conn.execute(stmt, {'soldier_ids': soldier_ids}).scalar_one())
+            params = {'soldier_ids': soldier_ids, 'run_start_event_id': run_start_event_id}
+            count = int(conn.execute(stmt, params).scalar_one())
             check(label, count == 0, str(count))
 
         collectors = conn.execute(text('''
