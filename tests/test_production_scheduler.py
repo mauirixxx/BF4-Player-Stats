@@ -96,3 +96,28 @@ def test_materializer_preserves_existing_queue_authority():
     assert "DELETE FROM collection_jobs" not in script
     assert "UPDATE collection_jobs" not in script
     assert 'RETAINED_RESOURCES = ("detailed", "weapons", "vehicles")' in script
+
+
+def test_discovery_integration_is_explicitly_opt_in():
+    discovery = Path("bf4ps/discovery.py").read_text()
+    service = Path("bf4ps/discovery_service.py").read_text()
+
+    assert "materialize_production_jobs: bool = False" in discovery
+    assert "materialize_production_jobs: bool = False" in service
+    assert '"--materialize-production-jobs"' in discovery
+    assert '"--materialize-production-jobs"' in service
+    assert "materialize_bf4sw_observation(" in discovery
+
+
+def test_discovery_materialization_occurs_before_cursor_or_watermark_advance():
+    discovery = Path("bf4ps/discovery.py").read_text()
+    materialize_at = discovery.index("materialize_bf4sw_observation(")
+    discovery_cursor_at = discovery.index(
+        "UPDATE discovery_state SET last_alias_id = :last_alias_id"
+    )
+    reconcile_watermark_at = discovery.index(
+        "UPDATE discovery_state SET last_success_at = :source_watermark"
+    )
+
+    assert materialize_at < discovery_cursor_at
+    assert materialize_at < reconcile_watermark_at
