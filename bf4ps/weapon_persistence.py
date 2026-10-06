@@ -164,12 +164,12 @@ def persist_weapon_success(
                  weapons_last_error_message, updated_at)
             VALUES
                 (:soldier_id, 'success', :source_fetched_at,
-                 :source_fetched_at, NULL, 0, NULL, NULL, now())
+                 :source_fetched_at, :source_fetched_at + interval '7 days', 0, NULL, NULL, now())
             ON CONFLICT (soldier_id) DO UPDATE
             SET weapons_state = 'success',
                 weapons_last_attempt_at = EXCLUDED.weapons_last_attempt_at,
                 weapons_last_success_at = EXCLUDED.weapons_last_success_at,
-                weapons_next_due_at = NULL,
+                weapons_next_due_at = EXCLUDED.weapons_next_due_at,
                 weapons_consecutive_failures = 0,
                 weapons_last_error_class = NULL,
                 weapons_last_error_message = NULL,
