@@ -54,6 +54,15 @@ def persist_weapon_success(
         raise ValueError("http_status must be between 100 and 599")
     _validate_weapons(weapons)
 
+    # Every successful weapon payload reconciles the same small global catalog.
+    # Serialize that shared critical section across collectors so concurrent
+    # transactions cannot acquire overlapping unique-index/catalog locks in
+    # conflicting orders. The lock is transaction-scoped and releases on
+    # commit/rollback.
+    conn.execute(
+        text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:weapon-catalog-persistence'))")
+    )
+
     ownership = conn.execute(
         text(
             """
@@ -83,7 +92,8 @@ def persist_weapon_success(
     # identity; descriptive fields follow the latest successfully normalized
     # observation while first_seen_at remains immutable.
     weapon_ids: dict[str, int] = {}
-    for weapon in weapons:
+    ordered_weapons = sorted(weapons, key=lambda item: item.weapon_guid)
+    for weapon in ordered_weapons:
         row = conn.execute(
             text(
                 """
