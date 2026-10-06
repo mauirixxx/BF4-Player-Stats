@@ -1,3 +1,4 @@
+import ast
 from pathlib import Path
 
 
@@ -21,9 +22,16 @@ def test_db_validation_is_rollback_only_and_has_no_battlelog_runtime():
     assert "tx = conn.begin()" in SCRIPT
     assert "tx.rollback()" in SCRIPT
     assert "tx.commit()" not in SCRIPT
+    tree = ast.parse(SCRIPT)
+    imported_roots = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported_roots.update(alias.name.split(".", 1)[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported_roots.add(node.module.split(".", 1)[0])
+
     assert "battlelog_" not in SCRIPT.lower()
-    assert "requests." not in SCRIPT.lower()
-    assert "httpx" not in SCRIPT.lower()
+    assert imported_roots.isdisjoint({"requests", "httpx", "urllib"})
 
 
 def test_db_validation_exercises_frozen_materialization_scenarios():
