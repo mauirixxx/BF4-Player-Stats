@@ -192,3 +192,54 @@ The final report must explicitly distinguish:
 ## Next decision
 
 After Phase 5A acceptance, use the measured request/duration/persistence amplification to choose the first sustained full-stat cohort size and safe per-resource refresh strategy. Only then should BF4PS estimate the wall-clock and bandwidth cost of completing weapon + vehicle bootstrap for the full discovered soldier database.
+
+
+## Stage A distributed run #1 — failed-run evidence (2026-10-06)
+
+The first three-collector Stage A execution is retained as a failed characterization
+run and diagnostic checkpoint. It MUST NOT be counted as Stage A acceptance even
+though the original post-run audit reported PASS.
+
+Observed behavior:
+
+- the frozen 30-job cohort was seeded cleanly with zero prior weapon/vehicle
+  persistence or events;
+- all visible Battlelog responses were HTTP 200 and no 403/429/throttle signal
+  was observed;
+- `tcou` crashed during successful-response persistence with a PostgreSQL
+  deadlock in `weapon_catalog`;
+- `kah-01` later crashed with the same deadlock signature;
+- `hnl-01` continued and the database ultimately contained 30 terminal
+  successful weapon events, one per frozen soldier;
+- the original audit therefore reported 30/30 durable successes and zero
+  failures, despite the two worker crashes.
+
+Root cause: successful weapon persistence reconciled roughly 173-174 shared
+global `weapon_catalog` identities inside each collector transaction using
+`INSERT ... ON CONFLICT DO UPDATE`. Concurrent collectors could acquire
+overlapping catalog/unique-index locks in conflicting orders, producing a
+deadlock cycle.
+
+The run also exposed an accounting defect. The HTTP request happened before the
+successful persistence transaction. When PostgreSQL aborted a deadlocked
+persistence transaction, the terminal event rolled back with it even though the
+network request had physically occurred. The durable terminal-event count could
+therefore undercount real Battlelog requests. The run produced at least two such
+unrecorded physical requests and is not valid cost-characterization evidence.
+
+Required correction before Stage A rerun:
+
+1. serialize the shared weapon-catalog persistence critical section across
+   collectors with a PostgreSQL transaction-scoped advisory lock and reconcile
+   weapon GUIDs in deterministic order;
+2. commit a `collection_attempt_started` event immediately before each physical
+   HTTP request so later persistence rollback cannot erase request evidence;
+3. make the bounded-attempt ceiling count unique durable started/terminal
+   attempts plus not-yet-started active reservations;
+4. require the Stage A audit to reconcile exactly 30 durable physical attempts
+   with exactly 30 terminal outcomes and require participation by all three
+   frozen collectors.
+
+The failed run remains useful evidence: resource normalization succeeded for all
+30 soldiers eventually and transport showed no observed throttling, while the
+distributed persistence/accounting layers failed acceptance.
