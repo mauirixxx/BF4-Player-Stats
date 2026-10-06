@@ -11,13 +11,14 @@ from bf4ps.db import make_engine
 from bf4ps.phase5a_frozen_cohort import FROZEN_COHORT
 from phase5a_stage_a_common import FROZEN_UUIDS, GLOBAL_ATTEMPT_CEILING, SOLDIER_IDS, assert_target
 
-def check(label, condition, detail=""):
-    status = "PASS" if condition else "FAIL"
-    print(f"{label:<72} {status}" + (f"  {detail}" if detail else ""))
-    if not condition:
-        raise AssertionError(f"{label}: {detail or 'condition was false'}")
-
 def main() -> int:
+    failures_found: list[str] = []
+
+    def check(label, condition, detail=""):
+        status = "PASS" if condition else "FAIL"
+        print(f"{label:<72} {status}" + (f"  {detail}" if detail else ""))
+        if not condition:
+            failures_found.append(f"{label}: {detail or 'condition was false'}")
     print("===== BF4PS PHASE 5A STAGE A POST-RUN AUDIT =====")
     print("database writes: 0")
     print("Battlelog requests: 0")
@@ -130,6 +131,11 @@ def main() -> int:
     if sizes:
         print(f"response_bytes total={sum(sizes)} mean={mean(sizes):.1f} median={median(sizes):.1f} min={min(sizes)} max={max(sizes)}")
     print(f"residual retry jobs={len(jobs)}")
+    if failures_found:
+        print(f"\nPHASE 5A STAGE A POST-RUN AUDIT: FAIL ({len(failures_found)} check(s))")
+        for failure in failures_found:
+            print(f" - {failure}")
+        return 1
     print("\nPHASE 5A STAGE A POST-RUN AUDIT: PASS")
     return 0
 
