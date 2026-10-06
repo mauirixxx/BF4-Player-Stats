@@ -33,7 +33,7 @@ def safety(conn, *, run_start_event_id: int) -> int:
         SELECT count(*) FROM collection_jobs
         WHERE lane='background'
           AND NOT (resource='weapons' AND soldier_id=ANY(:ids))
-    """), {"ids": list(SOLDIER_IDS), "run_start_event_id": run_start_event_id}).scalar_one())
+    """), {"ids": list(SOLDIER_IDS)}).scalar_one())
     bad_cohort_job = int(conn.execute(text("""
         SELECT count(*) FROM collection_jobs
         WHERE soldier_id=ANY(:ids)
@@ -53,7 +53,7 @@ def safety(conn, *, run_start_event_id: int) -> int:
           AND soldier_id=ANY(:ids)
           AND event_id > :run_start_event_id
           AND (http_status IN (403,429) OR error_class='battlelog_throttle')
-    """), {"ids": list(SOLDIER_IDS)}).scalar_one())
+    """), {"ids": list(SOLDIER_IDS), "run_start_event_id": run_start_event_id}).scalar_one())
     if foreign or bad_cohort_job or bad_owner or n > GLOBAL_ATTEMPT_CEILING or throttle:
         raise RuntimeError(
             f"Stage A safety failed foreign={foreign} bad_cohort_job={bad_cohort_job} "
