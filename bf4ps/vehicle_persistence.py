@@ -156,12 +156,12 @@ def persist_vehicle_success(
                  vehicles_last_error_message, updated_at)
             VALUES
                 (:soldier_id, 'success', :source_fetched_at,
-                 :source_fetched_at, NULL, 0, NULL, NULL, now())
+                 :source_fetched_at, :source_fetched_at + interval '7 days', 0, NULL, NULL, now())
             ON CONFLICT (soldier_id) DO UPDATE
             SET vehicles_state = 'success',
                 vehicles_last_attempt_at = EXCLUDED.vehicles_last_attempt_at,
                 vehicles_last_success_at = EXCLUDED.vehicles_last_success_at,
-                vehicles_next_due_at = NULL,
+                vehicles_next_due_at = EXCLUDED.vehicles_next_due_at,
                 vehicles_consecutive_failures = 0,
                 vehicles_last_error_class = NULL,
                 vehicles_last_error_message = NULL,
