@@ -135,6 +135,15 @@ Battlelog groups individual vehicles into categories such as Main Battle Tank. B
 
 The initial retained player-specific vehicle state is vehicle GUID, kills, and `timeIn`. `destroyXinY` is retained only if subsequent implementation work demonstrates that it is required to reproduce a supported BF4PS display; service-star, unlock/progression, suggestion, image, and other UI metadata are excluded. BF4PS does not initially retain vehicle history.
 
+### Live vehicle payload shape validation — 2026-10-06
+
+A bounded zero-write inspector made exactly one anonymous request for frozen PC soldier `jdisa35w` (persona `513446234`, platformInt `1`). Battlelog returned HTTP 200 with a measured entity body of 452,007 bytes.
+
+The response root contained `data`, `message`, and `type`. The vehicle collection is definitively `data.mainVehicleStats`, which contained exactly 82 entries. The inspected vehicle entry exposed these keys: `category`, `code`, `destroyXinY`, `guid`, `kills`, `killsDelta`, `name`, `serviceStars`, `serviceStarsProgress`, `slug`, `timeIn`, `timeInDelta`, `type`, `unlocks`, and `vehicle`.
+
+For the first entry, Battlelog supplied non-null `guid`, `name`, `slug`, `category`, integer `kills`, integer `timeIn`, and numeric `destroyXinY` (observed as JSON `0.0`). Across the 82 entries, the inspector observed nulls in `killsDelta`, `timeInDelta`, `type`, and `vehicle`; none of those fields are part of the BF4PS retention contract. This validation establishes the exact collection container for implementation and removes the need to search arbitrary nested payload structures.
+
+
 ## Battlelog profile/account reconnaissance
 
 Battlelog user profiles are available at:
