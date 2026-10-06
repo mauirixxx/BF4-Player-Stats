@@ -1,6 +1,6 @@
 # BF4PS Phase 3E lifecycle validation plan
 
-Status: **LIFECYCLE A COMPLETE — PASS; LIFECYCLE B COMPLETE — PASS**
+Status: **LIFECYCLE A COMPLETE — PASS; LIFECYCLE B COMPLETE — PASS; CLOSURE EVIDENCE IN PROGRESS**
 
 Date: 2026-10-05 UTC
 
@@ -18,6 +18,7 @@ Lifecycle A fully exercised graceful drain/rejoin behavior under a sustained 360
 
 - **Lifecycle A: COMPLETE/PASS** — graceful drain, continued drained state, explicit undrain, safe rejoin, and natural retry convergence.
 - **Lifecycle B: COMPLETE/PASS** — abrupt owner loss, lease expiration, cross-host reclamation, stale-owner fencing, and current-owner completion.
+- **Closure evidence:** drained restart/rejoin and unrelated survivor progress after abrupt loss are now live-proven; final acceptance still retains only requirements not yet backed by durable or explicit run evidence.
 
 ## Safety boundary shared by both experiments
 
@@ -250,16 +251,82 @@ The experiment demonstrated that abrupt process loss does not require a clean re
 
 The observed three-attempt sequence is intentionally preserved exactly as executed. Attempt 2 was a controlled reclaim/fencing checkpoint whose lease was allowed to expire; it is not rewritten as a terminal collection attempt after the fact.
 
+# Phase 3E closure evidence
+
+The first final-acceptance audit correctly left several requirements as `NOT PROVEN` rather than inferring them from terminal-event snapshots. Two of those gaps have since received dedicated live closure tests.
+
+## Persistent drain survives restart — PASS
+
+`hnl-01` was explicitly drained and then exercised through a restart-style registration/heartbeat/clean-stop probe under the same stable collector UUID. The probe demonstrated that:
+
+- persistent `drained=true` existed before restart;
+- stable-identity registration did not clear the drain;
+- registration remained claim-blocked;
+- heartbeat did not clear the drain and remained claim-blocked;
+- the restarted probe acquired no `current_job_id`;
+- clean stop preserved the operator drain and left no current job.
+
+The operator then explicitly undrained `hnl-01`. A dedicated rejoin probe demonstrated that registration and heartbeat preserved `drained=false`, the collector became claim-eligible again, no work was accidentally claimed by the probe, and clean stop preserved the explicit undrain.
+
+This closes both the restart-while-drained requirement and the associated persistent-control overwrite concern for the exercised registration/heartbeat/stop path.
+
+## Abrupt loss with unrelated survivor progress — PASS
+
+A separate three-job closure cohort was frozen after the candidate census identified genuinely pristine `never_attempted` PC soldiers:
+
+| Job | Soldier | Name | Role |
+|---:|---:|---|---|
+| 814 | 390 | `ObiJuanQueHuevos` | abrupt-loss victim |
+| 815 | 391 | `ASussyBaka` | survivor work |
+| 816 | 392 | `Exospax` | survivor work |
+
+`hnl-01` claimed job 814 / soldier 390 as attempt 1 with lease token `3d0cf2d7-22d1-4b4e-b9a4-b034cc048009`. The claim started at `2026-10-05 20:58:25.133293+00:00` and its test lease expired at `20:58:55.133293+00:00`. The victim performed no Battlelog request, lease renewal, clean release, or terminal finalization. The operator then terminated the victim with `Ctrl-C`.
+
+Immediately before termination, jobs 815 and 816 remained pristine pending attempt-zero jobs. The survivor harness on `kah-01` was explicitly restricted to survivor soldiers 391/392 so it could not reclaim victim job 814.
+
+### Harness checkpoint after first survivor
+
+The first survivor invocation successfully completed job 815 / soldier 391 through the production detailed collector path and appended history. The harness then stopped before job 816 because it supplied `allowed_soldier_ids=(391,392)` with `max_total_attempts=1`. The queue primitive correctly treats that ceiling as a total bounded-attempt ceiling across the supplied cohort, so event 812 consumed the single permitted attempt and the second claim returned `None`.
+
+This was a harness-bounds mistake, not a production queue or collection failure. No reset, reseed, deletion, or manual database cleanup was performed.
+
+The harness was changed to be checkpoint-aware. It recognized finalized job 815 from its exact durable success event, recognized job 816 as the only pristine pending survivor, and bounded the resumed production collector to soldier 392 alone with a one-attempt ceiling.
+
+The resumed invocation completed job 816 successfully. Final survivor evidence is:
+
+| Event | Job | Soldier | Attempt | Collector | HTTP | Result |
+|---:|---:|---:|---:|---|---:|---|
+| 812 | 815 | 391 | 1 | `phase3e-kah-01` | 200 | `collection_success` |
+| 813 | 816 | 392 | 1 | `phase3e-kah-01` | 200 | `collection_success` |
+
+Both successes reported `history_appended=True`. Both survivor queue rows finalized, both `collection_state.detailed_state` values converged to `success`, and both detailed current rows persisted.
+
+Most importantly, the harness compared the full selected queue ownership shape for victim job 814 before and after survivor collection and reported:
+
+`victim job unchanged while survivors progressed: PASS`
+
+Therefore an abrupt owner loss holding one job did not stall unrelated useful work by a surviving physical collector. The evidence also demonstrates safe resume after a harness-side interruption without discarding the first valid survivor result.
+
+## Closure evidence still not established by these probes
+
+These closure probes do **not** manufacture evidence for requirements they did not observe. In particular:
+
+- bounded feeder target depth `<= 6` throughout the endurance run still requires the previously captured time-series/run evidence to be wired into final acceptance rather than inferred from terminal events;
+- registry idle/current-job state does not by itself prove that every collector process was stopped cleanly after the experiment.
+
 # Phase 3E lifecycle validation conclusion
 
-**Both required lifecycle experiments are COMPLETE/PASS.**
+**Lifecycle A and Lifecycle B remain COMPLETE/PASS. Dedicated closure testing has additionally proven persistent drained restart/rejoin semantics and unrelated survivor progress after abrupt owner loss.**
 
-Together, Lifecycle A and Lifecycle B provide live test-database evidence for both sides of distributed collector lifecycle behavior:
+Together, the evidence now covers:
 
 - graceful administrative drain and rejoin under stable identity;
+- persistent drain surviving registration/heartbeat restart behavior;
+- explicit undrain restoring claim eligibility without silent control overwrite;
 - continued useful work by surviving collectors;
 - natural retry convergence after transient source failures;
 - abrupt owner death without graceful cleanup;
+- unrelated survivor work progressing while the victim job remains abandoned;
 - expired-lease cross-host reclamation;
 - monotonically increasing attempt ownership with lease-token rotation;
 - stale-owner fencing after reclamation;
@@ -274,4 +341,4 @@ Before writing or modifying schema-dependent code, consult `docs/database-schema
 
 ## Next step
 
-Lifecycle A and Lifecycle B no longer block Phase 3E. Return to the frozen Phase 3E parent design and identify the next still-open acceptance requirement before adding new collector behavior or expanding toward production autonomous collection.
+Rerun the Phase 3E final acceptance audit with the new closure evidence represented explicitly. Any remaining `NOT PROVEN` requirement must be closed from actual run/operator evidence rather than inferred or waived silently.
