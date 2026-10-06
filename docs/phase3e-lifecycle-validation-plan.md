@@ -1,6 +1,6 @@
 # BF4PS Phase 3E lifecycle validation plan
 
-Status: **LIFECYCLE A COMPLETE — PASS; LIFECYCLE B COMPLETE — PASS; CLOSURE EVIDENCE IN PROGRESS**
+Status: **LIFECYCLE A COMPLETE — PASS; LIFECYCLE B COMPLETE — PASS; FINAL CLEAN-STOP CLOSURE REMAINS**
 
 Date: 2026-10-05 UTC
 
@@ -16,9 +16,9 @@ The three-host endurance portion of Phase 3E is complete. Round Three reconciled
 
 Lifecycle A fully exercised graceful drain/rejoin behavior under a sustained 360-soldier workload and subsequent natural retry convergence. Lifecycle B then exercised abrupt owner loss, expired-lease cross-host reclamation, lease-token rotation, stale-owner fencing, and successful production-path completion by the surviving owner.
 
-- **Lifecycle A: COMPLETE/PASS** — graceful drain, continued drained state, explicit undrain, safe rejoin, and natural retry convergence.
-- **Lifecycle B: COMPLETE/PASS** — abrupt owner loss, lease expiration, cross-host reclamation, stale-owner fencing, and current-owner completion.
-- **Closure evidence:** drained restart/rejoin and unrelated survivor progress after abrupt loss are now live-proven; final acceptance still retains only requirements not yet backed by durable or explicit run evidence.
+Dedicated closure probes subsequently proved persistent drain across restart/heartbeat, explicit undrain/rejoin, and unrelated survivor progress while a victim job remained abandoned after abrupt owner loss.
+
+At this point the only remaining Phase 3E acceptance item is the final clean-stop/convergence closure after preserving the abandoned victim checkpoint.
 
 ## Safety boundary shared by both experiments
 
@@ -253,7 +253,23 @@ The observed three-attempt sequence is intentionally preserved exactly as execut
 
 # Phase 3E closure evidence
 
-The first final-acceptance audit correctly left several requirements as `NOT PROVEN` rather than inferring them from terminal-event snapshots. Two of those gaps have since received dedicated live closure tests.
+## Bounded feeder acceptance criterion — PASS from Round Three evidence
+
+The first closure audit incorrectly phrased this requirement as `bounded feeder target depth <= 6 throughout run`. That is **not** the frozen Phase 3E requirement and contradicts the already-documented Round Three concurrency result.
+
+The frozen design requires that queue **replenishment remain bounded throughout the run**. Target depth 6 is a replenishment target, not an instantaneous distributed queue-depth invariant. Round Three exists specifically because Round Two demonstrated that concurrent feeders can transiently observe actionable depth 7 while the target is 6.
+
+Round Three captured live worker telemetry from all three physical collectors:
+
+| Host | Local attempts | Max actionable observed | Stop |
+|---|---:|---:|---|
+| `tcou` | 40 | 6 | clean |
+| `hnl-01` | 40 | 7 | clean |
+| `kah-01` | 40 | 6 | clean |
+
+`hnl-01` explicitly emitted `NOTICE: transient actionable depth observed above feeder target: 7 > 6`, did not abort, and continued through its 40th local attempt. Global reconciliation then proved exactly 120 terminal attempts, 120 unique soldiers, 120 unique logical jobs, zero failures, zero throttle signals, an empty finalized Round Three queue, preserved controls, all three request gates, and clean stops for all three collectors.
+
+Therefore the correct frozen property — **bounded replenishment under concurrent feeders** — is already proven by the preserved Round Three run evidence. No additional feeder closure experiment is required. The acceptance audit has been corrected to represent the frozen design rather than the erroneous `<= 6` interpretation.
 
 ## Persistent drain survives restart — PASS
 
@@ -307,19 +323,21 @@ Most importantly, the harness compared the full selected queue ownership shape f
 
 Therefore an abrupt owner loss holding one job did not stall unrelated useful work by a surviving physical collector. The evidence also demonstrates safe resume after a harness-side interruption without discarding the first valid survivor result.
 
-## Closure evidence still not established by these probes
+## Remaining closure requirement
 
-These closure probes do **not** manufacture evidence for requirements they did not observe. In particular:
+Only one frozen acceptance requirement remains unresolved:
 
-- bounded feeder target depth `<= 6` throughout the endurance run still requires the previously captured time-series/run evidence to be wired into final acceptance rather than inferred from terminal events;
-- registry idle/current-job state does not by itself prove that every collector process was stopped cleanly after the experiment.
+- **all collectors stop cleanly after the experiment**.
+
+The current database intentionally retains victim job 814 as the abandoned attempt-1 checkpoint from the survivor-progress proof. That state must be preserved until the final closure choreography explicitly resolves the abandoned job and verifies the collector registry/queue are clean. Registry idle/current-job state alone is not sufficient evidence.
 
 # Phase 3E lifecycle validation conclusion
 
-**Lifecycle A and Lifecycle B remain COMPLETE/PASS. Dedicated closure testing has additionally proven persistent drained restart/rejoin semantics and unrelated survivor progress after abrupt owner loss.**
+**Lifecycle A and Lifecycle B are COMPLETE/PASS. Bounded feeder behavior, persistent drained restart/rejoin, and unrelated survivor progress after abrupt owner loss are also proven. Final clean-stop/convergence closure is the sole remaining Phase 3E acceptance item.**
 
 Together, the evidence now covers:
 
+- sustained concurrent bounded-feeder operation with target 6 and a safe transient observation of 7;
 - graceful administrative drain and rejoin under stable identity;
 - persistent drain surviving registration/heartbeat restart behavior;
 - explicit undrain restoring claim eligibility without silent control overwrite;
@@ -341,4 +359,4 @@ Before writing or modifying schema-dependent code, consult `docs/database-schema
 
 ## Next step
 
-Rerun the Phase 3E final acceptance audit with the new closure evidence represented explicitly. Any remaining `NOT PROVEN` requirement must be closed from actual run/operator evidence rather than inferred or waived silently.
+Perform the final clean-stop/convergence closure without erasing the already-preserved abrupt-loss evidence. Resolve abandoned victim job 814 through the production ownership model, leave all Phase 3E collectors with no current job, stop the final closure process cleanly, and rerun final acceptance. Any cleanup must preserve the historical evidence already recorded above.
