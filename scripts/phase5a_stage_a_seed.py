@@ -9,7 +9,7 @@ from bf4ps.db import make_engine
 from bf4ps.phase5a_frozen_cohort import FROZEN_COHORT
 from phase5a_stage_a_common import (
     GLOBAL_ATTEMPT_CEILING, JOB_REASON, PRIORITY_VALUE, SOLDIER_IDS, assert_target,
-    terminal_attempts,
+    current_run_start_event_id, terminal_attempts,
 )
 
 def main() -> int:
@@ -17,7 +17,8 @@ def main() -> int:
     engine = make_engine()
     with engine.begin() as conn:
         assert_target(conn)
-        assert terminal_attempts(conn) == 0, "cohort already has weapon attempt events"
+        run_start_event_id = current_run_start_event_id(conn)
+        assert terminal_attempts(conn, after_event_id=run_start_event_id) == 0, "current run already has weapon attempt events"
         foreign = int(conn.execute(text("""
             SELECT count(*) FROM collection_jobs
             WHERE lane='background'
