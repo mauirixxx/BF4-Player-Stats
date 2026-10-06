@@ -125,7 +125,7 @@ def main() -> int:
             identity=identity,
             request_interval_seconds=REQUEST_INTERVAL_SECONDS,
             allowed_soldier_ids=soldier_ids,
-            max_total_attempts=1,
+            max_total_attempts=cohort_size,
         )
         check(f"attempt {attempt:02d} produced one lifecycle result", result is not None, repr(result))
         lifecycle_results.append(result)
