@@ -1,6 +1,6 @@
 # Phase 5A — Full-Stats Multiplatform Cost Characterization
 
-Status: **IN PROGRESS — Stage A weapons accepted; Stage B vehicles preparing**
+Status: **COMPLETE / ACCEPTED — Stages A, B, and C passed on 2026-10-06**
 
 ## Purpose
 
@@ -393,3 +393,131 @@ The read-only acceptance audit found zero HTTP 403/429 or battlelog_throttle evi
 Stage B cost result: 30 successes / 0 failures; response bytes total 13,585,330, mean 452,844.3, median 452,550.0, minimum 449,683, maximum 457,542; request duration mean 1,210.8 ms, median 1,187.0 ms, minimum 988 ms, maximum 1,716 ms. The distributed run used normal 5-second per-egress PostgreSQL request gates and the hard 30-physical-attempt ceiling.
 
 The earlier one-soldier vehicle probe remains preserved as forensic evidence and is outside the Stage B Run #1 boundary. Stage A weapon state/data/history remained preserved through Stage B preparation and execution. With Stage A and Stage B accepted independently, Phase 5A may proceed to Stage C combined cost characterization and conclusions.
+
+
+## Stage C final cost characterization — accepted 2026-10-06
+
+The final Stage C report was read-only and issued zero Battlelog requests. It
+re-derived Stage A from durable boundary event 2299 and Stage B from durable
+boundary event 2363 rather than relying on copied run totals.
+
+### Acceptance result
+
+Both resources reconciled exactly:
+
+- weapons: 30 physical attempts, 30 terminal outcomes, 30 successes, 0 failures;
+- vehicles: 30 physical attempts, 30 terminal outcomes, 30 successes, 0 failures;
+- each resource retained the frozen 10 PC / 10 PS4 / 10 Xbox One platform split;
+- all 30 soldiers retained successful detailed, weapon, and vehicle collection state;
+- no HTTP 403/429 or Battlelog throttle evidence was observed;
+- no persistence-failure evidence was observed;
+- no residual weapon or vehicle jobs remained.
+
+Phase 5A therefore passes resource correctness, distributed persistence,
+transport behavior, durable physical-request accounting, lifecycle
+reconciliation, and observability.
+
+### Measured resource cost
+
+Weapons:
+
+- 30 measured requests;
+- 17,575,509 response bytes total;
+- 585,850.3 bytes mean, 590,158 median;
+- response range 518,987-640,772 bytes;
+- request duration mean 1,270.4 ms, median 1,211 ms;
+- duration range 981-2,271 ms;
+- 5,201 persisted soldier-weapon rows;
+- 173.4 rows per soldier mean, range 173-174.
+
+Vehicles:
+
+- 30 measured requests;
+- 13,585,330 response bytes total;
+- 452,844.3 bytes mean, 452,550 median;
+- response range 449,683-457,542 bytes;
+- request duration mean 1,210.8 ms, median 1,187 ms;
+- duration range 988-1,716 ms;
+- 2,460 persisted soldier-vehicle rows;
+- exactly 82 rows per soldier.
+
+Combined measured Phase 5A weapon + vehicle cost:
+
+- 60 physical requests for 30 completed soldiers;
+- exactly 2 measured requests per completed soldier;
+- 31,160,839 response bytes total;
+- 1,038,694.6 measured bytes per completed soldier;
+- approximately 0.991 MiB per completed soldier;
+- 7,661 current per-soldier weapon/vehicle statistic rows across the cohort,
+  or approximately 255.4 rows per soldier.
+
+The current global catalogs contain 174 weapon rows and 82 vehicle rows.
+Authoritative catalog *growth* during Phase 5A is not derivable because a
+pre-run catalog-cardinality baseline was not frozen. Current cardinality must
+not be mislabeled as Phase 5A growth.
+
+### Detailed-stat boundary
+
+The frozen cohort already had successful detailed collection before Phase 5A.
+Consequently, the measured Phase 5A traffic total contains weapons and vehicles
+only. The production retained-stat resource shape is:
+
+1. detailed;
+2. weapons;
+3. vehicles.
+
+That is structurally three resource requests per soldier for a complete
+retained-stat refresh. Phase 5A directly measured two of those three requests.
+Earlier detailed payload reconnaissance remains planning context and is not
+added to the measured 31,160,839-byte Phase 5A total.
+
+### Capacity conclusions
+
+The experiment supports a production design in which detailed, weapon, and
+vehicle collection remain independent queue resources rather than one
+monolithic full-stat operation. Weapons are the dominant measured payload,
+but vehicles are also substantial; together they consume roughly 0.991 MiB
+per successful soldier refresh before detailed traffic is counted.
+
+The successful three-egress run demonstrates that the existing
+PostgreSQL-coordinated per-egress request gates can distribute expensive
+resource work safely while retaining exact durable accounting. Phase 5A
+observed no evidence requiring a faster request cadence. The conservative
+5-second per-egress gate used by the characterization should therefore remain
+the scaling baseline until a separate experiment explicitly justifies a
+change.
+
+A full retained-stat refresh should be budgeted by resource, not treated as a
+single request: three physical requests per soldier when detailed, weapons,
+and vehicles are all due. Scheduling may stagger those resources independently
+so a soldier does not necessarily incur all three expensive operations in one
+cycle. Retry policy must likewise remain resource-specific so one temporary
+weapon or vehicle failure does not force already-successful resources to be
+re-fetched.
+
+Durable `collection_attempt_started` evidence must remain part of the
+production collector contract. Phase 5A Run #1 proved that terminal-event-only
+accounting can undercount real external requests when persistence fails after
+the HTTP side effect. Shared global catalog writes must retain deterministic
+ordering and transaction-level serialization for the same reason: correctness
+under multiple collectors is more important than maximizing write
+concurrency.
+
+### What Phase 5A does not establish
+
+Phase 5A does not establish a safe faster-than-5-second per-egress Battlelog
+rate, a complete measured byte total including detailed statistics, catalog
+growth from an empty/pre-run baseline, long-duration throttle behavior, or the
+appropriate refresh interval for the entire soldier population. It also does
+not justify collecting all three resources at identical cadence.
+
+Those are scheduling/capacity decisions for the next phase, using this
+accepted cost model as the baseline.
+
+### Phase 5A final disposition
+
+**ACCEPTED.** The frozen multiplatform cohort completed both expensive
+resources through the normal distributed lifecycle with exact durable request
+accounting and no transport or persistence failures. The measured cost model
+is sufficient to proceed to production scheduling/capacity design without
+bulk-ingesting the full BF4PS population first.
