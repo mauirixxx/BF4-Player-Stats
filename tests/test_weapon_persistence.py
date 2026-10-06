@@ -120,3 +120,7 @@ def test_weapon_persistence_serializes_shared_catalog_and_orders_guids() -> None
     assert "pg_advisory_xact_lock" in source
     assert "bf4ps:weapon-catalog-persistence" in source
     assert "sorted(weapons, key=lambda item: item.weapon_guid)" in source
+    lock_pos = source.index("pg_advisory_xact_lock")
+    ownership_pos = source.index("SELECT 1")
+    catalog_pos = source.index("INSERT INTO weapon_catalog")
+    assert lock_pos < ownership_pos < catalog_pos
