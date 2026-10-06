@@ -246,3 +246,73 @@ The next code deliverable is the **read-only production-scheduling census**.
 It must make zero database writes and zero Battlelog requests. Its output will
 be used to select candidate activity windows and cadences before scheduler code
 is written.
+
+
+## Read-only census evidence — 2026-10-06
+
+The Phase 5B scheduling census completed against `bf4_playerstats_test` at
+Alembic head `0003_request_gates`. It performed zero database writes and zero
+Battlelog requests.
+
+Population:
+
+- total soldiers: 188,364;
+- PC: 122,127;
+- PS4: 31,565;
+- Xbox One: 34,672;
+- all 188,364 currently have a `bf4sw` soldier-source row.
+
+Latest source-observation recency (this is discovery/source observation and is
+**not** asserted to be gameplay activity):
+
+- <1 hour: 3,939;
+- 1-6 hours: 7,844;
+- 6-24 hours: 13,114;
+- 1-7 days: 47,936;
+- 7-30 days: 80,558;
+- >=30 days: 34,973.
+
+Cumulative source-observed populations are therefore 3,939 within one hour,
+11,783 within six hours, 24,897 within 24 hours, 72,833 within seven days, and
+153,391 within 30 days.
+
+Collection state at census time:
+
+- detailed: 2,185 success, 1 temporary failure, 186,178 never attempted;
+- profile: 188,364 never attempted;
+- weapons: 41 success, 1 temporary failure, 188,322 never attempted;
+- vehicles: 30 success, 188,334 never attempted.
+
+The only current failure debt was one detailed normalization failure and one
+weapon normalization failure, each with one consecutive failure. The queue was
+empty.
+
+The collector registry still contains historical Phase 2/3 experimental
+collector identities and request gates in addition to the three Phase 3E
+identities. Those historical rows must not be mistaken for currently intended
+production capacity. The accepted capacity baseline remains the three Phase 3E
+egress domains unless a later design explicitly changes it.
+
+Durable request-history interpretation requires a chronology caveat. The
+census showed 1,442 detailed terminal events in the preceding 24 hours but zero
+detailed `collection_attempt_started` events. Durable pre-request markers were
+introduced later during Phase 5A hardening, so older detailed terminal history
+cannot be treated as exact physical-request accounting. Weapon/vehicle Phase 5A
+runs do have the hardened attempt-start evidence.
+
+### Immediate scale implication
+
+At three egresses and a five-second gate, the absolute theoretical aggregate
+capacity is 51,840 request slots/day. A one-time three-resource pass across all
+188,364 discovered soldiers would require 565,092 physical requests, or about
+10.9 days at that impossible-to-sustain 100-percent ceiling before retries,
+interactive traffic, safety headroom, or other workloads.
+
+Using the accepted Phase 5A weapon+vehicle mean of 1,038,694.6 bytes per
+soldier, one weapons+vehicles pass across all 188,364 soldiers would transfer
+approximately 182.2 GiB of measured response payload. Detailed traffic is not
+included in that byte figure.
+
+The census therefore supports tiered scheduling rather than uniform freshness
+across the entire discovered population. Exact tier boundaries and cadences
+remain unfrozen until the offline capacity calculator is evaluated.
