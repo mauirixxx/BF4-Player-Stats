@@ -371,3 +371,14 @@ representation for the observed payload without rounding or coercion. Vehicle
 persistence must nevertheless reject any future fractional `destroyXinY` value
 rather than silently truncate it; such a payload would require explicit schema/
 retention-contract reconciliation.
+
+
+## Stage B single-soldier persistence/lifecycle checkpoint — 2026-10-06
+
+A guarded first-write probe on tcou exercised frozen PC soldier 15 (jdisa35w, persona 513446234) through the normal vehicle queue, lease, PostgreSQL request gate, durable physical-attempt marker, strict normalizer, atomic persistence, terminal event, and queue finalization path.
+
+The probe created durable boundary event 2360 and job 2281. Exactly one physical Battlelog request completed successfully: HTTP 200, 452,019 measured response bytes, 1,260 ms duration, and 82 normalized/persisted vehicle rows. The read-only audit proved exactly one durable collection_attempt_started and exactly one reconciled terminal success, no collection_persistence_failure, vehicles_state success, 82 current soldier_vehicle_stats rows, and no residual vehicle job.
+
+The accepted Stage A weapon result was unchanged by the vehicle transaction: weapons_state success remained intact and all 173 weapon rows for soldier 15 remained present. This validates the vehicle persistence/lifecycle path in isolation before distributed Stage B.
+
+The probe is forensic evidence and remains in collection_events. Before the distributed Stage B run, only soldier 15 current vehicle rows and vehicle-prefixed collection-state fields are reset to pristine. Probe event history, the global vehicle catalog, all weapon state/data/history, detailed data, and identities remain untouched. A new durable Stage B run boundary scopes the 30-attempt distributed characterization so the probe request does not consume the Stage B attempt ceiling.
