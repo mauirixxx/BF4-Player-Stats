@@ -22,7 +22,7 @@ def main() -> int:
         print(f"{label:<72} {status}" + (f"  {detail}" if detail else ""))
         if not condition:
             failures_found.append(f"{label}: {detail or 'condition was false'}")
-    print("===== BF4PS PHASE 5A STAGE A POST-RUN AUDIT =====")
+    print("===== BF4PS PHASE 5A STAGE B POST-RUN AUDIT =====")
     print("database writes: 0")
     print("Battlelog requests: 0")
     engine = make_engine()
@@ -166,11 +166,11 @@ def main() -> int:
         print(f"response_bytes total={sum(sizes)} mean={mean(sizes):.1f} median={median(sizes):.1f} min={min(sizes)} max={max(sizes)}")
     print(f"residual retry jobs={len(jobs)}")
     if failures_found:
-        print(f"\nPHASE 5A STAGE A POST-RUN AUDIT: FAIL ({len(failures_found)} check(s))")
+        print(f"\nPHASE 5A STAGE B POST-RUN AUDIT: FAIL ({len(failures_found)} check(s))")
         for failure in failures_found:
             print(f" - {failure}")
         return 1
-    print("\nPHASE 5A STAGE A POST-RUN AUDIT: PASS")
+    print("\nPHASE 5A STAGE B POST-RUN AUDIT: PASS")
     return 0
 
 if __name__ == "__main__":
