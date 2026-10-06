@@ -352,3 +352,22 @@ No Stage B schema migration is planned. Current head `0003_request_gates`
 already provides `vehicle_catalog`, `soldier_vehicle_stats`, the `vehicles_*`
 collection-state family, generic vehicle-capable queue/event rows, and request
 gates.
+
+
+## Stage B live normalization checkpoint — 2026-10-06
+
+A bounded tcou probe made exactly one anonymous vehicle-statistics request for
+frozen PC soldier 15 (`jdisa35w`, persona 513446234) and performed zero database
+writes. Battlelog returned HTTP 200 and 452,007 measured response bytes.
+
+The strict normalizer accepted exactly 82 `data.mainVehicleStats` rows with 82
+unique vehicle GUIDs. The live payload had zero null slug rows, zero null category
+rows, zero null `destroyXinY` rows, and zero non-integral `destroyXinY` rows.
+Observed kills ranged 0-85, `timeIn` ranged 0-8,303 seconds, and the payload
+contained 27 distinct categories.
+
+This evidence validates the current schema's nullable BIGINT `destroy_x_in_y`
+representation for the observed payload without rounding or coercion. Vehicle
+persistence must nevertheless reject any future fractional `destroyXinY` value
+rather than silently truncate it; such a payload would require explicit schema/
+retention-contract reconciliation.
