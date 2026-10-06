@@ -127,6 +127,72 @@ def _record_attempt_started(
         )
 
 
+def _record_persistence_failure(
+    engine: Engine,
+    *,
+    job: ClaimedJob,
+    identity: CollectorIdentity,
+    persona_id: int,
+    platform: str,
+    duration_ms: int,
+    response_bytes: int,
+    exc: Exception,
+) -> None:
+    """Best-effort durable evidence after post-request persistence rolls back."""
+    error_class = f"{exc.__class__.__module__}.{exc.__class__.__name__}"
+    error_message = (str(exc).strip() or exc.__class__.__name__)[:2000]
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO collection_events
+                        (collector_uuid, collector_name_snapshot, hostname_snapshot,
+                         egress_key_snapshot, job_id, soldier_id, persona_id, platform,
+                         resource, lane, event_type, attempt_number, result, duration_ms,
+                         error_class, error_message, lease_token, metadata)
+                    VALUES
+                        (:collector_uuid, :collector_name, :hostname, :egress_key,
+                         :job_id, :soldier_id, :persona_id, :platform,
+                         'weapons', :lane, 'collection_persistence_failure',
+                         :attempt_number, 'persistence_failure', :duration_ms,
+                         :error_class, :error_message, :lease_token,
+                         jsonb_build_object(
+                             'response_bytes', :response_bytes,
+                             'stage', 'persist_weapon_success'
+                         ))
+                    """
+                ),
+                {
+                    "collector_uuid": job.collector_uuid,
+                    "collector_name": identity.collector_name,
+                    "hostname": identity.hostname,
+                    "egress_key": identity.egress_key,
+                    "job_id": job.job_id,
+                    "soldier_id": job.soldier_id,
+                    "persona_id": persona_id,
+                    "platform": platform,
+                    "lane": job.lane,
+                    "attempt_number": job.attempt_count,
+                    "duration_ms": duration_ms,
+                    "error_class": error_class,
+                    "error_message": error_message,
+                    "lease_token": job.lease_token,
+                    "response_bytes": response_bytes,
+                },
+            )
+    except Exception as logging_exc:
+        # Never replace the original persistence exception with an observability
+        # failure. The caller will re-raise the original exception and stdout/
+        # service logging remains the final fallback.
+        print(
+            "WARNING: failed to persist collection_persistence_failure "
+            f"job={job.job_id} original={error_class} "
+            f"logging_error={logging_exc.__class__.__name__}: {logging_exc}",
+            flush=True,
+        )
+
+
 def collect_one_weapon_job(
     engine: Engine,
     *,
@@ -207,14 +273,27 @@ def collect_one_weapon_job(
 
     duration_ms = max(0, int((monotonic() - started) * 1000))
     source_fetched_at = datetime.now(timezone.utc)
-    with engine.begin() as conn:
-        weapon_rows = persist_weapon_success(
-            conn, job=job, weapons=weapons, source_fetched_at=source_fetched_at,
-            persona_id=persona_id, platform=platform,
-            collector_name=identity.collector_name, hostname=identity.hostname,
-            egress_key=identity.egress_key, duration_ms=duration_ms,
-            response_bytes=fetched.response_bytes, http_status=200,
+    try:
+        with engine.begin() as conn:
+            weapon_rows = persist_weapon_success(
+                conn, job=job, weapons=weapons, source_fetched_at=source_fetched_at,
+                persona_id=persona_id, platform=platform,
+                collector_name=identity.collector_name, hostname=identity.hostname,
+                egress_key=identity.egress_key, duration_ms=duration_ms,
+                response_bytes=fetched.response_bytes, http_status=200,
+            )
+    except Exception as exc:
+        _record_persistence_failure(
+            engine,
+            job=job,
+            identity=identity,
+            persona_id=persona_id,
+            platform=platform,
+            duration_ms=duration_ms,
+            response_bytes=fetched.response_bytes,
+            exc=exc,
         )
+        raise
 
     return CollectedWeaponJob(
         job_id=job.job_id, soldier_id=job.soldier_id, persona_id=persona_id,
