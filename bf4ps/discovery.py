@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection
 
 from bf4ps.config import database_url
+from bf4ps.production_scheduler import materialize_bf4sw_observation
 
 SOURCE_NAME = "bf4sw"
 RECONCILE_SOURCE_NAME = "bf4sw_reconcile"
@@ -117,7 +118,12 @@ def load_reconciliation_rows(source: Connection, *, since: datetime, through: da
     return [_alias_from_mapping(row) for row in rows]
 
 
-def import_aliases(destination: Connection, aliases: list[AliasRow]) -> int:
+def import_aliases(
+    destination: Connection,
+    aliases: list[AliasRow],
+    *,
+    materialize_production_jobs: bool = False,
+) -> int:
     if not aliases:
         raise ValueError("At least one BF4SW alias is required")
     identity = {(alias.platform, alias.persona_id) for alias in aliases}
@@ -130,6 +136,17 @@ def import_aliases(destination: Connection, aliases: list[AliasRow]) -> int:
 
     earliest_seen = min(alias.first_seen for alias in aliases)
     latest_seen = max(alias.last_seen for alias in aliases)
+    existing_soldier_id = destination.execute(
+        text(
+            """
+            SELECT soldier_id
+            FROM soldiers
+            WHERE persona_id = :persona_id AND platform = :platform
+            """
+        ),
+        {"persona_id": persona_id, "platform": platform},
+    ).scalar_one_or_none()
+    newly_discovered = existing_soldier_id is None
     current_alias = max(aliases, key=lambda alias: (alias.last_seen, alias.alias_id))
     soldier_id = destination.execute(
         text(
@@ -180,6 +197,15 @@ def import_aliases(destination: Connection, aliases: list[AliasRow]) -> int:
         text("INSERT INTO collection_state (soldier_id) VALUES (:soldier_id) ON CONFLICT (soldier_id) DO NOTHING"),
         {"soldier_id": soldier_id},
     )
+    if materialize_production_jobs:
+        scheduler_now = destination.execute(text("SELECT clock_timestamp()")).scalar_one()
+        materialize_bf4sw_observation(
+            destination,
+            soldier_id=soldier_id,
+            observed_at=latest_seen,
+            as_of=scheduler_now,
+            newly_discovered=newly_discovered,
+        )
     return soldier_id
 
 
@@ -205,7 +231,13 @@ def ensure_reconciliation_state(destination: Connection) -> datetime | None:
     ).scalar_one()
 
 
-def run_discovery_batch(source: Connection, destination: Connection, *, batch_size: int) -> tuple[int, int, int, int]:
+def run_discovery_batch(
+    source: Connection,
+    destination: Connection,
+    *,
+    batch_size: int,
+    materialize_production_jobs: bool = False,
+) -> tuple[int, int, int, int]:
     if batch_size < 1:
         raise ValueError("batch_size must be at least 1")
     last_alias_id = ensure_discovery_state(destination)
@@ -223,7 +255,11 @@ def run_discovery_batch(source: Connection, destination: Connection, *, batch_si
 
     identities = sorted({(alias.platform, alias.persona_id) for alias in batch})
     for platform, persona_id in identities:
-        import_aliases(destination, load_aliases(source, persona_id=persona_id, platform=platform))
+        import_aliases(
+            destination,
+            load_aliases(source, persona_id=persona_id, platform=platform),
+            materialize_production_jobs=materialize_production_jobs,
+        )
 
     new_last_alias_id = batch[-1].alias_id
     destination.execute(
@@ -239,6 +275,7 @@ def run_reconciliation(
     *,
     initial_window_hours: int = DEFAULT_RECONCILE_WINDOW_HOURS,
     overlap_minutes: int = DEFAULT_RECONCILE_OVERLAP_MINUTES,
+    materialize_production_jobs: bool = False,
 ) -> tuple[datetime, datetime, int, int]:
     previous_success = ensure_reconciliation_state(destination)
     source_now = source.execute(text("SELECT clock_timestamp()")) .scalar_one()
@@ -258,7 +295,11 @@ def run_reconciliation(
     for alias in rows:
         grouped.setdefault((alias.platform, alias.persona_id), []).append(alias)
     for aliases in grouped.values():
-        import_aliases(destination, aliases)
+        import_aliases(
+            destination,
+            aliases,
+            materialize_production_jobs=materialize_production_jobs,
+        )
 
     destination.execute(
         text("UPDATE discovery_state SET last_success_at = :source_watermark, last_error = NULL, updated_at = now() WHERE source_name = :source_name"),
@@ -267,14 +308,25 @@ def run_reconciliation(
     return since, source_now, len(rows), len(grouped)
 
 
-def run_catch_up(source_engine, destination_engine, *, batch_size: int) -> None:
+def run_catch_up(
+    source_engine,
+    destination_engine,
+    *,
+    batch_size: int,
+    materialize_production_jobs: bool = False,
+) -> None:
     batch_number = 0
     total_alias_rows = 0
     total_identities = 0
     while True:
         with source_engine.connect() as source:
             with destination_engine.begin() as destination:
-                old_cursor, new_cursor, alias_rows, identities = run_discovery_batch(source, destination, batch_size=batch_size)
+                old_cursor, new_cursor, alias_rows, identities = run_discovery_batch(
+                    source,
+                    destination,
+                    batch_size=batch_size,
+                    materialize_production_jobs=materialize_production_jobs,
+                )
         if alias_rows == 0:
             print(f"BF4SW discovery caught up at cursor={new_cursor}: batches={batch_number} alias_rows={total_alias_rows} identity_visits={total_identities}")
             return
@@ -295,6 +347,11 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help=f"Alias rows per discovery batch (default: {DEFAULT_BATCH_SIZE}).")
     parser.add_argument("--reconcile-window-hours", type=int, default=DEFAULT_RECONCILE_WINDOW_HOURS, help=f"Initial reconciliation activity window in hours (default: {DEFAULT_RECONCILE_WINDOW_HOURS}).")
     parser.add_argument("--reconcile-overlap-minutes", type=int, default=DEFAULT_RECONCILE_OVERLAP_MINUTES, help=f"Reconciliation watermark overlap in minutes (default: {DEFAULT_RECONCILE_OVERLAP_MINUTES}).")
+    parser.add_argument(
+        "--materialize-production-jobs",
+        action="store_true",
+        help="Enable frozen Phase 5B observation-driven job materialization (default: disabled).",
+    )
     args = parser.parse_args()
 
     source_engine = create_engine(bf4sw_database_url())
@@ -305,25 +362,45 @@ def main() -> None:
         with source_engine.connect() as source:
             aliases = load_aliases(source, persona_id=args.persona_id, platform=args.platform)
         with destination_engine.begin() as destination:
-            soldier_id = import_aliases(destination, aliases)
+            soldier_id = import_aliases(
+                destination,
+                aliases,
+                materialize_production_jobs=args.materialize_production_jobs,
+            )
         current_alias = max(aliases, key=lambda alias: (alias.last_seen, alias.alias_id))
         print(f"Imported BF4SW persona_id={current_alias.persona_id} platform={current_alias.platform} aliases={len(aliases)} current_name={current_alias.player_name!r} as BF4PS soldier_id={soldier_id}")
         return
     if args.platform is not None:
         parser.error("--platform is only valid with --persona-id")
     if args.discover_until_caught_up:
-        run_catch_up(source_engine, destination_engine, batch_size=args.batch_size)
+        run_catch_up(
+            source_engine,
+            destination_engine,
+            batch_size=args.batch_size,
+            materialize_production_jobs=args.materialize_production_jobs,
+        )
         return
     if args.reconcile:
         with source_engine.connect() as source:
             with destination_engine.begin() as destination:
-                since, through, alias_rows, identities = run_reconciliation(source, destination, initial_window_hours=args.reconcile_window_hours, overlap_minutes=args.reconcile_overlap_minutes)
+                since, through, alias_rows, identities = run_reconciliation(
+                source,
+                destination,
+                initial_window_hours=args.reconcile_window_hours,
+                overlap_minutes=args.reconcile_overlap_minutes,
+                materialize_production_jobs=args.materialize_production_jobs,
+            )
         print(f"BF4SW reconciliation complete: since={since.isoformat()} through={through.isoformat()} alias_rows={alias_rows} identities={identities}")
         return
 
     with source_engine.connect() as source:
         with destination_engine.begin() as destination:
-            old_cursor, new_cursor, alias_rows, identities = run_discovery_batch(source, destination, batch_size=args.batch_size)
+            old_cursor, new_cursor, alias_rows, identities = run_discovery_batch(
+                source,
+                destination,
+                batch_size=args.batch_size,
+                materialize_production_jobs=args.materialize_production_jobs,
+            )
     print(f"BF4SW discovery batch complete: cursor={old_cursor}->{new_cursor} alias_rows={alias_rows} identities={identities}")
 
 
