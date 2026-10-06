@@ -43,3 +43,23 @@ def test_phase5a_stage_a_worker_does_not_invent_database_hostname_contract():
     assert "parsed.hostname" not in worker
     assert 'parsed.path.lstrip("/") != EXPECTED_DATABASE' in worker
     assert "assert_target(conn)" in worker
+
+
+def test_phase5a_stage_a_records_physical_attempt_before_http():
+    collector = Path("bf4ps/weapon_collector.py").read_text(encoding="utf-8")
+    assert "collection_attempt_started" in collector
+    assert collector.index("_record_attempt_started(") < collector.index("fetch_weapon_stats(")
+
+
+def test_phase5a_stage_a_bounded_claim_counts_durable_attempt_starts():
+    jobs = Path("bf4ps/collection_jobs.py").read_text(encoding="utf-8")
+    assert "collection_attempt_started" in jobs
+    assert "GROUP BY job_id, attempt_number" in jobs
+    assert "d.attempt_number = j.attempt_count" in jobs
+
+
+def test_phase5a_stage_a_audit_reconciles_physical_and_terminal_attempts():
+    audit = Path("scripts/phase5a_stage_a_audit.py").read_text(encoding="utf-8")
+    assert "exactly 30 durable physical weapon attempts exist" in audit
+    assert "every physical attempt has exactly one durable terminal outcome" in audit
+    assert "all three frozen collectors participated in physical attempts" in audit
