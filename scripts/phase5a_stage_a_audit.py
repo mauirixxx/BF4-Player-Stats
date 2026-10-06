@@ -9,7 +9,10 @@ from sqlalchemy import text
 
 from bf4ps.db import make_engine
 from bf4ps.phase5a_frozen_cohort import FROZEN_COHORT
-from phase5a_stage_a_common import FROZEN_UUIDS, GLOBAL_ATTEMPT_CEILING, SOLDIER_IDS, assert_target
+from phase5a_stage_a_common import (
+    FROZEN_UUIDS, GLOBAL_ATTEMPT_CEILING, SOLDIER_IDS, assert_target,
+    current_run_start_event_id,
+)
 
 def main() -> int:
     failures_found: list[str] = []
@@ -25,6 +28,7 @@ def main() -> int:
     engine = make_engine()
     with engine.connect() as conn:
         assert_target(conn)
+        run_start_event_id = current_run_start_event_id(conn)
         starts = conn.execute(text("""
             SELECT event_id, job_id, soldier_id, persona_id, platform, collector_uuid,
                    attempt_number, lease_token, metadata
@@ -32,8 +36,9 @@ def main() -> int:
             WHERE resource='weapons' AND lane='background'
               AND soldier_id=ANY(:ids)
               AND event_type='collection_attempt_started'
+              AND event_id > :run_start_event_id
             ORDER BY event_id
-        """), {"ids": list(SOLDIER_IDS)}).mappings().all()
+        """), {"ids": list(SOLDIER_IDS), "run_start_event_id": run_start_event_id}).mappings().all()
 
         persistence_failures = conn.execute(text("""
             SELECT event_id, job_id, soldier_id, persona_id, platform, collector_uuid,
@@ -42,8 +47,9 @@ def main() -> int:
             WHERE resource='weapons' AND lane='background'
               AND soldier_id=ANY(:ids)
               AND event_type='collection_persistence_failure'
+              AND event_id > :run_start_event_id
             ORDER BY event_id
-        """), {"ids": list(SOLDIER_IDS)}).mappings().all()
+        """), {"ids": list(SOLDIER_IDS), "run_start_event_id": run_start_event_id}).mappings().all()
 
         events = conn.execute(text("""
             SELECT event_id, job_id, soldier_id, persona_id, platform, collector_uuid,
@@ -53,8 +59,9 @@ def main() -> int:
             WHERE resource='weapons' AND lane='background'
               AND soldier_id=ANY(:ids)
               AND event_type IN ('collection_success','collection_failure')
+              AND event_id > :run_start_event_id
             ORDER BY event_id
-        """), {"ids": list(SOLDIER_IDS)}).mappings().all()
+        """), {"ids": list(SOLDIER_IDS), "run_start_event_id": run_start_event_id}).mappings().all()
 
         check("exactly 30 durable physical weapon attempts exist",
               len(starts) == GLOBAL_ATTEMPT_CEILING, str(len(starts)))
@@ -117,6 +124,7 @@ def main() -> int:
         check("failed soldiers persisted no weapon rows",
               all(int(row_counts.get(sid, 0)) == 0 for sid in failure_ids))
 
+    print(f"run boundary event_id={run_start_event_id}")
     print("\n===== PERSISTENCE FAILURES =====")
     for e in persistence_failures:
         meta = e["metadata"] or {}
