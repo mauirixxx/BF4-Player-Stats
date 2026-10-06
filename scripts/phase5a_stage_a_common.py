@@ -10,7 +10,6 @@ from bf4ps.phase5a_frozen_cohort import FROZEN_COHORT
 
 EXPECTED_DATABASE = "bf4_playerstats_test"
 EXPECTED_REVISION = "0003_request_gates"
-EXPECTED_DB_HOST = "bf4-db-primary.bf4statusbot.com"
 REQUEST_INTERVAL_SECONDS = 5.0
 LEASE_SECONDS = 120
 GLOBAL_ATTEMPT_CEILING = 30
