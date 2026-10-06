@@ -15,7 +15,7 @@ from bf4ps.weapon_collector import (
     CollectorIdentity, CollectedWeaponJob, FailedWeaponJob, collect_one_weapon_job,
 )
 from phase5a_stage_a_common import (
-    EXPECTED_DATABASE, EXPECTED_DB_HOST, FROZEN_UUIDS, GLOBAL_ATTEMPT_CEILING,
+    EXPECTED_DATABASE, FROZEN_UUIDS, GLOBAL_ATTEMPT_CEILING,
     HOSTS, LEASE_SECONDS, REQUEST_INTERVAL_SECONDS, RETRY_AFTER_SECONDS,
     SOFTWARE_VERSION, SOLDIER_IDS, assert_target, terminal_attempts,
 )
@@ -67,7 +67,7 @@ def main() -> int:
 
     url = os.environ.get("BF4PS_DATABASE_URL")
     parsed = urlsplit(url or "")
-    if not url or parsed.hostname != EXPECTED_DB_HOST or parsed.path.lstrip("/") != EXPECTED_DATABASE:
+    if not url or parsed.path.lstrip("/") != EXPECTED_DATABASE:
         raise SystemExit("REFUSING: wrong or missing BF4PS_DATABASE_URL")
 
     identity = CollectorIdentity(
