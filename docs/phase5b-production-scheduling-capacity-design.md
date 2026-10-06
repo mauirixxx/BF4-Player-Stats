@@ -579,3 +579,25 @@ implementation under step 4 is now authorized on the feature branch.
 Broad production collection remains unauthorized until implementation tests,
 bounded live validation, multi-resource endurance, and reconciliation complete
 the remaining validation sequence.
+
+
+## Step 4 implementation validation — rollback-only database exercise
+
+The first scheduler/materializer implementation slice passed the full automated
+test suite (169 tests) and a rollback-only live PostgreSQL exercise against
+`bf4_playerstats_test`, soldier 15 / PC persona 513446234 (`jdisa35w`).
+
+The database exercise verified:
+
+- a newly discovered soldier materializes detailed, weapons, and vehicles
+  bootstrap jobs exactly once;
+- replaying the same bootstrap observation is idempotent;
+- an active returning soldier materializes only independently due resources;
+- a recent (>24h) source observation creates no new refresh debt;
+- no Battlelog requests are made by the validation harness;
+- the validation transaction is rolled back, leaving zero committed database
+  writes.
+
+This validates the core Phase 5B eligibility/materialization mechanics before
+they are connected to the BF4SW discovery ingestion path. Broad production
+collection remains unauthorized.
