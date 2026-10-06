@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime, timezone
 from types import SimpleNamespace
+from pathlib import Path
 
 import pytest
 
@@ -112,3 +113,10 @@ def test_persistence_rejects_invalid_http_status_before_sql() -> None:
             response_bytes=1,
             http_status=99,
         )
+
+
+def test_weapon_persistence_serializes_shared_catalog_and_orders_guids() -> None:
+    source = Path("bf4ps/weapon_persistence.py").read_text(encoding="utf-8")
+    assert "pg_advisory_xact_lock" in source
+    assert "bf4ps:weapon-catalog-persistence" in source
+    assert "sorted(weapons, key=lambda item: item.weapon_guid)" in source
