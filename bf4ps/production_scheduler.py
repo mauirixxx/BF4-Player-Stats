@@ -26,6 +26,7 @@ def materialize_bf4sw_observation(
     *,
     soldier_id: int,
     observed_at: datetime,
+    as_of: datetime,
     newly_discovered: bool,
 ) -> MaterializeResult:
     """Materialize independently eligible work for one BF4SW observation.
@@ -41,8 +42,10 @@ def materialize_bf4sw_observation(
     """
     if soldier_id <= 0:
         raise ValueError("soldier_id must be positive")
-    if observed_at.tzinfo is None:
-        raise ValueError("observed_at must be timezone-aware")
+    if observed_at.tzinfo is None or as_of.tzinfo is None:
+        raise ValueError("observed_at and as_of must be timezone-aware")
+    if observed_at > as_of:
+        raise ValueError("observed_at cannot be later than as_of")
 
     row = conn.execute(
         text(
@@ -60,9 +63,10 @@ def materialize_bf4sw_observation(
         {"soldier_id": soldier_id},
     ).mappings().one()
 
-    # Classify relative to the observation being processed, not database wall
-    # clock, so delayed reconciliation remains deterministic.
-    source_age_seconds = max(0.0, (observed_at - row["last_seen_at"]).total_seconds())
+    # Classify the latest retained source observation against an explicit
+    # scheduler clock. This prevents delayed reconciliation of old source rows
+    # from being mistaken for current activity.
+    source_age_seconds = max(0.0, (as_of - row["last_seen_at"]).total_seconds())
     if source_age_seconds <= 24 * 60 * 60:
         source_class = "active"
     elif source_age_seconds <= 7 * 24 * 60 * 60:
