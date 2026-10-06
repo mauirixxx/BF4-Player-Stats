@@ -2,16 +2,22 @@
 """Read-only preflight for the final Phase 3E clean-stop closure."""
 from __future__ import annotations
 
+import os
+
 from sqlalchemy import create_engine, text, bindparam
 
-from phase3e_lifecycle_a_common import FROZEN_UUIDS, HOSTS, assert_target, database_url
+from phase3e_lifecycle_a_common import FROZEN_UUIDS, HOSTS, assert_target
 
 CLOSURE_JOBS = (814, 815, 816)
 CLOSURE_SOLDIERS = (390, 391, 392)
 
 
 def main() -> int:
-    engine = create_engine(database_url(), pool_pre_ping=True)
+    url = os.environ.get("BF4PS_DATABASE_URL")
+    if not url:
+        raise SystemExit("REFUSING: BF4PS_DATABASE_URL is not set")
+
+    engine = create_engine(url, pool_pre_ping=True)
     with engine.connect() as conn:
         assert_target(conn)
         collectors = conn.execute(
