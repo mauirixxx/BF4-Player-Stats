@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from uuid import UUID
 from sqlalchemy import bindparam, text
 
 from bf4ps.db import make_engine
@@ -10,7 +11,11 @@ from bf4ps.phase5a_frozen_cohort import FROZEN_COHORT
 
 EXPECTED_DATABASE = 'bf4_playerstats_test'
 EXPECTED_REVISION = '0003_request_gates'
-KNOWN_HISTORICAL_JOB_ID = 2209
+EXPECTED_COLLECTORS = {
+    'phase3e-hnl-01': (UUID('b2b3ef60-62e8-4d4a-91b0-41a2e2a3e001'), 'hnl-01', 'phase3e-hnl-01'),
+    'phase3e-kah-01': (UUID('b2b3ef60-62e8-4d4a-91b0-41a2e2a3e002'), 'kah-01', 'phase3e-kah-01'),
+    'phase3e-tcou': (UUID('b2b3ef60-62e8-4d4a-91b0-41a2e2a3e003'), 'tcou', 'phase3e-tcou'),
+}
 
 
 def check(label: str, condition: bool, detail: str = '') -> None:
@@ -74,19 +79,44 @@ def main() -> int:
             count = int(conn.execute(stmt, {'soldier_ids': soldier_ids}).scalar_one())
             check(label, count == 0, str(count))
 
-        foreign = conn.execute(text('''
-            SELECT job_id, soldier_id, resource, reason, status, attempt_count,
-                   collector_uuid, lease_token, started_at, lease_expires_at,
-                   last_error_class
+        collectors = conn.execute(text('''
+            SELECT collector_uuid, collector_name, hostname, egress_key, lane,
+                   enabled, drained, current_job_id, retired_at
+            FROM collectors
+            WHERE collector_name IN ('phase3e-hnl-01','phase3e-kah-01','phase3e-tcou')
+              AND retired_at IS NULL
+            ORDER BY collector_name
+        ''')).mappings().all()
+        check('all three frozen collectors are registered', len(collectors) == 3, str([dict(r) for r in collectors]))
+        by_name = {str(r['collector_name']): r for r in collectors}
+        check('collector names are exact', set(by_name) == set(EXPECTED_COLLECTORS), str(sorted(by_name)))
+        for name, (expected_uuid, expected_hostname, expected_egress) in EXPECTED_COLLECTORS.items():
+            row = by_name[name]
+            check(f'{name} UUID is frozen identity', row['collector_uuid'] == expected_uuid, str(row['collector_uuid']))
+            check(f'{name} hostname is exact', row['hostname'] == expected_hostname, str(row['hostname']))
+            check(f'{name} egress key is exact', row['egress_key'] == expected_egress, str(row['egress_key']))
+            check(f'{name} lane is background', row['lane'] == 'background', str(row['lane']))
+            check(f'{name} is enabled and undrained', bool(row['enabled']) and not bool(row['drained']), str(dict(row)))
+            check(f'{name} is idle', row['current_job_id'] is None, str(row['current_job_id']))
+
+        gates = conn.execute(text('''
+            SELECT egress_key, next_request_at, updated_at
+            FROM request_gates
+            WHERE egress_key IN ('phase3e-hnl-01','phase3e-kah-01','phase3e-tcou')
+            ORDER BY egress_key
+        ''')).mappings().all()
+        check('all three required request gates exist', len(gates) == 3, str([dict(r) for r in gates]))
+        check('request gate identities are exact', {str(r['egress_key']) for r in gates} == {v[2] for v in EXPECTED_COLLECTORS.values()}, str([r['egress_key'] for r in gates]))
+
+        foreign_jobs = conn.execute(text('''
+            SELECT job_id, soldier_id, resource, lane, priority_class, reason,
+                   status, attempt_count, collector_uuid, lease_token,
+                   claimed_at, started_at, lease_expires_at, last_error_class
             FROM collection_jobs
-            WHERE resource IN ('weapons','vehicles')
-              AND soldier_id NOT IN :soldier_ids
+            WHERE resource IN ('weapons','vehicles') OR lane='background'
             ORDER BY job_id
-        ''').bindparams(bindparam('soldier_ids', expanding=True)), {'soldier_ids': soldier_ids}).mappings().all()
-        check('only known historical foreign full-stats job remains', len(foreign) == 1 and int(foreign[0]['job_id']) == KNOWN_HISTORICAL_JOB_ID, str([dict(r) for r in foreign]))
-        hist = foreign[0]
-        check('historical job 2209 remains pending and unowned', hist['status'] == 'pending' and hist['collector_uuid'] is None and hist['lease_token'] is None and hist['started_at'] is None, str(dict(hist)))
-        check('historical job 2209 remains the failed single-live weapon probe', hist['resource'] == 'weapons' and hist['reason'] == 'phase5a_single_live_probe' and int(hist['attempt_count']) == 1 and hist['last_error_class'] == 'battlelog_normalization', str(dict(hist)))
+        ''')).mappings().all()
+        check('no foreign weapon/vehicle/background jobs contaminate ignition', len(foreign_jobs) == 0, str([dict(r) for r in foreign_jobs]))
 
     print('\n===== FROZEN COHORT =====')
     for platform in ('pc', 'ps4', 'xboxone'):
