@@ -1,6 +1,6 @@
 # Phase 5A — Full-Stats Multiplatform Cost Characterization
 
-Status: **DESIGN FROZEN — implementation not yet started**
+Status: **IN PROGRESS — Stage A weapons accepted; Stage B vehicles preparing**
 
 ## Purpose
 
@@ -265,3 +265,90 @@ The guarded Run #2 reset therefore:
 - appends a durable `phase5a_stage_a_run_started` boundary event for Run #2.
 
 Run #2 bounded-attempt accounting, worker safety checks, ignition, and post-run audit scope collection-event evidence to event IDs after that durable boundary. Historical Run #1 events therefore remain queryable without consuming Run #2's 30-attempt ceiling or contaminating its acceptance audit.
+
+
+## Stage A Run #2 — accepted distributed weapon characterization (2026-10-06)
+
+Run #2 preserved all failed Run #1 forensic events and used durable boundary event
+`2299` to scope the rerun. The guarded reset removed only the frozen cohort's
+current `soldier_weapon_stats` rows, reset only the weapon-prefixed collection
+state, preserved the global weapon catalog and all historical events, and issued
+zero Battlelog requests.
+
+The post-reset ignition passed with zero writes and zero Battlelog requests. The
+frozen 10 PC + 10 PS4 + 10 Xbox One identities were unchanged, all 30 detailed
+states remained successful, weapon and vehicle states were pristine, no
+per-soldier weapon/vehicle rows or jobs existed, all three frozen collectors were
+identity-correct and idle, all three request gates existed, and no current-run or
+foreign background work contaminated the experiment.
+
+Run #2 seeded jobs 2251-2280 and executed them concurrently on the three frozen
+collectors. Worker participation was:
+
+- `phase3e-hnl-01`: 8 physical attempts;
+- `phase3e-kah-01`: 8 physical attempts;
+- `phase3e-tcou`: 14 physical attempts.
+
+The final read-only audit passed every acceptance check after boundary event 2299:
+
+- durable physical attempts: 30 exactly;
+- terminal outcomes: 30 exactly;
+- start-to-terminal reconciliation: 30/30, one attempt per frozen soldier;
+- platform split: 10 PC / 10 PS4 / 10 Xbox One;
+- successes: 30; failures: 0;
+- HTTP 403/429/throttle evidence: 0;
+- `collection_persistence_failure` evidence: 0;
+- residual retry jobs: 0;
+- persisted per-soldier weapon rows: 5,201 total (173-174 per soldier);
+- measured response bytes: 17,575,509 total;
+- response bytes mean 585,850.3, median 590,158, range 518,987-640,772;
+- request duration mean 1,270.4 ms, median 1,211 ms, range 981-2,271 ms;
+- worker crashes/deadlocks: 0.
+
+Stage A Run #2 therefore passes resource correctness, distributed persistence,
+transport behavior, physical-request accounting, lifecycle reconciliation, and
+observability. The transaction-scoped advisory lock plus deterministic weapon
+GUID ordering survived the three-collector workload that deadlocked Run #1.
+
+Run #1 remains intentionally preserved as failed-run evidence. Its 30 terminal
+successes understated physical network cost because two post-request persistence
+deadlocks rolled back their terminal evidence; the run therefore made at least
+32 physical Battlelog requests. The contrast between the preserved failed run
+and accepted Run #2 is part of the Phase 5A evidence, not disposable test noise.
+
+### Stage B readiness boundary
+
+Stage B must leave the accepted Stage A weapon state and all Stage A event
+history untouched. Vehicle work uses the same frozen 30 soldiers, collectors,
+PostgreSQL request gates, queue/lease lifecycle, and hard 30-physical-attempt
+ceiling, but all Stage B accounting is scoped to a new durable Stage B run
+boundary.
+
+Before a distributed vehicle run, implementation must validate the actual
+Battlelog vehicle payload shape rather than infer it from weapon payloads or
+schema column names. The source contract confirms the anonymous
+`warsawvehiclesPopulateStats/{persona_id}/{platformInt}/stats/` endpoint, 82
+vehicle entries in representative PC/PS4/Xbox One payloads, stable vehicle GUID,
+kills, `timeIn`, `destroyXinY`, and catalog name/slug/category. Exact container
+keys and null/type behavior remain implementation evidence to verify.
+
+The first distributed vehicle collector must inherit the corrected Stage A
+observability/concurrency contract from the outset:
+
+1. commit `collection_attempt_started` immediately before the physical vehicle request;
+2. serialize the shared `vehicle_catalog` persistence critical section with a
+   transaction-scoped PostgreSQL advisory lock and deterministic vehicle-GUID order;
+3. persist catalog reconciliation, replacement `soldier_vehicle_stats`,
+   `vehicles_*` collection state, terminal event, and queue finalization atomically;
+4. after any post-request persistence rollback, append
+   `collection_persistence_failure` in a fresh transaction with vehicle-specific
+   stage/response-byte context, then re-raise the original exception;
+5. make the bounded attempt ceiling count durable physical starts within the
+   Stage B boundary and require exact 30-start/30-terminal reconciliation;
+6. stop on collector crash, foreign work, throttle evidence, schema mismatch,
+   or any payload shape that would require guessing.
+
+No Stage B schema migration is planned. Current head `0003_request_gates`
+already provides `vehicle_catalog`, `soldier_vehicle_stats`, the `vehicles_*`
+collection-state family, generic vehicle-capable queue/event rows, and request
+gates.
