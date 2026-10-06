@@ -203,6 +203,7 @@ def collect_one_weapon_job(
     retry_after_seconds: int = 300,
     allowed_soldier_ids: Sequence[int] | None = None,
     max_total_attempts: int | None = None,
+    attempts_after_event_id: int | None = None,
 ) -> CollectedWeaponJob | FailedWeaponJob | None:
     """Claim and execute at most one weapon job through the normal lifecycle."""
     if retry_after_seconds < 0:
@@ -217,6 +218,7 @@ def collect_one_weapon_job(
             lease_seconds=lease_seconds,
             allowed_soldier_ids=allowed_soldier_ids,
             max_total_attempts=max_total_attempts,
+            attempts_after_event_id=attempts_after_event_id,
         )
         if job is None:
             return None
