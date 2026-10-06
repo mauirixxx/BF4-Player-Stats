@@ -21,6 +21,37 @@ class MaterializeResult:
     created_resources: tuple[str, ...]
 
 
+def classify_source_age(*, last_seen_at: datetime, as_of: datetime) -> str:
+    if last_seen_at.tzinfo is None or as_of.tzinfo is None:
+        raise ValueError("last_seen_at and as_of must be timezone-aware")
+    if last_seen_at > as_of:
+        raise ValueError("last_seen_at cannot be later than as_of")
+    age_seconds = (as_of - last_seen_at).total_seconds()
+    if age_seconds <= 24 * 60 * 60:
+        return "active"
+    if age_seconds <= 7 * 24 * 60 * 60:
+        return "recent"
+    return "inactive"
+
+
+def resource_is_eligible(
+    *,
+    state: str,
+    next_due_at: datetime | None,
+    observed_at: datetime,
+    source_class: str,
+    newly_discovered: bool,
+) -> bool:
+    if newly_discovered:
+        return state == "never_attempted"
+    return (
+        source_class == "active"
+        and state == "success"
+        and next_due_at is not None
+        and next_due_at <= observed_at
+    )
+
+
 def materialize_bf4sw_observation(
     conn: Connection,
     *,
@@ -66,31 +97,24 @@ def materialize_bf4sw_observation(
     # Classify the latest retained source observation against an explicit
     # scheduler clock. This prevents delayed reconciliation of old source rows
     # from being mistaken for current activity.
-    source_age_seconds = max(0.0, (as_of - row["last_seen_at"]).total_seconds())
-    if source_age_seconds <= 24 * 60 * 60:
-        source_class = "active"
-    elif source_age_seconds <= 7 * 24 * 60 * 60:
-        source_class = "recent"
-    else:
-        source_class = "inactive"
+    source_class = classify_source_age(last_seen_at=row["last_seen_at"], as_of=as_of)
 
     eligible: list[tuple[str, str, str]] = []
     for resource in RETAINED_RESOURCES:
         state = row[f"{resource}_state"]
         next_due = row[f"{resource}_next_due_at"]
 
-        if newly_discovered and state == "never_attempted":
-            eligible.append((resource, "bootstrap", "bf4sw_new_soldier"))
-            continue
-
-        if (
-            not newly_discovered
-            and source_class == "active"
-            and state == "success"
-            and next_due is not None
-            and next_due <= observed_at
+        if resource_is_eligible(
+            state=state,
+            next_due_at=next_due,
+            observed_at=observed_at,
+            source_class=source_class,
+            newly_discovered=newly_discovered,
         ):
-            eligible.append((resource, "active", "bf4sw_active_refresh"))
+            if newly_discovered:
+                eligible.append((resource, "bootstrap", "bf4sw_new_soldier"))
+            else:
+                eligible.append((resource, "active", "bf4sw_active_refresh"))
 
     created: list[str] = []
     for resource, priority_class, reason in eligible:
