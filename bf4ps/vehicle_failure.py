@@ -59,7 +59,7 @@ def persist_vehicle_retry_failure(
     retry_after_seconds: int,
 ) -> None:
     """Atomically record a retryable vehicle failure and release the owned job."""
-    if job.resource != "weapons":
+    if job.resource != "vehicles":
         raise ValueError("persist_vehicle_retry_failure requires a vehicles job")
     if duration_ms < 0:
         raise ValueError("duration_ms must be non-negative")
