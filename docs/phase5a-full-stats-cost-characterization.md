@@ -238,7 +238,13 @@ Required correction before Stage A rerun:
    attempts plus not-yet-started active reservations;
 4. require the Stage A audit to reconcile exactly 30 durable physical attempts
    with exactly 30 terminal outcomes and require participation by all three
-   frozen collectors.
+   frozen collectors;
+5. after any post-request persistence exception rolls back, append a
+   `collection_persistence_failure` event in a fresh transaction and make any
+   such event fatal to Stage A acceptance. The diagnostic event must preserve
+   the original exception class/message plus job, attempt, collector, lease,
+   response-byte, and persistence-stage context without replacing the original
+   exception if diagnostic logging itself fails.
 
 The failed run remains useful evidence: resource normalization succeeded for all
 30 soldiers eventually and transport showed no observed throttling, while the
