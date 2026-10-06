@@ -16,6 +16,7 @@ from bf4ps.collection_jobs import claim_next_job, mark_job_running
 from bf4ps.detailed_failure import classify_detailed_failure, persist_detailed_retry_failure
 from bf4ps.detailed_persistence import persist_detailed_success
 from bf4ps.request_gate import reserve_request_slot
+from bf4ps.retry_policy import retry_delay_for_failure
 
 
 @dataclass(frozen=True)
@@ -73,7 +74,7 @@ def collect_one_detailed_job(
     request_interval_seconds: float,
     lease_seconds: int = 120,
     timeout_seconds: float = 15.0,
-    retry_after_seconds: int = 300,
+    retry_after_seconds: int | None = None,
     allowed_soldier_ids: Sequence[int] | None = None,
     max_total_attempts: int | None = None,
 ) -> CollectedJob | FailedJob | None:
@@ -86,7 +87,7 @@ def collect_one_detailed_job(
     future eligibility. BF4PS/database/programming exceptions still propagate:
     pretending an infrastructure failure was safely persisted would be wrong.
     """
-    if retry_after_seconds < 0:
+    if retry_after_seconds is not None and retry_after_seconds < 0:
         raise ValueError("retry_after_seconds must be non-negative")
 
     with engine.begin() as conn:
@@ -134,6 +135,16 @@ def collect_one_detailed_job(
         duration_ms = max(0, int((monotonic() - started) * 1000))
         attempted_at = datetime.now(timezone.utc)
         failure = classify_detailed_failure(exc)
+        with engine.connect() as conn:
+            effective_retry_after_seconds = (
+                retry_after_seconds
+                if retry_after_seconds is not None
+                else retry_delay_for_failure(
+                    conn,
+                    soldier_id=job.soldier_id,
+                    resource="detailed",
+                )
+            )
         with engine.begin() as conn:
             persist_detailed_retry_failure(
                 conn,
@@ -146,7 +157,7 @@ def collect_one_detailed_job(
                 hostname=identity.hostname,
                 egress_key=identity.egress_key,
                 duration_ms=duration_ms,
-                retry_after_seconds=retry_after_seconds,
+                retry_after_seconds=effective_retry_after_seconds,
             )
         return FailedJob(
             job_id=job.job_id,
@@ -155,7 +166,7 @@ def collect_one_detailed_job(
             platform=platform,
             error_class=failure.error_class,
             http_status=failure.http_status,
-            retry_after_seconds=retry_after_seconds,
+            retry_after_seconds=effective_retry_after_seconds,
             duration_ms=duration_ms,
         )
 
