@@ -17,7 +17,8 @@ from bf4ps.weapon_collector import (
 from phase5a_stage_a_common import (
     EXPECTED_DATABASE, FROZEN_UUIDS, GLOBAL_ATTEMPT_CEILING,
     HOSTS, LEASE_SECONDS, REQUEST_INTERVAL_SECONDS, RETRY_AFTER_SECONDS,
-    SOFTWARE_VERSION, SOLDIER_IDS, assert_target, terminal_attempts,
+    SOFTWARE_VERSION, SOLDIER_IDS, assert_target, current_run_start_event_id,
+    terminal_attempts,
 )
 
 STOP = False
@@ -26,13 +27,13 @@ def request_stop(*_) -> None:
     global STOP
     STOP = True
 
-def safety(conn) -> int:
+def safety(conn, *, run_start_event_id: int) -> int:
     assert_target(conn)
     foreign = int(conn.execute(text("""
         SELECT count(*) FROM collection_jobs
         WHERE lane='background'
           AND NOT (resource='weapons' AND soldier_id=ANY(:ids))
-    """), {"ids": list(SOLDIER_IDS)}).scalar_one())
+    """), {"ids": list(SOLDIER_IDS), "run_start_event_id": run_start_event_id}).scalar_one())
     bad_cohort_job = int(conn.execute(text("""
         SELECT count(*) FROM collection_jobs
         WHERE soldier_id=ANY(:ids)
@@ -45,11 +46,12 @@ def safety(conn) -> int:
           AND status IN ('claimed','running')
           AND collector_uuid <> ALL(:uuids)
     """), {"ids": list(SOLDIER_IDS), "uuids": list(FROZEN_UUIDS)}).scalar_one())
-    n = terminal_attempts(conn)
+    n = terminal_attempts(conn, after_event_id=run_start_event_id)
     throttle = int(conn.execute(text("""
         SELECT count(*) FROM collection_events
         WHERE resource='weapons' AND lane='background'
           AND soldier_id=ANY(:ids)
+          AND event_id > :run_start_event_id
           AND (http_status IN (403,429) OR error_class='battlelog_throttle')
     """), {"ids": list(SOLDIER_IDS)}).scalar_one())
     if foreign or bad_cohort_job or bad_owner or n > GLOBAL_ATTEMPT_CEILING or throttle:
@@ -76,7 +78,8 @@ def main() -> int:
     engine = create_engine(url, pool_pre_ping=True)
 
     with engine.begin() as conn:
-        n = safety(conn)
+        run_start_event_id = current_run_start_event_id(conn)
+        n = safety(conn, run_start_event_id=run_start_event_id)
         control = register_collector(conn, identity=identity, software_version=SOFTWARE_VERSION)
 
     print("===== BF4PS PHASE 5A STAGE A DISTRIBUTED WEAPON WORKER =====", flush=True)
@@ -94,7 +97,7 @@ def main() -> int:
     try:
         while not STOP:
             with engine.begin() as conn:
-                n = safety(conn)
+                n = safety(conn, run_start_event_id=run_start_event_id)
                 control = heartbeat_collector(
                     conn, collector_uuid=frozen.collector_uuid, software_version=SOFTWARE_VERSION
                 )
@@ -117,6 +120,7 @@ def main() -> int:
                 retry_after_seconds=RETRY_AFTER_SECONDS,
                 allowed_soldier_ids=SOLDIER_IDS,
                 max_total_attempts=GLOBAL_ATTEMPT_CEILING,
+                attempts_after_event_id=run_start_event_id,
             )
             if outcome is None:
                 time.sleep(0.25)
