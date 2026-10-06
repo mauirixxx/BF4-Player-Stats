@@ -1,12 +1,21 @@
+import ast
 from pathlib import Path
 
 SCRIPT = Path("scripts/phase5b_capacity_calculator.py").read_text()
 
 
 def test_capacity_calculator_has_no_database_or_network_runtime():
+    tree = ast.parse(SCRIPT)
+    imported_roots = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported_roots.update(alias.name.split(".", 1)[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported_roots.add(node.module.split(".", 1)[0])
+
     assert "make_engine" not in SCRIPT
-    assert "sqlalchemy" not in SCRIPT.lower()
-    assert "requests." not in SCRIPT.lower()
+    assert "sqlalchemy" not in imported_roots
+    assert imported_roots.isdisjoint({"requests", "httpx", "urllib"})
     assert "database access: 0" in SCRIPT
     assert "Battlelog requests: 0" in SCRIPT
 
