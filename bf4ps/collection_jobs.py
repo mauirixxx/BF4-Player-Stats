@@ -80,6 +80,7 @@ def claim_next_job(
     lease_seconds: int = 120,
     allowed_soldier_ids: Sequence[int] | None = None,
     max_total_attempts: int | None = None,
+    attempts_after_event_id: int | None = None,
 ) -> ClaimedJob | None:
     """Atomically claim one pending/expired job with optional experiment bounds.
 
@@ -98,6 +99,10 @@ def claim_next_job(
         raise ValueError("lease_seconds must be positive")
     if max_total_attempts is not None and max_total_attempts <= 0:
         raise ValueError("max_total_attempts must be positive")
+    if attempts_after_event_id is not None and attempts_after_event_id < 0:
+        raise ValueError("attempts_after_event_id must be non-negative")
+    if attempts_after_event_id is not None and max_total_attempts is None:
+        raise ValueError("attempts_after_event_id requires max_total_attempts")
 
     allowed_ids: tuple[int, ...] | None = None
     if allowed_soldier_ids is not None:
@@ -122,6 +127,10 @@ def claim_next_job(
 
     if max_total_attempts is not None:
         conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:bounded-claim'))"))
+        event_boundary_clause = ""
+        if attempts_after_event_id is not None:
+            event_boundary_clause = "AND event_id > :attempts_after_event_id"
+            params["attempts_after_event_id"] = attempts_after_event_id
         used_attempts = int(
             conn.execute(
                 text(
@@ -132,6 +141,7 @@ def claim_next_job(
                         WHERE resource = :resource
                           AND lane = :lane
                           {cohort_clause}
+                          {event_boundary_clause}
                           AND event_type IN (
                               'collection_attempt_started',
                               'collection_success',
