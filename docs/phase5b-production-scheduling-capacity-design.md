@@ -359,3 +359,78 @@ The next model must therefore work from a **request budget first**:
 6. preserve resource-specific due times and retries.
 
 No production cadence is frozen by the rejected models.
+
+
+## BF4SW source arrival/churn evidence — 2026-10-06
+
+The read-only source-arrival/churn probe completed against
+`bf4_playerstats_test` with zero database writes and zero Battlelog requests.
+
+The current schema retains `soldier_sources.first_seen_at` and the latest
+`soldier_sources.last_seen_at`; it does not retain every BF4SW observation.
+Consequently:
+
+- new-soldier arrival timing is directly measurable;
+- current latest-touch recency is directly measurable;
+- first-to-last observed lifetime is directly measurable;
+- historical touch-event volume is **not derivable** from current BF4PS state.
+
+At the measurement point there were 188,373 BF4SW-sourced soldiers.
+
+### 24-hour working-set evidence
+
+During the preceding 24 hours:
+
+- 2,430 soldiers were newly discovered;
+- 24,864 soldiers had their latest retained BF4SW observation in the window;
+- 22,434 of those were returning identities first seen before the window;
+- 2,400 of the 2,430 new arrivals had already been observed again.
+
+Thus approximately 98.8 percent of the newly discovered 24-hour cohort had
+already received a later source observation. The observed hot population is
+therefore dominated by returning identities rather than one-shot discoveries.
+
+### Seven-day evidence
+
+During the corresponding seven-day windows:
+
+- 19,955 soldiers were newly discovered;
+- 72,817 soldiers had their latest retained BF4SW observation in the window;
+- 52,862 were returning identities first seen before the window.
+
+### Observed source-lifetime shape
+
+Across all 188,373 BF4SW source rows:
+
+- exact same first/last timestamp: 2,219 (about 1.18%);
+- greater than zero but under one hour: 48,811;
+- one hour to under one day: 22,684;
+- one day to under seven days: 31,442;
+- seven to under 30 days: 50,545;
+- at least 30 days: 32,672.
+
+These spans prove repeated/extended observation timing, not the number of
+individual observations.
+
+### Capacity implication
+
+The arrival rate is materially smaller than the current recently observed
+population. At the measured 24-hour arrival count, collecting all three
+retained-stat resources exactly once for every newly discovered soldier would
+require 7,290 requests/day, about 14.1 percent of the three-egress theoretical
+51,840-request/day ceiling before retries.
+
+By contrast, refreshing all three resources once for every soldier whose
+latest source observation lies within 24 hours would require 74,592
+requests/day, already about 143.9 percent of the theoretical ceiling.
+
+Therefore Phase 5B should distinguish **arrival/bootstrap work** from
+**returning refresh work**. A source observation should not imply that all
+three resources must be fetched. Returning observations should primarily act
+as eligibility/freshness signals, with each resource independently coalesced
+against its last success / next-due state.
+
+The current database cannot reconstruct the number of source touch events that
+would have been presented to an online scheduler. If exact event-arrival rate
+or coalescing efficiency is required before production rollout, it must be
+measured prospectively rather than inferred from `last_seen_at`.
