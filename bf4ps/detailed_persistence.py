@@ -175,12 +175,12 @@ def persist_detailed_success(
                  detailed_last_error_message, updated_at)
             VALUES
                 (:soldier_id, 'success', :source_fetched_at,
-                 :source_fetched_at, NULL, 0, NULL, NULL, now())
+                 :source_fetched_at, :source_fetched_at + interval '24 hours', 0, NULL, NULL, now())
             ON CONFLICT (soldier_id) DO UPDATE
             SET detailed_state = 'success',
                 detailed_last_attempt_at = EXCLUDED.detailed_last_attempt_at,
                 detailed_last_success_at = EXCLUDED.detailed_last_success_at,
-                detailed_next_due_at = NULL,
+                detailed_next_due_at = EXCLUDED.detailed_next_due_at,
                 detailed_consecutive_failures = 0,
                 detailed_last_error_class = NULL,
                 detailed_last_error_message = NULL,
