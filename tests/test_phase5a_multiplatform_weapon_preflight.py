@@ -6,6 +6,9 @@ def test_phase5a_multiplatform_preflight_is_read_only_and_balanced():
 
     assert 'PLATFORMS = ("pc", "ps4", "xboxone")' in source
     assert "PER_PLATFORM = 10" in source
+    assert "selected cohort has no existing weapon/vehicle jobs" in source
+    assert "no existing weapon/vehicle jobs contaminate preflight" not in source
+    assert "soldier_id IN :soldier_ids" in source
     assert "enqueue_job" not in source
     assert "collect_one_weapon_job" not in source
     assert "engine.begin" not in source
