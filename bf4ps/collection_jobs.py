@@ -85,10 +85,10 @@ def claim_next_job(
 
     ``allowed_soldier_ids`` narrows claims to an explicit cohort. When
     ``max_total_attempts`` is supplied, claims are serialized with a
-    transaction-scoped advisory lock. Completed attempts are counted from the
-    durable event ledger and currently owned claimed/running jobs count as
-    reserved attempts. This remains correct after successful jobs are deleted
-    and while failures are returned to pending for retry.
+    transaction-scoped advisory lock. Durable attempt-start/terminal events
+    count unique (job_id, attempt_number) attempts, while currently owned
+    claimed/running jobs without such an event count as reserved attempts.
+    This keeps the ceiling durable even if post-request persistence rolls back.
     """
     if resource not in SUPPORTED_RESOURCES:
         raise ValueError(f"unsupported resource: {resource}")
@@ -126,19 +126,33 @@ def claim_next_job(
             conn.execute(
                 text(
                     f"""
+                    WITH durable_attempts AS (
+                        SELECT job_id, attempt_number
+                        FROM collection_events
+                        WHERE resource = :resource
+                          AND lane = :lane
+                          {cohort_clause}
+                          AND event_type IN (
+                              'collection_attempt_started',
+                              'collection_success',
+                              'collection_failure'
+                          )
+                        GROUP BY job_id, attempt_number
+                    )
                     SELECT
-                        (SELECT COUNT(*)
-                         FROM collection_events
-                         WHERE resource = :resource
-                           AND lane = :lane
-                           {cohort_clause}
-                           AND event_type IN ('collection_success', 'collection_failure'))
+                        (SELECT COUNT(*) FROM durable_attempts)
                       + (SELECT COUNT(*)
-                         FROM collection_jobs
-                         WHERE resource = :resource
-                           AND lane = :lane
+                         FROM collection_jobs AS j
+                         WHERE j.resource = :resource
+                           AND j.lane = :lane
                            {cohort_clause}
-                           AND status IN ('claimed', 'running'))
+                           AND j.status IN ('claimed', 'running')
+                           AND NOT EXISTS (
+                               SELECT 1
+                               FROM durable_attempts AS d
+                               WHERE d.job_id = j.job_id
+                                 AND d.attempt_number = j.attempt_count
+                           ))
                     """
                 ),
                 params,
