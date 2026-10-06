@@ -140,6 +140,23 @@ def _integer(value: Any, source_name: str) -> int:
     return integer
 
 
+def _nullable_counter(entry: Mapping[str, Any], key: str, source_name: str) -> int:
+    """Normalize a retained Battlelog counter that may be explicitly null.
+
+    Live payload inspection established that melee/Special weapon entries can
+    carry valid kills while Battlelog represents non-applicable headshot,
+    shot, and equipped-time counters as JSON null. Preserve strict shape
+    validation: an absent key remains a normalization failure; only an
+    explicitly supplied null is normalized to zero for BF4PS persistence.
+    """
+    if key not in entry:
+        raise WeaponStatsNormalizationError(f"{source_name}: required numeric value is missing")
+    value = entry[key]
+    if value is None:
+        return 0
+    return _integer(value, source_name)
+
+
 def _required_text(value: Any, source_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise WeaponStatsNormalizationError(f"{source_name}: required non-empty string is missing")
@@ -221,11 +238,11 @@ def normalize_weapon_stats(
                 slug=_optional_text(entry.get("slug"), f"{prefix}.slug"),
                 category=_optional_text(entry.get("category"), f"{prefix}.category"),
                 kills=_integer(entry.get("kills"), f"{prefix}.kills"),
-                headshots=_integer(entry.get("headshots"), f"{prefix}.headshots"),
-                shots_fired=_integer(entry.get("shotsFired"), f"{prefix}.shotsFired"),
-                shots_hit=_integer(entry.get("shotsHit"), f"{prefix}.shotsHit"),
-                time_equipped_seconds=_integer(
-                    entry.get("timeEquipped"), f"{prefix}.timeEquipped"
+                headshots=_nullable_counter(entry, "headshots", f"{prefix}.headshots"),
+                shots_fired=_nullable_counter(entry, "shotsFired", f"{prefix}.shotsFired"),
+                shots_hit=_nullable_counter(entry, "shotsHit", f"{prefix}.shotsHit"),
+                time_equipped_seconds=_nullable_counter(
+                    entry, "timeEquipped", f"{prefix}.timeEquipped"
                 ),
             )
         )
