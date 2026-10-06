@@ -16,11 +16,11 @@ from sqlalchemy import bindparam, text
 
 from bf4ps.db import make_engine
 from phase4c_cohort import PHASE4C_COHORT, SOLDIER_IDS
-from phase4c_common import COLLECTORS
+from phase4c_common import HOSTS
 
 EXPECTED_TOTAL = 450
 EXPECTED_PER_PLATFORM = {"pc": 150, "ps4": 150, "xboxone": 150}
-EXPECTED_COLLECTOR_NAMES = {row[1] for row in COLLECTORS}
+EXPECTED_COLLECTOR_NAMES = {host.collector_name for host in HOSTS.values()}
 
 
 def mark(label: str, ok: bool, detail: str = "") -> bool:
