@@ -35,6 +35,16 @@ def main() -> int:
             ORDER BY event_id
         """), {"ids": list(SOLDIER_IDS)}).mappings().all()
 
+        persistence_failures = conn.execute(text("""
+            SELECT event_id, job_id, soldier_id, persona_id, platform, collector_uuid,
+                   attempt_number, error_class, error_message, metadata
+            FROM collection_events
+            WHERE resource='weapons' AND lane='background'
+              AND soldier_id=ANY(:ids)
+              AND event_type='collection_persistence_failure'
+            ORDER BY event_id
+        """), {"ids": list(SOLDIER_IDS)}).mappings().all()
+
         events = conn.execute(text("""
             SELECT event_id, job_id, soldier_id, persona_id, platform, collector_uuid,
                    event_type, attempt_number, result, duration_ms, http_status,
@@ -68,6 +78,12 @@ def main() -> int:
               Counter(str(e["platform"]) for e in events) == Counter({"pc":10,"ps4":10,"xboxone":10}))
         check("no 403/429/throttle evidence",
               not any(e["http_status"] in {403,429} or e["error_class"] == "battlelog_throttle" for e in events))
+        check("no persistence-layer failure evidence",
+              not persistence_failures,
+              str([
+                  (int(e["soldier_id"]), str(e["error_class"]))
+                  for e in persistence_failures
+              ]))
 
         jobs = conn.execute(text("""
             SELECT job_id, soldier_id, status, attempt_count, last_error_class
@@ -100,6 +116,16 @@ def main() -> int:
               all(int(row_counts.get(sid, 0)) > 0 for sid in success_ids))
         check("failed soldiers persisted no weapon rows",
               all(int(row_counts.get(sid, 0)) == 0 for sid in failure_ids))
+
+    print("\n===== PERSISTENCE FAILURES =====")
+    for e in persistence_failures:
+        meta = e["metadata"] or {}
+        print(
+            f"soldier={e['soldier_id']} platform={e['platform']} "
+            f"job={e['job_id']} attempt={e['attempt_number']} "
+            f"collector={e['collector_uuid']} error={e['error_class']} "
+            f"bytes={meta.get('response_bytes')} message={e['error_message']}"
+        )
 
     print("\n===== PHYSICAL ATTEMPTS =====")
     for e in starts:
