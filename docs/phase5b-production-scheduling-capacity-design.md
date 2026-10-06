@@ -1,6 +1,6 @@
 # Phase 5B — Production Collection Scheduling and Capacity Design
 
-Status: **DRAFT DESIGN — implementation not authorized**
+Status: **DESIGN FROZEN — scheduler implementation authorized; broad production rollout is not**
 
 Date: 2026-10-06 UTC
 
@@ -434,3 +434,148 @@ The current database cannot reconstruct the number of source touch events that
 would have been presented to an online scheduler. If exact event-arrival rate
 or coalescing efficiency is required before production rollout, it must be
 measured prospectively rather than inferred from `last_seen_at`.
+
+
+## Frozen Phase 5B production scheduling policy
+
+The census, rejected fixed-tier models, and BF4SW source churn analysis provide
+enough evidence to freeze the first production scheduling policy. This policy
+replaces the earlier TBD cadence language where the two conflict.
+
+### Scheduling signal and activity windows
+
+BF4SW source observation is an **eligibility signal**, not an unconditional
+request instruction.
+
+For scheduling classification:
+
+- **active**: latest BF4SW source observation is within 24 hours;
+- **recent**: latest BF4SW source observation is older than 24 hours but within
+  seven days;
+- **inactive**: latest BF4SW source observation is older than seven days.
+
+These classifications describe source observation, not proven gameplay
+activity.
+
+### New-soldier bootstrap
+
+A newly discovered BF4SW soldier is eligible for one initial collection of
+each retained-stat resource:
+
+- detailed;
+- weapons;
+- vehicles.
+
+These are three independent resource jobs, not an atomic bundle. Failure or
+delay of one resource must not invalidate or re-fetch successful siblings.
+
+Bootstrap is bounded by normal background scheduling capacity. Discovery must
+never bypass the queue or request gate merely to complete initial collection.
+
+### Returning-soldier freshness
+
+A subsequent BF4SW observation may make stale resources eligible according to
+their independent freshness:
+
+| Source class | detailed | weapons | vehicles |
+|---|---|---|---|
+| active (<=24h) | 24 hours | 7 days | 7 days |
+| recent (>24h to <=7d) | no observation-triggered refresh unless already due from an active period | no observation-triggered refresh unless already due | no observation-triggered refresh unless already due |
+| inactive (>7d) | no recurring background refresh | no recurring background refresh | no recurring background refresh |
+
+An observation received while a resource remains fresh produces no new
+Battlelog request for that resource.
+
+The scheduler must use the existing per-resource collection-state/due-time
+fields. It must not infer sibling-resource freshness and must not create a
+mandatory three-resource refresh bundle.
+
+The conservative treatment of the recent class is intentional for the initial
+production policy: recent/inactive identities remain known and queryable, but
+source observation alone does not continuously create background refresh debt.
+A later evidence-backed policy may broaden recent-class refresh behavior.
+
+### Background capacity and headroom
+
+The five-second per-egress request gate remains unchanged.
+
+Normal automatically generated background work is budgeted to **no more than
+60 percent of the three-egress theoretical capacity**, equivalent to:
+
+- 31,104 request slots/day;
+- 1,296 request slots/hour aggregate.
+
+This is an admission/service budget, not a faster request rate. The remaining
+40 percent is headroom for interactive work, retries, recovery/maintenance,
+traffic variation, and shared-egress uncertainty.
+
+If eligible background demand exceeds the budget, work waits; the scheduler
+does not increase request rate or relax freshness rules to catch up.
+
+### Priority and fairness
+
+The existing priority classes remain authoritative:
+
+1. interactive;
+2. active;
+3. recent;
+4. bootstrap.
+
+Interactive work retains strict precedence over background work.
+
+Within automatic background service, starvation is bounded by reserving the
+60-percent background budget as follows:
+
+- up to 75 percent of background service for active work;
+- at least 20 percent available to bootstrap work when bootstrap work is
+  pending;
+- at least 5 percent available to retry/recovery or otherwise eligible
+  lower-priority background work when such work is pending.
+
+Unused reserved capacity may be borrowed by other eligible background classes;
+the reservation is a starvation floor when competing work exists, not a reason
+to leave request slots idle.
+
+Implementation may express these shares with service counters/token buckets or
+an equivalent single-authority mechanism, but must continue to materialize and
+claim work through the existing collection queue.
+
+### Retry policy
+
+Retries remain resource-specific.
+
+For the initial production scheduler:
+
+- first temporary failure: retry no sooner than 15 minutes;
+- second consecutive temporary failure: retry no sooner than 1 hour;
+- third: retry no sooner than 6 hours;
+- fourth and later: retry no sooner than 24 hours;
+- a successful collection resets that resource's consecutive-failure backoff.
+
+An unavailable resource does not enter the temporary-failure retry loop.
+Interactive/manual behavior for unavailable resources remains a separate
+policy concern.
+
+Retry work counts against background service capacity unless the originating
+job is explicitly interactive.
+
+### Explicit non-goals of this freeze
+
+This freeze does not:
+
+- authorize faster than five seconds per egress;
+- authorize an unbounded historical bootstrap of all discovered soldiers;
+- authorize broad production rollout before the validation sequence;
+- define PostgreSQL storage sizing or retention-growth policy;
+- treat Battlelog response bytes as database storage growth;
+- add a second scheduling authority;
+- claim source observation is proof of gameplay activity.
+
+### Implementation authorization
+
+Phase 5B validation steps 1 through 3 are complete. Scheduler/materializer
+implementation under step 4 is now authorized on the feature branch.
+
+Broad production collection remains unauthorized until implementation tests,
+bounded live validation, multi-resource endurance, and reconciliation complete
+the remaining validation sequence.
