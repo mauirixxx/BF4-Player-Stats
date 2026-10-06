@@ -382,3 +382,14 @@ The probe created durable boundary event 2360 and job 2281. Exactly one physical
 The accepted Stage A weapon result was unchanged by the vehicle transaction: weapons_state success remained intact and all 173 weapon rows for soldier 15 remained present. This validates the vehicle persistence/lifecycle path in isolation before distributed Stage B.
 
 The probe is forensic evidence and remains in collection_events. Before the distributed Stage B run, only soldier 15 current vehicle rows and vehicle-prefixed collection-state fields are reset to pristine. Probe event history, the global vehicle catalog, all weapon state/data/history, detailed data, and identities remain untouched. A new durable Stage B run boundary scopes the 30-attempt distributed characterization so the probe request does not consume the Stage B attempt ceiling.
+
+
+## Stage B distributed vehicle characterization — accepted 2026-10-06
+
+Stage B Run #1 used durable run boundary event 2363 and the frozen 30-soldier cohort (10 PC, 10 PS4, 10 Xbox One) across tcou, hnl-01, and kah-01. The run produced exactly 30 durable physical vehicle-attempt markers and exactly 30 terminal outcomes, with exactly one physical and terminal attempt per frozen soldier. All 30 outcomes were HTTP 200 successes. Physical-attempt participation was distributed across all three frozen collectors: tcou completed 13, hnl-01 completed 9, and kah-01 completed 8.
+
+The read-only acceptance audit found zero HTTP 403/429 or battlelog_throttle evidence, zero collection_persistence_failure evidence, zero first-attempt failures, and zero residual retry jobs. Every successful soldier persisted vehicle rows; every response normalized to 82 vehicle rows. Stage B therefore passes resource correctness, distributed persistence, transport behavior, physical-request accounting, lifecycle reconciliation, and observability acceptance.
+
+Stage B cost result: 30 successes / 0 failures; response bytes total 13,585,330, mean 452,844.3, median 452,550.0, minimum 449,683, maximum 457,542; request duration mean 1,210.8 ms, median 1,187.0 ms, minimum 988 ms, maximum 1,716 ms. The distributed run used normal 5-second per-egress PostgreSQL request gates and the hard 30-physical-attempt ceiling.
+
+The earlier one-soldier vehicle probe remains preserved as forensic evidence and is outside the Stage B Run #1 boundary. Stage A weapon state/data/history remained preserved through Stage B preparation and execution. With Stage A and Stage B accepted independently, Phase 5A may proceed to Stage C combined cost characterization and conclusions.
