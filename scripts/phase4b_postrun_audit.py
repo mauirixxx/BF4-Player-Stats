@@ -119,7 +119,13 @@ def main() -> int:
     exact_registry = len(collector_rows) == 3
     for row in collector_rows:
         frozen = HOSTS.get(str(row["hostname"]))
-        exact_registry = exact_registry and frozen is not None and str(row["collector_uuid"]) == frozen.collector_uuid and row["collector_name"] == frozen.collector_name and row["egress_key"] == frozen.egress_key
+        exact_registry = (
+            exact_registry
+            and frozen is not None
+            and row["collector_uuid"] == frozen.collector_uuid
+            and row["collector_name"] == frozen.collector_name
+            and row["egress_key"] == frozen.egress_key
+        )
 
     print("===== BF4PS PHASE 4B 900-PLAYER POST-RUN ACCEPTANCE AUDIT =====")
     print("mode=read-only database reconciliation")
