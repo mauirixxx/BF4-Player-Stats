@@ -40,8 +40,19 @@ def release_service_lock(connection) -> None:
     )
 
 
-def run_discovery_cycle(source_engine, destination_engine, *, batch_size: int) -> None:
-    run_catch_up(source_engine, destination_engine, batch_size=batch_size)
+def run_discovery_cycle(
+    source_engine,
+    destination_engine,
+    *,
+    batch_size: int,
+    materialize_production_jobs: bool = False,
+) -> None:
+    run_catch_up(
+        source_engine,
+        destination_engine,
+        batch_size=batch_size,
+        materialize_production_jobs=materialize_production_jobs,
+    )
 
 
 def run_reconciliation_cycle(
@@ -50,6 +61,7 @@ def run_reconciliation_cycle(
     *,
     initial_window_hours: int,
     overlap_minutes: int,
+    materialize_production_jobs: bool = False,
 ) -> None:
     with source_engine.connect() as source:
         with destination_engine.begin() as destination:
@@ -58,6 +70,7 @@ def run_reconciliation_cycle(
                 destination,
                 initial_window_hours=initial_window_hours,
                 overlap_minutes=overlap_minutes,
+                materialize_production_jobs=materialize_production_jobs,
             )
     LOGGER.info(
         "BF4SW reconciliation complete: since=%s through=%s alias_rows=%d identities=%d",
@@ -111,6 +124,7 @@ def run_service(
     reconcile_interval_seconds: int = DEFAULT_RECONCILE_INTERVAL_SECONDS,
     initial_window_hours: int = DEFAULT_RECONCILE_WINDOW_HOURS,
     overlap_minutes: int = DEFAULT_RECONCILE_OVERLAP_MINUTES,
+    materialize_production_jobs: bool = False,
 ) -> int:
     if discovery_interval_seconds < 1:
         raise ValueError("discovery_interval_seconds must be at least 1")
@@ -142,7 +156,12 @@ def run_service(
         # isolated so a temporary failure in one does not prevent the other
         # from running or advance the failed operation's durable state.
         try:
-            run_discovery_cycle(source_engine, destination_engine, batch_size=batch_size)
+            run_discovery_cycle(
+                source_engine,
+                destination_engine,
+                batch_size=batch_size,
+                materialize_production_jobs=materialize_production_jobs,
+            )
         except Exception as exc:
             discovery_failures.failed(exc)
         else:
@@ -154,6 +173,7 @@ def run_service(
                 destination_engine,
                 initial_window_hours=initial_window_hours,
                 overlap_minutes=overlap_minutes,
+                materialize_production_jobs=materialize_production_jobs,
             )
         except Exception as exc:
             reconciliation_failures.failed(exc)
@@ -215,6 +235,11 @@ def main() -> None:
     parser.add_argument("--reconcile-window-hours", type=int, default=DEFAULT_RECONCILE_WINDOW_HOURS)
     parser.add_argument("--reconcile-overlap-minutes", type=int, default=DEFAULT_RECONCILE_OVERLAP_MINUTES)
     parser.add_argument("--log-level", default="INFO", choices=("DEBUG", "INFO", "WARNING", "ERROR"))
+    parser.add_argument(
+        "--materialize-production-jobs",
+        action="store_true",
+        help="Enable frozen Phase 5B observation-driven job materialization (default: disabled).",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -233,6 +258,7 @@ def main() -> None:
             reconcile_interval_seconds=args.reconcile_interval_seconds,
             initial_window_hours=args.reconcile_window_hours,
             overlap_minutes=args.reconcile_overlap_minutes,
+            materialize_production_jobs=args.materialize_production_jobs,
         )
     )
 
