@@ -60,6 +60,73 @@ def _soldier_identity(engine: Engine, soldier_id: int) -> tuple[int, str]:
     return int(row.persona_id), str(row.platform)
 
 
+def _record_attempt_started(
+    engine: Engine,
+    *,
+    job: ClaimedJob,
+    identity: CollectorIdentity,
+    persona_id: int,
+    platform: str,
+) -> None:
+    """Durably record the physical outbound attempt before issuing HTTP."""
+    with engine.begin() as conn:
+        owned = conn.execute(
+            text(
+                """
+                SELECT 1
+                FROM collection_jobs
+                WHERE job_id = :job_id
+                  AND soldier_id = :soldier_id
+                  AND resource = 'weapons'
+                  AND status = 'running'
+                  AND collector_uuid = :collector_uuid
+                  AND lease_token = :lease_token
+                  AND lease_expires_at > now()
+                FOR UPDATE
+                """
+            ),
+            {
+                "job_id": job.job_id,
+                "soldier_id": job.soldier_id,
+                "collector_uuid": job.collector_uuid,
+                "lease_token": job.lease_token,
+            },
+        ).one_or_none()
+        if owned is None:
+            raise RuntimeError("weapon attempt start rejected: job lease is no longer owned")
+
+        conn.execute(
+            text(
+                """
+                INSERT INTO collection_events
+                    (collector_uuid, collector_name_snapshot, hostname_snapshot,
+                     egress_key_snapshot, job_id, soldier_id, persona_id, platform,
+                     resource, lane, event_type, attempt_number, lease_token,
+                     metadata)
+                VALUES
+                    (:collector_uuid, :collector_name, :hostname, :egress_key,
+                     :job_id, :soldier_id, :persona_id, :platform,
+                     'weapons', :lane, 'collection_attempt_started',
+                     :attempt_number, :lease_token,
+                     jsonb_build_object('physical_request', true))
+                """
+            ),
+            {
+                "collector_uuid": job.collector_uuid,
+                "collector_name": identity.collector_name,
+                "hostname": identity.hostname,
+                "egress_key": identity.egress_key,
+                "job_id": job.job_id,
+                "soldier_id": job.soldier_id,
+                "persona_id": persona_id,
+                "platform": platform,
+                "lane": job.lane,
+                "attempt_number": job.attempt_count,
+                "lease_token": job.lease_token,
+            },
+        )
+
+
 def collect_one_weapon_job(
     engine: Engine,
     *,
@@ -100,6 +167,16 @@ def collect_one_weapon_job(
         )
     if permit.wait_seconds > 0:
         sleep(permit.wait_seconds)
+
+    # Commit physical-attempt evidence before the HTTP request. A later
+    # normalization/persistence rollback must never make network cost disappear.
+    _record_attempt_started(
+        engine,
+        job=job,
+        identity=identity,
+        persona_id=persona_id,
+        platform=platform,
+    )
 
     started = monotonic()
     try:
