@@ -33,3 +33,13 @@ def test_phase5a_stage_a_audit_is_read_only():
     assert "INSERT INTO" not in upper
     assert "UPDATE COLLECTION" not in upper
     assert "DELETE FROM" not in upper
+
+
+def test_phase5a_stage_a_worker_does_not_invent_database_hostname_contract():
+    common = Path("scripts/phase5a_stage_a_common.py").read_text(encoding="utf-8")
+    worker = Path("scripts/phase5a_stage_a_worker.py").read_text(encoding="utf-8")
+    assert "EXPECTED_DB_HOST" not in common
+    assert "EXPECTED_DB_HOST" not in worker
+    assert "parsed.hostname" not in worker
+    assert 'parsed.path.lstrip("/") != EXPECTED_DATABASE' in worker
+    assert "assert_target(conn)" in worker
