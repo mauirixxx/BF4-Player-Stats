@@ -88,6 +88,32 @@ Produce a final read-only report combining both stages. The report must quantify
 
 The report may use the reconnaissance payload sizes as clearly labeled planning context, but they are not measured Phase 5A traffic.
 
+## Live weapon characterization checkpoint — 2026-10-06
+
+Before the frozen 10/10/10 multiplatform cohort, Phase 5A used a deliberately smaller PC-only weapon checkpoint to validate real collector cost and lifecycle behavior.
+
+The initial single-soldier probe succeeded with one Battlelog request, HTTP 200, 568,544 measured response bytes, 174 persisted weapon rows, and 1,405 ms request duration.
+
+A subsequent 10-soldier PC cohort completed successfully after an intentionally preserved interrupted run. The first cohort invocation completed soldier 5 and then stopped before request two because the harness incorrectly supplied `max_total_attempts=1`. The queue's durable cohort-wide attempt ceiling therefore prevented a second claim exactly as designed. Jobs 2212-2220 remained pending, unowned, and at attempt count zero; their soldiers remained `weapons_state='never_attempted'`; and no weapon rows or attempt events were created for them. A bounded resume harness then completed exactly those nine preserved jobs.
+
+Final 10-soldier evidence:
+
+- successful requests: 10/10, all HTTP 200;
+- total measured response bytes: 5,751,737 bytes (~5.49 MiB);
+- mean response size: 575,174 bytes;
+- median response size: 579,241 bytes;
+- response-size range: 521,047-593,678 bytes;
+- mean request duration: 1,480 ms;
+- median request duration: 1,358 ms;
+- duration range: 1,278-2,179 ms;
+- persisted weapon rows: 173-174 per soldier, mean 173.3;
+- temporary/HTTP failures: 0;
+- no progressive latency increase was evident across the sequence at the 5-second PostgreSQL request-gate interval.
+
+The reusable cohort harness must pass the requested cohort size as the durable `max_total_attempts` ceiling. A ceiling of one is valid only for a true single-attempt probe; it is not a per-call limit when the claim implementation counts durable completed cohort events.
+
+This checkpoint validates PC weapon collection and provides measured cost evidence, but it does not replace the frozen 30-soldier 10/10/10 multiplatform Phase 5A acceptance cohort defined below.
+
 ## Request pacing
 
 Phase 5A must use the existing PostgreSQL-coordinated `request_gates` mechanism and the three established collector egress identities. It must not add a special fast path or bypass the gate because the purpose is to measure realistic production behavior.
