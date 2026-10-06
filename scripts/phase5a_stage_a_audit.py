@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 from bf4ps.db import make_engine
 from bf4ps.phase5a_frozen_cohort import FROZEN_COHORT
-from phase5a_stage_a_common import GLOBAL_ATTEMPT_CEILING, SOLDIER_IDS, assert_target
+from phase5a_stage_a_common import FROZEN_UUIDS, GLOBAL_ATTEMPT_CEILING, SOLDIER_IDS, assert_target
 
 def check(label, condition, detail=""):
     status = "PASS" if condition else "FAIL"
@@ -24,6 +24,16 @@ def main() -> int:
     engine = make_engine()
     with engine.connect() as conn:
         assert_target(conn)
+        starts = conn.execute(text("""
+            SELECT event_id, job_id, soldier_id, persona_id, platform, collector_uuid,
+                   attempt_number, lease_token, metadata
+            FROM collection_events
+            WHERE resource='weapons' AND lane='background'
+              AND soldier_id=ANY(:ids)
+              AND event_type='collection_attempt_started'
+            ORDER BY event_id
+        """), {"ids": list(SOLDIER_IDS)}).mappings().all()
+
         events = conn.execute(text("""
             SELECT event_id, job_id, soldier_id, persona_id, platform, collector_uuid,
                    event_type, attempt_number, result, duration_ms, http_status,
@@ -35,10 +45,24 @@ def main() -> int:
             ORDER BY event_id
         """), {"ids": list(SOLDIER_IDS)}).mappings().all()
 
+        check("exactly 30 durable physical weapon attempts exist",
+              len(starts) == GLOBAL_ATTEMPT_CEILING, str(len(starts)))
+        start_counts = Counter(int(e["soldier_id"]) for e in starts)
+        check("exactly one physical attempt exists per frozen soldier",
+              set(start_counts) == set(SOLDIER_IDS) and all(v == 1 for v in start_counts.values()),
+              str(dict(start_counts)))
+        check("all three frozen collectors participated in physical attempts",
+              {e["collector_uuid"] for e in starts} == set(FROZEN_UUIDS),
+              str(sorted(str(e["collector_uuid"]) for e in starts)))
         check("exactly 30 terminal weapon attempt events exist", len(events) == GLOBAL_ATTEMPT_CEILING, str(len(events)))
         counts = Counter(int(e["soldier_id"]) for e in events)
         check("exactly one terminal event exists per frozen soldier",
               set(counts) == set(SOLDIER_IDS) and all(v == 1 for v in counts.values()), str(dict(counts)))
+        start_keys = {(int(e["job_id"]), int(e["attempt_number"])) for e in starts}
+        terminal_keys = {(int(e["job_id"]), int(e["attempt_number"])) for e in events}
+        check("every physical attempt has exactly one durable terminal outcome",
+              start_keys == terminal_keys,
+              f"starts={len(start_keys)} terminals={len(terminal_keys)}")
         check("event platform split is exactly 10/10/10",
               Counter(str(e["platform"]) for e in events) == Counter({"pc":10,"ps4":10,"xboxone":10}))
         check("no 403/429/throttle evidence",
@@ -75,6 +99,14 @@ def main() -> int:
               all(int(row_counts.get(sid, 0)) > 0 for sid in success_ids))
         check("failed soldiers persisted no weapon rows",
               all(int(row_counts.get(sid, 0)) == 0 for sid in failure_ids))
+
+    print("\n===== PHYSICAL ATTEMPTS =====")
+    for e in starts:
+        print(
+            f"soldier={e['soldier_id']} platform={e['platform']} "
+            f"job={e['job_id']} attempt={e['attempt_number']} "
+            f"collector={e['collector_uuid']}"
+        )
 
     print("\n===== EVENTS =====")
     for e in events:
