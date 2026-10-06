@@ -249,3 +249,19 @@ Required correction before Stage A rerun:
 The failed run remains useful evidence: resource normalization succeeded for all
 30 soldiers eventually and transport showed no observed throttling, while the
 distributed persistence/accounting layers failed acceptance.
+
+
+## Stage A Run #2 reset and evidence boundary
+
+Run #1 remains preserved in `collection_events` as failed-run forensic evidence. Preparing Run #2 must not delete or rewrite that ledger history merely to make the experiment harness pristine.
+
+The guarded Run #2 reset therefore:
+
+- requires the exact frozen test database/revision and the expected completed Run #1 shape;
+- requires no contaminating background/weapon/vehicle jobs and idle frozen collectors;
+- removes only the frozen cohort's current `soldier_weapon_stats` rows;
+- resets only the weapon-prefixed `collection_state` fields to the documented pristine state;
+- leaves soldier identity, detailed statistics, vehicle state/data, the global weapon catalog, and all historical collection events intact;
+- appends a durable `phase5a_stage_a_run_started` boundary event for Run #2.
+
+Run #2 bounded-attempt accounting, worker safety checks, ignition, and post-run audit scope collection-event evidence to event IDs after that durable boundary. Historical Run #1 events therefore remain queryable without consuming Run #2's 30-attempt ceiling or contaminating its acceptance audit.
