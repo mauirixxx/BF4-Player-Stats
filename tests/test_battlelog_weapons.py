@@ -77,6 +77,30 @@ def test_normalizer_accepts_inner_data_fixture() -> None:
     assert result[0].weapon_guid == "AEK-GUID"
 
 
+def test_normalizer_accepts_explicit_null_non_applicable_melee_counters() -> None:
+    payload = _payload()
+    payload["data"]["mainWeaponStats"][0] = {
+        "guid": "DB4E0973-32D1-4A9A-B598-EA0743E76B67",
+        "slug": "knife-bowie",
+        "name": "WARSAW_ID_P_INAME_BPKNIFE6",
+        "category": "Special",
+        "kills": 2078,
+        "headshots": None,
+        "shotsFired": None,
+        "shotsHit": None,
+        "timeEquipped": None,
+    }
+
+    result = normalize_weapon_stats(payload)
+    assert len(result) == 1
+    weapon = result[0]
+    assert weapon.kills == 2078
+    assert weapon.headshots == 0
+    assert weapon.shots_fired == 0
+    assert weapon.shots_hit == 0
+    assert weapon.time_equipped_seconds == 0
+
+
 def test_normalizer_rejects_missing_weapon_collection() -> None:
     payload = _payload()
     del payload["data"]["mainWeaponStats"]
