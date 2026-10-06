@@ -14,6 +14,7 @@ from sqlalchemy.engine import Engine
 from bf4ps.battlelog_vehicles import VehicleStatsError, fetch_vehicle_stats, normalize_vehicle_stats
 from bf4ps.collection_jobs import claim_next_job, mark_job_running
 from bf4ps.request_gate import reserve_request_slot
+from bf4ps.retry_policy import retry_delay_for_failure
 from bf4ps.vehicle_failure import classify_vehicle_failure, persist_vehicle_retry_failure
 from bf4ps.vehicle_persistence import persist_vehicle_success
 
@@ -200,13 +201,13 @@ def collect_one_vehicle_job(
     request_interval_seconds: float,
     lease_seconds: int = 120,
     timeout_seconds: float = 30.0,
-    retry_after_seconds: int = 300,
+    retry_after_seconds: int | None = None,
     allowed_soldier_ids: Sequence[int] | None = None,
     max_total_attempts: int | None = None,
     attempts_after_event_id: int | None = None,
 ) -> CollectedVehicleJob | FailedVehicleJob | None:
     """Claim and execute at most one vehicle job through the normal lifecycle."""
-    if retry_after_seconds < 0:
+    if retry_after_seconds is not None and retry_after_seconds < 0:
         raise ValueError("retry_after_seconds must be non-negative")
 
     with engine.begin() as conn:
@@ -258,18 +259,28 @@ def collect_one_vehicle_job(
         duration_ms = max(0, int((monotonic() - started) * 1000))
         attempted_at = datetime.now(timezone.utc)
         failure = classify_vehicle_failure(exc)
+        with engine.connect() as conn:
+            effective_retry_after_seconds = (
+                retry_after_seconds
+                if retry_after_seconds is not None
+                else retry_delay_for_failure(
+                    conn,
+                    soldier_id=job.soldier_id,
+                    resource="vehicles",
+                )
+            )
         with engine.begin() as conn:
             persist_vehicle_retry_failure(
                 conn, job=job, failure=failure, attempted_at=attempted_at,
                 persona_id=persona_id, platform=platform,
                 collector_name=identity.collector_name, hostname=identity.hostname,
                 egress_key=identity.egress_key, duration_ms=duration_ms,
-                retry_after_seconds=retry_after_seconds,
+                retry_after_seconds=effective_retry_after_seconds,
             )
         return FailedVehicleJob(
             job_id=job.job_id, soldier_id=job.soldier_id, persona_id=persona_id,
             platform=platform, error_class=failure.error_class,
-            http_status=failure.http_status, retry_after_seconds=retry_after_seconds,
+            http_status=failure.http_status, retry_after_seconds=effective_retry_after_seconds,
             duration_ms=duration_ms,
         )
 
