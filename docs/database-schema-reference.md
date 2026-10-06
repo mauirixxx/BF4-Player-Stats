@@ -242,6 +242,14 @@ Columns: `event_id` PK, `occurred_at`, `collector_uuid`, `collector_name_snapsho
 
 Several identity fields are intentionally nullable/snapshotted so historical events survive later registry/soldier changes.
 
+Operational event semantics include:
+
+- `collection_attempt_started`: committed immediately before a physical outbound collection request, so request evidence survives later normalization or persistence rollback;
+- `collection_success` / `collection_failure`: normal terminal collection outcomes;
+- `collection_persistence_failure`: a post-request database/persistence failure recorded in a fresh transaction after the failed persistence transaction rolls back. This is diagnostic evidence, not a second physical attempt.
+
+Significant collection/persistence failures belong in this ledger as structured durable evidence as well as normal process/service logs. Routine debug/info log lines are not duplicated into PostgreSQL.
+
 ## Outbound request coordination
 
 ### `request_gates` (added in `0003_request_gates`)
