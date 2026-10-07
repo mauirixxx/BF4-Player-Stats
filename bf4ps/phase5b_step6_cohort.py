@@ -6,7 +6,7 @@ REQUEST_INTERVAL_SECONDS = 5.0
 LEASE_SECONDS = 120
 GLOBAL_ATTEMPT_CEILING = 27
 SOFTWARE_VERSION = "phase5b-step6-bounded-live"
-JOB_REASON = "phase5b_step6_bounded_live"
+JOB_REASON = "phase5b_step6_bounded_live"\nPRIORITY_VALUE = 0
 RUN_MARKER_EVENT_TYPE = "phase5b_step6_run_started"
 RUN_NUMBER = 1
 RESOURCES = ("detailed", "weapons", "vehicles")
