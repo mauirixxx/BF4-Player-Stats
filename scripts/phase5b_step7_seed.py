@@ -78,7 +78,7 @@ def main() -> int:
             CROSS JOIN unnest(CAST(:resources AS text[])) resource
             ON CONFLICT (soldier_id,resource) DO NOTHING
         """),{"ids":ids,"resources":list(RESOURCES),"priority_class":PRIORITY_CLASS,
-              "reason":JOB_REASON,"priority_value":PRIORITY_VALUE}).rowcount
+              "reason":JOB_REASON,"priority_value":PRIORITY_VALUE}).rowcount)
         if inserted!=INITIAL_JOB_COUNT:
             raise RuntimeError(f"expected {INITIAL_JOB_COUNT} inserted jobs; got {inserted}")
         shape=conn.execute(text("""
