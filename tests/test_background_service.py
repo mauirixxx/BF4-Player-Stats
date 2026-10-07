@@ -86,11 +86,14 @@ def test_production_admission_can_retain_explicit_live_safety_bounds():
     assert signature.parameters["max_total_attempts"].default is None
     assert "attempts_after_event_id" in signature.parameters
     assert signature.parameters["attempts_after_event_id"].default is None
+    assert "attempt_ceiling_resources" in signature.parameters
+    assert signature.parameters["attempt_ceiling_resources"].default is None
 
     service = Path("bf4ps/background_service.py").read_text()
     assert "allowed_soldier_ids=allowed_soldier_ids" in service
     assert "max_total_attempts=max_total_attempts" in service
     assert "attempts_after_event_id=attempts_after_event_id" in service
+    assert "attempt_ceiling_resources=attempt_ceiling_resources" in service
 
     detailed = Path("bf4ps/detailed_collector.py").read_text()
     weapons = Path("bf4ps/weapon_collector.py").read_text()
@@ -98,5 +101,5 @@ def test_production_admission_can_retain_explicit_live_safety_bounds():
     for source in (detailed, weapons, vehicles):
         assert "allowed_soldier_ids=allowed_soldier_ids" in source
         assert "max_total_attempts=max_total_attempts" in source
-    for source in (weapons, vehicles):
         assert "attempts_after_event_id=attempts_after_event_id" in source
+        assert "attempt_ceiling_resources=attempt_ceiling_resources" in source
