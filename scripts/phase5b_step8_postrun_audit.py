@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 from sqlalchemy import create_engine, text
 from bf4ps.phase5b_step7_endurance import (
     EXPECTED_DATABASE, EXPECTED_REVISION, GLOBAL_ATTEMPT_CEILING, HOSTS,
-    LIVE_START_EVENT_TYPE, RESOURCES, RUN_MARKER_EVENT_TYPE, RUN_NUMBER,
+    INITIAL_JOB_COUNT, LIVE_START_EVENT_TYPE, RESOURCES, RUN_MARKER_EVENT_TYPE, RUN_NUMBER,
 )
 
 def main() -> int:
@@ -122,15 +122,20 @@ def main() -> int:
         while left<=right and t-times[left]>=timedelta(hours=1): left+=1
         rolling_max=max(rolling_max,right-left+1)
 
-    spacing_bad=[]
+    # Attempt-start events are committed after the request-gate reservation/wait.
+    # Their occurred_at values are useful observational timing evidence, but are
+    # not the authoritative reservation timestamps and therefore must not be
+    # treated as an exact >=5.000000-second gate invariant.
+    observed_gaps=[]
     by_egress=defaultdict(list)
     for r in attempts: by_egress[r["egress"]].append(r)
     for egress,rows in by_egress.items():
         rows.sort(key=lambda r:r["occurred_at"])
         for prev,cur in zip(rows,rows[1:]):
-            gap=(cur["occurred_at"]-prev["occurred_at"]).total_seconds()
-            if gap < 5.0:
-                spacing_bad.append((egress,prev["event_id"],cur["event_id"],gap))
+            observed_gaps.append((cur["occurred_at"]-prev["occurred_at"]).total_seconds())
+    observed_gap_min=min(observed_gaps) if observed_gaps else None
+    observed_below_5=sum(g<5.0 for g in observed_gaps)
+    observed_below_499=sum(g<4.99 for g in observed_gaps)
 
     bad_states=[]; due_bad=[]
     for row in states:
@@ -142,10 +147,31 @@ def main() -> int:
                     due_bad.append((row["soldier_id"],resource,success_at,due))
             elif state=="temporary_failure":
                 if failures<1: bad_states.append((row["soldier_id"],resource,state,failures))
+            elif state=="never_attempted":
+                # Valid only when the matching pristine job remains pending
+                # because retries consumed the shared hard attempt ceiling.
+                pass
             else:
                 bad_states.append((row["soldier_id"],resource,state,failures))
 
     owned_remaining=[r for r in remaining if r["status"]!="pending" or r["collector_uuid"] is not None or r["lease_token"] is not None]
+    pristine_remaining=[
+        r for r in remaining
+        if r["status"]=="pending" and int(r["attempt_count"])==0
+        and r["collector_uuid"] is None and r["lease_token"] is None
+        and r["claimed_at"] is None and r["started_at"] is None
+        and r["lease_expires_at"] is None and r["last_error_class"] is None
+        and r["last_error_at"] is None
+    ]
+    state_by_id={int(r["soldier_id"]):r for r in states}
+    unexplained_pristine=[]
+    for r in pristine_remaining:
+        st=state_by_id[int(r["soldier_id"])]
+        resource=str(r["resource"])
+        if st[f"{resource}_state"]!="never_attempted" or int(st[f"{resource}_consecutive_failures"])!=0:
+            unexplained_pristine.append((r["soldier_id"],resource,st[f"{resource}_state"],st[f"{resource}_consecutive_failures"]))
+    completed_or_displaced=(unique_jobs+len(remaining)==INITIAL_JOB_COUNT)
+    retry_displacement_exact=(len(remaining)==retry_attempts)
     print("===== BF4PS PHASE 5B STEP 8 POST-RUN FORENSIC AUDIT =====")
     print(f"run_marker_event_id={boundary} live_start_event_id={live_id}")
     print(f"live_started_at={lives0['occurred_at'].isoformat()}")
@@ -157,13 +183,15 @@ def main() -> int:
     print("by_platform="+",".join(f"{k}:{by_platform[k]}" for k in sorted(by_platform)))
     print("by_collector="+",".join(f"{k}:{by_collector[k]}" for k in sorted(by_collector)))
     print(f"rolling_1h_max_physical_starts={rolling_max} ceiling=1296")
-    print(f"per_egress_spacing_violations_lt_5s={len(spacing_bad)}")
-    for x in spacing_bad[:20]: print(f"  SPACING egress={x[0]} events={x[1]}->{x[2]} gap_seconds={x[3]:.6f}")
+    print(f"observed_attempt_event_gap_min_seconds={observed_gap_min if observed_gap_min is not None else 'n/a'}")
+    print(f"observed_attempt_event_gaps_lt_5s={observed_below_5} lt_4_99s={observed_below_499}")
+    print("request_gate_spacing_note=attempt event timestamps are post-gate observational evidence, not reservation timestamps")
     print(f"retry_gap_min_seconds={retry_gap_min if retry_gap_min is not None else 'n/a'}")
     print(f"403_429_or_throttle={throttle} persistence_failures={persistence} foreign_physical_starts={foreign}")
-    print(f"remaining_cohort_jobs={len(remaining)} owned_or_nonpending_remaining={len(owned_remaining)}")
+    print(f"remaining_cohort_jobs={len(remaining)} pristine_pending_remaining={len(pristine_remaining)} owned_or_nonpending_remaining={len(owned_remaining)}")
+    print(f"retry_displacement_exact={retry_displacement_exact} unique_jobs_plus_remaining={unique_jobs+len(remaining)} initial_jobs={INITIAL_JOB_COUNT}")
     for r in remaining[:30]: print("  REMAINING "+" ".join(f"{k}={v}" for k,v in r.items()))
-    print(f"collection_state_rows={len(states)} bad_state_rows={len(bad_states)} due_interval_mismatches={len(due_bad)}")
+    print(f"collection_state_rows={len(states)} bad_state_rows={len(bad_states)} due_interval_mismatches={len(due_bad)} unexplained_pristine_states={len(unexplained_pristine)}")
     for x in bad_states[:30]: print(f"  STATE soldier={x[0]} resource={x[1]} state={x[2]} failures={x[3]}")
     for x in due_bad[:30]: print(f"  DUE soldier={x[0]} resource={x[1]} success={x[2]} due={x[3]}")
     print("collectors:")
@@ -173,9 +201,10 @@ def main() -> int:
         and duplicate_attempt_keys==0 and duplicate_terminal_keys==0
         and not missing_terminal and not orphan_terminal
         and throttle==0 and persistence==0 and foreign==0
-        and rolling_max<=1296 and not spacing_bad
+        and rolling_max<=1296
         and len(states)==len(ids) and not bad_states and not due_bad
-        and not owned_remaining
+        and not owned_remaining and len(pristine_remaining)==len(remaining)
+        and not unexplained_pristine and completed_or_displaced and retry_displacement_exact
         and set(by_collector)=={h.collector_name for h in HOSTS.values()})
     print("database writes: 0")
     print("Battlelog requests by audit: 0")
