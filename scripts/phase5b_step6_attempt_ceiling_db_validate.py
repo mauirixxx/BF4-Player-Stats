@@ -7,6 +7,7 @@ attempts plus a reserved claim share one global ceiling, then rolls back.
 """
 from __future__ import annotations
 
+import argparse
 from uuid import uuid4
 
 from sqlalchemy import text
@@ -21,7 +22,7 @@ from bf4ps.phase5b_step6_cohort import (
 )
 
 
-def run_validation() -> None:
+def run_validation(synthetic_ids: list[int]) -> None:
     engine = make_engine()
     conn = engine.connect()
     tx = conn.begin()
@@ -36,9 +37,29 @@ def run_validation() -> None:
         if int(existing) != 27:
             raise RuntimeError(f"expected live seeded Step 6 queue to remain at 27 jobs; found {existing}")
 
-        # Synthetic identities avoid touching the real Step 6 queue while still
-        # exercising the exact PostgreSQL ceiling query.
-        synthetic_ids = list(SOLDIER_IDS[:3])
+        if len(synthetic_ids) != 3 or len(set(synthetic_ids)) != 3:
+            raise RuntimeError("provide exactly three distinct validation soldier IDs")
+        if set(synthetic_ids) & set(SOLDIER_IDS):
+            raise RuntimeError("validation soldiers must not be in the live Step 6 cohort")
+        found = conn.execute(
+            text("SELECT soldier_id FROM soldiers WHERE soldier_id = ANY(:ids) FOR UPDATE"),
+            {"ids": synthetic_ids},
+        ).scalars().all()
+        if set(found) != set(synthetic_ids):
+            raise RuntimeError("one or more validation soldiers do not exist")
+        owned = conn.execute(
+            text(
+                """
+                SELECT soldier_id, resource, status
+                FROM collection_jobs
+                WHERE soldier_id = ANY(:ids)
+                  AND status IN ('claimed', 'running')
+                """
+            ),
+            {"ids": synthetic_ids},
+        ).mappings().all()
+        if owned:
+            raise RuntimeError(f"validation soldiers have owned jobs: {owned}")
         conn.execute(
             text("DELETE FROM collection_jobs WHERE soldier_id = ANY(:ids)"),
             {"ids": synthetic_ids},
@@ -135,5 +156,15 @@ def run_validation() -> None:
         engine.dispose()
 
 
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--soldier-id", type=int, action="append", required=True)
+    args = parser.parse_args()
+    ids = list(dict.fromkeys(args.soldier_id))
+    if len(ids) != 3 or any(value <= 0 for value in ids):
+        parser.error("provide exactly three distinct positive --soldier-id values")
+    run_validation(ids)
+
+
 if __name__ == "__main__":
-    run_validation()
+    main()
