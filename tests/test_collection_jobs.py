@@ -60,3 +60,35 @@ def test_claimed_job_token_is_part_of_ownership_identity():
     assert stale.job_id == job.job_id
     assert stale.collector_uuid == job.collector_uuid
     assert stale.lease_token != job.lease_token
+
+
+def test_claim_rejects_empty_attempt_ceiling_resources():
+    with pytest.raises(ValueError, match="attempt_ceiling_resources must not be empty"):
+        claim_next_job(
+            None,  # type: ignore[arg-type]
+            collector_uuid=uuid4(),
+            allowed_soldier_ids=[1],
+            max_total_attempts=27,
+            attempt_ceiling_resources=[],
+        )
+
+
+def test_claim_rejects_unknown_attempt_ceiling_resource():
+    with pytest.raises(ValueError, match="unsupported attempt ceiling resources"):
+        claim_next_job(
+            None,  # type: ignore[arg-type]
+            collector_uuid=uuid4(),
+            allowed_soldier_ids=[1],
+            max_total_attempts=27,
+            attempt_ceiling_resources=["detailed", "bogus"],
+        )
+
+
+def test_claim_requires_ceiling_when_attempt_ceiling_resources_supplied():
+    with pytest.raises(ValueError, match="attempt_ceiling_resources requires max_total_attempts"):
+        claim_next_job(
+            None,  # type: ignore[arg-type]
+            collector_uuid=uuid4(),
+            allowed_soldier_ids=[1],
+            attempt_ceiling_resources=["detailed", "weapons", "vehicles"],
+        )
