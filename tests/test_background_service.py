@@ -1,7 +1,9 @@
 from pathlib import Path
+import inspect
 
 from bf4ps.background_service import (
     ACTIVE_SLOTS,
+    claim_production_background_job,
     BACKGROUND_SLOTS_PER_HOUR,
     BOOTSTRAP_SLOTS,
     RECOVERY_SLOTS,
@@ -77,10 +79,15 @@ def test_production_budget_mode_is_opt_in_for_collectors():
 
 
 def test_production_admission_can_retain_explicit_live_safety_bounds():
+    signature = inspect.signature(claim_production_background_job)
+    assert "allowed_soldier_ids" in signature.parameters
+    assert signature.parameters["allowed_soldier_ids"].default is None
+    assert "max_total_attempts" in signature.parameters
+    assert signature.parameters["max_total_attempts"].default is None
+    assert "attempts_after_event_id" in signature.parameters
+    assert signature.parameters["attempts_after_event_id"].default is None
+
     service = Path("bf4ps/background_service.py").read_text()
-    assert "allowed_soldier_ids: Sequence[int] | None = None" in service
-    assert "max_total_attempts: int | None = None" in service
-    assert "attempts_after_event_id: int | None = None" in service
     assert "allowed_soldier_ids=allowed_soldier_ids" in service
     assert "max_total_attempts=max_total_attempts" in service
     assert "attempts_after_event_id=attempts_after_event_id" in service
