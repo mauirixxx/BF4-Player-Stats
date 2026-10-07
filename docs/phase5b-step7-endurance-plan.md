@@ -131,3 +131,93 @@ least:
 
 Broad production materialization remains disabled until Step 7 and Step 8 are
 accepted.
+
+
+## Accepted Step 7/8 result — 2026-10-07 UTC
+
+Status: **PASS — endurance and forensic reconciliation accepted**
+
+Repository validation before the final forensic audit:
+
+- repository head: `0c4eec13d51ef107da3b81a46a8beb07b41f37e5`;
+- explicit Python compilation of the Step 8 audit and its test: PASS;
+- full automated suite: **241 passed**.
+
+The Step 7 run used run marker event 3781 and immutable live-start event 3782.
+All three frozen Phase 3E collectors shared the same live start timestamp:
+`2026-10-07T10:05:54.822805+00:00`.
+
+The run reached the exact aggregate physical-attempt ceiling:
+
+- physical attempts: **3,888 / 3,888**;
+- unique jobs attempted: **3,864**;
+- retry attempts: **24**;
+- terminal events: **3,888**;
+- terminal successes: **3,864**;
+- terminal failures: **24**;
+- duplicate attempt keys: **0**;
+- duplicate terminal keys: **0**;
+- attempts without terminal: **0**;
+- terminals without start: **0**.
+
+Collector participation was:
+
+- `phase3e-hnl-01`: 1,160 physical attempts;
+- `phase3e-kah-01`: 1,147 physical attempts;
+- `phase3e-tcou`: 1,581 physical attempts.
+
+The exact maximum number of durable physical starts in any rolling one-hour
+window was **1,296**, equal to and not greater than the frozen production
+background-service ceiling.
+
+Natural temporary failures exercised the retry path. The minimum observed
+retry gap was **901.592113 seconds**, satisfying the first frozen retry delay
+of no sooner than 15 minutes. There was:
+
+- zero HTTP 403/429 or `battlelog_throttle` evidence;
+- zero collection-persistence failures;
+- zero foreign physical starts by the Step 7 collectors.
+
+Because retries consume the same hard 3,888-attempt budget, the 24 retries
+displaced exactly 24 pristine initial jobs. The final queue therefore retained
+24 pending, unowned, never-attempted weapon jobs. This is accepted ceiling
+behavior, not unresolved attempt debt:
+
+- remaining cohort jobs: **24**;
+- pristine pending remaining: **24**;
+- owned/non-pending remaining: **0**;
+- unique jobs attempted + remaining initial jobs: **3,888**;
+- retry displacement exact: **true**.
+
+All 1,296 cohort soldiers retained collection-state rows. The final audit found
+zero invalid state rows, zero successful-resource due-interval mismatches, and
+zero unexplained pristine states.
+
+### Request-gate timing interpretation
+
+The forensic audit observed a minimum gap of 4.974251 seconds between adjacent
+`collection_attempt_started` event timestamps on the same egress. There were
+960 observed event gaps below 5.0 seconds, including 35 below 4.99 seconds.
+
+These event timestamps are retained as diagnostic evidence but are not the
+authoritative request-gate reservation clock. The PostgreSQL request gate
+reserves the outbound slot before the worker waits; the durable
+`collection_attempt_started` event is committed afterward in a separate
+transaction immediately before HTTP. Transaction and scheduling displacement
+can therefore make adjacent attempt-event timestamps differ slightly from the
+reserved gate interval. The accepted hard pacing authority remains the
+PostgreSQL request-gate reservation mechanism; the event-timestamp diagnostic
+must not be interpreted as proof that the gate reserved slots faster than five
+seconds.
+
+### Acceptance boundary
+
+Phase 5B validation Steps 7 and 8 are **accepted**. The endurance run directly
+demonstrated the distributed scheduler reaching, but not exceeding, the frozen
+1,296-attempt rolling-hour production background ceiling while preserving exact
+physical-to-terminal accounting and clean persistence/throttle boundaries.
+
+This acceptance does **not** itself enable production materialization, authorize
+an unbounded historical bootstrap, or change the five-second per-egress gate.
+Step 9 may now consider a deliberately bounded broader-production rollout under
+a separately reviewed activation plan.
