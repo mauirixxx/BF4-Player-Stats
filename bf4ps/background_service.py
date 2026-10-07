@@ -106,6 +106,26 @@ def claim_production_background_job(
     A transaction advisory lock serializes distributed admission decisions.
     """
     conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:phase5b-background-service'))"))
+
+    interactive_pending = conn.execute(
+        text(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM collection_jobs
+                WHERE lane = 'interactive'
+                  AND eligible_at <= now()
+                  AND (
+                      status = 'pending'
+                      OR (status IN ('claimed', 'running') AND lease_expires_at <= now())
+                  )
+            )
+            """
+        )
+    ).scalar_one()
+    if interactive_pending:
+        return None
+
     usage = _usage(conn)
     if usage.total >= BACKGROUND_SLOTS_PER_HOUR:
         return None
