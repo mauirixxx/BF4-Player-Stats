@@ -172,7 +172,7 @@ def collect_one_detailed_job(
 
     with engine.begin() as conn:
         if enforce_production_budget and identity.lane == "background":
-            if allowed_soldier_ids is not None or max_total_attempts is not None or False:
+            if allowed_soldier_ids is not None or max_total_attempts is not None:
                 raise ValueError("production budget mode cannot be combined with experiment claim bounds")
             job = claim_production_background_job(
                 conn,
@@ -187,9 +187,9 @@ def collect_one_detailed_job(
                 lane=identity.lane,
                 resource="detailed",
                 lease_seconds=lease_seconds,
-            allowed_soldier_ids=allowed_soldier_ids,
-            max_total_attempts=max_total_attempts,
-        )
+                allowed_soldier_ids=allowed_soldier_ids,
+                max_total_attempts=max_total_attempts,
+            )
         if job is None:
             return None
         if not mark_job_running(conn, job):
