@@ -660,3 +660,69 @@ Final implementation gate:
 Step 5 may now evaluate the implemented due-time, priority, retry, budget,
 fairness, and activation behavior as an integrated scheduler. Step 6 bounded
 live-cohort collection remains a separate later authorization boundary.
+
+
+## Step 5 status — integrated scheduler validation complete
+
+Phase 5B Step 5 is **COMPLETE**.
+
+Final automated gate:
+
+- repository head under test:
+  `341cc8965147813b624d9f5744cbbfd5b120028a`;
+- full automated suite: **205 passed**;
+- no live Battlelog request was issued by the Step 5 validation.
+
+The first Step 5 suite run produced 204 passes and one harness-safety-test
+failure. The failing assertion prohibited the substring `requests.` anywhere
+in the harness source and therefore matched the English docstring sentence
+`Battlelog requests.`. It did not identify a network call. The guard was
+corrected to reject actual Requests/httpx import forms while retaining the
+explicit prohibition on the Battlelog fetch function. The corrected suite
+passed 205/205. This negative result is retained because the validation guard
+itself was what failed, not scheduler behavior.
+
+A rollback-only integrated PostgreSQL exercise then completed against
+`bf4_playerstats_test`, Alembic head `0003_request_gates`, using explicit
+existing soldier 15 / PC persona 513446234 (`jdisa35w`).
+
+The integrated lifecycle proved:
+
+- new bootstrap materializes detailed, weapons, and vehicles exactly once;
+- active returning observations materialize only independently due resources;
+- recent observations create no new refresh debt;
+- an independently due detailed resource enters the existing queue as active
+  refresh work;
+- production background admission claims that existing queue work and preserves
+  normal lease ownership;
+- first temporary detailed failure creates a 15-minute resource-specific retry;
+- a new BF4SW observation during retry cooldown creates no duplicate or
+  reclassified job;
+- the retry reuses the same queue row and becomes attempt number two;
+- successful retry clears detailed failure debt and sets detailed freshness
+  due 24 hours after success;
+- weapons and vehicles collection state remain unchanged throughout the
+  detailed failure/retry/success lifecycle;
+- the exercise issued zero Battlelog requests;
+- the transaction was rolled back, leaving zero committed harness writes.
+
+Together with the existing unit and rollback-only database evidence, Step 5
+covers the frozen source-class boundaries, independent resource due times,
+queue idempotence, retry progression, success reset, strict interactive
+precedence, background fairness reservations, the 1,296-attempt rolling-hour
+background ceiling, durable attempt accounting, and the activation cutover
+fence.
+
+No additional Step 5 test is required by current evidence.
+
+### Authorization boundary after Step 5
+
+Completion of Step 5 does **not** authorize broad production scheduling or
+historical bootstrap.
+
+Validation sequence step 6, the bounded live cohort, is now eligible for
+explicit authorization. Step 6 is the first Phase 5B validation step that may
+intentionally issue live Battlelog requests. It must retain explicit cohort
+bounds, the existing five-second per-egress request gate, durable physical
+attempt accounting, and post-run reconciliation before any endurance or
+broader rollout decision.
