@@ -81,6 +81,8 @@ def claim_next_job(
     allowed_soldier_ids: Sequence[int] | None = None,
     max_total_attempts: int | None = None,
     attempts_after_event_id: int | None = None,
+    priority_classes: Sequence[str] | None = None,
+    retry_only: bool | None = None,
 ) -> ClaimedJob | None:
     """Atomically claim one pending/expired job with optional experiment bounds.
 
@@ -104,6 +106,15 @@ def claim_next_job(
     if attempts_after_event_id is not None and max_total_attempts is None:
         raise ValueError("attempts_after_event_id requires max_total_attempts")
 
+    priority_filter: tuple[str, ...] | None = None
+    if priority_classes is not None:
+        priority_filter = tuple(dict.fromkeys(str(value) for value in priority_classes))
+        if not priority_filter:
+            raise ValueError("priority_classes must not be empty when provided")
+        invalid = set(priority_filter) - SUPPORTED_PRIORITY_CLASSES
+        if invalid:
+            raise ValueError(f"unsupported priority classes: {sorted(invalid)}")
+
     allowed_ids: tuple[int, ...] | None = None
     if allowed_soldier_ids is not None:
         allowed_ids = tuple(dict.fromkeys(int(value) for value in allowed_soldier_ids))
@@ -124,6 +135,17 @@ def claim_next_job(
     if allowed_ids is not None:
         cohort_clause = "AND soldier_id = ANY(:allowed_soldier_ids)"
         params["allowed_soldier_ids"] = list(allowed_ids)
+
+    priority_clause = ""
+    if priority_filter is not None:
+        priority_clause = "AND priority_class = ANY(:priority_classes)"
+        params["priority_classes"] = list(priority_filter)
+
+    retry_clause = ""
+    if retry_only is True:
+        retry_clause = "AND last_error_at IS NOT NULL"
+    elif retry_only is False:
+        retry_clause = "AND last_error_at IS NULL"
 
     if max_total_attempts is not None:
         conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:bounded-claim'))"))
@@ -182,6 +204,8 @@ def claim_next_job(
                 WHERE resource = :resource
                   AND lane = :lane
                   {cohort_clause}
+                  {priority_clause}
+                  {retry_clause}
                   AND eligible_at <= now()
                   AND (
                         status = 'pending'
