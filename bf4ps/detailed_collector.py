@@ -156,6 +156,7 @@ def collect_one_detailed_job(
     retry_after_seconds: int | None = None,
     allowed_soldier_ids: Sequence[int] | None = None,
     max_total_attempts: int | None = None,
+    attempts_after_event_id: int | None = None,
     enforce_production_budget: bool = False,
 ) -> CollectedJob | FailedJob | None:
     """Claim and execute at most one detailed job.
@@ -179,6 +180,7 @@ def collect_one_detailed_job(
                 lease_seconds=lease_seconds,
                 allowed_soldier_ids=allowed_soldier_ids,
                 max_total_attempts=max_total_attempts,
+                attempts_after_event_id=attempts_after_event_id,
             )
         else:
             job = claim_next_job(
