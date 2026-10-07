@@ -19,6 +19,7 @@ JOB_REASON = "phase5b_step7_endurance"
 PRIORITY_CLASS = "bootstrap"
 PRIORITY_VALUE = 0
 RUN_MARKER_EVENT_TYPE = "phase5b_step7_run_started"
+LIVE_START_EVENT_TYPE = "phase5b_step7_live_started"
 RUN_NUMBER = 1
 RESOURCES = ("detailed", "weapons", "vehicles")
 PLATFORMS = ("pc", "ps4", "xboxone")
