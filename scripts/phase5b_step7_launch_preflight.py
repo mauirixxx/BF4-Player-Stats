@@ -39,10 +39,10 @@ def main():
   if foreign or attempts: raise RuntimeError(f"foreign={foreign} attempts={attempts}")
   if len(regs)!=3: raise RuntimeError(f"collector rows={len(regs)}")
   by_uuid={str(r["collector_uuid"]):r for r in regs}
-  for h in HOSTS.values():
+  for hostname,h in HOSTS.items():
    r=by_uuid.get(str(h.collector_uuid))
-   if not r or r["collector_name"]!=h.collector_name or r["hostname"]!=h.hostname or r["lane"]!="background" or r["egress_key"]!=h.egress_key: raise RuntimeError(f"identity mismatch {h.hostname}")
-   if not r["enabled"] or r["drained"] or r["current_job_id"] is not None or r["retired_at"] is not None: raise RuntimeError(f"collector not launch-ready {h.hostname}: {dict(r)}")
+   if not r or r["collector_name"]!=h.collector_name or r["hostname"]!=hostname or r["lane"]!="background" or r["egress_key"]!=h.egress_key: raise RuntimeError(f"identity mismatch {hostname}")
+   if not r["enabled"] or r["drained"] or r["current_job_id"] is not None or r["retired_at"] is not None: raise RuntimeError(f"collector not launch-ready {hostname}: {dict(r)}")
  engine.dispose()
  print("===== BF4PS PHASE 5B STEP 7 LAUNCH PREFLIGHT =====")
  print(f"database={db} revision={rev} primary_writable=yes run_marker_event_id={b}")
