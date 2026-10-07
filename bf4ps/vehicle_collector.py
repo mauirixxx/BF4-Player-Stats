@@ -109,7 +109,17 @@ def _record_vehicle_attempt_started(
                      :job_id, :soldier_id, :persona_id, :platform,
                      'vehicles', :lane, 'collection_attempt_started',
                      :attempt_number, :lease_token,
-                     jsonb_build_object('physical_request', true))
+                     jsonb_build_object(
+                         'physical_request', true,
+                         'priority_class', (
+                             SELECT priority_class FROM collection_jobs
+                             WHERE job_id = :job_id
+                         ),
+                         'retry', (
+                             SELECT last_error_at IS NOT NULL FROM collection_jobs
+                             WHERE job_id = :job_id
+                         )
+                     ))
                 """
             ),
             {
