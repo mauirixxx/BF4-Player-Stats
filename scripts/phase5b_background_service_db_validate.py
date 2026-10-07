@@ -129,10 +129,10 @@ def _seed_attempt_usage(conn, *, count: int, priority_class: str, retry: bool = 
                 'detailed', 'background', 'collection_attempt_started', 1,
                 jsonb_build_object(
                     'physical_request', true,
-                    'priority_class', :priority_class,
-                    'retry', :retry
+                    'priority_class', CAST(:priority_class AS text),
+                    'retry', CAST(:retry AS boolean)
                 )
-            FROM generate_series(1, :count)
+            FROM generate_series(1, CAST(:count AS integer))
             """
         ),
         {"count": count, "priority_class": priority_class, "retry": retry},
