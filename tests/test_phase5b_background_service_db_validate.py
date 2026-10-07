@@ -39,3 +39,10 @@ def test_harness_exercises_frozen_background_policy():
     assert "BACKGROUND_SLOTS_PER_HOUR" in source
     assert "unused reservation borrowing" in source
     assert "claim_production_background_job(" in source
+
+
+def test_synthetic_usage_parameters_have_explicit_postgresql_types():
+    source = _source()
+    assert "CAST(:priority_class AS text)" in source
+    assert "CAST(:retry AS boolean)" in source
+    assert "CAST(:count AS integer)" in source
