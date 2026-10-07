@@ -102,6 +102,7 @@ def claim_production_background_job(
     allowed_soldier_ids: Sequence[int] | None = None,
     max_total_attempts: int | None = None,
     attempts_after_event_id: int | None = None,
+    attempt_ceiling_resources: Sequence[str] | None = None,
 ) -> ClaimedJob | None:
     """Claim one job under the frozen aggregate budget and fairness policy.
 
@@ -149,6 +150,7 @@ def claim_production_background_job(
             allowed_soldier_ids=allowed_soldier_ids,
             max_total_attempts=max_total_attempts,
             attempts_after_event_id=attempts_after_event_id,
+            attempt_ceiling_resources=attempt_ceiling_resources,
         )
         if job is not None:
             return job
@@ -165,6 +167,7 @@ def claim_production_background_job(
             allowed_soldier_ids=allowed_soldier_ids,
             max_total_attempts=max_total_attempts,
             attempts_after_event_id=attempts_after_event_id,
+            attempt_ceiling_resources=attempt_ceiling_resources,
         )
         if job is not None:
             return job
@@ -179,6 +182,7 @@ def claim_production_background_job(
             allowed_soldier_ids=allowed_soldier_ids,
             max_total_attempts=max_total_attempts,
             attempts_after_event_id=attempts_after_event_id,
+            attempt_ceiling_resources=attempt_ceiling_resources,
         )
         if job is not None:
             return job
@@ -195,6 +199,7 @@ def claim_production_background_job(
             allowed_soldier_ids=allowed_soldier_ids,
             max_total_attempts=max_total_attempts,
             attempts_after_event_id=attempts_after_event_id,
+            attempt_ceiling_resources=attempt_ceiling_resources,
         )
         if job is not None:
             return job
@@ -210,4 +215,5 @@ def claim_production_background_job(
         allowed_soldier_ids=allowed_soldier_ids,
         max_total_attempts=max_total_attempts,
         attempts_after_event_id=attempts_after_event_id,
+        attempt_ceiling_resources=attempt_ceiling_resources,
     )
