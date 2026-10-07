@@ -123,6 +123,7 @@ def import_aliases(
     aliases: list[AliasRow],
     *,
     materialize_production_jobs: bool = False,
+    materialization_cutover_at: datetime | None = None,
 ) -> int:
     if not aliases:
         raise ValueError("At least one BF4SW alias is required")
@@ -198,6 +199,12 @@ def import_aliases(
         {"soldier_id": soldier_id},
     )
     if materialize_production_jobs:
+        if materialization_cutover_at is None:
+            raise ValueError("materialization_cutover_at is required when production materialization is enabled")
+        if materialization_cutover_at.tzinfo is None:
+            raise ValueError("materialization_cutover_at must be timezone-aware")
+        if latest_seen < materialization_cutover_at:
+            return soldier_id
         scheduler_now = destination.execute(text("SELECT clock_timestamp()")).scalar_one()
         materialize_bf4sw_observation(
             destination,
@@ -237,6 +244,7 @@ def run_discovery_batch(
     *,
     batch_size: int,
     materialize_production_jobs: bool = False,
+    materialization_cutover_at: datetime | None = None,
 ) -> tuple[int, int, int, int]:
     if batch_size < 1:
         raise ValueError("batch_size must be at least 1")
@@ -259,6 +267,7 @@ def run_discovery_batch(
             destination,
             load_aliases(source, persona_id=persona_id, platform=platform),
             materialize_production_jobs=materialize_production_jobs,
+            materialization_cutover_at=materialization_cutover_at,
         )
 
     new_last_alias_id = batch[-1].alias_id
@@ -276,6 +285,7 @@ def run_reconciliation(
     initial_window_hours: int = DEFAULT_RECONCILE_WINDOW_HOURS,
     overlap_minutes: int = DEFAULT_RECONCILE_OVERLAP_MINUTES,
     materialize_production_jobs: bool = False,
+    materialization_cutover_at: datetime | None = None,
 ) -> tuple[datetime, datetime, int, int]:
     previous_success = ensure_reconciliation_state(destination)
     source_now = source.execute(text("SELECT clock_timestamp()")) .scalar_one()
@@ -299,6 +309,7 @@ def run_reconciliation(
             destination,
             aliases,
             materialize_production_jobs=materialize_production_jobs,
+            materialization_cutover_at=materialization_cutover_at,
         )
 
     destination.execute(
@@ -314,6 +325,7 @@ def run_catch_up(
     *,
     batch_size: int,
     materialize_production_jobs: bool = False,
+    materialization_cutover_at: datetime | None = None,
 ) -> None:
     batch_number = 0
     total_alias_rows = 0
@@ -326,6 +338,7 @@ def run_catch_up(
                     destination,
                     batch_size=batch_size,
                     materialize_production_jobs=materialize_production_jobs,
+                    materialization_cutover_at=materialization_cutover_at,
                 )
         if alias_rows == 0:
             print(f"BF4SW discovery caught up at cursor={new_cursor}: batches={batch_number} alias_rows={total_alias_rows} identity_visits={total_identities}")
@@ -352,7 +365,17 @@ def main() -> None:
         action="store_true",
         help="Enable frozen Phase 5B observation-driven job materialization (default: disabled).",
     )
+    parser.add_argument(
+        "--materialization-cutover-at",
+        type=datetime.fromisoformat,
+        help="Required with --materialize-production-jobs; ignore BF4SW observations older than this timezone-aware timestamp.",
+    )
     args = parser.parse_args()
+    if args.materialize_production_jobs:
+        if args.materialization_cutover_at is None:
+            parser.error("--materialization-cutover-at is required with --materialize-production-jobs")
+        if args.materialization_cutover_at.tzinfo is None:
+            parser.error("--materialization-cutover-at must include a timezone offset")
 
     source_engine = create_engine(bf4sw_database_url())
     destination_engine = create_engine(database_url())
@@ -366,6 +389,7 @@ def main() -> None:
                 destination,
                 aliases,
                 materialize_production_jobs=args.materialize_production_jobs,
+                materialization_cutover_at=args.materialization_cutover_at,
             )
         current_alias = max(aliases, key=lambda alias: (alias.last_seen, alias.alias_id))
         print(f"Imported BF4SW persona_id={current_alias.persona_id} platform={current_alias.platform} aliases={len(aliases)} current_name={current_alias.player_name!r} as BF4PS soldier_id={soldier_id}")
@@ -389,6 +413,7 @@ def main() -> None:
                 initial_window_hours=args.reconcile_window_hours,
                 overlap_minutes=args.reconcile_overlap_minutes,
                 materialize_production_jobs=args.materialize_production_jobs,
+                materialization_cutover_at=args.materialization_cutover_at,
             )
         print(f"BF4SW reconciliation complete: since={since.isoformat()} through={through.isoformat()} alias_rows={alias_rows} identities={identities}")
         return
@@ -400,6 +425,7 @@ def main() -> None:
                 destination,
                 batch_size=args.batch_size,
                 materialize_production_jobs=args.materialize_production_jobs,
+                materialization_cutover_at=args.materialization_cutover_at,
             )
     print(f"BF4SW discovery batch complete: cursor={old_cursor}->{new_cursor} alias_rows={alias_rows} identities={identities}")
 
