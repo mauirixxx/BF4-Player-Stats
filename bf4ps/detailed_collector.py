@@ -13,6 +13,7 @@ from sqlalchemy.engine import Engine
 
 from bf4ps.battlelog_detailed import DetailedStatsError, fetch_detailed_stats, normalize_detailed_stats
 from bf4ps.collection_jobs import claim_next_job, mark_job_running
+from bf4ps.background_service import claim_production_background_job
 from bf4ps.detailed_failure import classify_detailed_failure, persist_detailed_retry_failure
 from bf4ps.detailed_persistence import persist_detailed_success
 from bf4ps.request_gate import reserve_request_slot
@@ -155,6 +156,7 @@ def collect_one_detailed_job(
     retry_after_seconds: int | None = None,
     allowed_soldier_ids: Sequence[int] | None = None,
     max_total_attempts: int | None = None,
+    enforce_production_budget: bool = False,
 ) -> CollectedJob | FailedJob | None:
     """Claim and execute at most one detailed job.
 
@@ -169,12 +171,22 @@ def collect_one_detailed_job(
         raise ValueError("retry_after_seconds must be non-negative")
 
     with engine.begin() as conn:
-        job = claim_next_job(
-            conn,
-            collector_uuid=identity.collector_uuid,
-            lane=identity.lane,
-            resource="detailed",
-            lease_seconds=lease_seconds,
+        if enforce_production_budget and identity.lane == "background":
+            if allowed_soldier_ids is not None or max_total_attempts is not None or False:
+                raise ValueError("production budget mode cannot be combined with experiment claim bounds")
+            job = claim_production_background_job(
+                conn,
+                collector_uuid=identity.collector_uuid,
+                resource="detailed",
+                lease_seconds=lease_seconds,
+            )
+        else:
+            job = claim_next_job(
+                conn,
+                collector_uuid=identity.collector_uuid,
+                lane=identity.lane,
+                resource="detailed",
+                lease_seconds=lease_seconds,
             allowed_soldier_ids=allowed_soldier_ids,
             max_total_attempts=max_total_attempts,
         )
