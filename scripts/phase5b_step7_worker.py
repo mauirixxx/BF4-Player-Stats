@@ -11,7 +11,7 @@ from bf4ps.weapon_collector import CollectedWeaponJob,FailedWeaponJob,collect_on
 from bf4ps.vehicle_collector import CollectedVehicleJob,FailedVehicleJob,collect_one_vehicle_job
 from bf4ps.phase5b_step7_endurance import (
  DURATION,EXPECTED_DATABASE,EXPECTED_REVISION,FROZEN_UUIDS,GLOBAL_ATTEMPT_CEILING,
- HOSTS,LEASE_SECONDS,REQUEST_INTERVAL_SECONDS,RESOURCES,RUN_MARKER_EVENT_TYPE,
+ HOSTS,LEASE_SECONDS,LIVE_START_EVENT_TYPE,REQUEST_INTERVAL_SECONDS,RESOURCES,RUN_MARKER_EVENT_TYPE,
  RUN_NUMBER,SOFTWARE_VERSION,
 )
 STOP=False
@@ -92,13 +92,23 @@ def main():
  engine=create_engine(url,pool_pre_ping=True)
  with engine.begin() as conn:
   boundary,marker_at,ids=_run(conn); attempts=safety(conn,boundary,ids)
-  # Duration begins when the first Step 7 worker registers, not when the queue was seeded.
-  started=conn.execute(text("""
-   SELECT MIN(started_at) FROM collectors WHERE collector_uuid=ANY(:uuids)
-    AND software_version=:version AND started_at>:marker_at
-  """),{"uuids":list(FROZEN_UUIDS),"version":SOFTWARE_VERSION,"marker_at":marker_at}).scalar_one()
+  # First worker atomically freezes one immutable live-start timestamp.
+  conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:phase5b-step7-live-start'))"))
+  live=conn.execute(text("""
+   SELECT event_id,occurred_at FROM collection_events
+   WHERE event_type=:t AND metadata->>'run_number'=:n ORDER BY event_id
+  """),{"t":LIVE_START_EVENT_TYPE,"n":str(RUN_NUMBER)}).mappings().all()
+  if len(live)>1: raise RuntimeError(f"multiple Step 7 live-start events: {len(live)}")
+  if not live:
+   live_row=conn.execute(text("""
+    INSERT INTO collection_events(event_type,result,metadata)
+    VALUES (:t,'started',jsonb_build_object('run_number',:n,'run_marker_event_id',:b))
+    RETURNING event_id,occurred_at
+   """),{"t":LIVE_START_EVENT_TYPE,"n":RUN_NUMBER,"b":boundary}).mappings().one()
+   started=live_row["occurred_at"]
+  else:
+   started=live[0]["occurred_at"]
   control=register_collector(conn,identity=identity,software_version=SOFTWARE_VERSION)
-  if started is None: started=control.started_at
  deadline=started+DURATION
  print("===== BF4PS PHASE 5B STEP 7 ENDURANCE WORKER =====",flush=True)
  print(f"host={host} collector={frozen.collector_name} egress={frozen.egress_key}\nrun_marker_event_id={boundary} soldiers={len(ids)} resources={','.join(RESOURCES)}\nglobal_attempt_ceiling={GLOBAL_ATTEMPT_CEILING} duration_hours=3 request_spacing={REQUEST_INTERVAL_SECONDS:.1f}s production_budget=enabled\nrun_started_at={started.isoformat()} deadline={deadline.isoformat()} initial_attempts={attempts} drained={control.drained}",flush=True)
