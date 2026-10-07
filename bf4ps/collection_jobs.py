@@ -81,6 +81,7 @@ def claim_next_job(
     allowed_soldier_ids: Sequence[int] | None = None,
     max_total_attempts: int | None = None,
     attempts_after_event_id: int | None = None,
+    attempt_ceiling_resources: Sequence[str] | None = None,
     priority_classes: Sequence[str] | None = None,
     retry_only: bool | None = None,
 ) -> ClaimedJob | None:
@@ -105,6 +106,16 @@ def claim_next_job(
         raise ValueError("attempts_after_event_id must be non-negative")
     if attempts_after_event_id is not None and max_total_attempts is None:
         raise ValueError("attempts_after_event_id requires max_total_attempts")
+    ceiling_resources: tuple[str, ...] | None = None
+    if attempt_ceiling_resources is not None:
+        ceiling_resources = tuple(dict.fromkeys(str(value) for value in attempt_ceiling_resources))
+        if not ceiling_resources:
+            raise ValueError("attempt_ceiling_resources must not be empty when provided")
+        invalid_ceiling_resources = set(ceiling_resources) - SUPPORTED_RESOURCES
+        if invalid_ceiling_resources:
+            raise ValueError(f"unsupported attempt ceiling resources: {sorted(invalid_ceiling_resources)}")
+        if max_total_attempts is None:
+            raise ValueError("attempt_ceiling_resources requires max_total_attempts")
 
     priority_filter: tuple[str, ...] | None = None
     if priority_classes is not None:
@@ -131,6 +142,10 @@ def claim_next_job(
         "collector_uuid": collector_uuid,
         "lease_seconds": lease_seconds,
     }
+    ceiling_resource_clause = "resource = :resource"
+    if ceiling_resources is not None:
+        ceiling_resource_clause = "resource = ANY(:attempt_ceiling_resources)"
+        params["attempt_ceiling_resources"] = list(ceiling_resources)
     cohort_clause = ""
     if allowed_ids is not None:
         cohort_clause = "AND soldier_id = ANY(:allowed_soldier_ids)"
@@ -160,7 +175,7 @@ def claim_next_job(
                     WITH durable_attempts AS (
                         SELECT job_id, attempt_number
                         FROM collection_events
-                        WHERE resource = :resource
+                        WHERE {ceiling_resource_clause}
                           AND lane = :lane
                           {cohort_clause}
                           {event_boundary_clause}
@@ -175,7 +190,7 @@ def claim_next_job(
                         (SELECT COUNT(*) FROM durable_attempts)
                       + (SELECT COUNT(*)
                          FROM collection_jobs AS j
-                         WHERE j.resource = :resource
+                         WHERE j.{ceiling_resource_clause}
                            AND j.lane = :lane
                            {cohort_clause}
                            AND j.status IN ('claimed', 'running')
