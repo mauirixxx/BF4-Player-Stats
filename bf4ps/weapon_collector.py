@@ -216,6 +216,7 @@ def collect_one_weapon_job(
     allowed_soldier_ids: Sequence[int] | None = None,
     max_total_attempts: int | None = None,
     attempts_after_event_id: int | None = None,
+    attempt_ceiling_resources: Sequence[str] | None = None,
     enforce_production_budget: bool = False,
 ) -> CollectedWeaponJob | FailedWeaponJob | None:
     """Claim and execute at most one weapon job through the normal lifecycle."""
@@ -232,6 +233,7 @@ def collect_one_weapon_job(
                 allowed_soldier_ids=allowed_soldier_ids,
                 max_total_attempts=max_total_attempts,
                 attempts_after_event_id=attempts_after_event_id,
+                attempt_ceiling_resources=attempt_ceiling_resources,
             )
         else:
             job = claim_next_job(
@@ -243,6 +245,7 @@ def collect_one_weapon_job(
             allowed_soldier_ids=allowed_soldier_ids,
             max_total_attempts=max_total_attempts,
             attempts_after_event_id=attempts_after_event_id,
+            attempt_ceiling_resources=attempt_ceiling_resources,
         )
         if job is None:
             return None
