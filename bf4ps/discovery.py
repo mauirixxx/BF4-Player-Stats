@@ -402,6 +402,7 @@ def main() -> None:
             destination_engine,
             batch_size=args.batch_size,
             materialize_production_jobs=args.materialize_production_jobs,
+            materialization_cutover_at=args.materialization_cutover_at,
         )
         return
     if args.reconcile:
