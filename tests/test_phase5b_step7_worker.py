@@ -11,7 +11,9 @@ def test_worker_parses_and_preserves_live_safety_contract():
 def test_worker_uses_marker_allowlist_and_common_time_boundary():
  s=P.read_text()
  assert 'meta["cohort_soldier_ids"]' in s
- assert "started_at>:marker_at" in s
+ assert "LIVE_START_EVENT_TYPE" in s
+ assert "phase5b-step7-live-start" in s
+ assert "INSERT INTO collection_events" in s
  assert "started+DURATION" in s
  assert "SELECT now()" in s
  assert "3-hour endurance deadline reached" in s
@@ -19,3 +21,9 @@ def test_worker_does_not_activate_discovery_materializer():
  s=P.read_text()
  assert "discovery_service" not in s
  assert "materialize_production_jobs" not in s
+
+
+def test_collector_control_is_not_used_as_timestamp_source():
+    s=P.read_text()
+    assert "control.started_at" not in s
+    assert "MIN(started_at)" not in s
