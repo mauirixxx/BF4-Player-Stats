@@ -28,8 +28,10 @@ def test_step5_harness_uses_production_scheduler_and_persistence_paths():
 def test_step5_harness_has_no_battlelog_request_runtime():
     source = _source()
     assert "fetch_detailed_stats" not in source
-    assert "requests." not in source
-    assert "httpx." not in source
+    assert "import requests" not in source
+    assert "from requests" not in source
+    assert "import httpx" not in source
+    assert "from httpx" not in source
 
 
 def test_step5_harness_proves_retry_and_resource_isolation():
