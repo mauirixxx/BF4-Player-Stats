@@ -641,3 +641,22 @@ enabled.
 
 The cutover is an activation fence, not authorization for broad rollout.
 Bounded live-cohort validation remains required before production enablement.
+
+
+## Step 4 status — implementation complete
+
+Phase 5B Step 4 is **IMPLEMENTATION COMPLETE**.
+
+Final implementation gate:
+
+- repository head under test: `796decf6aef814a88d6619d29182de6a4d6aa37e`;
+- Python compilation gate: PASS;
+- full automated suite: **201 passed**;
+- production materialization remains opt-in and disabled by default;
+- activation requires an explicit timezone-aware cutover timestamp;
+- broad production rollout remains unauthorized;
+- no live Battlelog collection was authorized by completing this step.
+
+Step 5 may now evaluate the implemented due-time, priority, retry, budget,
+fairness, and activation behavior as an integrated scheduler. Step 6 bounded
+live-cohort collection remains a separate later authorization boundary.
