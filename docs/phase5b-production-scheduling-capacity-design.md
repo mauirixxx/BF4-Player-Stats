@@ -601,3 +601,43 @@ The database exercise verified:
 This validates the core Phase 5B eligibility/materialization mechanics before
 they are connected to the BF4SW discovery ingestion path. Broad production
 collection remains unauthorized.
+
+
+## Step 4 implementation validation — background service and activation fence
+
+Phase 5B Step 4 scheduler implementation completed its rollback-only
+background-service database exercise against `bf4_playerstats_test` at Alembic
+head `0003_request_gates`.
+
+The code suite passed 198 tests before the database exercise. The rollback-only
+exercise then proved against real PostgreSQL:
+
+- eligible interactive work prevents new background admission;
+- bootstrap receives its frozen starvation floor while pending;
+- retry/recovery work receives its frozen starvation floor while pending;
+- unused reservations are borrowable;
+- the aggregate rolling-hour background ceiling is 1,296 attempts;
+- zero Battlelog requests were issued;
+- zero harness writes were committed.
+
+The first database exercise attempt failed before policy validation because
+PostgreSQL could not infer bound-parameter types inside the harness's synthetic
+`jsonb_build_object` fixture. The fixture was corrected with explicit
+PostgreSQL casts and the successful exercise was rerun. This was a harness
+typing defect, not scheduler-policy evidence, and is retained as negative test
+history.
+
+A final activation review also found that the discovery service originally
+propagated the opt-in materialization flag during startup cycles but omitted it
+from recurring cycles. That wiring defect is fixed and regression-tested.
+
+Production materialization remains disabled by default. Enabling it now also
+requires an explicit timezone-aware materialization cutover timestamp.
+BF4SW observations older than that cutover are imported/reconciled normally
+but cannot materialize production jobs. This prevents historical catch-up after
+a rebuild or delayed deployment from turning the known historical population
+into an unbounded bootstrap queue merely because the materialization switch is
+enabled.
+
+The cutover is an activation fence, not authorization for broad rollout.
+Bounded live-cohort validation remains required before production enablement.
