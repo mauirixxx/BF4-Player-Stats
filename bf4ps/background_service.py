@@ -33,27 +33,24 @@ def _usage(conn: Connection) -> BackgroundServiceUsage:
         text(
             """
             WITH started AS (
-                SELECT DISTINCT job_id, attempt_number
+                SELECT
+                    COUNT(*) AS total,
+                    COUNT(*) FILTER (
+                        WHERE metadata->>'priority_class' = 'active'
+                          AND COALESCE((metadata->>'retry')::boolean, false) = false
+                    ) AS active,
+                    COUNT(*) FILTER (
+                        WHERE metadata->>'priority_class' = 'bootstrap'
+                          AND COALESCE((metadata->>'retry')::boolean, false) = false
+                    ) AS bootstrap,
+                    COUNT(*) FILTER (
+                        WHERE COALESCE((metadata->>'retry')::boolean, false) = true
+                           OR metadata->>'priority_class' = 'recent'
+                    ) AS recovery
                 FROM collection_events
                 WHERE lane = 'background'
                   AND event_type = 'collection_attempt_started'
                   AND occurred_at >= now() - interval '1 hour'
-            ),
-            classified AS (
-                SELECT
-                    COUNT(*) AS total,
-                    COUNT(*) FILTER (
-                        WHERE j.priority_class = 'active' AND j.last_error_at IS NULL
-                    ) AS active,
-                    COUNT(*) FILTER (
-                        WHERE j.priority_class = 'bootstrap' AND j.last_error_at IS NULL
-                    ) AS bootstrap,
-                    COUNT(*) FILTER (
-                        WHERE j.last_error_at IS NOT NULL
-                           OR j.priority_class = 'recent'
-                    ) AS recovery
-                FROM started AS s
-                JOIN collection_jobs AS j ON j.job_id = s.job_id
             ),
             reserved AS (
                 SELECT
@@ -71,17 +68,19 @@ def _usage(conn: Connection) -> BackgroundServiceUsage:
                 WHERE j.lane = 'background'
                   AND j.status IN ('claimed', 'running')
                   AND NOT EXISTS (
-                      SELECT 1 FROM started AS s
-                      WHERE s.job_id = j.job_id
-                        AND s.attempt_number = j.attempt_count
+                      SELECT 1
+                      FROM collection_events AS e
+                      WHERE e.job_id = j.job_id
+                        AND e.attempt_number = j.attempt_count
+                        AND e.event_type = 'collection_attempt_started'
                   )
             )
             SELECT
-                classified.total + reserved.total AS total,
-                classified.active + reserved.active AS active,
-                classified.bootstrap + reserved.bootstrap AS bootstrap,
-                classified.recovery + reserved.recovery AS recovery
-            FROM classified, reserved
+                started.total + reserved.total AS total,
+                started.active + reserved.active AS active,
+                started.bootstrap + reserved.bootstrap AS bootstrap,
+                started.recovery + reserved.recovery AS recovery
+            FROM started, reserved
             """
         )
     ).mappings().one()
