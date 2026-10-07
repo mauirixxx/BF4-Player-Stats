@@ -1,3 +1,4 @@
+import ast
 from pathlib import Path
 SEED=Path("scripts/phase5b_step7_seed.py")
 AUDIT=Path("scripts/phase5b_step7_seed_audit.py")
@@ -15,3 +16,8 @@ def test_seed_audit_is_read_only_and_checks_zero_attempts():
  assert "collection_attempt_started" in s
  assert "foreign background jobs exist" in s
  assert "Battlelog requests: 0" in s
+
+
+def test_step7_seed_and_audit_are_python_syntax_valid():
+    for path in (SEED, AUDIT):
+        ast.parse(path.read_text(), filename=str(path))
