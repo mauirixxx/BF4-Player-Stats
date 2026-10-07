@@ -82,8 +82,9 @@ def run_validation(synthetic_ids: list[int]) -> None:
                 "egress": f"phase5b-step6-ceiling-validate-{collector_uuid}",
             },
         )
+        job_ids: dict[str, int] = {}
         for soldier_id, resource in zip(synthetic_ids, RESOURCES, strict=True):
-            conn.execute(
+            job_id = conn.execute(
                 text(
                     """
                     INSERT INTO collection_jobs
@@ -92,10 +93,12 @@ def run_validation(synthetic_ids: list[int]) -> None:
                     VALUES
                         (:soldier_id, :resource, 'background', 'bootstrap',
                          'phase5b_step6_ceiling_validate', 'pending', 0, now())
+                    RETURNING job_id
                     """
                 ),
                 {"soldier_id": soldier_id, "resource": resource},
-            )
+            ).scalar_one()
+            job_ids[resource] = int(job_id)
 
         boundary = int(
             conn.execute(
@@ -109,14 +112,44 @@ def run_validation(synthetic_ids: list[int]) -> None:
                 text(
                     """
                     INSERT INTO collection_events
-                        (soldier_id, resource, lane, event_type, attempt_number)
+                        (job_id, soldier_id, resource, lane, event_type, attempt_number)
                     VALUES
-                        (:soldier_id, :resource, 'background',
+                        (:job_id, :soldier_id, :resource, 'background',
                          'collection_attempt_started', 1)
                     """
                 ),
-                {"soldier_id": soldier_id, "resource": resource},
+                {
+                    "job_id": job_ids[resource],
+                    "soldier_id": soldier_id,
+                    "resource": resource,
+                },
             )
+
+        durable_count = int(
+            conn.execute(
+                text(
+                    """
+                    SELECT COUNT(*)
+                    FROM (
+                        SELECT job_id, attempt_number
+                        FROM collection_events
+                        WHERE event_id > :boundary
+                          AND soldier_id = ANY(:ids)
+                          AND resource = ANY(:resources)
+                          AND lane = 'background'
+                          AND event_type = 'collection_attempt_started'
+                        GROUP BY job_id, attempt_number
+                    ) AS attempts
+                    """
+                ),
+                {
+                    "boundary": boundary,
+                    "ids": synthetic_ids,
+                    "resources": list(RESOURCES),
+                },
+            ).scalar_one()
+        )
+        assert durable_count == 2
 
         # Ceiling=3: with two durable starts, exactly one mixed-resource claim
         # may be reserved. A fourth aggregate reservation must be refused.
