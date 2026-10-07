@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Sequence
 from uuid import UUID
 
 from sqlalchemy import text
@@ -142,6 +143,9 @@ def claim_production_background_job(
             lease_seconds=lease_seconds,
             priority_classes=("bootstrap",),
             retry_only=False,
+            allowed_soldier_ids=allowed_soldier_ids,
+            max_total_attempts=max_total_attempts,
+            attempts_after_event_id=attempts_after_event_id,
         )
         if job is not None:
             return job
@@ -155,6 +159,9 @@ def claim_production_background_job(
             lease_seconds=lease_seconds,
             priority_classes=("active", "recent", "bootstrap"),
             retry_only=True,
+            allowed_soldier_ids=allowed_soldier_ids,
+            max_total_attempts=max_total_attempts,
+            attempts_after_event_id=attempts_after_event_id,
         )
         if job is not None:
             return job
@@ -166,6 +173,9 @@ def claim_production_background_job(
             lease_seconds=lease_seconds,
             priority_classes=("recent",),
             retry_only=False,
+            allowed_soldier_ids=allowed_soldier_ids,
+            max_total_attempts=max_total_attempts,
+            attempts_after_event_id=attempts_after_event_id,
         )
         if job is not None:
             return job
@@ -179,6 +189,9 @@ def claim_production_background_job(
             lease_seconds=lease_seconds,
             priority_classes=("active",),
             retry_only=False,
+            allowed_soldier_ids=allowed_soldier_ids,
+            max_total_attempts=max_total_attempts,
+            attempts_after_event_id=attempts_after_event_id,
         )
         if job is not None:
             return job
@@ -191,4 +204,7 @@ def claim_production_background_job(
         lane="background",
         resource=resource,
         lease_seconds=lease_seconds,
+        allowed_soldier_ids=allowed_soldier_ids,
+        max_total_attempts=max_total_attempts,
+        attempts_after_event_id=attempts_after_event_id,
     )
