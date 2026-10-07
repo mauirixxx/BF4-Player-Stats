@@ -121,3 +121,30 @@ def test_discovery_materialization_occurs_before_cursor_or_watermark_advance():
 
     assert materialize_at < discovery_cursor_at
     assert materialize_at < reconcile_watermark_at
+
+
+def test_materialization_activation_requires_explicit_cutover():
+    discovery = Path("bf4ps/discovery.py").read_text()
+    service = Path("bf4ps/discovery_service.py").read_text()
+
+    assert "materialization_cutover_at: datetime | None = None" in discovery
+    assert "materialization_cutover_at is required when production materialization is enabled" in discovery
+    assert "if latest_seen < materialization_cutover_at:" in discovery
+    assert '"--materialization-cutover-at"' in discovery
+    assert '"--materialization-cutover-at"' in service
+
+
+def test_service_preserves_materialization_flag_and_cutover_on_recurring_cycles():
+    service = Path("bf4ps/discovery_service.py").read_text()
+    recurring = service[service.index("while not stopping:"):]
+    assert recurring.count("materialize_production_jobs=materialize_production_jobs") >= 2
+    assert recurring.count("materialization_cutover_at=materialization_cutover_at") >= 2
+
+
+def test_catch_up_cli_passes_materialization_cutover():
+    discovery = Path("bf4ps/discovery.py").read_text()
+    block = discovery[
+        discovery.index("if args.discover_until_caught_up:"):
+        discovery.index("if args.reconcile:")
+    ]
+    assert "materialization_cutover_at=args.materialization_cutover_at" in block
