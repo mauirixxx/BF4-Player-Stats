@@ -4,7 +4,7 @@ import argparse
 import logging
 import signal
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy import create_engine, text
 
@@ -46,12 +46,14 @@ def run_discovery_cycle(
     *,
     batch_size: int,
     materialize_production_jobs: bool = False,
+    materialization_cutover_at: datetime | None = None,
 ) -> None:
     run_catch_up(
         source_engine,
         destination_engine,
         batch_size=batch_size,
         materialize_production_jobs=materialize_production_jobs,
+        materialization_cutover_at=materialization_cutover_at,
     )
 
 
@@ -62,6 +64,7 @@ def run_reconciliation_cycle(
     initial_window_hours: int,
     overlap_minutes: int,
     materialize_production_jobs: bool = False,
+    materialization_cutover_at: datetime | None = None,
 ) -> None:
     with source_engine.connect() as source:
         with destination_engine.begin() as destination:
@@ -71,6 +74,7 @@ def run_reconciliation_cycle(
                 initial_window_hours=initial_window_hours,
                 overlap_minutes=overlap_minutes,
                 materialize_production_jobs=materialize_production_jobs,
+                materialization_cutover_at=materialization_cutover_at,
             )
     LOGGER.info(
         "BF4SW reconciliation complete: since=%s through=%s alias_rows=%d identities=%d",
@@ -125,6 +129,7 @@ def run_service(
     initial_window_hours: int = DEFAULT_RECONCILE_WINDOW_HOURS,
     overlap_minutes: int = DEFAULT_RECONCILE_OVERLAP_MINUTES,
     materialize_production_jobs: bool = False,
+    materialization_cutover_at: datetime | None = None,
 ) -> int:
     if discovery_interval_seconds < 1:
         raise ValueError("discovery_interval_seconds must be at least 1")
@@ -161,6 +166,7 @@ def run_service(
                 destination_engine,
                 batch_size=batch_size,
                 materialize_production_jobs=materialize_production_jobs,
+                materialization_cutover_at=materialization_cutover_at,
             )
         except Exception as exc:
             discovery_failures.failed(exc)
@@ -174,6 +180,7 @@ def run_service(
                 initial_window_hours=initial_window_hours,
                 overlap_minutes=overlap_minutes,
                 materialize_production_jobs=materialize_production_jobs,
+                materialization_cutover_at=materialization_cutover_at,
             )
         except Exception as exc:
             reconciliation_failures.failed(exc)
@@ -188,7 +195,13 @@ def run_service(
             now = time.monotonic()
             if now >= discovery_due:
                 try:
-                    run_discovery_cycle(source_engine, destination_engine, batch_size=batch_size)
+                    run_discovery_cycle(
+                        source_engine,
+                        destination_engine,
+                        batch_size=batch_size,
+                        materialize_production_jobs=materialize_production_jobs,
+                        materialization_cutover_at=materialization_cutover_at,
+                    )
                 except Exception as exc:
                     discovery_failures.failed(exc)
                 else:
@@ -203,6 +216,8 @@ def run_service(
                         destination_engine,
                         initial_window_hours=initial_window_hours,
                         overlap_minutes=overlap_minutes,
+                        materialize_production_jobs=materialize_production_jobs,
+                        materialization_cutover_at=materialization_cutover_at,
                     )
                 except Exception as exc:
                     reconciliation_failures.failed(exc)
@@ -240,7 +255,17 @@ def main() -> None:
         action="store_true",
         help="Enable frozen Phase 5B observation-driven job materialization (default: disabled).",
     )
+    parser.add_argument(
+        "--materialization-cutover-at",
+        type=datetime.fromisoformat,
+        help="Required with --materialize-production-jobs; ignore BF4SW observations older than this timezone-aware timestamp.",
+    )
     args = parser.parse_args()
+    if args.materialize_production_jobs:
+        if args.materialization_cutover_at is None:
+            parser.error("--materialization-cutover-at is required with --materialize-production-jobs")
+        if args.materialization_cutover_at.tzinfo is None:
+            parser.error("--materialization-cutover-at must include a timezone offset")
 
     logging.basicConfig(
         level=getattr(logging, args.log_level),
@@ -259,6 +284,7 @@ def main() -> None:
             initial_window_hours=args.reconcile_window_hours,
             overlap_minutes=args.reconcile_overlap_minutes,
             materialize_production_jobs=args.materialize_production_jobs,
+            materialization_cutover_at=args.materialization_cutover_at,
         )
     )
 
