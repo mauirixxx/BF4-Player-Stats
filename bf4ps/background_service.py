@@ -99,6 +99,9 @@ def claim_production_background_job(
     collector_uuid: UUID,
     resource: str,
     lease_seconds: int = 120,
+    allowed_soldier_ids: Sequence[int] | None = None,
+    max_total_attempts: int | None = None,
+    attempts_after_event_id: int | None = None,
 ) -> ClaimedJob | None:
     """Claim one job under the frozen aggregate budget and fairness policy.
 
