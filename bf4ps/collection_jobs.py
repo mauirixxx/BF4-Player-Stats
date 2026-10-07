@@ -142,9 +142,11 @@ def claim_next_job(
         "collector_uuid": collector_uuid,
         "lease_seconds": lease_seconds,
     }
-    ceiling_resource_clause = "resource = :resource"
+    event_ceiling_resource_clause = "resource = :resource"
+    job_ceiling_resource_clause = "j.resource = :resource"
     if ceiling_resources is not None:
-        ceiling_resource_clause = "resource = ANY(:attempt_ceiling_resources)"
+        event_ceiling_resource_clause = "resource = ANY(:attempt_ceiling_resources)"
+        job_ceiling_resource_clause = "j.resource = ANY(:attempt_ceiling_resources)"
         params["attempt_ceiling_resources"] = list(ceiling_resources)
     cohort_clause = ""
     if allowed_ids is not None:
@@ -168,6 +170,9 @@ def claim_next_job(
         if attempts_after_event_id is not None:
             event_boundary_clause = "AND event_id > :attempts_after_event_id"
             params["attempts_after_event_id"] = attempts_after_event_id
+        cohort_job_clause = ""
+        if allowed_ids is not None:
+            cohort_job_clause = "AND j.soldier_id = ANY(:allowed_soldier_ids)"
         used_attempts = int(
             conn.execute(
                 text(
@@ -175,7 +180,7 @@ def claim_next_job(
                     WITH durable_attempts AS (
                         SELECT job_id, attempt_number
                         FROM collection_events
-                        WHERE {ceiling_resource_clause}
+                        WHERE {event_ceiling_resource_clause}
                           AND lane = :lane
                           {cohort_clause}
                           {event_boundary_clause}
@@ -190,9 +195,9 @@ def claim_next_job(
                         (SELECT COUNT(*) FROM durable_attempts)
                       + (SELECT COUNT(*)
                          FROM collection_jobs AS j
-                         WHERE j.{ceiling_resource_clause}
+                         WHERE {job_ceiling_resource_clause}
                            AND j.lane = :lane
-                           {cohort_clause}
+                           {cohort_job_clause}
                            AND j.status IN ('claimed', 'running')
                            AND NOT EXISTS (
                                SELECT 1
