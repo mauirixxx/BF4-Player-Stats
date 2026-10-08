@@ -195,3 +195,12 @@ The initial scratch attempts exposed **harness-only** defects, all corrected bef
 4. Reconcile this design's historical future-tense schema/migration language with the completed scratch-only `0004` implementation; never treat scratch migration success as authorization to upgrade the main test database.
 
 **Gate remains closed:** no real Stage 9C activation or six-hour run has been authorized.
+
+
+### Rolling-hour policy reconciliation — 2026-10-08
+
+The accepted `docs/phase5b-step9-production-activation-plan.md` explicitly forbids **more than 1,296 automatic background starts in any rolling hour**, and `docs/phase5b-production-scheduling-capacity-design.md` calls this an aggregate rolling-hour ceiling. The Stage 9B event boundary (`11558`) is an audit scope fence, **not** a reset of the request budget. Therefore the Stage 9C watchdog must not calculate budget compliance solely from `collection_events.event_id > 11558` when earlier starts could fall within a rolling-hour window being checked.
+
+**Implementation design gate (not yet implemented):** Keep the accepted event boundary for Stage 9C attempt/terminal reconciliation and abort-event auditing. Compute budget compliance using a separate, time-window-bounded set of eligible background `collection_attempt_started` events, including pre-boundary events whose timestamps fall within the hour preceding any evaluated post-boundary start (or the current DB time for the current rolling window). Preserve the existing policy on which event types/resources/lane count; compare directly against the scheduler and Step 9 checkpoint audit before coding. Verify database-time and inclusive/exclusive one-hour edge semantics, index/query plan, timestamp ordering versus event-ID ordering, and fail-closed behavior if historical events are missing or insufficient. Never silently treat a cutover or watchdog restart as a fresh hourly budget.
+
+**Next work:** source audit and offline regression tests first, then disposable PostgreSQL verification. No live collector activation is authorized.
