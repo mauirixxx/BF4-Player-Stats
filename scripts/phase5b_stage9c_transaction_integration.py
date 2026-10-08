@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 import os
 from uuid import uuid4
-from unittest.mock import patch
 
 from sqlalchemy import create_engine, text
 
@@ -17,10 +16,10 @@ from bf4ps.stage9c_supervision import (
     CUTOVER_AT, BOUNDARY_EVENT_ID, SupervisionRefused,
     abort_owned_run, renew_after_inspection, require_guard_lease,
 )
-from scripts.phase5b_stage9c_postgres_integration import (
+from phase5b_stage9c_postgres_integration import (
     EXPECTED_DATABASE, EXPECTED_USER, EXPECTED_IP, REV4, refuse_unsafe_target,
 )
-from scripts import phase5b_stage9c_watchdog as watchdog
+import phase5b_stage9c_watchdog as watchdog
 from bf4ps.production_hosts import HOSTS
 
 
