@@ -366,3 +366,64 @@ materialization must be stopped on fleet abort; transient unit launch
 commands must securely load each host's environment; and an end-to-end
 fault injection must prove all three collectors stop. The harmless
 systemd probe is a dependency test, **not** production activation.
+
+
+## Stage 9C supervisor integration gate — design checkpoint (not activation)
+
+Three-host harmless systemd proof accepted: tcou, hnl-01 and kah-01 each
+reported 2/2 unit tests passed and both runtime assertions:
+`PASS: both harmless units active` and
+`PASS: BindsTo stopped harmless worker after guard stop`.
+This validates a **local unit dependency only**, not fleet shutdown.
+
+### Required fail-closed invariants before launch
+
+1. Each collector must be bound to its own guard with `BindsTo=` and
+   `After=`. The tcou materializer must also be guard-bound. Every
+   worker and guard needs a bounded runtime, and no worker may restart
+   independently after its guard stops.
+2. A guard must stop its local units on PostgreSQL connectivity failure,
+   wrong DB/revision/primary, collector identity drift, disabled/drained
+   state, **or missing/stale central-watchdog heartbeat**. A guard crash
+   must itself stop dependent units through the proven systemd dependency.
+3. Central-watchdog health must be published through a *durable, shared,
+   freshness-checked mechanism*. An ordinary log message, SSH session,
+   process check on tcou, or local file on tcou is insufficient for the
+   two remote guards. Use a unique run identity and short-lived heartbeat
+   lease; stale data from a previous run must never authorize a collector.
+   Specify TTL, clock source, heartbeat cadence, and propagation latency
+   before implementation. On heartbeat-write failure the watchdog must
+   exit nonzero; the guards must expire the lease and stop.
+4. A confirmed HTTP 403/429, throttle, persistence, budget, accounting,
+   identity or provenance abort must stop materialization and the entire
+   fleet, not just drain database registrations. The abort signal must
+   be sticky for the run so a restarted watchdog cannot silently clear it.
+5. Deadline enforcement must use one recorded UTC run start and six-hour
+   deadline, checked by each guard independently, plus systemd runtime
+   ceilings. A local host clock error or missing run state must fail
+   closed. Stage 9D must not begin automatically.
+6. Launcher must reject existing matching units, unknown hostnames,
+   missing protected environment, wrong code revision, or any unexpected
+   active materializer. Launch must remain explicitly gated and be
+   reversible without deleting retry jobs or historical evidence.
+
+### Implementation order
+
+**First:** document the shared heartbeat/abort lease and verify its exact
+schema against the documented migration chain before writing SQL. A new
+table/migration, if needed, must be added together with the schema reference.
+Do not repurpose `collectors.last_heartbeat_at`: that measures collector
+liveness, not independent watchdog authorization.
+
+**Second:** implement offline unit-command construction and unit tests.
+The launcher must default to dry-run and must not silently enable collectors
+or materialization.
+
+**Third:** fault-inject watchdog death, DB disconnection, expired lease,
+forced guard exit, explicit abort, and deadline expiry using harmless sleep
+workers or isolated test state. Verify process shutdown on each host, including
+the tcou materializer dependency, before connecting production entrypoints.
+
+**Finally:** perform a separate read-only three-host preflight and request
+explicit operator authorization. No six-hour production run is authorized
+by this design checkpoint.
