@@ -66,3 +66,13 @@ Tests should use unique `bf4ps-stage9c-test-*` unit names, no database URL, no r
 ## Gate to proceed
 
 Create static systemd unit contract tests and a non-installing dummy-unit test generator. Inspect generated units with `systemd-analyze verify` where available, then request explicit operator approval before installing even dummy units on tcou. Repeat dummy fault injection on hnl-01 and kah-01 only after tcou verification.
+
+## tcou real-systemd dummy SIGKILL result — 2026-10-07
+
+Operator executed the staged three-unit dummy test on tcou (all ExecStart=/usr/bin/sleep 3600). All three were active before injection. At 20:13:56 local journal time, `systemctl kill --kill-whom=main --signal=SIGKILL bf4ps-stage9c-test-guard.service` killed the guard's main process (PID 851608, status=9/KILL). systemd immediately logged stopping both dependent units. Three seconds later: guard `failed/failed`, `MainPID=0`, `Result=signal`; collector and materializer each `inactive/dead`, `MainPID=0`, `Result=success`. Cleanup removed all three unit files; final LoadState=not-found and ActiveState=inactive for each. Two `reset-failed` warnings for unloaded dependents were harmless.
+
+**PASS limited to:** tcou dummy-unit guard SIGKILL dependency propagation. Not evidence of real BF4PS container or collector shutdown, other failure modes, or other hosts.
+
+## Production deployment direction (proposal, not authorization)
+
+Prefer one versioned Docker image with role-specific collector/materializer/watchdog/guard commands, deployed alongside the existing BF4SW fleet where appropriate. Keep BF4PS separate from BF4SW databases and releases. Host-level systemd should supervise Docker service lifecycle and guarantee dependent container stop on guard loss; verify Docker stop/kill and restart policies using dummy containers before live deployment. Stage 9C's six-hour lease/deadline is a trial authorization, not a permanent production operating model. Production requires a separately designed renewal and recovery policy, schema/role permissions, backups, observability, and explicit go-live approval.
