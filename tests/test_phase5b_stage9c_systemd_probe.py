@@ -7,7 +7,7 @@ def test_probe_uses_only_sleep_and_systemd_run():
     assert first[0] == second[0] == "systemd-run"
     assert first[-2:] == second[-2:] == ["/usr/bin/sleep", "100"]
     assert "--property=BindsTo=" + guard in second
-    assert "After=" + guard in second
+    assert "--property=After=" + guard in second
     assert worker.endswith("-worker.service")
 
 
