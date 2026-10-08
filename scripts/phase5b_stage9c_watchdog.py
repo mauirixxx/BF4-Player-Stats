@@ -117,7 +117,9 @@ def inspect(conn, *, boundary: int, cutover: datetime, grace_seconds: int,
     for key in starts.keys() - terminals.keys():
         if now - starts[key]["occurred_at"] > timedelta(seconds=grace_seconds):
             issues.append(f"unclosed physical attempt {key}")
-    maximum = rolling_background_max(\n        conn, cutover=supervision_start if supervision_start is not None else cutover, now=now\n    )
+    maximum = rolling_background_max(
+        conn, cutover=supervision_start if supervision_start is not None else cutover, now=now
+    )
     if maximum > CEILING:
         issues.append(f"rolling budget exceeded {maximum}>{CEILING}")
     bad = conn.execute(text("""
