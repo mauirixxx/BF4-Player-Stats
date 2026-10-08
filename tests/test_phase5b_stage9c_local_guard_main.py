@@ -37,7 +37,8 @@ def prepare(monkeypatch, *, host="tcou", armed=True, failure=None):
     check = Mock(side_effect=failure)
     monkeypatch.setattr(guard, "check_db", check)
     runner = Mock()
-    monkeypatch.setattr(guard.subprocess, "run", runner)
+    original_stop_units = guard.stop_units
+    monkeypatch.setattr(guard, "stop_units", lambda host, *, armed: original_stop_units(host, armed=armed, runner=runner))
     return engine, check, runner
 
 
