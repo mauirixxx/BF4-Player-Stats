@@ -92,6 +92,8 @@ def main():
         with engine.connect() as conn:
             check(conn)
             conn.rollback()
+            # Test-only override; restored in finally. Production module unchanged.
+            watchdog.validate_target = scratch_validate
             uuids = [uuid4() for _ in range(3)]
             watchdog.IDENTITIES = {
                 uid: (f"stage9c-scratch-{i}", f"scratch-{i}", f"scratch-egress-{i}")
