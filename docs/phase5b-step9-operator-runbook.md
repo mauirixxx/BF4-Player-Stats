@@ -337,3 +337,32 @@ audit and abort signals before leaving the first PC.
 **Current decision:** Stage 9C is still blocked on watchdog implementation,
 negative tests, and the operator's explicit go-ahead. No service starts
 or production Battlelog requests are authorized by this section.
+
+## Stage 9C systemd dependency proof (safe preflight only)
+
+A dedicated probe is available at
+`scripts/phase5b_stage9c_systemd_probe.py`. Its default mode only prints
+the intended transient systemd unit commands. With explicit `--execute`,
+it creates **two short-lived /usr/bin/sleep units only**, with unique names
+and a two-minute runtime ceiling. It then stops the guard unit and verifies
+that the worker unit stops through `BindsTo=`. The script always attempts
+cleanup. It does not start BF4PS, touch PostgreSQL, or make Battlelog calls.
+
+On **each** host, after pulling the feature branch:
+
+```bash
+.venv/bin/python -m pytest -q tests/test_phase5b_stage9c_systemd_probe.py
+.venv/bin/python scripts/phase5b_stage9c_systemd_probe.py
+sudo .venv/bin/python scripts/phase5b_stage9c_systemd_probe.py --execute
+```
+
+The `--execute` probe must be run on a host using systemd and with
+permission to create transient system units. Capture output. An actual
+`BindsTo=` stop proof is mandatory before deploying the live supervisor.
+
+**Not yet solved:** central-watchdog death with a still-reachable database
+must also stop every host; a collector must never outlive its local guard;
+materialization must be stopped on fleet abort; transient unit launch
+commands must securely load each host's environment; and an end-to-end
+fault injection must prove all three collectors stop. The harmless
+systemd probe is a dependency test, **not** production activation.
