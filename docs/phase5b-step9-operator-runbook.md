@@ -215,6 +215,19 @@ The remaining non-database gate before Stage 9B is an explicit deployment
 check that no other BF4PS discovery process is already running with production
 materialization enabled.
 
+On every host where BF4PS discovery is currently deployed or could already
+have been manually started, run:
+
+```bash
+cd /opt/bf4-player-stats
+.venv/bin/python scripts/phase5b_step9_materialization_process_check.py
+```
+
+The checker reads local `/proc` only. It performs zero database writes and
+zero Battlelog requests, and fails if it finds a BF4PS discovery command line
+containing `--materialize-production-jobs`. A PASS is host-local evidence;
+do not treat a PASS on tcou as proof about another host.
+
 ## Stage 9A boundary
 
 This runbook documents commands and semantics; it does not authorize executing
