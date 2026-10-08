@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy import create_engine, text
 
@@ -18,6 +18,11 @@ BACKGROUND_HOURLY_CEILING = 1296
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--cutover-at",
+        required=True,
+        help="Timezone-aware production materialization cutover timestamp.",
+    )
+    parser.add_argument(
         "--since-event-id",
         type=int,
         required=True,
@@ -26,6 +31,12 @@ def main() -> int:
     args = parser.parse_args()
     if args.since_event_id < 0:
         raise SystemExit("--since-event-id must be non-negative")
+    try:
+        cutover = datetime.fromisoformat(args.cutover_at)
+    except ValueError as exc:
+        raise SystemExit("--cutover-at must be a valid ISO-8601 timestamp") from exc
+    if cutover.tzinfo is None or cutover.utcoffset() is None:
+        raise SystemExit("--cutover-at must include a timezone offset")
 
     engine = create_engine(database_url(), pool_pre_ping=True)
     try:
@@ -112,9 +123,19 @@ def main() -> int:
                 SELECT COUNT(*) FROM collection_jobs
                 WHERE status IN ('claimed','running')
             """)).scalar_one())
+            bad_provenance = int(conn.execute(text("""
+                SELECT COUNT(*) FROM collection_jobs
+                WHERE lane='background'
+                  AND resource=ANY(:resources)
+                  AND (
+                    reason NOT IN ('bf4sw_new_soldier','bf4sw_active_refresh')
+                    OR eligible_at < :cutover
+                  )
+            """), {"resources": list(RESOURCES), "cutover": cutover}).scalar_one())
 
         print("===== BF4PS PHASE 5B STEP 9 PRODUCTION CHECKPOINT AUDIT =====")
         print(f"database={db} revision={revision} primary_writable=yes boundary_event_id={args.since_event_id}")
+        print(f"materialization_cutover_at={cutover.isoformat()}")
         print(
             f"physical_attempts={len(starts)} terminal_events={len(terminals)} "
             f"success={successes} failure={failures}"
@@ -131,7 +152,7 @@ def main() -> int:
         )
         print(f"rolling_1h_max_physical_starts={rolling_max} ceiling={BACKGROUND_HOURLY_CEILING}")
         print(f"403_429_throttle_or_persistence={abort_events} foreign_physical_starts={foreign}")
-        print(f"claimed_or_running_jobs_now={owned}")
+        print(f"claimed_or_running_jobs_now={owned} bad_background_job_provenance={bad_provenance}")
         for row in queue:
             print(
                 f"  QUEUE lane={row['lane']} priority={row['priority_class']} "
@@ -148,6 +169,7 @@ def main() -> int:
             and rolling_max <= BACKGROUND_HOURLY_CEILING
             and abort_events == 0
             and foreign == 0
+            and bad_provenance == 0
         )
         print(
             "PHASE 5B STEP 9 PRODUCTION CHECKPOINT AUDIT: "
