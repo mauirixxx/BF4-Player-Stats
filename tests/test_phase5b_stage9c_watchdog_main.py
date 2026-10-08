@@ -24,12 +24,18 @@ class FakeEngine:
     def __init__(self):
         self.conn = object()
         self.disposed = False
+        self.commits = 0
+        self.rollbacks = 0
     def begin(self):
         engine = self
         class Context:
             def __enter__(self):
                 return engine.conn
-            def __exit__(self, *_):
+            def __exit__(self, exc_type, *_):
+                if exc_type is None:
+                    engine.commits += 1
+                else:
+                    engine.rollbacks += 1
                 return False
         return Context()
     def dispose(self):
@@ -121,3 +127,53 @@ def test_invalid_cli_rejected_before_db_connection(monkeypatch, extra):
         watchdog.main()
     assert exc.value.code == 2
     create.assert_not_called()
+
+
+def test_atomic_drain_failure_rolls_back_then_fallback_aborts(monkeypatch):
+    f = setup(monkeypatch, args=argv("--armed"), issues=["injected throttle"])
+    f.drain.side_effect = RuntimeError("injected fleet drift")
+    assert watchdog.main() == 2
+    assert f.engine.rollbacks == 1
+    assert f.engine.commits == 1
+    assert f.abort.call_count == 2
+    assert "fleet drain failed" in f.abort.call_args.kwargs["reason"]
+    f.renew.assert_not_called()
+
+
+def test_failed_fallback_does_not_claim_success(monkeypatch):
+    f = setup(monkeypatch, args=argv("--armed"), issues=["injected throttle"])
+    f.drain.side_effect = RuntimeError("injected fleet drift")
+    f.abort.side_effect = [None, RuntimeError("injected fenced abort rejection")]
+    assert watchdog.main() == 3
+    assert f.engine.rollbacks == 2
+    assert f.engine.commits == 0
+    f.renew.assert_not_called()
+
+
+def test_atomic_abort_failure_never_drains_or_renews(monkeypatch):
+    f = setup(monkeypatch, args=argv("--armed"), issues=["injected throttle"])
+    f.abort.side_effect = RuntimeError("injected abort failure")
+    assert watchdog.main() == 3
+    assert f.engine.rollbacks == 1
+    assert f.engine.commits == 0
+    f.drain.assert_not_called()
+    f.renew.assert_not_called()
+
+
+def test_renewal_failure_rolls_back_and_exits(monkeypatch):
+    f = setup(monkeypatch, args=argv("--armed"))
+    f.renew.side_effect = RuntimeError("injected renewal failure")
+    assert watchdog.main() == 3
+    assert f.engine.rollbacks == 1
+    assert f.engine.commits == 0
+    f.abort.assert_not_called()
+    f.drain.assert_not_called()
+
+
+def test_successful_armed_abort_commits_atomically(monkeypatch):
+    f = setup(monkeypatch, args=argv("--armed"), issues=["injected throttle"])
+    assert watchdog.main() == 2
+    assert f.engine.commits == 1
+    assert f.engine.rollbacks == 0
+    f.abort.assert_called_once()
+    f.drain.assert_called_once()
