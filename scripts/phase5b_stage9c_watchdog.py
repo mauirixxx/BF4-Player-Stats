@@ -82,7 +82,8 @@ def rolling_background_max(conn, *, cutover: datetime, now: datetime) -> int:
     return maximum
 
 
-def inspect(conn, *, boundary: int, cutover: datetime, grace_seconds: int,\n            supervision_start: datetime | None = None):
+def inspect(conn, *, boundary: int, cutover: datetime, grace_seconds: int,
+            supervision_start: datetime | None = None):
     validate_target(conn)
     now = conn.execute(text("SELECT now()")).scalar_one()
     events = conn.execute(text("""
