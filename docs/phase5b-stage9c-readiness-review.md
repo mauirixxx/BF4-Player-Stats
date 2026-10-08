@@ -40,6 +40,12 @@ All **22 scratch checks passed**. TEMP shadow data and disposable supervision ro
 
 **Decision remains HOLD / NOT AUTHORIZED.** The six open gates below still require explicit resolution. For gate 4, the temporal-anchor design decision is now recorded: immutable Stage 9B cutover is the materialization/audit fence, while persisted Stage 9C `started_at` anchors supervision; the rolling budget must include pre-supervision physical starts in its trailing-hour context. Remaining gate-4 audit and scheduler verification are not waived.
 
+### Watchdog entrypoint regression evidence (mak-01)
+
+Commit `aed72e7` corrected a production-code wiring gap: watchdog `main()` now passes the persisted lease `started_at` into `inspect(supervision_start=...)` instead of silently defaulting to the Stage 9B cutover. The immutable cutover and exclusive event boundary remain unchanged. Commit `8d952b4` added nine offline, mocked-`main()` tests covering armed renewal, abort/drain invocation, dry-run nonmutation, database failure, lease expiry, and CLI fail-closed validation. **Full suite: 376 passed, 0 failed** on mak-01.
+
+These tests do not prove real database transaction rollback/commit behavior inside `main()`, the fallback abort branch, or physical systemd guard termination. Gate 2 remains **open** until those paths receive targeted fault-injection evidence; gate 3 remains **open**. No live activation authorized.
+
 ## Open gates — no activation before resolution
 
 1. **Production database/schema:** Stage 9C supervisor requires revision `0004_stage9c_supervision_runs`; last recorded main test DB preflight was `0003_request_gates`. Independently inspect live revision and schema against the documented reference, agree on maintenance/rollback plan, and obtain explicit approval before applying any migration.
