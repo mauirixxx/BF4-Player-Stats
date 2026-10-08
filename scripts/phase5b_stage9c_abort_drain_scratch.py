@@ -72,6 +72,21 @@ def main():
     # One physical connection keeps the TEMP table scoped to this test.
     # Each explicit transaction is independently committed or rolled back.
     original = watchdog.IDENTITIES
+    original_validate = watchdog.validate_target
+
+    def scratch_validate(conn):
+        identity = conn.execute(text(
+            "SELECT current_database(), current_user, inet_server_addr(), "
+            "pg_is_in_recovery(), current_setting('transaction_read_only')"
+        )).one()
+        if (identity[0], identity[1], str(identity[2]), identity[3], identity[4]) != (
+            EXPECTED_DATABASE, EXPECTED_USER, EXPECTED_IP, False, "off"
+        ):
+            raise RuntimeError(f"REFUSING unsafe scratch target: {identity}")
+        revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+        if revision != "0004_stage9c_supervision_runs":
+            raise RuntimeError("REFUSING wrong scratch Alembic revision")
+
     run_ids = []
     try:
         with engine.connect() as conn:
@@ -149,25 +164,10 @@ def main():
             class BoundEngine:
                 def begin(self):
                     return conn.begin()
-            # The production watchdog target validator expects the live test DB.
-            # Override only the target check with the stricter scratch validator
-            # during this isolated integration call.
-            old_validate = watchdog.validate_target
-            def scratch_validate(c):
-                row = c.execute(text(
-                    "SELECT current_database(), current_user, inet_server_addr()"
-                )).one()
-                assert (row[0], row[1], str(row[2])) == (
-                    EXPECTED_DATABASE, EXPECTED_USER, EXPECTED_IP
-                )
-            watchdog.validate_target = scratch_validate
-            try:
-                watchdog.commit_fallback_abort(
-                    BoundEngine(), args_fallback, ["scratch identity drift"],
-                    RuntimeError("cannot drain: identity drift"),
-                )
-            finally:
-                watchdog.validate_target = old_validate
+            watchdog.commit_fallback_abort(
+                BoundEngine(), args_fallback, ["scratch identity drift"],
+                RuntimeError("cannot drain: identity drift"),
+            )
             assert state(conn, run_id) == "aborted"
             assert conn.execute(text(
                 "SELECT count(*) FROM pg_temp.collectors WHERE drained"
@@ -217,6 +217,7 @@ def main():
         except Exception as cleanup_error:
             print(f"WARNING: scratch cleanup failed; inspect disposable run IDs: {run_ids}; {cleanup_error}")
         watchdog.IDENTITIES = original
+        watchdog.validate_target = original_validate
         engine.dispose()
 
 
