@@ -31,3 +31,16 @@ The Step 9 checkpoint auditor historically computed rolling maximum from events 
 Should Stage 9C budget monitoring use the persisted supervision run's `started_at` as its trial-history anchor while retaining the frozen Stage 9B cutover and event ID for provenance? This is the recommended separation, but it changes the watchdog's audit window and requires explicit operator acceptance plus regression tests.
 
 **Gate: HOLD.** See `docs/phase5b-stage9c-readiness-review.md`.
+
+
+## Operator design approval and initial implementation — 2026-10-08
+
+Operator approved separation of immutable Stage 9B provenance anchors from Stage 9C's persisted supervision start. Initial implementation commits `ff38d3c`, `b5e9dc1`, and `e31c241`:
+
+- Armed watchdog `main()` obtains `started_at` from the fenced `require_guard_lease()` row and passes it to `inspect()` as `supervision_start`.
+- Rolling budget scans one hour before the supervision start, not the Stage 9B cutover, when the new parameter is provided. The Stage 9B cutover and event boundary remain unchanged for reconciliation.
+- The rolling function additionally evaluates the trailing hour at current DB time, even if no starts occurred after supervision began.
+- Added offline tests for the distinct time anchor, pre-trial context, live trailing-hour overage without new trial starts, exact expiry, and historical expiration.
+- Existing `inspect()` callers retain the old `cutover` fallback until their scratch harnesses are migrated to pass an explicit synthetic supervision start. This is a **temporary compatibility path**, not the intended armed runtime contract.
+
+**Not yet operator-validated:** These commits require a fresh tcou offline regression run and an updated PostgreSQL scratch run. Historical query volume, timestamp consistency, missing ledger completeness and Step 9 checkpoint alignment remain open. Do not activate Stage 9C.
