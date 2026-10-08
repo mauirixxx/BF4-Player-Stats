@@ -1,6 +1,6 @@
 # Phase 5B Step 9 — Bounded production activation plan
 
-Status: **DESIGN FROZEN — implementation/preflight authorized; live production activation is not yet authorized**
+Status: **STAGE 9A COMPLETE / ACCEPTED — live Stage 9B production activation is not yet authorized**
 
 Date: 2026-10-07 UTC
 
@@ -151,7 +151,9 @@ No collection event or collection-state row is deleted or rewritten.
 
 ### Stage 9A — implementation and dry validation
 
-No production Battlelog traffic.
+**COMPLETE / ACCEPTED — 2026-10-07.**
+
+No production Battlelog traffic was used during Stage 9A.
 
 Implement and validate:
 
@@ -164,6 +166,26 @@ Implement and validate:
 
 Stage 9A completion authorizes a separate live decision; it does not itself
 start production.
+
+Accepted Stage 9A evidence includes:
+
+- exact Step 7 residue cleanup with historical events/state preserved;
+- post-cleanup forensic verification PASS;
+- production collector daemon with stable frozen identities and production
+  admission/request-gate contract;
+- fail-closed drain/resume operator control;
+- rollback-only live PostgreSQL control exercise PASS with zero persistent
+  mutation;
+- read-only final activation readiness PASS;
+- cutover-aware read-only production checkpoint audit;
+- full automated suite PASS at 283 tests;
+- external process checks on tcou, hnl-01, and kah-01 all PASS;
+- tcou's existing discovery process was observed without
+  `--materialize-production-jobs`;
+- hnl-01 and kah-01 had no BF4PS discovery/materialization process;
+- zero Battlelog requests were introduced by the Stage 9A dry gates.
+
+Stage 9B remains separately authorization-gated.
 
 ### Stage 9B — prospective canary
 
