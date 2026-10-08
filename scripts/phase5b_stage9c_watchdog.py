@@ -130,6 +130,26 @@ def drain_fleet(conn):
     return count
 
 
+class FleetDrainRefused(RuntimeError):
+    """Combined abort/drain rolled back because fleet drain failed."""
+
+
+def commit_fallback_abort(engine, args, issues, drain_error):
+    """Persist only the fenced terminal abort after failed atomic drain.
+
+    Never claim fleet drain success. A failed fallback is fatal; guards
+    independently stop on lease expiry or loss of database access.
+    """
+    reason = ("; ".join(issues) + f"; fleet drain failed: {type(drain_error).__name__}: {drain_error}")[:4000]
+    with engine.begin() as conn:
+        validate_target(conn)
+        abort_owned_run(
+            conn, run_id=args.run_id, owner=args.watchdog_owner,
+            generation=args.watchdog_generation, reason=reason,
+        )
+    LOG.critical("FENCED ABORT COMMITTED; FLEET DRAIN INCOMPLETE/UNKNOWN; operator intervention required")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True, type=UUID)
@@ -175,7 +195,10 @@ def main():
                                 generation=args.watchdog_generation,
                                 reason="; ".join(issues)[:4000],
                             )
-                            drained = drain_fleet(conn)
+                            try:
+                                drained = drain_fleet(conn)
+                            except Exception as drain_error:
+                                raise FleetDrainRefused("atomic fleet drain failed") from drain_error
                             LOG.critical("ABORT + FLEET DRAIN: %d collectors", drained)
                         else:
                             LOG.warning("DRY RUN: no abort or drain performed")
@@ -190,6 +213,14 @@ def main():
                     return 2
                 LOG.info("PASS starts=%d terminals=%d rolling_max=%d armed=%s",
                          starts, terminals, maximum, args.armed)
+            except FleetDrainRefused as failure:
+                LOG.exception("ATOMIC ABORT/DRAIN ROLLED BACK; attempting fenced sticky-abort fallback")
+                try:
+                    commit_fallback_abort(engine, args, issues, failure.__cause__ or failure)
+                except Exception:
+                    LOG.exception("FENCED ABORT FALLBACK FAILED; lease will not renew")
+                    return 3
+                return 2
             except Exception:
                 LOG.exception("WATCHDOG UNHEALTHY: cannot verify safety")
                 # No blind renewal or drain: an uncertain transaction must
