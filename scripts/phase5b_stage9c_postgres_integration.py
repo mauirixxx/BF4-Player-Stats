@@ -22,29 +22,44 @@ from bf4ps.stage9c_supervision import (
 
 REV3 = "0003_request_gates"
 REV4 = "0004_stage9c_supervision_runs"
-SUFFIX = "_stage9c_integration"
+EXPECTED_DATABASE = "bf4ps_scratch_stage9c_integration"
+EXPECTED_HOST = "mak-db-02.bf4statusbot.com"
+EXPECTED_USER = "bf4ps_stage9c_integration"
+EXPECTED_IP = "192.168.10.78"
 
 
 def refuse_unsafe_target(url):
     parsed = make_url(url)
     name = parsed.database or ""
-    if parsed.get_backend_name() != "postgresql" or not name.endswith(SUFFIX):
-        raise RuntimeError("REFUSING: dedicated PostgreSQL *_stage9c_integration database required")
-    if name in ("bf4_playerstats_test", "bf4_playerstats"):
-        raise RuntimeError("REFUSING: production database")
+    if (
+        parsed.get_backend_name() != "postgresql"
+        or name != EXPECTED_DATABASE
+        or parsed.host != EXPECTED_HOST
+        or parsed.username != EXPECTED_USER
+        or (parsed.port is not None and parsed.port != 5432)
+    ):
+        raise RuntimeError("REFUSING: unexpected PostgreSQL host, database, user or port")
     return name
 
 
 def assert_empty(engine, expected_name):
     with engine.connect() as conn:
-        name, recovery, ro = conn.execute(text(
-            "SELECT current_database(), pg_is_in_recovery(), current_setting('transaction_read_only')"
+        name, db_user, server_ip, recovery, ro = conn.execute(text(
+            "SELECT current_database(), current_user, inet_server_addr(), "
+            "pg_is_in_recovery(), current_setting('transaction_read_only')"
         )).one()
-        if (name, recovery, ro) != (expected_name, False, "off"):
-            raise RuntimeError("REFUSING: wrong database, standby or read-only connection")
-        tables = inspect(conn).get_table_names(schema="public")
-        if tables:
-            raise RuntimeError(f"REFUSING: integration database not empty: {tables}")
+        if (name, db_user, str(server_ip), recovery, ro) != (
+            expected_name, EXPECTED_USER, EXPECTED_IP, False, "off"
+        ):
+            raise RuntimeError("REFUSING: wrong database, role, server, standby or read-only connection")
+        objects = conn.execute(text("""
+            SELECT count(*) FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public'
+              AND c.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')
+        """)).scalar_one()
+        if objects:
+            raise RuntimeError("REFUSING: integration public schema is not empty")
 
 
 def alembic_config(url):
@@ -132,14 +147,19 @@ def run(url):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--isolated-url", required=True, help="Dedicated EMPTY database URL (never production)")
+    parser.add_argument("--isolated-url", help=argparse.SUPPRESS)
     parser.add_argument("--execute", action="store_true", help="Required to run migrations on isolated DB")
     args = parser.parse_args()
-    name = refuse_unsafe_target(args.isolated_url)
+    if args.isolated_url:
+        parser.error("--isolated-url disabled; use BF4PS_STAGE9C_INTEGRATION_URL")
+    url = os.environ.get("BF4PS_STAGE9C_INTEGRATION_URL", "")
+    if not url:
+        parser.error("BF4PS_STAGE9C_INTEGRATION_URL is required")
+    name = refuse_unsafe_target(url)
     if not args.execute:
         print(f"DRY RUN: would verify EMPTY disposable PostgreSQL database {name!r}")
         return
-    run(args.isolated_url)
+    run(url)
 
 
 if __name__ == "__main__":
