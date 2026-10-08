@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import os
 from uuid import uuid4
+from unittest.mock import patch
 
 from sqlalchemy import create_engine, text
 
@@ -19,7 +20,7 @@ from bf4ps.stage9c_supervision import (
 from scripts.phase5b_stage9c_postgres_integration import (
     EXPECTED_DATABASE, EXPECTED_USER, EXPECTED_IP, REV4, refuse_unsafe_target,
 )
-from scripts.phase5b_stage9c_watchdog import drain_fleet
+from scripts import phase5b_stage9c_watchdog as watchdog
 from bf4ps.production_hosts import HOSTS
 
 
@@ -77,6 +78,8 @@ def run(url):
         "connect_timeout": 3, "options": "-c statement_timeout=3000 -c lock_timeout=1000"
     })
     run_id, owner = uuid4(), uuid4()
+    original_validate = watchdog.validate_target
+    watchdog.validate_target = validate
     try:
         # One connection: temporary table is invisible to every other session.
         with engine.connect() as conn:
@@ -94,7 +97,7 @@ def run(url):
                 with conn.begin():
                     abort_owned_run(conn, run_id=run_id, owner=owner,
                                     generation=1, reason="rollback injection")
-                    assert drain_fleet(conn) == len(HOSTS)
+                    assert watchdog.drain_fleet(conn) == len(HOSTS)
                     raise RuntimeError("INTENTIONAL ROLLBACK")
             except RuntimeError as exc:
                 if str(exc) != "INTENTIONAL ROLLBACK":
@@ -112,7 +115,7 @@ def run(url):
             with conn.begin():
                 abort_owned_run(conn, run_id=run_id, owner=owner,
                                 generation=1, reason="committed scratch abort")
-                assert drain_fleet(conn) == len(HOSTS)
+                assert watchdog.drain_fleet(conn) == len(HOSTS)
             with conn.begin():
                 state = conn.execute(text(
                     "SELECT state FROM stage9c_supervision_runs WHERE run_id=:id"
@@ -135,6 +138,7 @@ def run(url):
                         raise AssertionError("aborted run unexpectedly accepted")
             print("PASS: actual PostgreSQL committed abort/drain; aborted lease cannot renew")
     finally:
+        watchdog.validate_target = original_validate
         # Remove only our exact scratch run, even if a check fails.
         # No public collector rows were ever created or modified.
         try:
