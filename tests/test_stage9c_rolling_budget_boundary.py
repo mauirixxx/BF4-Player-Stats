@@ -78,3 +78,72 @@ def test_timestamp_order_overrides_event_id_order():
         make_event(T0 + timedelta(seconds=1), event_id=2),
     ]
     assert budget_peak(events) == 2
+
+
+def test_watchdog_budget_query_includes_pre_boundary_and_rejects_1297():
+    from scripts.phase5b_stage9c_watchdog import rolling_background_max
+
+    class Result:
+        def mappings(self):
+            return self
+
+        def all(self):
+            return self.rows
+
+    class Connection:
+        def execute(self, statement, params):
+            sql = str(statement)
+            assert "event_id >" not in sql
+            assert "lane = 'background'" in sql
+            assert "event_type = 'collection_attempt_started'" in sql
+            assert params["lookback"] == T0 - timedelta(hours=1)
+            assert params["now"] == T0 + timedelta(seconds=2)
+            assert set(params["resources"]) == set(RESOURCES)
+            result = Result()
+            result.rows = [
+                {"event_id": i, "occurred_at": T0 - timedelta(seconds=1)}
+                for i in range(1, 1297)
+            ] + [{"event_id": 11559, "occurred_at": T0 + timedelta(seconds=1)}]
+            return result
+
+    peak = rolling_background_max(
+        Connection(), cutover=T0, now=T0 + timedelta(seconds=2)
+    )
+    assert peak == 1297
+    assert peak > CEILING
+
+
+def test_watchdog_budget_does_not_flag_only_pre_cutover_peak():
+    from scripts.phase5b_stage9c_watchdog import rolling_background_max
+
+    class Result:
+        def mappings(self):
+            return self
+
+        def all(self):
+            return [
+                {"event_id": i, "occurred_at": T0 - timedelta(minutes=50)}
+                for i in range(1297)
+            ] + [{"event_id": 11559, "occurred_at": T0 + timedelta(minutes=20)}]
+
+    class Connection:
+        def execute(self, statement, params):
+            return Result()
+
+    # The pre-cutover 1297 starts are older than one hour at the first
+    # post-cutover start. Their historic peak must not be attributed to 9C.
+    assert rolling_background_max(
+        Connection(), cutover=T0, now=T0 + timedelta(minutes=21)
+    ) == 1
+
+
+def test_watchdog_budget_query_failure_propagates_fail_closed():
+    import pytest
+    from scripts.phase5b_stage9c_watchdog import rolling_background_max
+
+    class Connection:
+        def execute(self, statement, params):
+            raise RuntimeError("simulated database read failure")
+
+    with pytest.raises(RuntimeError, match="database read failure"):
+        rolling_background_max(Connection(), cutover=T0, now=T0 + timedelta(seconds=1))
