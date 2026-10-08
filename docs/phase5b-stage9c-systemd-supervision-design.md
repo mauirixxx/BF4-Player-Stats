@@ -97,3 +97,9 @@ The six-hour Stage 9C trial is documented. A five-step production path (Stage 9C
 Operator reinstalled the three isolated dummy units, confirmed all active/running (guard PID 855976, collector 855981, materializer 855982), then executed `systemctl stop bf4ps-stage9c-test-guard.service`. At 20:25:38 tcou journal time, systemd stopped both dependents as part of the guard stop transaction, then stopped the guard. Two seconds later all three were inactive/dead with MainPID=0 and Result=success. Operator stopped any remaining test units, removed the three test unit files and ran daemon-reload without reported errors. No post-cleanup LoadState check was provided for this run.
 
 **PASS limited to:** tcou dummy-unit normal guard stop dependency propagation. No live BF4PS workload was used.
+
+## tcou dummy guard runtime expiration result — 2026-10-07
+
+Operator confirmed no dummy units loaded, installed the three previously generated dummy services, and changed only the installed guard's `RuntimeMaxSec` from 90 to 20 seconds. `systemd-analyze verify` returned no errors. `systemctl show` confirmed guard RuntimeMaxUSec=20s, collector/materializer RuntimeMaxUSec=1min 30s, and Restart=no for all. All three started active at 20:29:20 tcou journal time. At 20:29:40 systemd logged `Service reached runtime time limit. Stopping.`, began stopping both dependents, and marked the guard `Result=timeout`. After 25 seconds, guard was failed/failed, MainPID=0; collector and materializer each inactive/dead, MainPID=0, Result=success. Operator removed the test unit files, daemon-reloaded, reset failed state, and verified all three LoadState=not-found and ActiveState=inactive.
+
+**PASS limited to:** tcou dummy-unit guard runtime expiration dependency propagation. Alongside SIGKILL and normal stop, all three tcou dummy scenarios passed. Other hosts and real workloads remain untested.
