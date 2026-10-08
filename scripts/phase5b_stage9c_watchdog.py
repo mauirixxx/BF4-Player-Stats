@@ -137,7 +137,7 @@ def main():
     parser.add_argument("--watchdog-generation", required=True, type=int)
     parser.add_argument("--cutover-at", required=True)
     parser.add_argument("--since-event-id", required=True, type=int)
-    parser.add_argument("--interval-seconds", type=int, default=15)
+    parser.add_argument("--interval-seconds", type=int, default=5)
     parser.add_argument("--inflight-grace-seconds", type=int, default=150)
     parser.add_argument("--armed", action="store_true", help="Allow atomic drain on abort")
     parser.add_argument("--once", action="store_true")
