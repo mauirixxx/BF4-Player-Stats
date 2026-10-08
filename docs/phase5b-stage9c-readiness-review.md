@@ -25,6 +25,21 @@ The scratch integration target is the explicitly allowlisted `bf4ps_scratch_stag
 
 **Observed cleanup:** `PASS: scratch supervision ledger cleaned; TEMP tables session-scoped`. The budget harness also reported `public.collection_events` had zero rows on scratch. This does not prove anything about the main test database's ledger.
 
+## Additional verification — 2026-10-08, mak-01
+
+The isolated checkout on mak-01 was updated to feature branch commit `23fc099`. The full offline suite completed **367 passed, 0 failed**. The prior 15 failures were outdated Stage 9C test fixtures: three local-guard calls omitted the now-required run ID, and twelve watchdog cases supplied obsolete Alembic revision `0003_request_gates`. The fixtures were aligned with revision `0004_stage9c_supervision_runs`; an additional regression verifies that the local guard refuses a missing supervision lease. Test-only commits: `5e88d8b`, `23fc099`.
+
+With explicit `--execute`, the four PostgreSQL scratch harnesses were rerun from mak-01 against the allowlisted scratch target on mak-db-02:
+
+- Rolling budget: **10 PASS**, including pre-supervision saturated trailing hour, exact-hour expiry, and pre-supervision peak expiry without new starts (commit `e2ef1ee`).
+- Complete `inspect()`: **4 PASS**.
+- Budget violation to fenced abort/drain: **4 PASS**.
+- Fenced abort/drain fault paths: **4 PASS**, including the intentionally injected incomplete-drain warning.
+
+All **22 scratch checks passed**. TEMP shadow data and disposable supervision rows were cleaned; the rolling-budget harness reported persistent `collection_events` unchanged at zero rows. No real collector/materializer, production migration, or Battlelog request was initiated. These results strengthen isolated PostgreSQL behavior evidence but **do not** demonstrate watchdog `main()` end-to-end, real systemd termination, or live fleet readiness.
+
+**Decision remains HOLD / NOT AUTHORIZED.** The six open gates below still require explicit resolution. For gate 4, the temporal-anchor design decision is now recorded: immutable Stage 9B cutover is the materialization/audit fence, while persisted Stage 9C `started_at` anchors supervision; the rolling budget must include pre-supervision physical starts in its trailing-hour context. Remaining gate-4 audit and scheduler verification are not waived.
+
 ## Open gates — no activation before resolution
 
 1. **Production database/schema:** Stage 9C supervisor requires revision `0004_stage9c_supervision_runs`; last recorded main test DB preflight was `0003_request_gates`. Independently inspect live revision and schema against the documented reference, agree on maintenance/rollback plan, and obtain explicit approval before applying any migration.
