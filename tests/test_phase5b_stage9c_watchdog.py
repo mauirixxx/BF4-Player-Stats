@@ -41,7 +41,7 @@ class FakeConnection:
         if "current_database()" in sql:
             return FakeResult(scalar="bf4_playerstats_test")
         if "alembic_version" in sql:
-            return FakeResult(scalar="0003_request_gates")
+            return FakeResult(scalar="0004_stage9c_supervision_runs")
         if "pg_is_in_recovery()" in sql:
             return FakeResult(scalar=False)
         if "transaction_read_only" in sql:
