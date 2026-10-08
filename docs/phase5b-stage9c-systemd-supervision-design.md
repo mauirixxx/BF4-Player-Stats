@@ -76,3 +76,18 @@ Operator executed the staged three-unit dummy test on tcou (all ExecStart=/usr/b
 ## Production deployment direction (proposal, not authorization)
 
 Prefer one versioned Docker image with role-specific collector/materializer/watchdog/guard commands, deployed alongside the existing BF4SW fleet where appropriate. Keep BF4PS separate from BF4SW databases and releases. Host-level systemd should supervise Docker service lifecycle and guarantee dependent container stop on guard loss; verify Docker stop/kill and restart policies using dummy containers before live deployment. Stage 9C's six-hour lease/deadline is a trial authorization, not a permanent production operating model. Production requires a separately designed renewal and recovery policy, schema/role permissions, backups, observability, and explicit go-live approval.
+
+## Next controlled tests — tcou, then remote hosts
+
+The tcou SIGKILL experiment passed; it is not a substitute for testing other exit modes. Repeat only with isolated `bf4ps-stage9c-test-*` dummy units, with no database credentials and no real BF4PS services.
+
+1. **Normal guard stop:** start three dummy units, `systemctl stop bf4ps-stage9c-test-guard.service`, confirm both dependents become inactive/dead and MainPID=0.
+2. **Unexpected guard exit:** the SIGKILL experiment already demonstrates an unexpected signal exit; separately test a nonzero exit only after designing a dummy guard that exits nonzero on command.
+3. **Runtime expiration:** shorten the *dummy-only* guard RuntimeMaxSec to a controlled duration, start all three promptly, confirm guard expiration causes both dependents to stop. Distinguish guard runtime expiration from the dependents' own runtime limits.
+4. **Cleanup:** stop all test units, remove only their unit files, daemon-reload, confirm LoadState=not-found and ActiveState=inactive. A reset-failed warning for already-unloaded units is harmless.
+
+Before installing dummy units on hnl-01 or kah-01, separately confirm that systemd is available, `/usr/bin/sleep` exists, and no test units with those names are present. Do not deploy real collectors.
+
+## Roadmap boundary
+
+The six-hour Stage 9C trial is documented. A five-step production path (Stage 9C completion, Docker packaging, production DB preparation, shadow deployment, controlled go-live) is **a proposal, not a previously approved end-to-end implementation plan**. Production Docker lifecycle supervision, database migration, and permanent renewable lease behavior require separate design and operator approval.
