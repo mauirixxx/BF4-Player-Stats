@@ -11,17 +11,22 @@ import argparse
 import logging
 import signal
 import time
+from uuid import UUID
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import create_engine, text
 
 from bf4ps.config import database_url
 from bf4ps.production_hosts import HOSTS, RESOURCES
+from bf4ps.stage9c_supervision import (
+    REVISION, CUTOVER_AT, BOUNDARY_EVENT_ID, abort_owned_run,
+    renew_after_inspection, require_guard_lease,
+)
 
 LOG = logging.getLogger("bf4ps.stage9c.watchdog")
 STOP = False
 EXPECTED_DB = "bf4_playerstats_test"
-EXPECTED_REV = "0003_request_gates"
+EXPECTED_REV = REVISION
 CEILING = 1296
 IDENTITIES = {host.collector_uuid: (host.collector_name, name, host.egress_key)
               for name, host in HOSTS.items()}
@@ -105,7 +110,7 @@ def inspect(conn, *, boundary: int, cutover: datetime, grace_seconds: int):
 
 
 def drain_fleet(conn):
-    """Atomically validate all identities and drain all three. No lease edits."""
+    """Validate identities and drain all three within caller transaction."""
     validate_target(conn)
     rows = conn.execute(text("""
         SELECT collector_uuid,collector_name,hostname,egress_key,lane,retired_at
@@ -127,6 +132,9 @@ def drain_fleet(conn):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--run-id", required=True, type=UUID)
+    parser.add_argument("--watchdog-owner", required=True, type=UUID)
+    parser.add_argument("--watchdog-generation", required=True, type=int)
     parser.add_argument("--cutover-at", required=True)
     parser.add_argument("--since-event-id", required=True, type=int)
     parser.add_argument("--interval-seconds", type=int, default=15)
@@ -135,7 +143,12 @@ def main():
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
     cutover = datetime.fromisoformat(args.cutover_at)
-    if cutover.tzinfo is None or cutover.utcoffset() is None or args.since_event_id < 0 or args.interval_seconds < 1 or args.inflight_grace_seconds < 60:
+    if (cutover.tzinfo is None or cutover.utcoffset() is None
+            or cutover != datetime.fromisoformat(CUTOVER_AT)
+            or args.since_event_id != BOUNDARY_EVENT_ID
+            or args.watchdog_generation < 1
+            or args.interval_seconds < 1 or args.interval_seconds > 5
+            or args.inflight_grace_seconds < 60):
         parser.error("invalid cutover/boundary/interval/grace")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     signal.signal(signal.SIGTERM, request_stop)
@@ -144,27 +157,43 @@ def main():
     try:
         while not STOP:
             try:
-                with engine.connect() as conn:
-                    issues, starts, terminals, maximum = inspect(conn, boundary=args.since_event_id, cutover=cutover, grace_seconds=args.inflight_grace_seconds)
-                if issues:
-                    LOG.critical("ABORT: %s", "; ".join(issues))
-                    if args.armed:
-                        with engine.begin() as conn:
+                # The independent inspection and fenced renewal share one
+                # transaction. A failed inspection never extends the lease.
+                with engine.begin() as conn:
+                    validate_target(conn)
+                    require_guard_lease(conn, args.run_id)
+                    issues, starts, terminals, maximum = inspect(
+                        conn, boundary=args.since_event_id, cutover=cutover,
+                        grace_seconds=args.inflight_grace_seconds,
+                    )
+                    if issues:
+                        LOG.critical("ABORT: %s", "; ".join(issues))
+                        if args.armed:
+                            abort_owned_run(
+                                conn, run_id=args.run_id,
+                                owner=args.watchdog_owner,
+                                generation=args.watchdog_generation,
+                                reason="; ".join(issues)[:4000],
+                            )
                             drained = drain_fleet(conn)
-                        LOG.critical("FLEET DRAIN COMMITTED: %d collectors. STOP OS UNITS AND MATERIALIZER.", drained)
-                    else:
-                        LOG.warning("DRY RUN: no fleet drain performed")
+                            LOG.critical("ABORT + FLEET DRAIN: %d collectors", drained)
+                        else:
+                            LOG.warning("DRY RUN: no abort or drain performed")
+                    elif args.armed:
+                        renew_after_inspection(
+                            conn, run_id=args.run_id,
+                            owner=args.watchdog_owner,
+                            generation=args.watchdog_generation,
+                            inspection_passed=True,
+                        )
+                if issues:
                     return 2
-                LOG.info("PASS starts=%d terminals=%d rolling_max=%d armed=%s", starts, terminals, maximum, args.armed)
+                LOG.info("PASS starts=%d terminals=%d rolling_max=%d armed=%s",
+                         starts, terminals, maximum, args.armed)
             except Exception:
                 LOG.exception("WATCHDOG UNHEALTHY: cannot verify safety")
-                if args.armed:
-                    try:
-                        with engine.begin() as conn:
-                            drain_fleet(conn)
-                        LOG.critical("FLEET DRAIN COMMITTED after watchdog error")
-                    except Exception:
-                        LOG.exception("FLEET DRAIN FAILED: DATABASE UNREACHABLE OR UNSAFE; LOCAL HOST STOP REQUIRED")
+                # No blind renewal or drain: an uncertain transaction must
+                # fail closed through independent guard lease expiry.
                 return 3
             if args.once:
                 return 0
