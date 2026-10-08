@@ -12,6 +12,7 @@ from bf4ps.production_hosts import HOSTS
 
 EXPECTED_DATABASE = "bf4_playerstats_test"
 EXPECTED_REVISION = "0003_request_gates"
+STAGE9C_REVISION = "0004_stage9c_supervision_runs"
 
 
 def main() -> int:
@@ -27,7 +28,7 @@ def main() -> int:
     if configured is None:
         raise SystemExit(f"REFUSING: host {host!r} has no production collector identity")
 
-    engine = create_engine(database_url(), pool_pre_ping=True)
+    engine = create_engine(database_url(), pool_pre_ping=True, connect_args={"connect_timeout": 3, "options": "-c statement_timeout=3000 -c lock_timeout=1000"})
     desired = args.action == "drain"
     try:
         with engine.begin() as conn:
@@ -35,7 +36,8 @@ def main() -> int:
             revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
             recovery = bool(conn.execute(text("SELECT pg_is_in_recovery()")).scalar_one())
             read_only = conn.execute(text("SELECT current_setting('transaction_read_only')")).scalar_one()
-            if db != EXPECTED_DATABASE or revision != EXPECTED_REVISION or recovery or read_only != "off":
+            allowed_revision = (EXPECTED_REVISION, STAGE9C_REVISION) if desired else (EXPECTED_REVISION,)
+            if db != EXPECTED_DATABASE or revision not in allowed_revision or recovery or read_only != "off":
                 raise RuntimeError(
                     f"wrong target db={db!r} revision={revision!r} recovery={recovery} read_only={read_only!r}"
                 )
