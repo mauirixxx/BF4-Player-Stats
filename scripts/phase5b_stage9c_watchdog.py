@@ -79,7 +79,12 @@ def rolling_background_max(conn, *, cutover: datetime, now: datetime) -> int:
         # Ignore windows ending before cutover; they are context, not Stage 9C.
         if stamp >= cutover:
             maximum = max(maximum, right - left + 1)
-    return maximum
+    # Count the current trailing hour even when no post-supervision starts
+    # exist. Exclude events exactly 60 minutes old (strict rolling window).
+    current_left = 0
+    while current_left < len(stamps) and stamps[current_left] <= now - timedelta(hours=1):
+        current_left += 1
+    return max(maximum, len(stamps) - current_left)
 
 
 def inspect(conn, *, boundary: int, cutover: datetime, grace_seconds: int,
