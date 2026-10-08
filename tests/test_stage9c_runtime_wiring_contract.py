@@ -41,3 +41,19 @@ def test_watchdog_abort_and_drain_share_transaction():
 def test_guard_stops_only_known_units():
     assert guard.COLLECTOR_UNIT == "bf4ps-stage9c-collector.service"
     assert guard.MATERIALIZER_UNIT == "bf4ps-stage9c-materializer.service"
+
+
+def test_runtime_database_operations_have_bounded_waits():
+    for module in (watchdog, guard):
+        source = inspect.getsource(module.main)
+        assert '"connect_timeout": 3' in source
+        assert "statement_timeout=3000" in source
+        assert "lock_timeout=1000" in source
+        assert "idle_in_transaction_session_timeout=5000" in source
+
+
+def test_operator_drain_accepts_0004_but_resume_does_not():
+    from scripts import bf4ps_production_collector_control as control
+    src = inspect.getsource(control.main)
+    assert 'if desired else (EXPECTED_REVISION,)' in src
+    assert 'STAGE9C_REVISION = "0004_stage9c_supervision_runs"' in inspect.getsource(control)
