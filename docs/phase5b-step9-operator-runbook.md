@@ -1,6 +1,6 @@
 # Phase 5B Step 9 — Production operator runbook
 
-Status: **STAGE 9A DRY OPERATIONS ONLY — live Stage 9B activation is not authorized**
+Status: **STAGE 9A COMPLETE / ACCEPTED — live Stage 9B activation is not authorized**
 
 This runbook operationalizes the frozen Step 9 design. It deliberately keeps
 three controls separate:
@@ -211,9 +211,14 @@ As of the post-cleanup readiness checkpoint:
 - checkpoint audit now requires both an event boundary and timezone-aware
   cutover, and rejects foreign/pre-cutover production background provenance.
 
-The remaining non-database gate before Stage 9B is an explicit deployment
-check that no other BF4PS discovery process is already running with production
-materialization enabled.
+The external deployment gate has been completed across the current three-host
+BF4PS collector deployment. Results:
+
+- tcou: one BF4PS discovery process present; materialization flag absent; PASS;
+- hnl-01: zero discovery processes; zero materializing processes; PASS;
+- kah-01: zero discovery processes; zero materializing processes; PASS.
+
+No unexpected production materialization process was present.
 
 On every host where BF4PS discovery is currently deployed or could already
 have been manually started, run:
@@ -231,6 +236,10 @@ do not treat a PASS on tcou as proof about another host.
 ## Stage 9A boundary
 
 This runbook documents commands and semantics; it does not authorize executing
-the production entrypoint or enabling materialization. Stage 9A remains a
-zero-live-Battlelog phase until the external materialization-process check is
-recorded and the implementation checkpoint is formally accepted.
+the production entrypoint or enabling materialization. Stage 9A completed as a zero-live-Battlelog phase. The external
+materialization-process gate is recorded above and the implementation
+checkpoint is formally accepted.
+
+Nothing in Stage 9A completion itself authorizes Stage 9B. Starting production
+materialization or a production collector still requires the separate live
+canary decision.
