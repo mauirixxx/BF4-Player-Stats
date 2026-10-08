@@ -34,7 +34,7 @@ class TransactionEngine:
         self.disposed = True
 
 
-def run_watchdog(monkeypatch, *, issues, fail_drain=False, fail_inspection=False):
+def run_watchdog(monkeypatch, *, issues, fail_drain=False, fail_inspection=False, fail_fallback=False):
     engine = TransactionEngine()
     monkeypatch.setattr(watchdog, "STOP", False)
     monkeypatch.setattr(watchdog, "database_url", lambda: "postgresql+psycopg://unused/unused")
@@ -52,6 +52,8 @@ def run_watchdog(monkeypatch, *, issues, fail_drain=False, fail_inspection=False
         conn.append("renew")
 
     def abort(conn, **kwargs):
+        if fail_fallback and engine.rollbacks:
+            raise RuntimeError("simulated fallback abort failure")
         conn.append("abort")
 
     def drain(conn):
@@ -86,11 +88,20 @@ def test_confirmed_fault_aborts_and_drains_atomically(monkeypatch):
     assert engine.commits == 1
 
 
-def test_drain_failure_rolls_back_abort(monkeypatch):
+def test_drain_failure_rolls_back_combined_transaction_then_commits_fenced_abort(monkeypatch):
     result, engine = run_watchdog(monkeypatch, issues=["simulated 429"], fail_drain=True)
+    assert result == 2
+    assert engine.actions == ["abort"]  # Never claim a completed fleet drain.
+    assert (engine.commits, engine.rollbacks) == (1, 1)
+
+
+def test_failed_fallback_never_claims_abort_or_drain(monkeypatch):
+    result, engine = run_watchdog(
+        monkeypatch, issues=["simulated 429"], fail_drain=True, fail_fallback=True,
+    )
     assert result == 3
     assert engine.actions == []
-    assert (engine.commits, engine.rollbacks) == (0, 1)
+    assert (engine.commits, engine.rollbacks) == (0, 2)
 
 
 def test_inspection_exception_does_not_renew(monkeypatch):
