@@ -46,6 +46,12 @@ Commit `aed72e7` corrected a production-code wiring gap: watchdog `main()` now p
 
 These tests do not prove real database transaction rollback/commit behavior inside `main()`, the fallback abort branch, or physical systemd guard termination. Gate 2 remains **open** until those paths receive targeted fault-injection evidence; gate 3 remains **open**. No live activation authorized.
 
+### Additional fail-closed control-flow tests (mak-01)
+
+Commit `4edb469` added five watchdog `main()` fault-injection cases: atomic drain failure rolls back before separate sticky-abort fallback; fallback failure returns unhealthy; abort failure prevents drain/renewal; renewal failure rolls back; successful abort/drain commits in the fake transaction model. Commit `2a003b1` added seven local-guard `main()` cases covering healthy checks, exact allowlisted stop targets for tcou/hnl-01/kah-01, dry-run, stop failure and unsupported host. Commit `73c135a` corrected a **test-isolation defect**: the initial guard test mocked `subprocess.run` too late to override the function's captured default runner, causing real `systemctl stop` attempts on mak-01. They failed with `Interactive authentication required`; no successful stop was observed. The corrected test explicitly injects a fake runner through `stop_units` and avoids systemctl execution.
+
+After correction, the **full offline suite passed 388/388** on mak-01. This validates mocked entrypoint behavior only; it does not verify actual systemd process termination or durable PostgreSQL transaction outcomes. Gates 2 and 3 remain open pending the appropriate isolated integration and operator checks. **HOLD remains in force.**
+
 ## Open gates — no activation before resolution
 
 1. **Production database/schema:** Stage 9C supervisor requires revision `0004_stage9c_supervision_runs`; last recorded main test DB preflight was `0003_request_gates`. Independently inspect live revision and schema against the documented reference, agree on maintenance/rollback plan, and obtain explicit approval before applying any migration.
