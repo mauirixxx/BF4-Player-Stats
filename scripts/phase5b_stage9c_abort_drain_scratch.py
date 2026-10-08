@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import os
+from contextlib import contextmanager
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -164,8 +165,10 @@ def main():
             # Use a connection-bound engine facade so fallback uses the same
             # physical PostgreSQL session and its TEMP collector shadow.
             class BoundEngine:
+                @contextmanager
                 def begin(self):
-                    return conn.begin()
+                    with conn.begin():
+                        yield conn
             watchdog.commit_fallback_abort(
                 BoundEngine(), args_fallback, ["scratch identity drift"],
                 RuntimeError("cannot drain: identity drift"),
