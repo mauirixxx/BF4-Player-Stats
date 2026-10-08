@@ -102,6 +102,33 @@ def main():
             conn.rollback()
             print("PASS: pre-cutover-only historical peak excluded")
 
+            # Supervision starts while the trailing hour is already over cap.
+            # No new starts after supervision began: still a live violation.
+            clear()
+            insert_range(CEILING + 1, cutover - timedelta(minutes=1), 1)
+            assert rolling_background_max(
+                conn, cutover=cutover, now=cutover + timedelta(minutes=1)
+            ) == CEILING + 1
+            conn.rollback()
+            print("PASS: PostgreSQL pre-supervision-only saturated current hour detected")
+
+            # The exact expiry instant excludes all old starts.
+            clear()
+            insert_range(CEILING + 1, cutover - timedelta(hours=1), 1)
+            assert rolling_background_max(conn, cutover=cutover, now=cutover) == 0
+            conn.rollback()
+            print("PASS: PostgreSQL exact current-hour expiry excludes old starts")
+
+            # A pre-supervision saturation must cease to count once expired.
+            clear()
+            insert_range(CEILING + 1, cutover - timedelta(minutes=59), 1)
+            assert rolling_background_max(conn, cutover=cutover, now=cutover) == CEILING + 1
+            assert rolling_background_max(
+                conn, cutover=cutover, now=cutover + timedelta(minutes=2)
+            ) == 0
+            conn.rollback()
+            print("PASS: PostgreSQL pre-supervision peak expires without trial starts")
+
             # Filter interactive, terminal, and unsupported resource rows.
             clear()
             conn.execute(text("""
