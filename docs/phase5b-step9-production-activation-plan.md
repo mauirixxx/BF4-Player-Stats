@@ -1,6 +1,6 @@
 # Phase 5B Step 9 — Bounded production activation plan
 
-Status: **STAGE 9A COMPLETE / ACCEPTED — live Stage 9B production activation is not yet authorized**
+Status: **STAGE 9B ACCEPTED — Stage 9C preflight in progress; live Stage 9C not yet authorized**
 
 Date: 2026-10-07 UTC
 
@@ -302,3 +302,39 @@ The next authorized work is **Stage 9A only**:
 - add tests and operator documentation.
 
 No new live Battlelog request is authorized by this design freeze.
+
+## Stage 9B accepted production canary — 2026-10-08 UTC
+
+**ACCEPTED.** One-hour tcou-only canary completed and both processes were stopped.
+Frozen materialization cutover: `2026-10-08T00:47:34.757784+00:00`.
+Frozen exclusive event boundary: `11558`. Neither may be regenerated for Stage 9C.
+
+Final stopped read-only audit (repeated at Stage 9C preflight): 466 physical attempts,
+466 matching terminal events, 464 successes, 2 classified temporary failures;
+no duplicate/missing terminals, no 403/429/throttle or persistence events,
+no foreign starts, no unexpected background provenance, no owned jobs.
+Peak rolling-hour starts: 430 of the 1,296 ceiling.
+
+Failure for Sundaro (PS4 weapons): HTTP 503, event 11982, recovered with
+HTTP 200 on attempt 2 (event 12140), 15-minute retry policy observed;
+weapons state success, failure count zero, job removed.
+Failure for moonMindman (PS4 weapons): read timeout, event 12482,
+classified `battlelog_transport`, 900-second retry, weapons state
+`temporary_failure`, one pending job 6722 due at
+`2026-10-08T02:20:03.422169+00:00`. Preserve this legitimate debt.
+
+Stage 9C preflight evidence: tcou, hnl-01, kah-01 all on branch
+`feature/phase5a-cost-cohort` at commit
+`3ea3839cd7c37027fe69b48da6130b18be9a9fcc`, Python 3.12.3;
+all had entrypoint and DB environment, no active collector/discovery processes.
+All three connected to writable `bf4_playerstats_test` at revision
+`0003_request_gates`; registry has the three expected stable identities,
+all enabled/undrained, heartbeat unknown, no current ownership or running jobs.
+Distinct public IPv4 egress observed: tcou 72.253.18.166,
+hnl-01 76.81.69.106, kah-01 98.155.184.38, no proxy environment reported.
+This proves independent public egress at check time, not Battlelog reachability.
+
+**Stage 9C is NOT started.** Remaining gates: confirm deployment-specific
+Battlelog connectivity without initiating collection; establish coordinated
+fleet-wide stop on abort, restart materialization with the SAME frozen cutover,
+and explicitly authorize six-hour collection. No queue reset or historical backfill.
