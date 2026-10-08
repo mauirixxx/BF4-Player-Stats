@@ -6,7 +6,7 @@ def test_probe_uses_only_sleep_and_systemd_run():
     guard, worker, first, second = commands("bf4ps-stage9c-probe-test")
     assert first[0] == second[0] == "systemd-run"
     assert first[-2:] == second[-2:] == ["/usr/bin/sleep", "100"]
-    assert "BindsTo=" + guard in second
+    assert "--property=BindsTo=" + guard in second
     assert "After=" + guard in second
     assert worker.endswith("-worker.service")
 
