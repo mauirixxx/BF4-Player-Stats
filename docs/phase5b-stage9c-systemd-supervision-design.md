@@ -127,3 +127,9 @@ Operator confirmed all three units not-found/inactive, installed previously gene
 Operator generated the three dummy units locally, verified with `systemd-analyze verify` (no errors), confirmed all test units initially not-found/inactive, then installed and started all three. At 09:18:57 all three were active (guard PID 76199, collector 76202, materializer 76204). At 09:19:05 operator issued `systemctl kill --kill-whom=main --signal=SIGKILL` to the guard. Journal confirms guard main process killed with status=9/KILL, Result=signal, and systemd immediately stopped both dependents. Guard was failed/failed, MainPID=0; collector and materializer were inactive/dead, MainPID=0, Result=success. Operator stopped services, removed all dummy unit files, daemon-reloaded, reset only dummy guard failed state, and confirmed all three LoadState=not-found, ActiveState=inactive.
 
 **PASS limited to:** hnl-01 dummy-unit SIGKILL dependency propagation. hnl-01 normal-stop and runtime-expiration scenarios pending. No real BF4PS workload or database changes.
+
+## hnl-01 dummy guard normal-stop result — 2026-10-08 (host journal)
+
+Operator confirmed all three test units initially not-found/inactive, installed and started dummy guard (PID 76867), collector (PID 76870), and materializer (PID 76871), all active/running. At 09:20:33, operator ran `systemctl stop bf4ps-stage9c-test-guard.service`; journal records systemd stopping both dependents at that same second and then stopping guard. All three reported inactive/dead, Result=success, MainPID=0. Operator removed all dummy unit files, daemon-reloaded, and verified all three LoadState=not-found and ActiveState=inactive.
+
+**PASS limited to:** hnl-01 dummy-unit normal-stop dependency propagation. hnl-01 runtime expiration remains pending; no real BF4PS workload or database changes.
