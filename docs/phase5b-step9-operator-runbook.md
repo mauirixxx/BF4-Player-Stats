@@ -84,11 +84,16 @@ Stopping the process does not change operator-owned `enabled` or `drained`.
 Drain is preferred before a planned stop when the operator wants a quiet
 boundary. Do not edit job ownership/lease columns manually.
 
-Until a dedicated operator CLI is accepted, perform drain/resume only with an
-explicit transaction against the intended database and stable collector UUID,
-then verify the returned row. Example SQL is intentionally not embedded here:
-operational SQL must continue to be reviewed against the documented schema and
-current Alembic head at execution time.
+The accepted operator control is:
+
+```bash
+.venv/bin/python scripts/bf4ps_production_collector_control.py drain --execute
+.venv/bin/python scripts/bf4ps_production_collector_control.py resume --execute
+```
+
+It fails closed on the database/revision/primary and frozen collector identity
+before changing `collectors.drained`. Do not replace it with ad-hoc ownership
+or queue SQL.
 
 ## Disable versus drain
 
@@ -129,7 +134,7 @@ the order is:
 6. enable prospective production materialization with that cutover;
 7. start exactly one production collector/egress;
 8. observe for one hour;
-9. run `phase5b_step9_checkpoint_audit.py --since-event-id <BOUNDARY>`;
+9. run `phase5b_step9_checkpoint_audit.py --cutover-at <CUTOVER> --since-event-id <BOUNDARY>`;
 10. stop/pause before expansion if any abort condition appears.
 
 The one-hour canary does not authorize the other two collectors automatically.
@@ -140,7 +145,9 @@ After an authorized live boundary exists:
 
 ```bash
 cd /opt/bf4-player-stats
-.venv/bin/python scripts/phase5b_step9_checkpoint_audit.py --since-event-id <BOUNDARY>
+.venv/bin/python scripts/phase5b_step9_checkpoint_audit.py \
+  --cutover-at <CUTOVER> \
+  --since-event-id <BOUNDARY>
 ```
 
 The audit performs no Battlelog requests and no database writes. Preserve its
@@ -187,8 +194,30 @@ cause, verify database/revision/primary, inspect queue ownership and pending
 work, and rerun the applicable read-only audit. Resume materialization and the
 collector only after the rollout decision is explicitly re-authorized.
 
+## Stage 9A accepted dry evidence
+
+As of the post-cleanup readiness checkpoint:
+
+- full automated suite: 279 passed;
+- Step 7 residue cleanup: accepted, 24 exact rows removed with events/state preserved;
+- post-cleanup verifier: PASS;
+- production collector daemon contract: behaviorally exercised;
+- production drain/resume control: rollback-only live PostgreSQL exercise PASS;
+- rollback exercise observed `drained=false -> true` inside the transaction and
+  `false` again after rollback on a fresh connection;
+- final activation readiness: PASS with zero background jobs, zero Step 7
+  residue, zero claimed/running jobs, three exact frozen production collector
+  identities, zero retired identities, and zero current jobs;
+- checkpoint audit now requires both an event boundary and timezone-aware
+  cutover, and rejects foreign/pre-cutover production background provenance.
+
+The remaining non-database gate before Stage 9B is an explicit deployment
+check that no other BF4PS discovery process is already running with production
+materialization enabled.
+
 ## Stage 9A boundary
 
 This runbook documents commands and semantics; it does not authorize executing
 the production entrypoint or enabling materialization. Stage 9A remains a
-zero-live-Battlelog phase until its remaining dry validation gates pass.
+zero-live-Battlelog phase until the external materialization-process check is
+recorded and the implementation checkpoint is formally accepted.
