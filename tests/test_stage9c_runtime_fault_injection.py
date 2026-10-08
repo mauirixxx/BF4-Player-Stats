@@ -37,6 +37,7 @@ class TransactionEngine:
 def run_watchdog(monkeypatch, *, issues, fail_drain=False, fail_inspection=False):
     engine = TransactionEngine()
     monkeypatch.setattr(watchdog, "STOP", False)
+    monkeypatch.setattr(watchdog, "database_url", lambda: "postgresql+psycopg://unused/unused")
     monkeypatch.setattr(watchdog.signal, "signal", lambda *a: None)
     monkeypatch.setattr(watchdog, "create_engine", lambda *a, **kw: engine)
     monkeypatch.setattr(watchdog, "validate_target", lambda conn: None)
@@ -114,6 +115,7 @@ def test_guard_db_failure_stops_local_units(monkeypatch):
 
     stopped = []
     monkeypatch.setattr(guard, "STOP", False)
+    monkeypatch.setattr(guard, "database_url", lambda: "postgresql+psycopg://unused/unused")
     monkeypatch.setattr(guard.socket, "gethostname", lambda: "tcou")
     monkeypatch.setattr(guard.signal, "signal", lambda *a: None)
     monkeypatch.setattr(guard, "create_engine", lambda *a, **kw: Engine())
