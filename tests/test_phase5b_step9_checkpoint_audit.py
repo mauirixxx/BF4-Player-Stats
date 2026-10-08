@@ -14,6 +14,8 @@ def test_step9_checkpoint_audit_is_read_only_and_requires_boundary():
     s = P.read_text()
     upper = s.upper()
     assert '"--since-event-id"' in s
+    assert '"--cutover-at"' in s
+    assert "--cutover-at must include a timezone offset" in s
     assert "database writes: 0" in s
     assert "Battlelog requests by audit: 0" in s
     assert " INSERT INTO " not in upper
@@ -34,6 +36,10 @@ def test_step9_checkpoint_audit_locks_core_acceptance_evidence():
     assert "attempts_without_terminal" in s
     assert "terminals_without_start" in s
     assert "foreign_physical_starts" in s
+    assert "bad_background_job_provenance" in s
+    assert "bf4sw_new_soldier" in s
+    assert "bf4sw_active_refresh" in s
+    assert "eligible_at < :cutover" in s
 
 
 def test_step9_checkpoint_audit_reports_queue_shape_without_mutating_it():
