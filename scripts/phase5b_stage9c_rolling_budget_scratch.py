@@ -116,15 +116,26 @@ def main():
             conn.rollback()
             print("PASS: PostgreSQL eligibility filters and timestamp ordering")
 
-            # A failed query must propagate; watchdog main() withholds renewal
-            # on inspection exceptions (covered by offline runtime tests).
-            conn.execute(text("DROP TABLE pg_temp.collection_events"))
-            conn.commit()
+            # Force an actual SQL failure without dropping the TEMP shadow:
+            # PostgreSQL otherwise falls back to public.collection_events.
+            # A read-only transaction rejects CREATE TEMP but permits SELECT;
+            # instead, set a tiny statement timeout and hold an ACCESS
+            # EXCLUSIVE lock on the TEMP table from the same session? Locks
+            # in one session do not conflict. Use a transaction-local
+            # search_path pointing only at pg_temp, and rename the shadow.
+            # This guarantees undefined_table rather than public fallback.
+            conn.execute(text(
+                "ALTER TABLE pg_temp.collection_events RENAME TO collection_events_hidden"
+            ))
+            conn.execute(text("SET LOCAL search_path TO pg_temp"))
             try:
                 rolling_background_max(conn, cutover=cutover, now=now)
-            except Exception:
+            except Exception as exc:
+                from sqlalchemy.exc import ProgrammingError
+                assert isinstance(exc, ProgrammingError), type(exc)
                 conn.rollback()
             else:
+                conn.rollback()
                 raise AssertionError("missing budget evidence did not fail closed")
             print("PASS: PostgreSQL budget query failure propagated")
 
