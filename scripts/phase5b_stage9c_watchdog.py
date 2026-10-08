@@ -48,9 +48,9 @@ def validate_target(conn):
 
 
 def rolling_background_max(conn, *, cutover: datetime, now: datetime) -> int:
-    """Aggregate physical starts across the audit boundary, never resetting at cutover.
+    """Aggregate physical starts across the supervision-start boundary.
 
-    The preceding hour supplies context for every post-cutover window. This
+    The preceding hour supplies context for every trial window. This
     deliberately counts ledger rows, not deduplicated attempt keys: duplicate
     physical-start evidence must not make the budget appear smaller.
     """
@@ -82,7 +82,7 @@ def rolling_background_max(conn, *, cutover: datetime, now: datetime) -> int:
     return maximum
 
 
-def inspect(conn, *, boundary: int, cutover: datetime, grace_seconds: int):
+def inspect(conn, *, boundary: int, cutover: datetime, grace_seconds: int,\n            supervision_start: datetime | None = None):
     validate_target(conn)
     now = conn.execute(text("SELECT now()")).scalar_one()
     events = conn.execute(text("""
@@ -116,7 +116,7 @@ def inspect(conn, *, boundary: int, cutover: datetime, grace_seconds: int):
     for key in starts.keys() - terminals.keys():
         if now - starts[key]["occurred_at"] > timedelta(seconds=grace_seconds):
             issues.append(f"unclosed physical attempt {key}")
-    maximum = rolling_background_max(conn, cutover=cutover, now=now)
+    maximum = rolling_background_max(\n        conn, cutover=supervision_start if supervision_start is not None else cutover, now=now\n    )
     if maximum > CEILING:
         issues.append(f"rolling budget exceeded {maximum}>{CEILING}")
     bad = conn.execute(text("""
