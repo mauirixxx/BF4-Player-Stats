@@ -1,6 +1,6 @@
 """Stage 9C runtime behavioral fault injection: no PostgreSQL or systemd calls."""
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 import sys
 
@@ -41,7 +41,7 @@ def run_watchdog(monkeypatch, *, issues, fail_drain=False, fail_inspection=False
     monkeypatch.setattr(watchdog.signal, "signal", lambda *a: None)
     monkeypatch.setattr(watchdog, "create_engine", lambda *a, **kw: engine)
     monkeypatch.setattr(watchdog, "validate_target", lambda conn: None)
-    monkeypatch.setattr(watchdog, "require_guard_lease", lambda conn, run_id: None)
+    monkeypatch.setattr(watchdog, "require_guard_lease", lambda conn, run_id: {"started_at": datetime.now(timezone.utc)})
 
     def inspect(conn, **kwargs):
         if fail_inspection:
