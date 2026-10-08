@@ -91,3 +91,9 @@ Before installing dummy units on hnl-01 or kah-01, separately confirm that syste
 ## Roadmap boundary
 
 The six-hour Stage 9C trial is documented. A five-step production path (Stage 9C completion, Docker packaging, production DB preparation, shadow deployment, controlled go-live) is **a proposal, not a previously approved end-to-end implementation plan**. Production Docker lifecycle supervision, database migration, and permanent renewable lease behavior require separate design and operator approval.
+
+## tcou normal guard stop result — 2026-10-07
+
+Operator reinstalled the three isolated dummy units, confirmed all active/running (guard PID 855976, collector 855981, materializer 855982), then executed `systemctl stop bf4ps-stage9c-test-guard.service`. At 20:25:38 tcou journal time, systemd stopped both dependents as part of the guard stop transaction, then stopped the guard. Two seconds later all three were inactive/dead with MainPID=0 and Result=success. Operator stopped any remaining test units, removed the three test unit files and ran daemon-reload without reported errors. No post-cleanup LoadState check was provided for this run.
+
+**PASS limited to:** tcou dummy-unit normal guard stop dependency propagation. No live BF4PS workload was used.
