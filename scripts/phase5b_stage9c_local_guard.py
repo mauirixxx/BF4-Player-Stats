@@ -14,16 +14,18 @@ import signal
 import socket
 import subprocess
 import time
+from uuid import UUID
 
 from sqlalchemy import create_engine, text
 
 from bf4ps.config import database_url
 from bf4ps.production_hosts import HOSTS
+from bf4ps.stage9c_supervision import REVISION, require_guard_lease
 
 LOG = logging.getLogger("bf4ps.stage9c.local_guard")
 STOP = False
 EXPECTED_DB = "bf4_playerstats_test"
-EXPECTED_REV = "0003_request_gates"
+EXPECTED_REV = REVISION
 COLLECTOR_UNIT = "bf4ps-stage9c-collector.service"
 MATERIALIZER_UNIT = "bf4ps-stage9c-materializer.service"
 
@@ -51,7 +53,7 @@ def stop_units(host, *, armed, runner=subprocess.run):
             LOG.warning("DRY RUN: would stop %s", unit)
 
 
-def check_db(conn, host):
+def check_db(conn, host, run_id):
     db = conn.execute(text("SELECT current_database()")).scalar_one()
     rev = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
     recovery = conn.execute(text("SELECT pg_is_in_recovery()")).scalar_one()
@@ -71,16 +73,18 @@ def check_db(conn, host):
         raise RuntimeError("collector identity drift")
     if not row["enabled"] or row["drained"]:
         raise RuntimeError("collector disabled or drained")
+    require_guard_lease(conn, run_id)
 
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--run-id", required=True, type=UUID, help="Exact explicitly authorized Stage 9C run UUID")
     parser.add_argument("--armed", action="store_true", help="Permit local systemctl stop")
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--interval-seconds", type=int, default=5)
     args = parser.parse_args()
-    if args.interval_seconds < 1 or args.interval_seconds > 30:
-        parser.error("interval must be between 1 and 30 seconds")
+    if args.interval_seconds < 1 or args.interval_seconds > 5:
+        parser.error("interval must be between 1 and 5 seconds")
     host = socket.gethostname().split(".", 1)[0]
     if host not in HOSTS:
         parser.error(f"unsupported hostname {host}")
@@ -92,7 +96,7 @@ def main():
         while not STOP:
             try:
                 with engine.connect() as conn:
-                    check_db(conn, host)
+                    check_db(conn, host, args.run_id)
             except Exception:
                 LOG.exception("LOCAL SAFETY FAILURE")
                 try:
