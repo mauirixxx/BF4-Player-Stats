@@ -46,6 +46,42 @@ def validate_target(conn):
         raise RuntimeError(f"unsafe target: db={db} revision={rev} recovery={recovery} read_only={read_only}")
 
 
+
+def rolling_background_max(conn, *, cutover: datetime, now: datetime) -> int:
+    """Aggregate physical starts across the audit boundary, never resetting at cutover.
+
+    The preceding hour supplies context for every post-cutover window. This
+    deliberately counts ledger rows, not deduplicated attempt keys: duplicate
+    physical-start evidence must not make the budget appear smaller.
+    """
+    if cutover.tzinfo is None or now.tzinfo is None or now < cutover:
+        raise RuntimeError("invalid rolling budget inspection interval")
+    rows = conn.execute(text("""
+        SELECT event_id, occurred_at
+        FROM collection_events
+        WHERE occurred_at > :lookback
+          AND occurred_at <= :now
+          AND lane = 'background'
+          AND event_type = 'collection_attempt_started'
+          AND resource = ANY(:resources)
+        ORDER BY occurred_at, event_id
+    """), {
+        "lookback": cutover - timedelta(hours=1),
+        "now": now,
+        "resources": list(RESOURCES),
+    }).mappings().all()
+    stamps = [row["occurred_at"] for row in rows]
+    left = 0
+    maximum = 0
+    for right, stamp in enumerate(stamps):
+        while left <= right and stamps[left] <= stamp - timedelta(hours=1):
+            left += 1
+        # Ignore windows ending before cutover; they are context, not Stage 9C.
+        if stamp >= cutover:
+            maximum = max(maximum, right - left + 1)
+    return maximum
+
+
 def inspect(conn, *, boundary: int, cutover: datetime, grace_seconds: int):
     validate_target(conn)
     now = conn.execute(text("SELECT now()")).scalar_one()
@@ -80,13 +116,7 @@ def inspect(conn, *, boundary: int, cutover: datetime, grace_seconds: int):
     for key in starts.keys() - terminals.keys():
         if now - starts[key]["occurred_at"] > timedelta(seconds=grace_seconds):
             issues.append(f"unclosed physical attempt {key}")
-    times = sorted(e["occurred_at"] for e in starts.values())
-    left = 0
-    maximum = 0
-    for right, stamp in enumerate(times):
-        while left <= right and times[left] <= stamp - timedelta(hours=1):
-            left += 1
-        maximum = max(maximum, right - left + 1)
+    maximum = rolling_background_max(conn, cutover=cutover, now=now)
     if maximum > CEILING:
         issues.append(f"rolling budget exceeded {maximum}>{CEILING}")
     bad = conn.execute(text("""
