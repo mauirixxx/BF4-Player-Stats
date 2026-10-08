@@ -139,9 +139,9 @@ def main():
             conn.rollback()
             print("PASS: complete inspect() accepts 1296; reconciliation unchanged")
 
-            # Fail the budget query specifically: removing its required
-            # occurred_at column leaves the first event-reconciliation query
-            # valid, but causes the separate rolling query to raise.
+            # Force an actual SQL failure in the inspection event read.
+            # The dedicated budget-query failure is tested by the separate
+            # rolling-budget scratch harness; both must fail closed.
             conn.execute(text(
                 "ALTER TABLE pg_temp.collection_events RENAME COLUMN "
                 "occurred_at TO missing_occurred_at"
@@ -153,7 +153,7 @@ def main():
                 )
             except Exception:
                 conn.rollback()
-                print("PASS: complete inspect() propagates missing evidence")
+                print("PASS: complete inspect() propagates missing event evidence")
             else:
                 conn.rollback()
                 raise AssertionError("inspection accepted missing event timestamp")
