@@ -1,5 +1,6 @@
 """No-network local guard behavior tests."""
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+from uuid import UUID
 import pytest
 
 from scripts.phase5b_stage9c_local_guard import (
@@ -26,7 +27,7 @@ class Connection:
         if "current_database()" in sql:
             return Result(value=self.database)
         if "alembic_version" in sql:
-            return Result(value="0003_request_gates")
+            return Result(value="0004_stage9c_supervision_runs")
         if "pg_is_in_recovery()" in sql:
             return Result(value=False)
         if "transaction_read_only" in sql:
@@ -38,18 +39,30 @@ class Connection:
         raise AssertionError(sql)
 
 
+RUN_ID = UUID("00000000-0000-0000-0000-000000000001")
+
+
 def test_local_db_healthy():
-    check_db(Connection(), "tcou")
+    with patch("scripts.phase5b_stage9c_local_guard.require_guard_lease") as lease:
+        check_db(Connection(), "tcou", RUN_ID)
+        lease.assert_called_once()
+        assert lease.call_args.args[1] == RUN_ID
 
 
 def test_local_drain_detected():
     with pytest.raises(RuntimeError, match="disabled or drained"):
-        check_db(Connection(drained=True), "tcou")
+        check_db(Connection(drained=True), "tcou", RUN_ID)
 
 
 def test_local_wrong_database_detected():
     with pytest.raises(RuntimeError, match="database safety mismatch"):
-        check_db(Connection(database="postgres"), "tcou")
+        check_db(Connection(database="postgres"), "tcou", RUN_ID)
+
+
+def test_local_guard_rejects_missing_supervision_lease():
+    with patch("scripts.phase5b_stage9c_local_guard.require_guard_lease", side_effect=RuntimeError("run missing")):
+        with pytest.raises(RuntimeError, match="run missing"):
+            check_db(Connection(), "tcou", RUN_ID)
 
 
 def test_dry_run_never_stops_units():
