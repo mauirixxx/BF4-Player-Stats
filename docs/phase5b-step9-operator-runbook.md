@@ -1,6 +1,6 @@
 # Phase 5B Step 9 — Production operator runbook
 
-Status: **STAGE 9A COMPLETE / ACCEPTED — live Stage 9B activation is not authorized**
+Status: **STAGE 9B ACCEPTED — Stage 9C preflight in progress; live Stage 9C not yet authorized**
 
 This runbook operationalizes the frozen Step 9 design. It deliberately keeps
 three controls separate:
@@ -243,3 +243,41 @@ checkpoint is formally accepted.
 Nothing in Stage 9A completion itself authorizes Stage 9B. Starting production
 materialization or a production collector still requires the separate live
 canary decision.
+
+## Stage 9B accepted / Stage 9C preflight checkpoint (2026-10-08 UTC)
+
+Stage 9B tcou one-hour canary **ACCEPTED**. Preserve these immutable values:
+
+- `--cutover-at 2026-10-08T00:47:34.757784+00:00`
+- `--since-event-id 11558`
+
+Stopped audit: 466 starts = 466 terminals; 464 successes, 2 temporary
+failures, zero throttling/persistence/foreign activity, peak rolling-hour
+430/1296, zero owned jobs. Sundaro's HTTP 503 weapons request recovered on
+15-minute retry. moonMindman's weapons read timeout remains pending as job
+6722 with 15-minute retry; do not delete or reseed it.
+
+Stage 9C read-only host checks PASS on tcou, kah-01, hnl-01: same git commit
+`3ea3839cd7c37027fe69b48da6130b18be9a9fcc`, Python 3.12.3,
+no collector/discovery processes; all point to writable
+`bf4_playerstats_test` revision `0003_request_gates`. Collector registry
+shows three frozen UUIDs enabled, undrained, heartbeat unknown, no ownership;
+one legitimate pending background job. Public IPv4 egress addresses were
+respectively 72.253.18.166, 98.155.184.38, and 76.81.69.106.
+
+Repeat checkpoint audit using the frozen arguments:
+
+```bash
+cd /opt/bf4-player-stats
+.venv/bin/python scripts/phase5b_step9_checkpoint_audit.py \\
+  --cutover-at 2026-10-08T00:47:34.757784+00:00 \\
+  --since-event-id 11558
+```
+
+Stage 9C remains **NOT AUTHORIZED TO START** pending a verified
+three-host launch/stop plan, coordinated response to a 403/429 or other abort
+condition, and explicit operator go-ahead. The single-host collector's
+self-stop on throttling is NOT a fleet-wide stop. Restart tcou discovery
+materialization with the **existing** cutover only after final approval;
+do not create a new cutover, delete retry debt, or restart any collector
+as part of read-only preflight.
