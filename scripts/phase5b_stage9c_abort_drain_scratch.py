@@ -206,6 +206,16 @@ def main():
             conn.rollback()
             print("PASS: scratch cleanup; supervision ledger restored to zero")
     finally:
+        # On assertion failure, delete only run IDs created by this harness.
+        # Never mask the original error with a cleanup exception.
+        try:
+            with engine.begin() as cleanup:
+                for rid in run_ids:
+                    cleanup.execute(text(
+                        "DELETE FROM stage9c_supervision_runs WHERE run_id=:id"
+                    ), {"id": rid})
+        except Exception as cleanup_error:
+            print(f"WARNING: scratch cleanup failed; inspect disposable run IDs: {run_ids}; {cleanup_error}")
         watchdog.IDENTITIES = original
         engine.dispose()
 
