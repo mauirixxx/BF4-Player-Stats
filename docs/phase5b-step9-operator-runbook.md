@@ -281,3 +281,59 @@ self-stop on throttling is NOT a fleet-wide stop. Restart tcou discovery
 materialization with the **existing** cutover only after final approval;
 do not create a new cutover, delete retry debt, or restart any collector
 as part of read-only preflight.
+
+## Stage 9C unattended six-hour execution design — NOT YET ACTIVATED
+
+**Recommended supervisor:** transient systemd units (`systemd-run`) on each
+host, rather than screen/tmux or permanent installed services. Each unit
+runs under the dedicated bf4ps account, with the existing protected
+`/etc/bf4-player-stats/discovery.env` (where applicable), fixed working
+directory `/opt/bf4-player-stats`, unbuffered logs to journald, and a
+bounded runtime. Do not pass database credentials in command arguments,
+logs, or shell history. Verify the protected environment exists and is
+appropriate on **each** host before attempting to launch.
+
+**Separation:** one discovery/materializer unit on tcou only; one
+production collector unit on each of tcou, hnl-01, kah-01. Use the same
+frozen cutover `2026-10-08T00:47:34.757784+00:00` and original exclusive
+event boundary `11558`. Do not regenerate either value, reset gates,
+delete retry debt, or reseed background work.
+
+**Unattended safety gate (must be implemented and tested first):** a
+fleet-wide watchdog, independent of the operator's SSH session, must
+periodically inspect the durable event ledger and database health and
+detect HTTP 403/429, Battlelog throttle, persistence failures, accounting
+anomalies (allow for in-flight attempts before declaring a mismatch),
+budget overflow, provenance violations, and repeated lease anomalies.
+It must fail closed when database access or watchdog health is lost.
+On a confirmed abort it must prevent new claims on all three collectors
+using supported collector controls and coordinate shutdown of the three
+collector processes and materialization, while preserving all evidence.
+A single collector's existing throttle self-stop is not fleet-wide
+protection. Define/validate watchdog latency, fault injection, shutdown
+idempotence, and restart behavior before any unattended run.
+
+**Run boundary:** record UTC start and planned six-hour end; use a
+supervisor-enforced maximum runtime as a backstop, not as a substitute
+for the watchdog. Stop collectors first, then materialization; wait for
+in-flight attempts to settle before running the final read-only audit.
+The six-hour checkpoint is an evaluation gate, not automatic permission
+to proceed to Stage 9D.
+
+**Remote operations:** from another PC, SSH to each host and use
+`systemctl status <transient-unit>` and
+`journalctl -u <transient-unit>` to observe; use documented stop/drain
+controls to end the test. Avoid running multiple copies of a collector
+on one host or two materializing discovery processes.
+
+**Launch order after authorization:** preflight the supervisor/watchdog
+and database; verify exact git revision on all hosts; verify one discovery
+singleton and no existing collectors; start the watchdog; start tcou
+materialization with the preserved cutover; then start tcou, hnl-01,
+and kah-01 collectors in controlled sequence, confirming identity,
+heartbeat, and bounded request activity after each. Recheck the global
+audit and abort signals before leaving the first PC.
+
+**Current decision:** Stage 9C is still blocked on watchdog implementation,
+negative tests, and the operator's explicit go-ahead. No service starts
+or production Battlelog requests are authorized by this section.
