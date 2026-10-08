@@ -151,3 +151,17 @@ migration contract tests passed. `git grep` identified hardcoded
    a separate approved window and a rollback plan.
 
 **No production schema upgrade is authorized by this audit.**
+
+## Stage 9C abort/drain failure gap — design decision pending implementation
+
+**Observed in source review after the 9/9 dummy-systemd matrix:** `phase5b_stage9c_watchdog.py` calls `abort_owned_run()` and `drain_fleet()` in one `engine.begin()` transaction. `drain_fleet()` refuses missing or drifted collector registrations; the exception rolls back the run's `active → aborted` transition. The existing `test_drain_failure_rolls_back_abort` explicitly confirms this behavior. Lease renewal is withheld, so host guards should fail closed on expiry, but a confirmed safety violation is not recorded as a durable abort.
+
+### Proposed fail-closed resolution (design, not implemented)
+
+1. Keep the existing **atomic abort + complete three-collector drain** as the preferred path when identities are valid. Preserve owner/generation/cutover/boundary fencing and database-target validation.
+2. On failure to commit that combined transaction, **do not renew the lease, restart collection, or infer that the abort committed**. A separate, narrowly scoped fallback transaction may commit **only** the fenced sticky abort of the exact run UUID, with the original safety reason plus a bounded drain-failure diagnostic. It must validate the same database identity, schema revision, run owner, generation, cutover, and event boundary. If fencing or database health is uncertain, refuse the fallback and rely on guard lease expiration.
+3. Treat fallback abort as **terminal but fleet drain incomplete/unknown**. Do not report `ABORT + FLEET DRAIN` success, and do not mutate an unknown collector identity. Trigger explicit operator escalation; physical shutdown must be enforced by guards/systemd, not assumed from a database drain.
+4. Prove through offline transaction fault injection that normal abort/drain commits together, a failed drain rolls back the combined transaction, and the separately committed fallback leaves the run aborted without claiming the fleet drained. Prove stale owner/generation, unavailable DB, and failed fallback do not falsely report success. Then use a disposable PostgreSQL database for real commit/rollback verification.
+5. No live Stage 9C activation, production migration, or collector launch is authorized by this proposal.
+
+**Tradeoff:** A fallback sticky abort cannot be claimed as an atomic fleet drain. The design deliberately favors durable terminal run state plus independent guard-enforced physical shutdown over silently rolling back a confirmed abort. Review and implementation are required before the six-hour trial.
