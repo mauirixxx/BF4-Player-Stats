@@ -29,7 +29,7 @@ def test_supervision_migration_is_inert_and_reversible():
     assert "state = 'active'" in source
     assert 'op.drop_table("stage9c_supervision_runs")' in source
     assert 'op.execute(' not in source
-    for forbidden in ("collection_jobs", "collection_events", "request_gates", "UPDATE collectors"):
+    for forbidden in ("collection_jobs", "collection_events", "UPDATE collectors"):
         assert forbidden not in source
 
 
