@@ -45,8 +45,8 @@ def create_run(conn, run_id, owner):
         (run_id,state,cutover_at,since_event_id,started_at,deadline_at,
          watchdog_owner,watchdog_generation,heartbeat_at,lease_expires_at)
         VALUES (:id,'active',CAST(:cutover AS timestamptz),:boundary,
-                clock_timestamp(),clock_timestamp()+interval '6 hours',
-                :owner,1,clock_timestamp(),clock_timestamp()+interval '20 seconds')
+                transaction_timestamp(),transaction_timestamp()+interval '6 hours',
+                :owner,1,transaction_timestamp(),transaction_timestamp()+interval '20 seconds')
     """), {"id": run_id, "owner": owner, "cutover": CUTOVER_AT,
            "boundary": BOUNDARY_EVENT_ID})
 
