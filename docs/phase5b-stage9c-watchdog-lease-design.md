@@ -101,3 +101,53 @@ and the operational scripts that depend on them. Update
 migration. Add offline SQL/state-transition tests, then isolated
 PostgreSQL integration tests and harmless three-host systemd fault
 injection. **No production migration or live launch is approved here.**
+
+
+## Revision compatibility audit — tcou output, 2026-10-08 UTC
+
+After fast-forwarding to `d3683d2`, tcou reported **3/3** offline
+migration contract tests passed. `git grep` identified hardcoded
+`0003_request_gates` in the following categories:
+
+- **Stage 9C live safety path:** `scripts/phase5b_stage9c_watchdog.py`,
+  `scripts/phase5b_stage9c_local_guard.py`.
+- **Operator control:** `scripts/bf4ps_production_collector_control.py`.
+  The `drain` action must remain available after schema migration;
+  `resume` must never bypass an active or aborted Stage 9C lease.
+- **Step 9 read-only audits and activation tooling:** multiple
+  `scripts/phase5b_step9*.py`, including checkpoint audit, activation
+  readiness, rollback, and Stage 9B boundary.
+- **Schema verifier:** `scripts/verify_database_schema.py`.
+- **Historical Phase 2–5A harnesses and shared cohort constants:**
+  deliberately pinned to the revision under which those experiments
+  were accepted. Preserve historical expectations rather than blindly
+  rewriting their constants.
+- **Tests:** several tests assert exact `0003` string literals and
+  must be revised only alongside their corresponding runtime policy.
+
+### Upgrade policy
+
+1. **Before database migration:** Stage 9C guards and watchdog must
+   remain fail-closed against both schema versions until the lease
+   implementation is complete. Do not broaden their accepted revision
+   to `0004` before they actually enforce the lease.
+2. **Operator emergency drain:** make `drain` compatible with both
+   revisions while validating the same database and collector identity;
+   retain strict safeguards for `resume`. An unqualified resume must
+   not activate collection during Stage 9C.
+3. **New Stage 9C launcher:** require exactly `0004` and prove the
+   run lease and sticky abort checks before any live collector starts.
+4. **Historical scripts:** keep pinned `0003` unless there is a
+   separately reviewed reason to execute them against `0004`.
+   A historical script refusing to run after upgrade is intentional,
+   not permission to weaken its safeguards.
+5. **Schema verifier:** support explicit target revisions with matching
+   table/column expectations; do not call `0004` verified while
+   only checking `0003` tables.
+6. **Migration validation:** run Alembic offline inspection and isolated
+   PostgreSQL upgrade/downgrade/upgrade tests with checks for no
+   unexpected modifications to `collection_jobs`, `collection_events`,
+   `collectors`, and `request_gates`. Production migration requires
+   a separate approved window and a rollback plan.
+
+**No production schema upgrade is authorized by this audit.**
