@@ -237,3 +237,7 @@ Operator independently verified zero rows in `collectors`, `soldiers`, `collecti
 ### FI-2 start-event INSERT failure — CLOSED
 
 Operator ran `scripts.phase5b_stage9c_fi2_start_failure_scratch --execute` on `tcou` (commit `9597d81`): injected production start-event INSERT failure propagated; HTTP was blocked (Battlelog requests 0); no committed start event; unexpired running reservation charged once; exact fixture and request-gate cleanup; harness exit 0. Independent follow-up census confirmed zero rows in `collectors`, `soldiers`, `collection_jobs`, `collection_events`, `stage9c_supervision_runs`, and zero `request_gates` rows matching `stage9c_fi2_start_failure-%`. `PASS: Independent FI-2 cleanup`. FI-2 closed. FI-3 pending; production HOLD.
+
+### FI-3 durable start vs. persistence rollback — harness PASS, independent census pending
+
+Operator pulled latest `test/stage9c-admission-concurrency` and ran `scripts.phase5b_stage9c_fi3_persistence_rollback_scratch --execute` on `tcou`. Output: `PASS: committed physical start survives later persistence rollback`; `PASS: current/history/state/success rolled back; slot 1296 remains charged`; `Battlelog requests: 0`; `PASS: exact scratch fixture cleanup`; exit code 0. Independent five-table cleanup verification is still required before closing FI-3. This tests persistence rollback durability, not post-failure diagnostic-event logging. Production Stage 9C remains HOLD.
