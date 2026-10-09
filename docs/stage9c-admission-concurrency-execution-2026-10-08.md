@@ -241,3 +241,7 @@ Operator ran `scripts.phase5b_stage9c_fi2_start_failure_scratch --execute` on `t
 ### FI-3 durable start vs. persistence rollback — harness PASS, independent census pending
 
 Operator pulled latest `test/stage9c-admission-concurrency` and ran `scripts.phase5b_stage9c_fi3_persistence_rollback_scratch --execute` on `tcou`. Output: `PASS: committed physical start survives later persistence rollback`; `PASS: current/history/state/success rolled back; slot 1296 remains charged`; `Battlelog requests: 0`; `PASS: exact scratch fixture cleanup`; exit code 0. Independent five-table cleanup verification is still required before closing FI-3. This tests persistence rollback durability, not post-failure diagnostic-event logging. Production Stage 9C remains HOLD.
+
+### FI-3 independent cleanup — CLOSED
+
+Operator independently checked `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs` after FI-3 harness PASS. Each returned zero rows; `PASS: Independent FI-3 cleanup`. FI-1, FI-2, and FI-3 now all have successful harness executions and independent cleanup evidence. Failure-injection transaction-boundary group closed; no implication of overall Stage 9C readiness. Next: reconcile remaining design/operational gates with existing evidence, including persistence-failure diagnostics and cross-host concurrency. Production Stage 9C remains HOLD.
