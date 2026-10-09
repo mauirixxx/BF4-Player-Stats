@@ -75,3 +75,7 @@ Reviewed `docs/database-schema-reference.md` and `migrations/versions/0001_initi
 ### T2 offline regression checkpoint
 
 Operator pulled `0f74057` on `tcou`; all three collector modules compiled and `pytest -q` reported **412 passed in 1.22s**, exit 0. This confirms existing regression compatibility only. Focused PostgreSQL duplicate-start and concurrency tests, legitimate next-attempt retry, and independent cleanup are still required. T2 OPEN; Stage 9C HOLD.
+
+### T2 scratch duplicate-start validation — PASS, independent cleanup pending
+
+Operator confirmed scratch DB/user `bf4ps_scratch_stage9c_integration` / `bf4ps_stage9c_integration` and ran `scripts.phase5b_stage9c_duplicate_start_scratch --execute`: detailed, weapons and vehicles each PASS concurrent duplicate rejection, sequential duplicate rejection, and legitimate attempt-2 acceptance. Zero real HTTP; harness reports exact fixture cleanup. **Independent cleanup census remains pending**, so T2 not yet CLOSED. Production Stage 9C HOLD.
