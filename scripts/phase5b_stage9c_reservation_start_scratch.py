@@ -40,7 +40,6 @@ def run(url: str) -> None:
     jobs: list[int] = []
     seeded = False
     preflight = False
-    started = False
     try:
         with engine.connect() as conn:
             check(conn)
@@ -122,7 +121,6 @@ def run(url: str) -> None:
             engine, job=job, identity=identity, persona_id=persona_id,
             platform="pc",
         )
-        started = True
 
         with engine.begin() as conn:
             matching = int(conn.execute(text("""
@@ -179,10 +177,19 @@ def run(url: str) -> None:
                         WHERE collector_uuid=:uid AND collector_name=:name
                     """), {"uid": uid, "name": name}).rowcount
                     counts = (deleted_jobs, deleted_events, deleted_soldiers, deleted_collectors)
-                    expected = (
-                        (2, BACKGROUND_SLOTS_PER_HOUR - 1 + int(started), 2, 1)
-                        if seeded else (0, 0, 0, 0)
-                    )
+                    # The production writer commits independently. If it committed
+                    # and then raised, an in-memory flag is not authoritative.
+                    # Exactly 1295 baseline events and at most one owned start
+                    # event are valid for this test; anything else fails closed.
+                    baseline = BACKGROUND_SLOTS_PER_HOUR - 1
+                    valid_events = {baseline, baseline + 1} if seeded else {0}
+                    expected_shape = (2, 2, 1) if seeded else (0, 0, 0)
+                    if deleted_events not in valid_events:
+                        raise RuntimeError(
+                            f"REFUSING unexpected event cleanup count: {deleted_events}"
+                        )
+                    expected = (expected_shape[0], deleted_events,
+                                expected_shape[1], expected_shape[2])
                     if counts != expected:
                         raise RuntimeError(f"REFUSING partial cleanup: {counts} != {expected}")
                 print("PASS: exact scratch fixture cleanup")
