@@ -99,6 +99,19 @@ def main():
                         raise RuntimeError("REFUSING release after claim")
                     if _usage(conn).total!=BACKGROUND_SLOTS_PER_HOUR-1:
                         raise RuntimeError("REFUSING changed budget before release")
+                    window = conn.execute(text("""
+                        SELECT COUNT(*) AS n, MIN(occurred_at) AS oldest,
+                               MAX(occurred_at) AS newest
+                        FROM collection_events
+                        WHERE metadata->>'stage9c_t4_marker'=:marker
+                          AND event_type='collection_attempt_started'
+                    """), {"marker":marker}).one()
+                    if window.n != BACKGROUND_SLOTS_PER_HOUR-1:
+                        raise RuntimeError("REFUSING changed synthetic event count")
+                    if not conn.execute(text("""
+                        SELECT CAST(:oldest AS timestamptz) >= now() - interval '5 minutes'
+                    """), {"oldest":window.oldest}).scalar_one():
+                        raise RuntimeError("REFUSING stale synthetic budget window")
                     emit(conn,marker,RELEASE)
                     print("PASS: three hosts ready; release committed")
                 elif args.action=="inspect":
