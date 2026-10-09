@@ -44,3 +44,13 @@ T1/T2/T3 were validated on tcou using isolated PostgreSQL scratch and independen
 ## Approval checkpoint
 
 This document authorizes **nothing**. Next deliverable is an exact reviewed, zero-HTTP cross-host harness and commands. Operator approval must be requested separately before any remote execution. T5 and O1–O4 remain OPEN; production Stage 9C HOLD.
+
+## Implementation review checkpoint (2026-10-09)
+
+- tcou read-only preflight passed; coordinator and participant syntax compilation passed on tcou at 810b749.
+- Participant exact identity check patched at 92c6c65; coordinator expired-lease cleanup check patched at 9515971. These newer revisions have **not** been compiled or executed on a host.
+- **STOP: do not execute seed/participant/inspect/cleanup yet.** There is no genuine cross-host readiness barrier or coordinator release protocol. The coordinator's current inspection only proves one claim and budget 1296; it does not prove three participants were concurrently ready or that all three returned.
+- Current cleanup depends on operator confirming all participants exited, and on the winner's lease expiring. It does not yet independently establish participant completion or enforce a unique persistent readiness/finish ledger.
+- Further review required: seed/participant SQL must be verified against the documented schema and migrations; exact expected fixture counts; failure cleanup on partial runs; independent read-only five-table census.
+- Next engineering deliverable: add a bounded DB-coordinated ready/release/finished barrier using scratch-only durable state (no production migration), with explicit timeout/abort and no automatic rerun. Then run offline tests and a tcou-only rehearsal before seeking remote execution approval.
+- T4 remains OPEN. No remote hosts or production systems were touched.
