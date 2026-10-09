@@ -220,10 +220,15 @@ def main():
                 with engine.begin() as conn:
                     validate_target(conn)
                     supervision = require_guard_lease(conn, args.run_id)
+                    supervision_start = supervision["started_at"]
+                    if (not isinstance(supervision_start, datetime)
+                            or supervision_start.tzinfo is None
+                            or supervision_start.utcoffset() is None):
+                        raise RuntimeError("missing or invalid persisted supervision start")
                     issues, starts, terminals, maximum = inspect(
                         conn, boundary=args.since_event_id, cutover=cutover,
                         grace_seconds=args.inflight_grace_seconds,
-                        supervision_start=supervision["started_at"],
+                        supervision_start=supervision_start,
                     )
                     if issues:
                         LOG.critical("ABORT: %s", "; ".join(issues))
