@@ -54,3 +54,9 @@ This document authorizes **nothing**. Next deliverable is an exact reviewed, zer
 - Further review required: seed/participant SQL must be verified against the documented schema and migrations; exact expected fixture counts; failure cleanup on partial runs; independent read-only five-table census.
 - Next engineering deliverable: add a bounded DB-coordinated ready/release/finished barrier using scratch-only durable state (no production migration), with explicit timeout/abort and no automatic rerun. Then run offline tests and a tcou-only rehearsal before seeking remote execution approval.
 - T4 remains OPEN. No remote hosts or production systems were touched.
+
+## Barrier implementation checkpoint — 2026-10-09
+
+The test branch now contains `scripts/phase5b_stage9c_t4_barrier.py`, and revised coordinator/participant scripts. Each participant writes a distinct READY event, polls for one committed RELEASE for at most 60 seconds without holding an open transaction, performs one production admission claim, and commits a DONE event with WIN/DENIED outcome. Coordinator release requires three distinct READY events; inspect and cleanup require three distinct DONE events with one WIN and two DENIED. Cleanup expects exactly 1295 synthetic budget events plus seven barrier events and refuses an unexpired winner lease.
+
+**Not yet validated**: latest syntax, scratch SQL, barrier behavior, exception/timeout cleanup, and actual cross-host concurrency. A timed-out or failed participant intentionally prevents automatic cleanup; manual incident review is required. The coordinator does not launch remote processes. No host execution authorized. This is a design and implementation checkpoint only. T4 OPEN; production HOLD.
