@@ -75,7 +75,7 @@ def main():
     })
     try:
         with engine.connect() as conn:
-            conn.exec_driver_sql("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+            conn.exec_driver_sql("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
             try:
                 inspect(conn, marker)
             finally:
