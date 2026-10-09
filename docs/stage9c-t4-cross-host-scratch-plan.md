@@ -64,3 +64,12 @@ The test branch now contains `scripts/phase5b_stage9c_t4_barrier.py`, and revise
 ## Three-independent-job correction (2026-10-09)
 
 Review found that a single pending job cannot distinguish a global budget cap from ordinary duplicate-job locking. T4 now seeds three distinct soldiers and three independent pending detailed jobs, one assigned to each host. Each host claims only its own soldier. Expected result after RELEASE: one claimed job with attempt_count=1, two still-pending jobs with attempt_count=0, and shared usage 1296/1296. This is a test-design correction, not yet a tested result. Changes at ed99aa5 and 18556b9. Recompile latest scripts before any database rehearsal. Cross-host authorization remains withheld.
+
+## Failure handling and time-window checkpoint (2026-10-09)
+
+- Release now checks that exactly 1295 synthetic `collection_attempt_started` events remain and that their oldest timestamp is no more than five minutes old. This is stricter than the rolling one-hour budget and prevents delayed release from giving misleading results. Change: f473ef2.
+- **Normal path:** three READY events, one RELEASE, three DONE events, inspect, then cleanup only after winner lease expiry and confirmation that all participant processes exited; independently count all scratch fixture tables afterward.
+- **Failure before release:** no admission attempt should have occurred. The existing `cleanup` command deliberately refuses because there are not three DONE events. Do **not** bypass it or rerun `seed`. Record event/job/lease state and stop participants before designing an exact, reviewed recovery transaction.
+- **Failure after release:** a winner might hold a valid lease even if its DONE event was not committed. Stop all participants, preserve evidence, inspect ownership and expiry, and do not delete rows until a separate reviewed recovery plan explicitly covers missing DONE events.
+- **Rolling-hour expiry:** if synthetic events age out before inspection, treat T4 as inconclusive rather than PASS; preserve fixture for forensic review. Never add synthetic events mid-run.
+- **Current blocker:** no implemented, reviewed recovery command for incomplete READY/RELEASE/DONE sequences. No functional scratch rehearsal or cross-host execution authorization yet. Production HOLD.
