@@ -110,8 +110,8 @@ def run(url: str) -> None:
                    "token": old.lease_token}).rowcount
             if count != 1:
                 raise AssertionError("could not expire exact owned fixture")
-            if _usage(conn).total != BACKGROUND_SLOTS_PER_HOUR:
-                raise AssertionError("expired reservation unexpectedly disappeared")
+            if _usage(conn).total != BACKGROUND_SLOTS_PER_HOUR - 1:
+                raise AssertionError("expired unstarted reservation still consumes capacity")
 
         with engine.begin() as conn:
             replacement = claim_production_background_job(
@@ -119,30 +119,17 @@ def run(url: str) -> None:
                 allowed_soldier_ids=soldiers,
             )
             usage = _usage(conn).total
-            if replacement is None:
-                print("OBSERVED: expired unstarted reservation blocks reclaim at 1296")
-                if usage != BACKGROUND_SLOTS_PER_HOUR:
-                    raise AssertionError(f"unexpected blocked usage {usage}")
-                state = conn.execute(text("""
-                    SELECT status,attempt_count,collector_uuid,lease_token,
-                           lease_expires_at <= now() AS expired
-                    FROM collection_jobs WHERE job_id=:jid
-                """), {"jid": old.job_id}).mappings().one()
-                if (state["status"] != "claimed"
-                        or state["attempt_count"] != 1
-                        or state["lease_token"] != old.lease_token
-                        or not state["expired"]):
-                    raise AssertionError(f"blocked state inconsistent: {state}")
-                print("PASS: reproduced and fenced expired-lease capacity deadlock")
-            else:
-                if (replacement.job_id != old.job_id
-                        or replacement.attempt_count != 2
-                        or replacement.lease_token == old.lease_token
-                        or usage != BACKGROUND_SLOTS_PER_HOUR):
-                    raise AssertionError(
-                        f"unexpected replacement: {replacement}, usage={usage}"
-                    )
-                print("PASS: reclaimed expired reservation at full ceiling")
+            if (replacement is None
+                    or replacement.job_id != old.job_id
+                    or replacement.attempt_count != 2
+                    or replacement.lease_token == old.lease_token
+                    or usage != BACKGROUND_SLOTS_PER_HOUR):
+                raise AssertionError(
+                    f"full-ceiling reclaim failed: replacement={replacement}, usage={usage}"
+                )
+            print("PASS: expired unstarted reservation releases capacity")
+            print("PASS: reclaimed expired reservation at full ceiling")
+            print("PASS: replacement token and attempt count advanced; total 1296")
         print("Battlelog requests: 0")
     finally:
         try:
