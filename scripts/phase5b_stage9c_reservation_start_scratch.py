@@ -159,24 +159,25 @@ def run(url: str) -> None:
                     conn.execute(text(
                         "SELECT pg_advisory_xact_lock(hashtext('bf4ps:stage9c-reservation-start-fixture'))"
                     ))
-                    counts = (
-                        conn.execute(text(
-                            "DELETE FROM collection_jobs WHERE job_id=ANY(:ids) AND reason=:reason"
-                        ), {"ids": jobs, "reason": name}).rowcount,
-                        conn.execute(text("""
-                            DELETE FROM collection_events
-                            WHERE metadata->>'stage9c_reservation_start_marker'=:marker
-                               OR (job_id=ANY(:ids) AND collector_uuid=:uid
-                                   AND event_type='collection_attempt_started')
-                        """), {"marker": marker, "ids": jobs, "uid": uid}).rowcount,
-                        conn.execute(text("""
-                            DELETE FROM soldiers
-                            WHERE soldier_id=ANY(:ids) AND current_name LIKE :prefix
-                        """), {"ids": soldiers, "prefix": name + "-%"}).rowcount,
-                        conn.execute(text("""
-                            DELETE FROM collectors
-                            WHERE collector_uuid=:uid AND collector_name=:name
-                        """), {"uid": uid, "name": name}).rowcount
+                    # Remove start events before jobs: FK ON DELETE SET NULL
+                    # would otherwise erase the job_id cleanup selector.
+                    deleted_events = conn.execute(text("""
+                        DELETE FROM collection_events
+                        WHERE metadata->>'stage9c_reservation_start_marker'=:marker
+                           OR (job_id=ANY(:ids) AND collector_uuid=:uid
+                               AND event_type='collection_attempt_started')
+                    """), {"marker": marker, "ids": jobs, "uid": uid}).rowcount
+                    deleted_jobs = conn.execute(text(
+                        "DELETE FROM collection_jobs WHERE job_id=ANY(:ids) AND reason=:reason"
+                    ), {"ids": jobs, "reason": name}).rowcount
+                    deleted_soldiers = conn.execute(text("""
+                        DELETE FROM soldiers
+                        WHERE soldier_id=ANY(:ids) AND current_name LIKE :prefix
+                    """), {"ids": soldiers, "prefix": name + "-%"}).rowcount
+                    deleted_collectors = conn.execute(text("""
+                        DELETE FROM collectors
+                        WHERE collector_uuid=:uid AND collector_name=:name
+                    """), {"uid": uid, "name": name}).rowcount
                     counts = (deleted_jobs, deleted_events, deleted_soldiers, deleted_collectors)
                     expected = (
                         (2, BACKGROUND_SLOTS_PER_HOUR - 1 + int(started), 2, 1)
