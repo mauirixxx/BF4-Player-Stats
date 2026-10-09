@@ -190,3 +190,7 @@ HARNESS EXIT CODE: 0
 ```
 
 The rerun PASSED. Independent five-table cleanup verification **after the successful rerun** is still pending. Started-lease regression remains pending. Stage 9C production trial remains HOLD.
+
+### Independent cleanup after successful below-ceiling regression rerun
+
+Operator independently verified **zero rows** in each of `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs` after the successful `58a3436` below-ceiling regression rerun. Output: `PASS: Independent below-ceiling regression cleanup`. This closes its post-fix cleanup gate. Started-lease regression remains pending. Stage 9C production trial remains HOLD.
