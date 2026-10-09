@@ -1,3 +1,15 @@
+## Reconciliation with completed Stage 9C work (2026-10-08)
+
+**Do not duplicate previously executed checks.** Existing evidence and implementation are recorded in:
+
+- `docs/phase5b-stage9c-readiness-review.md` — 406/406 offline PASS; 22 PostgreSQL scratch checks; actual watchdog `main()` isolated integration; unresolved activation gates.
+- `docs/phase5b-stage9c-rolling-budget-boundary-audit.md` — cross-boundary rolling-hour accounting implemented and verified, with explicit remaining live-ledger completeness caveat.
+- `scripts/phase5b_stage9c_rolling_budget_scratch.py`, `scripts/phase5b_stage9c_watchdog_main_scratch.py`, `scripts/phase5b_stage9c_checkpoint_scratch.py` — reusable allowlisted PostgreSQL scratch validation patterns.
+- `scripts/phase5b_background_service_db_validate.py` — rollback-only sequential production-admission checks, **not** concurrent admission proof; currently pins historical revision `0003_request_gates`, so do not execute against the Stage 9C scratch target unchanged.
+- `scripts/phase3a_concurrent_claim_integration.py` and `scripts/phase3b_lease_fencing_integration.py` — existing concurrency/lease primitives to inspect before building new tests.
+
+**Incremental scope only:** race two independent transactions through `claim_production_background_job` at 1,295/1,296 usage; verify reservation-to-start transition, expired lease reclaim, retry consumption, and cross-resource accounting. Preserve existing allowlist, exact target checks, no external HTTP, and Stage 9C HOLD. Prior PASS results are historical operator evidence, not tests rerun in this branch.
+
 # Stage 9C — PostgreSQL admission concurrency validation
 
 Status: **HOLD — validation design only; no live activation**
