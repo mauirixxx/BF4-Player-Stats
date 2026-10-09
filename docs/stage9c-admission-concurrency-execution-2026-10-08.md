@@ -209,3 +209,9 @@ HARNESS EXIT CODE: 0
 ```
 
 All four planned post-fix scratch scenarios have now passed their harnesses: full-ceiling expired-unstarted reclaim, two-transaction final-slot race, below-ceiling reclaim, and started-lease reclaim. **Independent five-table census for this final started-lease rerun is still pending.** Stage 9C production trial remains HOLD pending further failure-injection and cross-host validation.
+
+### Independent cleanup after started-lease regression — regression group closed
+
+Operator independently queried the isolated Stage 9C scratch database after the successful started-lease rerun: `collectors=0`, `soldiers=0`, `collection_jobs=0`, `collection_events=0`, `stage9c_supervision_runs=0`. Output: `PASS: Independent started-lease regression cleanup`.
+
+**All four post-correction regression scenarios and their independent five-table cleanup censuses have passed.** This closes the expired-unstarted-reservation accounting defect's defined regression group, not the broader Stage 9C validation program. Remaining gates include rollback/failure injection, start-event durability, persistence failures, rolling-window boundaries, and cross-host tests. Production trial remains HOLD.
