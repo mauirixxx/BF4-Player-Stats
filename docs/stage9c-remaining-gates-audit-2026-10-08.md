@@ -59,3 +59,7 @@ Operator executed `scripts.phase5b_stage9c_detailed_diagnostic_scratch --execute
 ### Independent cleanup — detailed diagnostic harness CLOSED
 
 Operator independently checked the isolated scratch target after diagnostic harness PASS: `collectors=0`, `soldiers=0`, `collection_jobs=0`, `collection_events=0`, `stage9c_supervision_runs=0`; output `PASS: Independent detailed diagnostic cleanup`. The direct diagnostic writer and cleanup subgate is **CLOSED**. Full `collect_one_detailed_job` exception-path integration remains unverified; do not equate the helper invocation with an orchestrator test. Stage 9C HOLD.
+
+### Full detailed collector exception path — scratch PASS, independent census pending
+
+Operator ran `scripts.phase5b_stage9c_detailed_orchestrator_scratch --execute` at `df70d00`: committed diagnostic after injected persistence rollback, physical-start retained, current/history/state/success rolled back, 1296th slot charged, one mocked fetch and **zero real Battlelog requests**, exact fixture cleanup, exit 0. This covers `collect_one_detailed_job` rather than direct helper only. **Independent five-table census and request-gate fixture check still pending**; T3 final closure contingent on independent cleanup. Production Stage 9C HOLD.
