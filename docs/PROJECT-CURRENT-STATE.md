@@ -40,6 +40,33 @@ The authoritative detailed evidence is `docs/phase5b-stage9c-readiness-review.md
 - Detailed, weapons, and vehicles collector source paths have been inspected for durable pre-HTTP attempt-start events; this is source evidence, not a concurrent execution proof.
 - The Stage 9C watchdog's cross-boundary rolling-hour logic and persisted supervision `started_at` handling have been corrected and scratch-tested. Historical Stage 9B checkpoint reporting is **not** sufficient for Stage 9C.
 
+## Historical milestone index (repository-evidenced)
+
+This is a **navigation index**, not a replacement for original acceptance records. Historical documents can contain earlier STOP/HOLD states that were superseded by later implementation; always consult the latest dated acceptance and current source. PASS means **recorded in the linked document**, not independently rerun during this checkpoint update.
+
+| Phase | Recorded milestone and evidence | Authoritative repository record |
+|---|---|---|
+| Foundation | Battlelog source reconnaissance, retention policy, database and operational schema, collector architecture/registry, discovery contracts. **Design documented**; implementation/acceptance varies by component. | [Battlelog sources](battlelog-data-sources.md), [schema reference](database-schema-reference.md), [collector architecture](collector-architecture.md), [BF4SW discovery](bf4sw-discovery.md) |
+| Phase 1 | Detailed stats fetched and persisted for PC, PS4 and Xbox One with HTTP 200, valid queue finalization and canonical history behavior. **Live cohort PASS recorded.** | [Multiplatform live validation](phase1-multiplatform-live-validation.md), [failure/recovery validation](phase1-failure-recovery-live-validation.md) |
+| Phase 2 | Bounded single-node feeder/runtime completed 10/10 detailed jobs across repeated replenishment cycles. **Live PASS recorded.** Other drain/recovery checks have separate records. | [Sustained runtime](phase2-sustained-runtime-live-validation.md), [bounded feeder](phase2-bounded-feeder-live-validation.md), [drained runtime](phase2-drained-runtime-live-validation.md) |
+| Phase 3A–3C | Concurrent queue claims, lease fencing and operator lifecycle each have dedicated validation records. **Do not conflate queue exclusivity with Stage 9C aggregate admission.** | [Concurrent claims](phase3a-concurrent-live-validation.md), [lease fencing](phase3b-lease-fencing-validation.md), [operator lifecycle](phase3c-operator-lifecycle-validation.md) |
+| Phase 3D | Three physical hosts competed for one PostgreSQL queue: 36/36 successful detailed collections, 12 attributed to each collector, no 403/429, clean queue and stops. **Live distributed PASS recorded.** | [Three-host validation](phase3d-three-host-validation.md) |
+| Phase 3E | Abrupt-loss recovery, cross-host reclamation, and final clean-stop closure documented. **Final clean-stop PASS recorded; consult the separate final acceptance evidence before claiming whole-phase closure.** | [Final clean-stop closure](phase3e-final-clean-stop-closure.md), [endurance records](phase3e-third-endurance-run.md) |
+| Phase 4A | 90-soldier sustained distributed ramp with a dedicated acceptance record. | [Phase 4A results](phase4a-sustained-run-results.md) |
+| Phase 4B | 900-player distributed sustained run: **PASS with automatic retry recovery** documented. | [Phase 4B results](phase4b-900-sustained-run-results.md) |
+| Phase 4C | Multiplatform sustained detailed collection: **450 attempts** with one unresolved, lifecycle-valid Xbox retry at acceptance; audit **PASS**, not 450 successful unique soldiers. | [Phase 4C results](phase4c-multiplatform-sustained-run-results.md) |
+| Phase 5A | Weapon/vehicle collection design, implementation census, weapon persistence integration contract, and live weapon probe records exist. **The original implementation census is historical and does not describe current code availability.** Do not claim complete full-stats cost characterization solely from these documents. | [Cost characterization design](phase5a-full-stats-cost-characterization.md), [implementation census](phase5a-implementation-census.md), [weapon persistence contract](phase5a-weapon-persistence-integration.md), [weapon probe](phase5a-live-weapon-probe-results.md) |
+| Phase 5B Steps 7–8 | Accepted endurance: 3,888 physical starts and terminals, 3,864 distinct jobs, 24 retries, rolling-hour maximum 1,296, zero 403/429 and zero persistence failures. **Accepted evidence recorded.** | [Step 9 activation plan (accepted Step 7/8 evidence)](phase5b-step9-production-activation-plan.md), [Step 7 endurance plan](phase5b-step7-endurance-plan.md) |
+| Phase 5B Stage 9B | Prospective materialization cutover accepted; immutable timestamp and event boundary are recorded above. Stage 9B historical audit does not certify Stage 9C cross-boundary budget. | [Production activation plan](phase5b-step9-production-activation-plan.md), [Stage 9C rolling-budget audit](phase5b-stage9c-rolling-budget-boundary-audit.md) |
+| Stage 9C | Watchdog supervision, rolling-hour cross-boundary accounting, scratch integration and read-only checkpoint have substantial passing evidence. **Live six-hour trial remains HOLD.** | [Readiness review](phase5b-stage9c-readiness-review.md), [rolling-budget audit](phase5b-stage9c-rolling-budget-boundary-audit.md), [supervision design](phase5b-stage9c-systemd-supervision-design.md) |
+
+### Evidence interpretation
+
+- Original dated validation documents are retained as immutable historical records. Do not overwrite historical STOP/HOLD language to make the timeline appear uniformly successful.
+- A **design**, **execution contract**, **source census**, **PASS test**, and **operator-approved activation** are different statuses. The index deliberately preserves these distinctions.
+- Earlier harnesses often pin Alembic `0003_request_gates`; Stage 9C scratch uses `0004_stage9c_supervision_runs`. Never assume a historical command is safe against a newer database.
+- Historical counts describe their frozen cohort or bounded experiment only; they are not live fleet health or current production metrics.
+
 ## Open gates (do not silently mark closed)
 
 1. Independently verify intended database's live schema and Alembic revision; any migration needs an explicit plan and approval.
