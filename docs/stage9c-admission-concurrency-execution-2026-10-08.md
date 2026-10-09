@@ -229,3 +229,7 @@ HARNESS EXIT CODE: 0
 ```
 
 **FI-1 harness PASS; independent five-table scratch cleanup census pending.** FI-2 and FI-3 have not yet executed. Stage 9C production trial remains HOLD.
+
+### FI-1 independent cleanup — CLOSED
+
+Operator independently verified zero rows in `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs` after FI-1 PASS. Output: `PASS: Independent FI-1 rollback cleanup`. FI-1 harness and independent cleanup gates are both complete. FI-2 start-event failure and FI-3 post-start persistence rollback remain pending. Production Stage 9C HOLD.
