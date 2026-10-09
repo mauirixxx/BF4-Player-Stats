@@ -94,3 +94,5 @@ The first two commits on the current branch were documentation and offline safet
 - **Authored, not executed.** This probe checks lock/usage visibility, **not** actual `claim_production_background_job()` concurrent queue claims, reservation accounting, retries, or lease reclamation. It must not be described as the Stage 9C admission gate passing.
 - Before operator execution, review failure-path cleanup, transaction timing/barrier strength, and strict scratch database emptiness; only run with explicit authorization against the allowlisted disposable database.
 - Next: improve deterministic barrier assertions; then add a genuine multi-connection `claim_production_background_job()` test with valid scratch soldiers/collectors/jobs and verify resource/retry/reclaim behavior. Maintain Stage 9C HOLD.
+
+- Commit `e637715` strengthens the unexecuted lock/usage probe: a loser-ready barrier and a third PostgreSQL connection's `pg_try_advisory_xact_lock` confirm that the winning transaction still holds the production advisory lock before release. It also refuses fixture cleanup after preflight rejection. **Not a production queue-claim proof and not run yet.**
