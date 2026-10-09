@@ -73,3 +73,7 @@ HARNESS EXIT CODE: 0
 ```
 
 **Evidence scope:** production detailed start-event writer was invoked against isolated scratch PostgreSQL with no outbound HTTP. It converted the winning committed reservation into one durable start event, kept aggregate accounting at the 1,296/hour ceiling, and denied another background claim. Harness-reported exact cleanup passed. **An independent post-run read-only emptiness check has not yet been reported** for this execution. Duplicate-start, lease reclaim, retries, mixed resources, rollback boundaries, and distributed hosts remain unproven. Production Stage 9C stays **HOLD**.
+
+### Independent post-run cleanup verification
+
+After the reservation-to-start execution, the operator ran a separate read-only PostgreSQL check against the allowlisted Stage 9C scratch database. All five tables returned **0 rows**: `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs`. Output ended with `PASS: Independent scratch cleanup verification`. This closes the reservation-to-start fixture cleanup verification; it does not change the Stage 9C production **HOLD** or validate untested lease-reclaim scenarios.
