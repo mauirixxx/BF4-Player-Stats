@@ -40,10 +40,12 @@ def main():
                 raise RuntimeError("REFUSING Alembic head")
             collectors=conn.execute(text("""
                 SELECT collector_uuid,hostname FROM collectors
-                WHERE collector_name LIKE :prefix
-            """),{"prefix":uid_marker+"_%"}).all()
+                WHERE collector_name IN (:tcou,:hnl,:kah)
+            """),{"tcou":uid_marker+"_tcou","hnl":uid_marker+"_hnl-01","kah":uid_marker+"_kah-01"}).all()
             if len(collectors)!=3 or {c.hostname for c in collectors}!=HOSTS:
                 raise RuntimeError("REFUSING incomplete participant registry")
+            if len({c.collector_uuid for c in collectors}) != 3:
+                raise RuntimeError("REFUSING duplicate collector identity")
             uid=next(c.collector_uuid for c in collectors if c.hostname==actual)
             job=conn.execute(text("""
                 SELECT job_id,soldier_id,status,attempt_count FROM collection_jobs
