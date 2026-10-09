@@ -31,7 +31,8 @@ def run(url: str) -> None:
         connect_args={"connect_timeout": 5, "options": "-c statement_timeout=15000"},
     )
     marker = str(uuid4())
-    winner_locked, release_winner = Event(), Event()
+    winner_locked, loser_ready, release_winner = Event(), Event(), Event()
+    preflight_passed = False
     try:
         # Guard all persistent writes. This database is disposable, but never
         # erase or reinterpret somebody else's scratch evidence.
@@ -41,6 +42,7 @@ def run(url: str) -> None:
                 if conn.execute(text(f"SELECT count(*) FROM public.{table}")).scalar_one():
                     raise RuntimeError(f"REFUSING nonempty public.{table}")
             conn.rollback()
+        preflight_passed = True
         with engine.begin() as conn:
             conn.execute(text("""
                 INSERT INTO public.collection_events
@@ -72,6 +74,7 @@ def run(url: str) -> None:
             if not winner_locked.wait(timeout=10):
                 raise TimeoutError("winner never acquired advisory lock")
             with engine.begin() as conn:
+                loser_ready.set()
                 conn.execute(text(LOCK))  # must wait for winner COMMIT
                 total = _usage(conn).total
                 assert total == BACKGROUND_SLOTS_PER_HOUR, total
@@ -82,8 +85,13 @@ def run(url: str) -> None:
             b = pool.submit(loser)
             if not winner_locked.wait(timeout=10):
                 raise TimeoutError("winner did not reach lock barrier")
-            # Winner remains open until this explicit release; loser cannot
-            # inspect a stale usage count while winner owns the advisory lock.
+            if not loser_ready.wait(timeout=10):
+                raise TimeoutError("loser never entered independent transaction")
+            # Independently verify the winner still owns the advisory lock.
+            # This is stronger than a scheduling-only thread barrier.
+            with engine.begin() as probe:
+                if probe.execute(text("SELECT pg_try_advisory_xact_lock(hashtext('bf4ps:phase5b-background-service'))")).scalar_one():
+                    raise AssertionError("advisory lock unexpectedly available")
             release_winner.set()
             a.result(timeout=20)
             assert b.result(timeout=20) == BACKGROUND_SLOTS_PER_HOUR
@@ -97,6 +105,9 @@ def run(url: str) -> None:
     finally:
         release_winner.set()
         try:
+            if not preflight_passed:
+                engine.dispose()
+                raise RuntimeError("preflight refused; no fixture cleanup attempted")
             with engine.begin() as conn:
                 # Exact marker only. Failure to clean is a hard failure.
                 deleted = conn.execute(text("""
