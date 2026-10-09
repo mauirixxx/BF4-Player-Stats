@@ -3,7 +3,7 @@
 from __future__ import annotations
 import argparse
 import os
-from uuid import uuid4
+from uuid import UUID, uuid4
 from sqlalchemy import create_engine, text
 from bf4ps.background_service import BACKGROUND_SLOTS_PER_HOUR, _usage
 from scripts.phase5b_stage9c_abort_drain_scratch import check
@@ -25,7 +25,7 @@ def main():
     url = os.environ.get("BF4PS_STAGE9C_INTEGRATION_URL", "")
     refuse_unsafe_target(url)
     engine = create_engine(url, pool_pre_ping=True, connect_args={"connect_timeout":5,"options":"-c statement_timeout=15000"})
-    marker = "stage9c_t4_" + (args.run_id or str(uuid4()))
+    marker = "stage9c_t4_" + (str(UUID(args.run_id)) if args.run_id else str(uuid4()))
     try:
         with engine.begin() as conn:
             if args.action == "seed":
@@ -84,8 +84,8 @@ def main():
                 job = rows[0]
                 owners = conn.execute(text("""
                     SELECT collector_uuid,hostname FROM collectors
-                    WHERE collector_name LIKE :prefix ORDER BY hostname
-                """), {"prefix":marker+"_%"}).all()
+                    WHERE collector_name IN (:tcou,:hnl,:kah) ORDER BY hostname
+                """), {"tcou":marker+"_tcou","hnl":marker+"_hnl-01","kah":marker+"_kah-01"}).all()
                 if len(owners)!=3 or {x.hostname for x in owners}!=set(HOSTS):
                     raise RuntimeError("REFUSING collector identity drift")
                 if args.action=="inspect":
@@ -98,6 +98,9 @@ def main():
                         raise AssertionError("budget incorrect after winner reservation")
                     print("PASS: one claimed job, 1296/1296 used (host logs still required)")
                 else:
+                    # Never remove a fixture while a participant still owns a live lease.
+                    if job.status in ("claimed", "running"):
+                        raise RuntimeError("REFUSING cleanup of live claimed/running lease; explicit expiry required")
                     # Remove events before jobs: FK ON DELETE SET NULL.
                     n=conn.execute(text("""
                         DELETE FROM collection_events WHERE metadata->>'stage9c_t4_marker'=:marker
@@ -110,8 +113,8 @@ def main():
                     n=conn.execute(text("DELETE FROM soldiers WHERE soldier_id=:sid AND current_name=:marker"),
                                    {"sid":job.soldier_id,"marker":marker}).rowcount
                     if n!=1: raise RuntimeError("REFUSING soldier cleanup mismatch")
-                    n=conn.execute(text("DELETE FROM collectors WHERE collector_name LIKE :prefix"),
-                                   {"prefix":marker+"_%"}).rowcount
+                    n=conn.execute(text("DELETE FROM collectors WHERE collector_name IN (:tcou,:hnl,:kah)"),
+                                   {"tcou":marker+"_tcou","hnl":marker+"_hnl-01","kah":marker+"_kah-01"}).rowcount
                     if n!=3: raise RuntimeError("REFUSING collector cleanup mismatch")
                     print("PASS: exact T4 fixture cleanup; independent census still required")
     finally:
