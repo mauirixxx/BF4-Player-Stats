@@ -55,3 +55,38 @@ The rolling-hour query filters start events by `occurred_at`, while outstanding 
 The first real scratch claim-race scenario **PASSED** on `tcou` at tested commit `821dfb5`: 1,295 synthetic start events, one committed weapons claim reserving slot 1,296, competing vehicles claim denied, lease reconciled, and marker-owned fixture cleanup. Independent post-run verification found all five scratch tables empty. Offline tests: 6 targeted and 412 total PASS. Full command, environment, output, and limitations: [execution record](stage9c-admission-concurrency-execution-2026-10-08.md).
 
 **Not yet validated:** reservation-to-start event transition, reclaim of expired unstarted/started leases, retry and mixed-resource consumption, rollback/failure injection, and hour-boundary expiry. This checkpoint closes only the specified two-transaction claim race, not the whole admission gate. Production Stage 9C remains **HOLD**.
+
+## Next implementation gate — reservation-to-start transition (design checkpoint, 2026-10-08)
+
+**Status: designed, NOT implemented or executed.** The preceding claim-race PASS must not be conflated with this gate.
+
+### Authoritative code and schema
+
+- `bf4ps/background_service.py::_usage` counts rolling-hour `collection_attempt_started` rows plus claimed/running jobs **without a matching start event for their current attempt number**.
+- `bf4ps/collection_jobs.py::claim_next_job` increments `attempt_count` and issues a new `lease_token` on claim; `mark_job_running` enforces ownership, lease token, status, and expiry.
+- `docs/database-schema-reference.md` defines `collection_events` (including `job_id`, `attempt_number`, `lease_token`, `resource`, `lane`, `metadata`) and `collection_jobs` ownership/lease constraints. Review migration chain `0001`–`0004` and actual production start-event writer before authoring INSERT statements. Do not infer writer metadata.
+- Existing `scripts/phase5b_stage9c_claim_race_scratch.py` provides a successful two-connection claim and exact-marker cleanup pattern, **not** a reusable production start-event writer.
+
+### Scenario A: committed reservation becomes one durable start
+
+1. Refuse anything but the allowlisted, empty, writable Stage 9C scratch database at revision `0004_stage9c_supervision_runs`. Verify `READ COMMITTED`. No HTTP.
+2. Insert only uniquely marked, FK-valid fixture collectors, soldier, pending job, and 1,295 synthetic rolling-hour started events. Record baseline `_usage` = 1,295.
+3. Call the **production** background claim path in a transaction, commit, and assert `_usage` = 1,296 via an independent connection (one unstarted reservation).
+4. Transition to `running` using production `mark_job_running` with the original ownership tuple. Insert the **matching** durable `collection_attempt_started` event using the verified production writer shape (same job ID and attempt number), then commit.
+5. On a fresh transaction assert `_usage` = 1,296, with one matching started event and **zero outstanding reservation for that attempt**. An additional eligible background job must not be admitted at the ceiling.
+6. Verify stale or incorrect lease-token attempts cannot transition the job to running or write a valid owned start. The writer's fencing semantics must be reviewed; do not assume SQL constraints alone enforce this.
+7. Delete only uniquely marked fixtures, validate exact deletion counts transactionally, and independently verify the five scratch tables are empty.
+
+### Scenario B: rollback and durability boundaries
+
+- Roll back a transaction containing an **uncommitted** start event: the existing claimed/running reservation must remain counted (1,296). Do not simulate a physical request in this case.
+- Once a matching start event is **committed**, later normalization/persistence rollback must not erase it. Validate against actual writer transaction boundaries; do not claim physical-attempt completeness from synthetic SQL alone.
+- Ensure no event is inserted twice for the same physical attempt by the production path. A duplicate synthetic event would expose whether `_usage` double counts and must be treated as a possible defect, not silently hidden.
+
+### Review-before-execution checklist
+
+- Verify production event writer, metadata fields, lease fencing, and commit boundaries from source.
+- Verify migration constraints and live scratch revision; do not modify production or apply migrations.
+- Prefer a separate scratch harness rather than changing the already-passing claim-race harness.
+- Include compile/offline tests, explicit `--execute`, a target allowlist, crash/partial-seed behavior, exact marker cleanup, and independent post-run emptiness check.
+- On any failure, stop and inspect before retrying. Stage 9C production six-hour trial remains **HOLD**.
