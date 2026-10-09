@@ -171,3 +171,7 @@ HARNESS EXIT CODE: 0
 ```
 
 This confirms the previously passing two-transaction final-slot race still passes with the expired-reservation accounting correction. **Independent five-table cleanup census remains pending** for this run. Below-ceiling and started-lease regressions remain pending. Stage 9C production trial remains HOLD.
+
+### Independent cleanup after post-fix claim-race regression
+
+Operator independently queried the isolated Stage 9C scratch database after the corrected-code claim-race regression. Counts were **0** for `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs`; output: `PASS: Independent claim-race regression cleanup`. This closes the cleanup gate for the post-fix claim-race rerun. Below-ceiling and started-lease regression reruns remain pending. Stage 9C production trial remains HOLD.
