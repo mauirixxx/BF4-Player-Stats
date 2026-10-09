@@ -28,7 +28,16 @@ def main():
     marker = "stage9c_t4_" + (args.run_id or str(uuid4()))
     try:
         with engine.begin() as conn:
-            check(conn)
+            if args.action == "seed":
+                check(conn)
+            else:
+                from scripts.phase5b_stage9c_postgres_integration import EXPECTED_DATABASE, EXPECTED_IP, EXPECTED_USER
+                ident = conn.execute(text("SELECT current_database(),current_user,inet_server_addr(),pg_is_in_recovery(),current_setting('transaction_read_only')")).one()
+                if (ident[0],ident[1],str(ident[2]),ident[3],ident[4]) != (EXPECTED_DATABASE,EXPECTED_USER,EXPECTED_IP,False,"off"):
+                    raise RuntimeError("REFUSING scratch identity drift")
+                rev = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+                if rev != "0004_stage9c_supervision_runs":
+                    raise RuntimeError("REFUSING revision drift")
             conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:stage9c-reservation-start-fixture'))"))
             if args.action == "seed":
                 for table in TABLES:
