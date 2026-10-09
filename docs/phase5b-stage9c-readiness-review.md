@@ -74,6 +74,14 @@ Commit `818ccd0` added `scripts/phase5b_stage9c_checkpoint_scratch.py`. Against 
 
 This validates the query and read-only contract against scratch PostgreSQL; it does **not** validate complete physical-start evidence, production scheduler accounting, or a live main-test database. Gate 4 remains open and the six-hour trial is still HOLD.
 
+### Scheduler admission and physical-start ledger source audit
+
+Read `bf4ps/production_scheduler.py`, `bf4ps/background_service.py`, `bf4ps/request_gate.py`, `scripts/bf4ps_production_collector.py`, and the detailed collector's physical-start path. The materializer enqueues work, not HTTP. The production collector sets `enforce_production_budget=True`; `claim_production_background_job` serializes admissions with PostgreSQL transaction advisory lock `bf4ps:phase5b-background-service`, counts last-hour `collection_attempt_started` events plus outstanding claimed/running reservations with no start event, and enforces the aggregate 1,296 limit. The egress request gate separately reserves spacing and commits before waiting.
+
+The detailed collector validates a still-owned running lease under row lock and commits a `collection_attempt_started` event in its own transaction **before** calling `fetch_detailed_stats`. A failed start insert prevents reaching that HTTP call on this inspected path. This is useful source-level evidence, **not** a concurrency proof for all resources or a guarantee that a persisted start always corresponds to an actual HTTP request.
+
+**Unresolved safety question:** reservation accounting uses a rolling event window plus currently claimed/running jobs; when reservations age out or leases are reclaimed, prove that delayed requests cannot exceed the strict physical-start ceiling. Independently inspect weapons and vehicles paths, duplicate/replay protection, and the source of event timestamps. Also note the admission SQL uses `occurred_at >= now() - interval '1 hour'`, while the watchdog uses strict expiration; document any conservative boundary differences. Gate 4 remains open; no rollout authorization.
+
 ## Open gates — no activation before resolution
 
 1. **Production database/schema:** Stage 9C supervisor requires revision `0004_stage9c_supervision_runs`; last recorded main test DB preflight was `0003_request_gates`. Independently inspect live revision and schema against the documented reference, agree on maintenance/rollback plan, and obtain explicit approval before applying any migration.
