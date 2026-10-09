@@ -114,3 +114,7 @@ HARNESS EXIT CODE: 0
 ```
 
 **Interpretation:** below the 1,296/hour ceiling, the production reclaim path advances the attempt, changes the lease token, rejects stale-token operations, and counts the new reservation once. This is a scoped PASS; it does not resolve the separately reproduced full-ceiling deadlock. The harness reports exact cleanup, but **independent post-run zero-row census is still pending** for this execution. Stage 9C remains HOLD.
+
+### Independent cleanup after below-ceiling reclaim
+
+Operator independently queried the isolated scratch database after the below-ceiling reclaim test. Counts were **0** for `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs`; output: `PASS: Independent below-ceiling cleanup verification`. This closes the cleanup check for that execution. Full-ceiling expired unstarted reservation deadlock remains open; Stage 9C remains HOLD.
