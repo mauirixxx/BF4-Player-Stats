@@ -73,3 +73,7 @@ Review found that a single pending job cannot distinguish a global budget cap fr
 - **Failure after release:** a winner might hold a valid lease even if its DONE event was not committed. Stop all participants, preserve evidence, inspect ownership and expiry, and do not delete rows until a separate reviewed recovery plan explicitly covers missing DONE events.
 - **Rolling-hour expiry:** if synthetic events age out before inspection, treat T4 as inconclusive rather than PASS; preserve fixture for forensic review. Never add synthetic events mid-run.
 - **Current blocker:** no implemented, reviewed recovery command for incomplete READY/RELEASE/DONE sequences. No functional scratch rehearsal or cross-host execution authorization yet. Production HOLD.
+
+## Read-only incomplete-run diagnostic (2026-10-09)
+
+New `scripts/phase5b_stage9c_t4_diagnose.py` provides read-only, repeatable-read scratch diagnostics of collector, soldier, job, lease and READY/RELEASE/DONE events for a specified UUID. It performs no cleanup or lease release. It has not yet been validated on tcou. This is a forensic aid, **not** a complete recovery path. Cleanup of incomplete runs remains blocked pending reviewed participant-exit verification, ownership checks, and post-cleanup census. Do not run the fixture yet. Production HOLD.
