@@ -53,15 +53,18 @@ def main():
                         (collector_uuid,collector_name,hostname,lane,egress_key,enabled,drained,heartbeat_state)
                         VALUES (:uid,:name,:host,'background',:egress,true,false,'healthy')
                     """), {"uid":uid,"name":marker+"_"+host,"host":host,"egress":marker+"_"+host})
-                sid = conn.execute(text("""
+                jobs_seeded = []
+                for index, host in enumerate(HOSTS):
+                    sid = conn.execute(text("""
                     INSERT INTO soldiers(persona_id,platform,current_name,first_seen_at,last_seen_at)
                     VALUES (:persona,'pc',:name,now(),now()) RETURNING soldier_id
-                """), {"persona":880000000000+int(uuid4().int%100000000),"name":marker}).scalar_one()
-                jid = conn.execute(text("""
+                """), {"persona":880000000000+int(uuid4().int%100000000),"name":marker+"_"+host}).scalar_one()
+                    jid = conn.execute(text("""
                     INSERT INTO collection_jobs(soldier_id,resource,lane,priority_class,reason,status,priority_value,eligible_at)
                     VALUES (:sid,'detailed','background','active',:marker,'pending',0,now())
                     RETURNING job_id
                 """), {"sid":sid,"marker":marker}).scalar_one()
+                    jobs_seeded.append((jid,sid))
                 conn.execute(text("""
                     INSERT INTO collection_events(resource,lane,event_type,attempt_number,metadata)
                     SELECT 'detailed','background','collection_attempt_started',1,
@@ -72,7 +75,7 @@ def main():
                 if _usage(conn).total != BACKGROUND_SLOTS_PER_HOUR-1:
                     raise AssertionError("fixture did not create 1295 used slots")
                 print("SEEDED run-id:",marker.removeprefix("stage9c_t4_"))
-                print("Job:",jid,"Soldier:",sid)
+                print("Jobs and soldiers:",jobs_seeded)
                 print("Participant UUIDs:",*(f"{h}={u}" for h,u in ids.items()))
                 print("NOT AUTHORIZED TO RUN REMOTELY UNTIL OPERATOR APPROVES")
             else:
@@ -80,9 +83,8 @@ def main():
                     SELECT j.job_id,j.soldier_id,j.status,j.collector_uuid,j.attempt_count
                     FROM collection_jobs j WHERE j.reason=:marker
                 """), {"marker":marker}).all()
-                if len(rows)!=1:
-                    raise RuntimeError(f"REFUSING unexpected fixture job count: {len(rows)}")
-                job = rows[0]
+                if len(rows)!=3 or len({r.soldier_id for r in rows})!=3:
+                    raise RuntimeError(f"REFUSING unexpected fixture jobs: {len(rows)}")
                 owners = conn.execute(text("""
                     SELECT collector_uuid,hostname FROM collectors
                     WHERE collector_name IN (:tcou,:hnl,:kah) ORDER BY hostname
@@ -93,7 +95,7 @@ def main():
                     verify_ready(conn, marker)
                     if events(conn,marker,RELEASE) or events(conn,marker,DONE):
                         raise RuntimeError("REFUSING duplicate/late release")
-                    if job.status!="pending" or job.attempt_count!=0:
+                    if any(j.status!="pending" or j.attempt_count!=0 for j in rows):
                         raise RuntimeError("REFUSING release after claim")
                     if _usage(conn).total!=BACKGROUND_SLOTS_PER_HOUR-1:
                         raise RuntimeError("REFUSING changed budget before release")
@@ -105,10 +107,12 @@ def main():
                     if len(events(conn,marker,RELEASE))!=1:
                         raise AssertionError("release ledger mismatch")
                     usage=_usage(conn)
-                    print("JOB",job)
+                    print("JOBS",rows)
                     print("USAGE",usage)
-                    if job.status!="claimed" or job.attempt_count!=1 or job.collector_uuid not in {x.collector_uuid for x in owners}:
-                        raise AssertionError("cross-host claim outcome not established")
+                    winners=[j for j in rows if j.status=="claimed" and j.attempt_count==1 and j.collector_uuid in {x.collector_uuid for x in owners}]
+                    pending=[j for j in rows if j.status=="pending" and j.attempt_count==0]
+                    if len(winners)!=1 or len(pending)!=2:
+                        raise AssertionError("three independent jobs did not yield exactly one reservation")
                     if usage.total!=BACKGROUND_SLOTS_PER_HOUR:
                         raise AssertionError("budget incorrect after winner reservation")
                     print("PASS: one claimed job, 1296/1296 used (host logs still required)")
@@ -119,24 +123,25 @@ def main():
                         raise RuntimeError("REFUSING cleanup without exactly one release")
                     # Refuse cleanup until any winning lease has expired.
                     # Operator must first confirm all participants exited.
-                    if job.status in ("claimed", "running"):
-                        expired = conn.execute(text(
-                            "SELECT lease_expires_at <= now() FROM collection_jobs WHERE job_id=:jid"
-                        ), {"jid":job.job_id}).scalar_one()
-                        if not expired:
-                            raise RuntimeError("REFUSING cleanup of unexpired lease")
+                    for job in rows:
+                        if job.status in ("claimed", "running"):
+                            expired = conn.execute(text(
+                                "SELECT lease_expires_at <= now() FROM collection_jobs WHERE job_id=:jid"
+                            ), {"jid":job.job_id}).scalar_one()
+                            if not expired:
+                                raise RuntimeError("REFUSING cleanup of unexpired lease")
                     # Remove events before jobs: FK ON DELETE SET NULL.
                     n=conn.execute(text("""
                         DELETE FROM collection_events WHERE metadata->>'stage9c_t4_marker'=:marker
                     """), {"marker":marker}).rowcount
                     if n!=BACKGROUND_SLOTS_PER_HOUR-1+7:
                         raise RuntimeError(f"REFUSING unexpected fixture event count {n}")
-                    n=conn.execute(text("DELETE FROM collection_jobs WHERE job_id=:jid AND reason=:marker"),
-                                   {"jid":job.job_id,"marker":marker}).rowcount
-                    if n!=1: raise RuntimeError("REFUSING job cleanup mismatch")
-                    n=conn.execute(text("DELETE FROM soldiers WHERE soldier_id=:sid AND current_name=:marker"),
-                                   {"sid":job.soldier_id,"marker":marker}).rowcount
-                    if n!=1: raise RuntimeError("REFUSING soldier cleanup mismatch")
+                    n=conn.execute(text("DELETE FROM collection_jobs WHERE reason=:marker"),
+                                   {"marker":marker}).rowcount
+                    if n!=3: raise RuntimeError("REFUSING job cleanup mismatch")
+                    n=conn.execute(text("DELETE FROM soldiers WHERE current_name IN (:tcou,:hnl,:kah)"),
+                                   {"tcou":marker+"_tcou","hnl":marker+"_hnl-01","kah":marker+"_kah-01"}).rowcount
+                    if n!=3: raise RuntimeError("REFUSING soldier cleanup mismatch")
                     n=conn.execute(text("DELETE FROM collectors WHERE collector_name IN (:tcou,:hnl,:kah)"),
                                    {"tcou":marker+"_tcou","hnl":marker+"_hnl-01","kah":marker+"_kah-01"}).rowcount
                     if n!=3: raise RuntimeError("REFUSING collector cleanup mismatch")
