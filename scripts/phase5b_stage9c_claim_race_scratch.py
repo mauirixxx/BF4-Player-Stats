@@ -98,6 +98,8 @@ def run(url):
             if not ready.wait(timeout=10):
                 raise TimeoutError("first claim never acquired lock")
             with engine.begin() as conn:
+                # Signal only after the second transaction is established.
+                conn.execute(text("SELECT 1"))
                 second_ready.set()
                 claim = claim_production_background_job(
                     conn, collector_uuid=collectors[1], resource="vehicles",
@@ -117,20 +119,28 @@ def run(url):
                     raise AssertionError("first claim does not hold admission lock")
             release.set()
             winner = a.result(timeout=20)
-            assert b.result(timeout=20) == BACKGROUND_SLOTS_PER_HOUR
+            loser_total = b.result(timeout=20)
+            if loser_total != BACKGROUND_SLOTS_PER_HOUR:
+                raise AssertionError(f"loser observed incorrect usage: {loser_total}")
 
         with engine.connect() as conn:
-            assert _usage(conn).total == BACKGROUND_SLOTS_PER_HOUR
+            final_usage = _usage(conn).total
+            if final_usage != BACKGROUND_SLOTS_PER_HOUR:
+                raise AssertionError(f"final usage {final_usage} != {BACKGROUND_SLOTS_PER_HOUR}")
             rows = conn.execute(text("""
                 SELECT job_id,status,attempt_count,collector_uuid,lease_token
                 FROM collection_jobs WHERE job_id = ANY(:ids)
             """), {"ids": jobs}).mappings().all()
-            assert len(rows) == 2
-            assert sum(row["status"] == "claimed" for row in rows) == 1
-            assert sum(row["status"] == "pending" for row in rows) == 1
-            assert any(row["job_id"] == winner.job_id and
+            if len(rows) != 2:
+                raise AssertionError(f"expected two jobs, found {len(rows)}")
+            if sum(row["status"] == "claimed" for row in rows) != 1:
+                raise AssertionError("expected exactly one claimed job")
+            if sum(row["status"] == "pending" for row in rows) != 1:
+                raise AssertionError("expected exactly one pending job")
+            if not any(row["job_id"] == winner.job_id and
                        row["collector_uuid"] == winner.collector_uuid and
-                       row["lease_token"] == winner.lease_token for row in rows)
+                       row["lease_token"] == winner.lease_token for row in rows):
+                raise AssertionError("winning lease ownership mismatch")
             conn.rollback()
         print("PASS: real production claim at 1295 reserves final slot")
         print("PASS: independent competing vehicles claim denied at 1296")
