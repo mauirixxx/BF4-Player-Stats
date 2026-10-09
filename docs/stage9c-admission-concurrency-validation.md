@@ -126,3 +126,32 @@ Source-verified against `bf4ps/background_service.py::_usage` and `claim_product
 **Branch-only candidate, not yet tested or activated.** Source review and prior scratch execution confirmed `_usage` counted expired unstarted reservations, blocking the reclaim that would replace them at 1,296. The candidate change in `bf4ps/background_service.py` restricts outstanding reservations to `j.lease_expires_at > now()` while leaving durable rolling-hour started-event accounting intact. The transaction-scoped advisory admission lock and existing queue/lease-token fencing remain unchanged. The isolated expired-reclaim scratch harness now **requires** successful full-ceiling reclaim (no longer accepts the historical deadlock as a diagnostic PASS).
 
 **Validation sequence:** compile and run offline tests on `tcou`; then run the revised scratch harness only on the allowlisted empty Stage 9C database; independently verify five-table emptiness. Re-run claim-race, below-ceiling reclaim, and started-lease reclaim to detect regression. Cross-host and failure-injection scenarios remain pending. No migration is proposed; verify documented schema against migrations before any later schema changes. Stage 9C production trial remains HOLD.
+
+## Next gate — rollback and start-event durability (design checkpoint, 2026-10-08)
+
+**Status: design reviewed; no new harness executed.** The four post-fix reclaim/claim-race regressions and independent five-table cleanup censuses passed; see the execution record. This section supersedes earlier 'not yet validated' wording for those four scenarios, without rewriting historical checkpoints.
+
+Source review confirms `claim_production_background_job` takes a transaction-scoped advisory lock and returns a queue claim in the caller's transaction. `_usage` charges durable rolling-hour `collection_attempt_started` rows and only **unexpired** claimed/running reservations without a matching current-attempt event. The detailed collector commits claim+running, reserves an egress request gate, then invokes `_record_detailed_attempt_started` in its **own** `engine.begin()` transaction before HTTP. That writer checks an unexpired owned running lease `FOR UPDATE` and inserts the start event; the surrounding transaction commits before `fetch_detailed_stats`. The current writer does not visibly guard against duplicate invocation for the same attempt. Consult `docs/database-schema-reference.md` and migrations `0001`–`0004` again before any fixture SQL.
+
+### Gate FI-1 — admission transaction rollback
+
+- Seed 1,295 uniquely marked synthetic background starts, two FK-valid pending jobs, and registered collector identities on an empty, allowlisted Stage 9C scratch database at head `0004_stage9c_supervision_runs`.
+- Claim slot 1,296 using the real production admission path in transaction A, assert 1,296 **inside** A, then explicitly roll back A. From a fresh connection assert job A is still pending, no committed reservation remains, and `_usage` returns 1,295. Independently claim slot 1,296 with job B and assert no 1,297th claim. No HTTP or start event for rolled-back job A.
+- Use two separate PostgreSQL connections and commit/rollback barriers. Verify that a rollback releases the transaction advisory lock, rather than merely mocking claim behavior.
+
+### Gate FI-2 — start-event insertion failure
+
+- Create a real owned, running detailed job with the production claim and `mark_job_running` paths. Inject a **database-side** failure inside the real `_record_detailed_attempt_started` transaction, without changing its production SQL, and verify the exception prevents the HTTP fetch. Preserve the unexpired running reservation as the charged slot; assert zero committed matching start events.
+- Do not make an actual outbound request. Fault injection must be narrowly scoped and reversible, and must not modify production schema or global database settings. Prefer a dedicated test-only SQLAlchemy connection/transaction hook if it can target just the start INSERT safely; otherwise document the limitation and stop rather than inventing a failure mode.
+
+### Gate FI-3 — committed start survives later persistence rollback
+
+- Invoke the actual detailed start writer on an owned running scratch job with outbound HTTP disabled. Confirm the matching event commits in a separate transaction and `_usage` still counts exactly one slot.
+- Inject a subsequent *separate* persistence transaction failure/rollback; independently confirm the start event remains committed and no second physical attempt was charged. Review the actual detailed persistence/error paths before asserting that `collection_persistence_failure` is emitted: schema documents its intended meaning, not guaranteed coverage in every runtime path.
+- Explicitly inspect duplicate-start behavior. If a second invocation of the writer creates another matching event, record this as a distinct defect requiring a design decision; do not hide it by counting distinct attempts.
+
+### Execution safeguards and stop conditions
+
+- One harness/scenario at a time; `--execute` required; exact scratch URL allowlist, revision, empty-table and READ COMMITTED preflight; unique marker-owned FK-valid fixtures; transactionally verified exact cleanup followed by an independent five-table census.
+- Zero Battlelog/Keeper/BFLIST traffic; no migration, production database access, or deployment to `hnl-01`/`kah-01`.
+- Stop on any unexpected state, fixture cleanup discrepancy, uncharged HTTP possibility, or duplicate-start discovery. Do not advance to FI-2/FI-3 on an FI-1 failure. Stage 9C production trial remains **HOLD**.
