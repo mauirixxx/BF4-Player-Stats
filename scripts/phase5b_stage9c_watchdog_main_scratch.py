@@ -130,6 +130,13 @@ def main():
             )).scalar_one() == 0
             conn.rollback()
             print("PASS: real PostgreSQL watchdog main() healthy inspection + fenced renewal")
+            # Schema enforces at most one active supervision run. Delete only
+            # our validated healthy run before opening the next scenario.
+            with conn.begin():
+                assert conn.execute(text(
+                    "DELETE FROM stage9c_supervision_runs WHERE run_id=:id"
+                ), {"id": run_id}).rowcount == 1
+            run_ids.remove(run_id)
 
             # Seed saturated trailing-hour context before supervision; no
             # trial starts. Current-hour check must abort at 1297.
