@@ -68,6 +68,12 @@ This materially strengthens **gate 2**: actual `main()` transaction and fallback
 
 The Stage 9B `scripts/phase5b_step9_checkpoint_audit.py` is still pinned to revision `0003_request_gates` and calculates its rolling maximum only over post-boundary starts. Its PASS is **not sufficient** to establish Stage 9C cross-boundary rolling-budget compliance. The Stage 9C watchdog has corrected bounded time-window logic and separate persisted supervision start. Design and required independent Stage 9C read-only audit contract are now recorded in `docs/phase5b-stage9c-rolling-budget-boundary-audit.md`; historical checkpoint script intentionally unchanged. This is **not** proof of live ledger completeness, and gate 4 remains open.
 
+### Independent read-only checkpoint — isolated PostgreSQL evidence
+
+Commit `818ccd0` added `scripts/phase5b_stage9c_checkpoint_scratch.py`. Against the strictly allowlisted scratch database, the integration passed three checks: cross-supervision 1,297-start observed budget violation, 1,296-start observed compliance with ledger completeness still explicitly UNVERIFIED, and PostgreSQL rejection of an attempted DELETE inside the audit's READ ONLY transaction. Disposable supervision run and session-local TEMP event rows were cleaned. The full offline suite on mak-01 remained **406/406 PASS**.
+
+This validates the query and read-only contract against scratch PostgreSQL; it does **not** validate complete physical-start evidence, production scheduler accounting, or a live main-test database. Gate 4 remains open and the six-hour trial is still HOLD.
+
 ## Open gates — no activation before resolution
 
 1. **Production database/schema:** Stage 9C supervisor requires revision `0004_stage9c_supervision_runs`; last recorded main test DB preflight was `0003_request_gates`. Independently inspect live revision and schema against the documented reference, agree on maintenance/rollback plan, and obtain explicit approval before applying any migration.
