@@ -194,3 +194,18 @@ The rerun PASSED. Independent five-table cleanup verification **after the succes
 ### Independent cleanup after successful below-ceiling regression rerun
 
 Operator independently verified **zero rows** in each of `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs` after the successful `58a3436` below-ceiling regression rerun. Output: `PASS: Independent below-ceiling regression cleanup`. This closes its post-fix cleanup gate. Started-lease regression remains pending. Stage 9C production trial remains HOLD.
+
+## Started-lease regression after expired-reservation accounting correction
+
+Operator pulled branch at `7ebc30a` and reran `scripts.phase5b_stage9c_started_reclaim_scratch --execute` on isolated PostgreSQL scratch:
+
+```text
+PASS: expired started attempt remains charged
+PASS: replacement reservation separately charged; total 1296
+PASS: stale owner fenced; further admission denied
+Battlelog requests: 0
+PASS: exact scratch fixture cleanup
+HARNESS EXIT CODE: 0
+```
+
+All four planned post-fix scratch scenarios have now passed their harnesses: full-ceiling expired-unstarted reclaim, two-transaction final-slot race, below-ceiling reclaim, and started-lease reclaim. **Independent five-table census for this final started-lease rerun is still pending.** Stage 9C production trial remains HOLD pending further failure-injection and cross-host validation.
