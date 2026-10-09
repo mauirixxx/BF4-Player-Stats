@@ -83,3 +83,7 @@ Operator confirmed scratch DB/user `bf4ps_scratch_stage9c_integration` / `bf4ps_
 ### T2 CLOSED — independent cleanup verified
 
 Operator independently confirmed `collectors=0`, `soldiers=0`, `collection_jobs=0`, `collection_events=0`, `stage9c_supervision_runs=0` and `PASS: Independent T2 cleanup` after the three-resource concurrent/sequential duplicate-start and attempt-2 scratch PASS. **T2 duplicate-start protection CLOSED.** Next T1 mixed-resource/retry global budget scratch validation. Stage 9C production HOLD.
+
+### T1 mixed-resource shared-budget scratch — PASS; independent cleanup pending
+
+Operator ran `scripts.phase5b_stage9c_mixed_resource_budget_scratch --execute` on `tcou`, exit 0: detailed/weapons/vehicles each converted a reservation to one charged physical start; all three resources blocked at shared 1,296/hour ceiling; retry-classified vehicle start counted; zero HTTP; exact fixture cleanup reported. Independent empty-table census remains pending before T1 CLOSED. Production Stage 9C HOLD.
