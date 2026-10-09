@@ -98,9 +98,14 @@ def main():
                         raise AssertionError("budget incorrect after winner reservation")
                     print("PASS: one claimed job, 1296/1296 used (host logs still required)")
                 else:
-                    # Never remove a fixture while a participant still owns a live lease.
+                    # Refuse cleanup until any winning lease has expired.
+                    # Operator must first confirm all participants exited.
                     if job.status in ("claimed", "running"):
-                        raise RuntimeError("REFUSING cleanup of live claimed/running lease; explicit expiry required")
+                        expired = conn.execute(text(
+                            "SELECT lease_expires_at <= now() FROM collection_jobs WHERE job_id=:jid"
+                        ), {"jid":job.job_id}).scalar_one()
+                        if not expired:
+                            raise RuntimeError("REFUSING cleanup of unexpired lease")
                     # Remove events before jobs: FK ON DELETE SET NULL.
                     n=conn.execute(text("""
                         DELETE FROM collection_events WHERE metadata->>'stage9c_t4_marker'=:marker
