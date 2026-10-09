@@ -87,3 +87,7 @@ Operator independently confirmed `collectors=0`, `soldiers=0`, `collection_jobs=
 ### T1 mixed-resource shared-budget scratch — PASS; independent cleanup pending
 
 Operator ran `scripts.phase5b_stage9c_mixed_resource_budget_scratch --execute` on `tcou`, exit 0: detailed/weapons/vehicles each converted a reservation to one charged physical start; all three resources blocked at shared 1,296/hour ceiling; retry-classified vehicle start counted; zero HTTP; exact fixture cleanup reported. Independent empty-table census remains pending before T1 CLOSED. Production Stage 9C HOLD.
+
+### T1 CLOSED — independent cleanup verified
+
+Operator independently verified scratch census after T1: `collectors=0`, `soldiers=0`, `collection_jobs=0`, `collection_events=0`, `stage9c_supervision_runs=0`, `PASS: Independent T1 cleanup`. T1 mixed-resource global budget/retry accounting **CLOSED**. T1/T2/T3 local scratch technical gates closed; T4 cross-host and T5 live physical-start ledger completeness remain OPEN, as do operational authorization gates. Production Stage 9C HOLD.
