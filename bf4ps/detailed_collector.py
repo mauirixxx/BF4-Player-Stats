@@ -146,6 +146,65 @@ def _record_detailed_attempt_started(
         )
 
 
+
+def _record_detailed_persistence_failure(
+    engine: Engine,
+    *,
+    job,
+    identity: CollectorIdentity,
+    persona_id: int,
+    platform: str,
+    duration_ms: int,
+    exc: Exception,
+) -> None:
+    """Best-effort diagnostic after successful-fetch persistence rolls back."""
+    error_class = f"{exc.__class__.__module__}.{exc.__class__.__name__}"
+    error_message = (str(exc).strip() or exc.__class__.__name__)[:2000]
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO collection_events
+                        (collector_uuid, collector_name_snapshot, hostname_snapshot,
+                         egress_key_snapshot, job_id, soldier_id, persona_id, platform,
+                         resource, lane, event_type, attempt_number, result, duration_ms,
+                         error_class, error_message, lease_token, metadata)
+                    VALUES
+                        (:collector_uuid, :collector_name, :hostname, :egress_key,
+                         :job_id, :soldier_id, :persona_id, :platform,
+                         'detailed', :lane, 'collection_persistence_failure',
+                         :attempt_number, 'persistence_failure', :duration_ms,
+                         :error_class, :error_message, :lease_token,
+                         jsonb_build_object('stage', 'persist_detailed_success'))
+                    """
+                ),
+                {
+                    "collector_uuid": job.collector_uuid,
+                    "collector_name": identity.collector_name,
+                    "hostname": identity.hostname,
+                    "egress_key": identity.egress_key,
+                    "job_id": job.job_id,
+                    "soldier_id": job.soldier_id,
+                    "persona_id": persona_id,
+                    "platform": platform,
+                    "lane": job.lane,
+                    "attempt_number": job.attempt_count,
+                    "duration_ms": duration_ms,
+                    "error_class": error_class,
+                    "error_message": error_message,
+                    "lease_token": job.lease_token,
+                },
+            )
+    except Exception as logging_exc:
+        print(
+            "WARNING: failed to persist collection_persistence_failure "
+            f"job={job.job_id} original={error_class} "
+            f"logging_error={logging_exc.__class__.__name__}: {logging_exc}",
+            flush=True,
+        )
+
+
 def collect_one_detailed_job(
     engine: Engine,
     *,
@@ -275,20 +334,32 @@ def collect_one_detailed_job(
     duration_ms = max(0, int((monotonic() - started) * 1000))
     source_fetched_at = datetime.now(timezone.utc)
 
-    with engine.begin() as conn:
-        history_appended = persist_detailed_success(
-            conn,
+    try:
+        with engine.begin() as conn:
+            history_appended = persist_detailed_success(
+                conn,
+                job=job,
+                stats=stats,
+                source_fetched_at=source_fetched_at,
+                persona_id=persona_id,
+                platform=platform,
+                collector_name=identity.collector_name,
+                hostname=identity.hostname,
+                egress_key=identity.egress_key,
+                duration_ms=duration_ms,
+                http_status=200,
+            )
+    except Exception as exc:
+        _record_detailed_persistence_failure(
+            engine,
             job=job,
-            stats=stats,
-            source_fetched_at=source_fetched_at,
+            identity=identity,
             persona_id=persona_id,
             platform=platform,
-            collector_name=identity.collector_name,
-            hostname=identity.hostname,
-            egress_key=identity.egress_key,
             duration_ms=duration_ms,
-            http_status=200,
+            exc=exc,
         )
+        raise
 
     return CollectedJob(
         job_id=job.job_id,
