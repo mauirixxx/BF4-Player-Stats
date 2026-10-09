@@ -47,3 +47,7 @@ Reviewed `scripts/bf4ps_production_collector.py`, `bf4ps/background_service.py`,
 - Detailed success persistence currently has no equivalent exception handler or diagnostic-event writer. This is a **confirmed source-level observability gap** relative to the documented collection-event contract. FI-3 did not cover this logging behavior. Design/implement parity and test with no HTTP before trial.
 - The detailed start writer inserts without a visible duplicate check. Review actual migration/index constraints and weapons/vehicles start writers before selecting a duplicate-start fix; do not claim a demonstrated duplicate until tested.
 - No remote hosts, database writes, or HTTP were used in this source review. Production HOLD.
+
+## Offline validation after detailed diagnostic patch
+
+Operator pulled `31d99aa` on `tcou`; `py_compile bf4ps/detailed_collector.py` succeeded; full offline pytest reported **412 passed in 1.23s**, exit 0. This confirms existing regression compatibility only. It does **not** yet establish that the new detailed `collection_persistence_failure` event commits after a deliberately failed persistence transaction; targeted diagnostic validation remains required. Production Stage 9C remains HOLD.
