@@ -90,3 +90,13 @@ The first real scratch claim-race scenario **PASSED** on `tcou` at tested commit
 - Prefer a separate scratch harness rather than changing the already-passing claim-race harness.
 - Include compile/offline tests, explicit `--execute`, a target allowlist, crash/partial-seed behavior, exact marker cleanup, and independent post-run emptiness check.
 - On any failure, stop and inspect before retrying. Stage 9C production six-hour trial remains **HOLD**.
+
+### Production detailed start-writer source review — 2026-10-08
+
+Reviewed `bf4ps/detailed_collector.py` and `bf4ps/background_service.py` against the documented `collection_events` and `collection_jobs` schema:
+
+- `collect_one_detailed_job` claims and transitions the job to running in a committed transaction, reserves the request gate separately, then calls `_record_detailed_attempt_started` before `fetch_detailed_stats`.
+- `_record_detailed_attempt_started` opens an independent `engine.begin()` transaction, selects the running job `FOR UPDATE` with matching job/soldier/collector/token and unexpired lease, and inserts a durable `collection_attempt_started` event with `physical_request=true`, priority class, retry flag, and job attempt number. It commits before HTTP.
+- **Unresolved duplicate-start risk:** the writer shown does not itself query for an existing matching start event or use an `ON CONFLICT` clause. `_usage` counts all rolling-hour start-event rows, not distinct attempts. Do not assert idempotency or absence of duplicate starts without reviewing migration constraints and exercising the production writer. A duplicate event might conservatively overcount; it must still be classified as a correctness defect if one physical attempt is charged twice.
+- Next implementation must test the production detailed writer, not only a hand-authored SQL insert. A direct second writer invocation is a fault-injection scenario, **not** evidence that normal runtime makes two HTTP requests. Test no HTTP and assert explicit event count.
+- Verify weapons and vehicles start-writer equivalents before claiming cross-resource transition coverage. **No scratch execution performed in this source review.**
