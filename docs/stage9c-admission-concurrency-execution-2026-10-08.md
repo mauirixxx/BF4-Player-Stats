@@ -91,3 +91,7 @@ HARNESS EXIT CODE: 0
 ```
 
 **Classification: confirmed behavioral defect, diagnostic PASS.** The production admission path does not reclaim an expired unstarted reservation when the 1,296/hour ceiling is filled, because `_usage` still charges the expired job and admission rejects the claim before reclaiming. This does **not** demonstrate an over-budget HTTP request; none was made. Harness-reported cleanup passed, but a separate independent read-only post-run table census has **not yet** been reported for this execution. Do not interpret exit code zero as successful reclamation. Stage 9C remains **HOLD** pending design and correction.
+
+### Independent cleanup after expired-lease diagnostic
+
+Operator ran the separate read-only scratch census following the full-ceiling expired-lease diagnostic. Each table returned **0**: `collectors`, `soldiers`, `collection_jobs`, `collection_events`, `stage9c_supervision_runs`. Output: `PASS: Independent expired-lease cleanup verification`. This verifies cleanup, **not** correct reclaim behavior. The deadlock remains reproduced; production Stage 9C remains HOLD.
