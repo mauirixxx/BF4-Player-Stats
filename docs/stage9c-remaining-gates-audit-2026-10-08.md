@@ -63,3 +63,7 @@ Operator independently checked the isolated scratch target after diagnostic harn
 ### Full detailed collector exception path — scratch PASS, independent census pending
 
 Operator ran `scripts.phase5b_stage9c_detailed_orchestrator_scratch --execute` at `df70d00`: committed diagnostic after injected persistence rollback, physical-start retained, current/history/state/success rolled back, 1296th slot charged, one mocked fetch and **zero real Battlelog requests**, exact fixture cleanup, exit 0. This covers `collect_one_detailed_job` rather than direct helper only. **Independent five-table census and request-gate fixture check still pending**; T3 final closure contingent on independent cleanup. Production Stage 9C HOLD.
+
+### T3 CLOSED — full detailed diagnostic path and independent cleanup
+
+Operator independently verified after `df70d00` harness: `collectors=0`, `soldiers=0`, `collection_jobs=0`, `collection_events=0`, `stage9c_supervision_runs=0`, and orchestrator-prefixed `request_gates=0`; output `PASS: Independent orchestrator cleanup`. Combined with the earlier direct-helper scratch PASS and independent zero census, T3 detailed persistence diagnostic validation is **CLOSED**. No additional T3 reruns required. Proceed to T2 duplicate-start protection; Stage 9C production HOLD.
