@@ -156,3 +156,18 @@ HARNESS EXIT CODE: 0
 ### Independent cleanup after full-ceiling reclaim fix
 
 Operator independently queried the isolated Stage 9C scratch database after the full-ceiling reclaim correction harness. Counts were **0** for `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs`; output: `PASS: Independent full-ceiling fix cleanup verification`. Cleanup is independently confirmed. Prior claim-race, below-ceiling reclaim, and started-lease reclaim scenarios still require reruns on the corrected code. Production Stage 9C remains HOLD.
+
+## Claim-race regression after expired-reservation correction
+
+Operator reran `scripts.phase5b_stage9c_claim_race_scratch --execute` on `tcou` after pulling corrected branch at `57a1108`:
+
+```text
+PASS: real production claim at 1295 reserves final slot
+PASS: independent competing vehicles claim denied at 1296
+PASS: committed reservation and lease ownership reconciled
+Battlelog requests: 0
+PASS: exact scratch fixture cleanup
+HARNESS EXIT CODE: 0
+```
+
+This confirms the previously passing two-transaction final-slot race still passes with the expired-reservation accounting correction. **Independent five-table cleanup census remains pending** for this run. Below-ceiling and started-lease regressions remain pending. Stage 9C production trial remains HOLD.
