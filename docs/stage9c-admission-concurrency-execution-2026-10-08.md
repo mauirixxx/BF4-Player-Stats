@@ -118,3 +118,18 @@ HARNESS EXIT CODE: 0
 ### Independent cleanup after below-ceiling reclaim
 
 Operator independently queried the isolated scratch database after the below-ceiling reclaim test. Counts were **0** for `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs`; output: `PASS: Independent below-ceiling cleanup verification`. This closes the cleanup check for that execution. Full-ceiling expired unstarted reservation deadlock remains open; Stage 9C remains HOLD.
+
+## Started-lease expiration and replacement — operator execution
+
+On `tcou`, branch `test/stage9c-admission-concurrency` at `b396b94`, offline compilation succeeded and pytest reported **412 passed**. Operator ran `scripts/phase5b_stage9c_started_reclaim_scratch.py --execute` against the isolated scratch database:
+
+```text
+PASS: expired started attempt remains charged
+PASS: replacement reservation separately charged; total 1296
+PASS: stale owner fenced; further admission denied
+Battlelog requests: 0
+PASS: exact scratch fixture cleanup
+HARNESS EXIT CODE: 0
+```
+
+**Interpretation:** a previously committed physical-start event remains charged after lease expiry, while the replacement attempt's reservation consumes a distinct slot. The aggregate reaches but does not exceed 1,296, and the previous lease token is fenced. Harness-reported cleanup passed; independent post-run five-table census is pending. This does not resolve the full-ceiling expired *unstarted* reservation deadlock. Production Stage 9C remains HOLD.
