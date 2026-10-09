@@ -56,6 +56,14 @@ After correction, the **full offline suite passed 388/388** on mak-01. This vali
 
 Commits `3f7ca8c` and `bcda09c` make armed watchdog `main()` reject absent, non-datetime, or timezone-naive persisted `started_at` rather than silently falling back to the Stage 9B materialization cutover. Three new offline regressions passed; **full suite 391/391 PASS** on mak-01. The real PostgreSQL `main()` entry path and actual systemd termination remain separate unverified gates.
 
+### Actual watchdog main() — isolated PostgreSQL integration (mak-01 → mak-db-02)
+
+Commits `26ea886` and `698419f` added and corrected `scripts/phase5b_stage9c_watchdog_main_scratch.py`. The harness enforces the dedicated scratch URL allowlist, verifies live database/user/IP/revision and empty real collector/run ledgers, shadows collectors/events/jobs using session-local PostgreSQL TEMP tables, and creates only disposable Stage 9C supervision runs. It invokes the **actual** watchdog `main()` with a connection-bound SQLAlchemy engine facade, while preventing network collection, real systemd operations and production DB access.
+
+The first execution passed healthy renewal but encountered the expected schema constraint `uq_stage9c_one_active_run` when the harness attempted a second simultaneous active run. The harness was corrected to delete its own completed healthy run before the next scenario. The subsequent `--execute` run passed **4/4**: healthy inspection/lease renewal, rolling-hour 1,297-start overage triggering committed abort plus three TEMP collector drains, identity-drift rollback followed by committed sticky abort with fleet undrained, and scratch ledger cleanup. Critical abort/fallback logs were deliberately injected and expected.
+
+This materially strengthens **gate 2**: actual `main()` transaction and fallback paths have been exercised against isolated PostgreSQL. Remaining gate-2 concerns include broader failure coverage and DB-loss/lease-expiry behavior in real supervision; **gate 3 physical shutdown** is still unproven for real workloads. **Decision: HOLD / NOT AUTHORIZED.**
+
 ## Open gates — no activation before resolution
 
 1. **Production database/schema:** Stage 9C supervisor requires revision `0004_stage9c_supervision_runs`; last recorded main test DB preflight was `0003_request_gates`. Independently inspect live revision and schema against the documented reference, agree on maintenance/rollback plan, and obtain explicit approval before applying any migration.
