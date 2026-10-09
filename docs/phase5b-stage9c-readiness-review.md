@@ -52,6 +52,10 @@ Commit `4edb469` added five watchdog `main()` fault-injection cases: atomic drai
 
 After correction, the **full offline suite passed 388/388** on mak-01. This validates mocked entrypoint behavior only; it does not verify actual systemd process termination or durable PostgreSQL transaction outcomes. Gates 2 and 3 remain open pending the appropriate isolated integration and operator checks. **HOLD remains in force.**
 
+### Persisted supervision timestamp validation (mak-01)
+
+Commits `3f7ca8c` and `bcda09c` make armed watchdog `main()` reject absent, non-datetime, or timezone-naive persisted `started_at` rather than silently falling back to the Stage 9B materialization cutover. Three new offline regressions passed; **full suite 391/391 PASS** on mak-01. The real PostgreSQL `main()` entry path and actual systemd termination remain separate unverified gates.
+
 ## Open gates — no activation before resolution
 
 1. **Production database/schema:** Stage 9C supervisor requires revision `0004_stage9c_supervision_runs`; last recorded main test DB preflight was `0003_request_gates`. Independently inspect live revision and schema against the documented reference, agree on maintenance/rollback plan, and obtain explicit approval before applying any migration.
