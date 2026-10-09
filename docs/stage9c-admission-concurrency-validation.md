@@ -120,3 +120,9 @@ Source-verified against `bf4ps/background_service.py::_usage` and `claim_product
 6. Include transaction rollback, exact marker-owned cleanup, no HTTP, and independent five-table emptiness verification. Do not touch production or remote hosts.
 
 **Gate:** no production activation; Stage 9C remains HOLD. If the full-ceiling case fails, first document the reproduced behavior and design the fix before implementation.
+
+## Full-ceiling expired-unstarted reservation correction — implementation checkpoint
+
+**Branch-only candidate, not yet tested or activated.** Source review and prior scratch execution confirmed `_usage` counted expired unstarted reservations, blocking the reclaim that would replace them at 1,296. The candidate change in `bf4ps/background_service.py` restricts outstanding reservations to `j.lease_expires_at > now()` while leaving durable rolling-hour started-event accounting intact. The transaction-scoped advisory admission lock and existing queue/lease-token fencing remain unchanged. The isolated expired-reclaim scratch harness now **requires** successful full-ceiling reclaim (no longer accepts the historical deadlock as a diagnostic PASS).
+
+**Validation sequence:** compile and run offline tests on `tcou`; then run the revised scratch harness only on the allowlisted empty Stage 9C database; independently verify five-table emptiness. Re-run claim-race, below-ceiling reclaim, and started-lease reclaim to detect regression. Cross-host and failure-injection scenarios remain pending. No migration is proposed; verify documented schema against migrations before any later schema changes. Stage 9C production trial remains HOLD.
