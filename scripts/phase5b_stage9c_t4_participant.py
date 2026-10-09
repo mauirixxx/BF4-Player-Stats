@@ -51,9 +51,11 @@ def main():
             uid=next(c.collector_uuid for c in collectors if c.hostname==actual)
             job=conn.execute(text("""
                 SELECT job_id,soldier_id,status,attempt_count FROM collection_jobs
-                WHERE reason=:marker
-            """),{"marker":uid_marker}).all()
-            if len(job)!=1 or job[0].status not in ("pending","claimed") or job[0].attempt_count not in (0,1):
+                WHERE reason=:marker AND soldier_id IN (
+                    SELECT soldier_id FROM soldiers WHERE current_name=:soldier_name
+                )
+            """),{"marker":uid_marker,"soldier_name":uid_marker+"_"+actual}).all()
+            if len(job)!=1 or job[0].status!="pending" or job[0].attempt_count!=0:
                 raise RuntimeError("REFUSING fixture not ready; no reruns")
             if events(conn,uid_marker,RELEASE) or events(conn,uid_marker,DONE):
                 raise RuntimeError("REFUSING late participant after release")
