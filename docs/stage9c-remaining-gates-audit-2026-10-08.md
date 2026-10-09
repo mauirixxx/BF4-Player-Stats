@@ -91,3 +91,7 @@ Operator ran `scripts.phase5b_stage9c_mixed_resource_budget_scratch --execute` o
 ### T1 CLOSED — independent cleanup verified
 
 Operator independently verified scratch census after T1: `collectors=0`, `soldiers=0`, `collection_jobs=0`, `collection_events=0`, `stage9c_supervision_runs=0`, `PASS: Independent T1 cleanup`. T1 mixed-resource global budget/retry accounting **CLOSED**. T1/T2/T3 local scratch technical gates closed; T4 cross-host and T5 live physical-start ledger completeness remain OPEN, as do operational authorization gates. Production Stage 9C HOLD.
+
+### T4 tcou read-only participant preflight — PASS
+
+Operator pulled `a1646a9` on `tcou` and executed `scripts.phase5b_stage9c_t4_host_preflight --expected-host tcou --check`: `PASS: tcou verified scratch primary, Alembic head and empty fixture tables`; `READ ONLY: zero SQL writes, zero HTTP collection, zero service changes`. This verifies only the local participant preflight; hnl-01/kah-01 not yet tested and cross-host race not yet implemented/executed. T4 OPEN; production Stage 9C HOLD.
