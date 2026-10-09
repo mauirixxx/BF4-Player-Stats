@@ -152,3 +152,7 @@ HARNESS EXIT CODE: 0
 ```
 
 **Interpretation:** the candidate `_usage` lease-expiry filter permits reclaim of an expired unstarted reservation at the full 1,296-slot accounting boundary; the replacement attempt is charged and fenced. This is a scratch-only PASS, not production authorization. Harness-reported exact cleanup passed; **independent five-table zero-row verification is pending**, as are repeat claim-race/below-ceiling/started-lease regression checks and remaining Stage 9C gates. Production trial remains HOLD.
+
+### Independent cleanup after full-ceiling reclaim fix
+
+Operator independently queried the isolated Stage 9C scratch database after the full-ceiling reclaim correction harness. Counts were **0** for `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs`; output: `PASS: Independent full-ceiling fix cleanup verification`. Cleanup is independently confirmed. Prior claim-race, below-ceiling reclaim, and started-lease reclaim scenarios still require reruns on the corrected code. Production Stage 9C remains HOLD.
