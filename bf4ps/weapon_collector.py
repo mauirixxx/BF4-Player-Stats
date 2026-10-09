@@ -97,6 +97,22 @@ def _record_attempt_started(
         if owned is None:
             raise RuntimeError("weapon attempt start rejected: job lease is no longer owned")
 
+        duplicate = conn.execute(
+            text(
+                """
+                SELECT 1 FROM collection_events
+                WHERE job_id = :job_id
+                  AND attempt_number = :attempt_number
+                  AND event_type = 'collection_attempt_started'
+                  AND metadata->>'physical_request' = 'true'
+                LIMIT 1
+                """
+            ),
+            {"job_id": job.job_id, "attempt_number": job.attempt_count},
+        ).one_or_none()
+        if duplicate is not None:
+            raise RuntimeError("weapon attempt start rejected: physical start already recorded")
+
         conn.execute(
             text(
                 """
