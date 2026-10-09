@@ -42,6 +42,12 @@ def run(url):
             conn.rollback()
         preflight_passed = True
         with engine.begin() as conn:
+            # Serialize scratch preflight against other runs of this harness.
+            # Recheck emptiness after acquiring the transaction lock.
+            conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:stage9c-claim-race-fixture'))"))
+            for table in ('collectors','soldiers','collection_jobs','collection_events','stage9c_supervision_runs'):
+                if conn.execute(text(f'SELECT count(*) FROM public.{table}')).scalar_one():
+                    raise RuntimeError(f'REFUSING concurrently populated scratch table: {table}')
             for i, resource in enumerate(("weapons", "vehicles")):
                 uid = uuid4()
                 collectors.append(uid)
@@ -135,27 +141,29 @@ def run(url):
         try:
             if preflight_passed:
                 with engine.begin() as conn:
-                    conn.execute(text("UPDATE collectors SET current_job_id=NULL WHERE collector_uuid=ANY(:ids)"),
-                                 {"ids": collectors})
+                    # Cleanup is all-or-nothing; unexpected counts abort the
+                    # transaction instead of committing partial deletions.
+                    conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:stage9c-claim-race-fixture'))"))
                     deleted_jobs = conn.execute(text("""
-                        DELETE FROM collection_jobs WHERE job_id=ANY(:ids) AND reason=:reason
+                        DELETE FROM collection_jobs
+                        WHERE job_id=ANY(:ids) AND reason=:reason
                     """), {"ids": jobs, "reason": f"{MARKER}-{marker}"}).rowcount
                     deleted_events = conn.execute(text("""
                         DELETE FROM collection_events
                         WHERE metadata->>'stage9c_claim_race_marker'=:marker
                     """), {"marker": marker}).rowcount
                     deleted_soldiers = conn.execute(text("""
-                        DELETE FROM soldiers WHERE soldier_id=ANY(:ids)
-                          AND current_name LIKE :prefix
+                        DELETE FROM soldiers
+                        WHERE soldier_id=ANY(:ids) AND current_name LIKE :prefix
                     """), {"ids": soldiers, "prefix": f"{MARKER}-{marker}-%"}).rowcount
                     deleted_collectors = conn.execute(text("""
-                        DELETE FROM collectors WHERE collector_uuid=ANY(:ids)
-                          AND collector_name LIKE :prefix
+                        DELETE FROM collectors
+                        WHERE collector_uuid=ANY(:ids) AND collector_name LIKE :prefix
                     """), {"ids": collectors, "prefix": f"{MARKER}-{marker}-%"}).rowcount
-                expected = (2, BACKGROUND_SLOTS_PER_HOUR - 1, 2, 2) if seeded else (0, 0, 0, 0)
-                actual = (deleted_jobs, deleted_events, deleted_soldiers, deleted_collectors)
-                if actual != expected:
-                    raise RuntimeError(f"scratch cleanup mismatch: {actual} != {expected}; inspect database")
+                    expected = (2, BACKGROUND_SLOTS_PER_HOUR - 1, 2, 2) if seeded else (0, 0, 0, 0)
+                    actual = (deleted_jobs, deleted_events, deleted_soldiers, deleted_collectors)
+                    if actual != expected:
+                        raise RuntimeError(f"REFUSING partial scratch cleanup: {actual} != {expected}")
                 print("PASS: exact scratch fixture cleanup")
         finally:
             engine.dispose()
