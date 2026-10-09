@@ -111,8 +111,8 @@ def run(url: str) -> None:
                    "token": old.lease_token}).rowcount
             if count != 1:
                 raise AssertionError("could not expire exact owned fixture")
-            if _usage(conn).total != BACKGROUND_SLOTS_PER_HOUR - 1:
-                raise AssertionError("expired reservation unexpectedly disappeared")
+            if _usage(conn).total != BACKGROUND_SLOTS_PER_HOUR - 2:
+                raise AssertionError("expired unstarted reservation still charged")
 
         with engine.begin() as conn:
             replacement = claim_production_background_job(
