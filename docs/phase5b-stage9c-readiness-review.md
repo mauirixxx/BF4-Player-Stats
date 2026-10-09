@@ -64,6 +64,10 @@ The first execution passed healthy renewal but encountered the expected schema c
 
 This materially strengthens **gate 2**: actual `main()` transaction and fallback paths have been exercised against isolated PostgreSQL. Remaining gate-2 concerns include broader failure coverage and DB-loss/lease-expiry behavior in real supervision; **gate 3 physical shutdown** is still unproven for real workloads. **Decision: HOLD / NOT AUTHORIZED.**
 
+### Historical checkpoint-audit reconciliation (design review)
+
+The Stage 9B `scripts/phase5b_step9_checkpoint_audit.py` is still pinned to revision `0003_request_gates` and calculates its rolling maximum only over post-boundary starts. Its PASS is **not sufficient** to establish Stage 9C cross-boundary rolling-budget compliance. The Stage 9C watchdog has corrected bounded time-window logic and separate persisted supervision start. Design and required independent Stage 9C read-only audit contract are now recorded in `docs/phase5b-stage9c-rolling-budget-boundary-audit.md`; historical checkpoint script intentionally unchanged. This is **not** proof of live ledger completeness, and gate 4 remains open.
+
 ## Open gates — no activation before resolution
 
 1. **Production database/schema:** Stage 9C supervisor requires revision `0004_stage9c_supervision_runs`; last recorded main test DB preflight was `0003_request_gates`. Independently inspect live revision and schema against the documented reference, agree on maintenance/rollback plan, and obtain explicit approval before applying any migration.
