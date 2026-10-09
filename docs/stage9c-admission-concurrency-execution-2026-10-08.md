@@ -137,3 +137,18 @@ HARNESS EXIT CODE: 0
 ### Independent cleanup after started-lease reclaim
 
 Operator independently queried the Stage 9C isolated scratch database after the started-lease reclaim harness. Counts were **0** for `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs`; output: `PASS: Independent started-lease cleanup verification`. This closes the cleanup check for that execution. The full-ceiling expired-unstarted reservation deadlock remains unresolved. Stage 9C production trial remains HOLD.
+
+## Full-ceiling expired-unstarted reservation correction — scratch execution
+
+On `tcou`, branch `test/stage9c-admission-concurrency` at `68caea3`, Python compilation succeeded and the offline suite reported **412 passed**. The operator executed the revised `scripts/phase5b_stage9c_expired_reclaim_scratch.py --execute` against the isolated Stage 9C PostgreSQL scratch database:
+
+```text
+PASS: expired unstarted reservation releases capacity
+PASS: reclaimed expired reservation at full ceiling
+PASS: replacement token and attempt count advanced; total 1296
+Battlelog requests: 0
+PASS: exact scratch fixture cleanup
+HARNESS EXIT CODE: 0
+```
+
+**Interpretation:** the candidate `_usage` lease-expiry filter permits reclaim of an expired unstarted reservation at the full 1,296-slot accounting boundary; the replacement attempt is charged and fenced. This is a scratch-only PASS, not production authorization. Harness-reported exact cleanup passed; **independent five-table zero-row verification is pending**, as are repeat claim-race/below-ceiling/started-lease regression checks and remaining Stage 9C gates. Production trial remains HOLD.
