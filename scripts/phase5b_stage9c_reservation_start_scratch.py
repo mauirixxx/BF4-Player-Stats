@@ -176,8 +176,8 @@ def run(url: str) -> None:
                         conn.execute(text("""
                             DELETE FROM collectors
                             WHERE collector_uuid=:uid AND collector_name=:name
-                        """), {"uid": uid, "name": name}).rowcount,
-                    )
+                        """), {"uid": uid, "name": name}).rowcount
+                    counts = (deleted_jobs, deleted_events, deleted_soldiers, deleted_collectors)
                     expected = (
                         (2, BACKGROUND_SLOTS_PER_HOUR - 1 + int(started), 2, 1)
                         if seeded else (0, 0, 0, 0)
