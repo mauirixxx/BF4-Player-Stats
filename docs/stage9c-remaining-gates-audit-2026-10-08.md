@@ -55,3 +55,7 @@ Operator pulled `31d99aa` on `tcou`; `py_compile bf4ps/detailed_collector.py` su
 ## Detailed diagnostic scratch checkpoint
 
 Operator executed `scripts.phase5b_stage9c_detailed_diagnostic_scratch --execute` at `e122ed8`: PASS for committed `collection_persistence_failure` after injected persistence rollback, retained physical-start event, rolled-back current/history/state/success, slot 1296 still charged, zero Battlelog requests, exact fixture cleanup, exit 0. **Independent post-run five-table census remains pending.** This harness invokes the production diagnostic helper directly and does not yet exercise the full `collect_one_detailed_job` exception path. T3 remains partially open; production HOLD.
+
+### Independent cleanup — detailed diagnostic harness CLOSED
+
+Operator independently checked the isolated scratch target after diagnostic harness PASS: `collectors=0`, `soldiers=0`, `collection_jobs=0`, `collection_events=0`, `stage9c_supervision_runs=0`; output `PASS: Independent detailed diagnostic cleanup`. The direct diagnostic writer and cleanup subgate is **CLOSED**. Full `collect_one_detailed_job` exception-path integration remains unverified; do not equate the helper invocation with an orchestrator test. Stage 9C HOLD.
