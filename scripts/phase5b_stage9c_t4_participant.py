@@ -4,9 +4,11 @@ from __future__ import annotations
 import argparse
 import os
 import socket
+import time
 from uuid import UUID
 from sqlalchemy import create_engine, text
 from bf4ps.background_service import claim_production_background_job
+from scripts.phase5b_stage9c_t4_barrier import READY, RELEASE, DONE, events, emit
 from scripts.phase5b_stage9c_postgres_integration import (
     EXPECTED_DATABASE,EXPECTED_IP,EXPECTED_USER,refuse_unsafe_target,
 )
@@ -53,12 +55,33 @@ def main():
             """),{"marker":uid_marker}).all()
             if len(job)!=1 or job[0].status not in ("pending","claimed") or job[0].attempt_count not in (0,1):
                 raise RuntimeError("REFUSING fixture not ready; no reruns")
+            if events(conn,uid_marker,RELEASE) or events(conn,uid_marker,DONE):
+                raise RuntimeError("REFUSING late participant after release")
+            if any(e.host==actual for e in events(conn,uid_marker,READY)):
+                raise RuntimeError("REFUSING duplicate host participation")
+            emit(conn,uid_marker,READY,host=actual)
+        print("READY",actual,flush=True)
+        deadline=time.monotonic()+60
+        while True:
+            with engine.connect() as conn:
+                released=events(conn,uid_marker,RELEASE)
+                conn.rollback()
+            if len(released)==1:
+                break
+            if released or time.monotonic()>=deadline:
+                raise RuntimeError("REFUSING absent/invalid T4 release after bounded wait")
+            time.sleep(0.5)
+        with engine.begin() as conn:
+            if len(events(conn,uid_marker,RELEASE))!=1:
+                raise RuntimeError("REFUSING release drift")
             result=claim_production_background_job(
                 conn,collector_uuid=uid,resource="detailed",
                 allowed_soldier_ids=[job[0].soldier_id],
             )
             if result is not None and result.job_id!=job[0].job_id:
                 raise RuntimeError("REFUSING unexpected claimed job")
+            emit(conn,uid_marker,DONE,host=actual,
+                 outcome=("WIN" if result is not None else "DENIED"))
         print("HOST",actual,"RESULT",("WIN" if result is not None else "DENIED"))
         print("PASS: one bounded scratch claim call, zero HTTP")
     finally:
