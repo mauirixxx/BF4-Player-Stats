@@ -215,3 +215,17 @@ All four planned post-fix scratch scenarios have now passed their harnesses: ful
 Operator independently queried the isolated Stage 9C scratch database after the successful started-lease rerun: `collectors=0`, `soldiers=0`, `collection_jobs=0`, `collection_events=0`, `stage9c_supervision_runs=0`. Output: `PASS: Independent started-lease regression cleanup`.
 
 **All four post-correction regression scenarios and their independent five-table cleanup censuses have passed.** This closes the expired-unstarted-reservation accounting defect's defined regression group, not the broader Stage 9C validation program. Remaining gates include rollback/failure injection, start-event durability, persistence failures, rolling-window boundaries, and cross-host tests. Production trial remains HOLD.
+
+## FI-1 admission transaction rollback — first scratch execution
+
+Operator pulled commit `95b2373` on `tcou` and ran `scripts.phase5b_stage9c_fi1_admission_rollback_scratch --execute` against the allowlisted Stage 9C scratch database. Reported output:
+
+```text
+PASS: rolled-back claim leaves no committed reservation or start event
+PASS: independent collector reuses slot 1296; slot 1297 denied
+Battlelog requests: 0
+PASS: exact scratch fixture cleanup
+HARNESS EXIT CODE: 0
+```
+
+**FI-1 harness PASS; independent five-table scratch cleanup census pending.** FI-2 and FI-3 have not yet executed. Stage 9C production trial remains HOLD.
