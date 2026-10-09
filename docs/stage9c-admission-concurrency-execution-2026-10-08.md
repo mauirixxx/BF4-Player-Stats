@@ -133,3 +133,7 @@ HARNESS EXIT CODE: 0
 ```
 
 **Interpretation:** a previously committed physical-start event remains charged after lease expiry, while the replacement attempt's reservation consumes a distinct slot. The aggregate reaches but does not exceed 1,296, and the previous lease token is fenced. Harness-reported cleanup passed; independent post-run five-table census is pending. This does not resolve the full-ceiling expired *unstarted* reservation deadlock. Production Stage 9C remains HOLD.
+
+### Independent cleanup after started-lease reclaim
+
+Operator independently queried the Stage 9C isolated scratch database after the started-lease reclaim harness. Counts were **0** for `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs`; output: `PASS: Independent started-lease cleanup verification`. This closes the cleanup check for that execution. The full-ceiling expired-unstarted reservation deadlock remains unresolved. Stage 9C production trial remains HOLD.
