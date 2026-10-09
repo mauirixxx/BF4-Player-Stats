@@ -177,3 +177,15 @@ def test_successful_armed_abort_commits_atomically(monkeypatch):
     assert f.engine.rollbacks == 0
     f.abort.assert_called_once()
     f.drain.assert_called_once()
+
+
+@pytest.mark.parametrize("bad_start", [None, "not-a-timestamp", datetime(2026, 10, 8, 1, 15)])
+def test_invalid_supervision_start_fails_closed(monkeypatch, bad_start):
+    f = setup(monkeypatch, args=argv("--armed"))
+    f.lease.return_value = {"started_at": bad_start}
+    assert watchdog.main() == 3
+    f.inspect.assert_not_called()
+    f.renew.assert_not_called()
+    f.abort.assert_not_called()
+    f.drain.assert_not_called()
+    assert f.engine.rollbacks == 1
