@@ -233,3 +233,7 @@ HARNESS EXIT CODE: 0
 ### FI-1 independent cleanup — CLOSED
 
 Operator independently verified zero rows in `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs` after FI-1 PASS. Output: `PASS: Independent FI-1 rollback cleanup`. FI-1 harness and independent cleanup gates are both complete. FI-2 start-event failure and FI-3 post-start persistence rollback remain pending. Production Stage 9C HOLD.
+
+### FI-2 start-event INSERT failure — CLOSED
+
+Operator ran `scripts.phase5b_stage9c_fi2_start_failure_scratch --execute` on `tcou` (commit `9597d81`): injected production start-event INSERT failure propagated; HTTP was blocked (Battlelog requests 0); no committed start event; unexpired running reservation charged once; exact fixture and request-gate cleanup; harness exit 0. Independent follow-up census confirmed zero rows in `collectors`, `soldiers`, `collection_jobs`, `collection_events`, `stage9c_supervision_runs`, and zero `request_gates` rows matching `stage9c_fi2_start_failure-%`. `PASS: Independent FI-2 cleanup`. FI-2 closed. FI-3 pending; production HOLD.
