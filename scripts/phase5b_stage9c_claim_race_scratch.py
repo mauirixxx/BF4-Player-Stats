@@ -28,6 +28,7 @@ def run(url):
     marker = str(uuid4())
     collectors, soldiers, jobs = [], [], []
     seeded = False
+    preflight_passed = False
     ready, second_ready, release = Event(), Event(), Event()
     try:
         with engine.connect() as conn:
@@ -39,6 +40,7 @@ def run(url):
             if conn.execute(text("SHOW transaction_isolation")).scalar_one().lower() != "read committed":
                 raise RuntimeError("REFUSING non-READ COMMITTED isolation")
             conn.rollback()
+        preflight_passed = True
         with engine.begin() as conn:
             for i, resource in enumerate(("weapons", "vehicles")):
                 uid = uuid4()
@@ -131,7 +133,7 @@ def run(url):
     finally:
         release.set()
         try:
-            if seeded:
+            if preflight_passed:
                 with engine.begin() as conn:
                     conn.execute(text("UPDATE collectors SET current_job_id=NULL WHERE collector_uuid=ANY(:ids)"),
                                  {"ids": collectors})
@@ -150,10 +152,10 @@ def run(url):
                         DELETE FROM collectors WHERE collector_uuid=ANY(:ids)
                           AND collector_name LIKE :prefix
                     """), {"ids": collectors, "prefix": f"{MARKER}-{marker}-%"}).rowcount
-                if (deleted_jobs, deleted_events, deleted_soldiers, deleted_collectors) != (
-                    2, BACKGROUND_SLOTS_PER_HOUR - 1, 2, 2
-                ):
-                    raise RuntimeError("scratch cleanup counts mismatch; inspect database")
+                expected = (2, BACKGROUND_SLOTS_PER_HOUR - 1, 2, 2) if seeded else (0, 0, 0, 0)
+                actual = (deleted_jobs, deleted_events, deleted_soldiers, deleted_collectors)
+                if actual != expected:
+                    raise RuntimeError(f"scratch cleanup mismatch: {actual} != {expected}; inspect database")
                 print("PASS: exact scratch fixture cleanup")
         finally:
             engine.dispose()
