@@ -1,0 +1,46 @@
+# Stage 9C T4 — cross-host scratch admission validation plan
+
+Status: **PROPOSED / NOT AUTHORIZED**. Design-only checkpoint; production Stage 9C HOLD.
+
+## Purpose and evidence boundary
+
+T1/T2/T3 were validated on tcou using isolated PostgreSQL scratch and independent cleanup. T4 must demonstrate that distinct physical hosts (tcou, hnl-01, kah-01) coordinate through the same PostgreSQL primary, not merely through separate tcou connections. No claim of cross-host PASS exists yet.
+
+## Allowed target and participants
+
+- Coordinator: tcou; remote participants: hnl-01 and kah-01.
+- Scratch DB only: mak-db-02.bf4statusbot.com / 192.168.10.78; database bf4ps_scratch_stage9c_integration; user bf4ps_stage9c_integration.
+- Expected schema head: 0004_stage9c_supervision_runs.
+- Each remote process must independently verify hostname, DB name/user/server IP, pg_is_in_recovery=false, transaction_read_only=off, Alembic head, READ COMMITTED isolation, and authorized scratch URL. Do not print credentials.
+- Hostname identity and route/egress independence must be confirmed by operator evidence, not inferred from labels.
+
+## Non-negotiable boundaries
+
+1. No commands on remote hosts until explicit operator approval after reviewing this plan and the exact harness.
+2. Zero Battlelog HTTP, no live external collection, no production DB connection, no production collector rows, no migration or service activation.
+3. No systemd unit changes, no Docker operations, no production collector start/stop.
+4. Scratch preflight requires zero rows in collectors, soldiers, collection_jobs, collection_events, stage9c_supervision_runs. Refuse if unexpected activity appears.
+5. Use an explicit unique run marker and narrowly scoped rows; fail closed on partial cleanup. Keep operator-provided connection secrets out of output and source control.
+6. Set statement/connection timeouts and bounded barriers; no infinite waiting. Each process logs hostname, test phase, and pass/fail without credentials.
+
+## Proposed sequence (design only)
+
+1. Operator reviews/approves precise harness and execution window. Verify all three host checkouts and venvs at the same commit without modifying live services.
+2. Coordinator performs strict scratch preflight, acquires fixture advisory lock, seeds a bounded three-resource cohort with synthetic identities and jobs, and records expected row IDs.
+3. Each remote host runs a *dry-run* identity/preflight command first; inspect returned host and database identities. No writes on dry run.
+4. At an explicit barrier, separate hosts compete for the final available global slot through the production claim/admission function in independent transactions. Assert exactly one successful claim and no oversubscription; log which host won.
+5. Exercise one owner-bound start with the production start writer and assert a nonowner cannot start with the wrong lease; use only synthetic payloads and zero outbound HTTP.
+6. Exercise one expired *unstarted* reservation reclaim under a controlled scratch clock/lease setup, asserting correct reservation accounting. Avoid broad failure-injection changes.
+7. Coordinator reads the authoritative committed event ledger and usage, validates exact expected attempts, then performs exact-marker cleanup (events before jobs), checks all fixture rows removed, and reports PASS only after independent zero census.
+8. Operator independently runs a read-only five-table census on the scratch database; any residue or unexpected rows means T4 stays OPEN.
+
+## Abort and rollback
+
+- Abort immediately on wrong DB identity, unexpected nonempty tables, host identity mismatch, missing barrier participant, timeout, unapproved egress, any real HTTP attempt, or inconsistent ledger.
+- No remote production processes should be changed; rollback consists solely of deleting uniquely tagged scratch fixture rows, with explicit row-count assertions. Never TRUNCATE or DROP shared tables.
+- On uncertain cleanup, stop all harness participants, retain logs/IDs, and require manual operator review before any further run. Do not perform blind retries.
+- Keep T4 OPEN until the cross-host race, ownership, ledger, and independent cleanup evidence are all recorded.
+
+## Approval checkpoint
+
+This document authorizes **nothing**. Next deliverable is an exact reviewed, zero-HTTP cross-host harness and commands. Operator approval must be requested separately before any remote execution. T5 and O1–O4 remain OPEN; production Stage 9C HOLD.
