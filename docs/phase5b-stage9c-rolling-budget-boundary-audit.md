@@ -35,3 +35,24 @@ Status: **SOURCE AUDIT AND IMPLEMENTATION DESIGN ONLY. No runtime SQL change or 
 ## Activation status
 
 The four scratch PostgreSQL abort/drain checkpoints passed on commit `59f3a1f`. This source audit does not extend that evidence to rolling-budget correctness or full watchdog execution. No real collector, materializer, systemd service, database migration, or six-hour trial is authorized.
+
+
+## Implementation reconciliation — 2026-10-08 (current branch)
+
+The original discrepancy and proposal above are retained as historical design rationale, **not the current implementation status**. The Stage 9C watchdog now queries eligible physical background starts across the event boundary using a bounded database-time window, including pre-supervision starts, and computes the rolling maximum over the persisted supervision interval plus its trailing-hour context. `main()` explicitly passes the persisted run `started_at` to `inspect()` and refuses absent or invalid timestamps. The frozen Stage 9B cutover and exclusive event ID remain the materialization and post-boundary reconciliation fences, **not** a rolling-budget reset.
+
+Verification evidence: the rolling-budget PostgreSQL scratch harness passed 10 cases; the actual watchdog `main()` scratch harness passed four scenarios including a 1,297-start violation and fenced abort/drain. See `docs/phase5b-stage9c-readiness-review.md`. These tests do **not** establish the completeness of the live event ledger or scheduler enforcement.
+
+### Historical Step 9 audit is not a Stage 9C budget authority
+
+`scripts/phase5b_step9_checkpoint_audit.py` remains deliberately pinned to revision `0003_request_gates` and computes its `rolling_1h_max_physical_starts` only from `event_id > since_event_id`. Its output can understate a cross-boundary peak and **must not** be used alone to authorize Stage 9C. Preserve the script as historical Stage 9B evidence. Do not widen its schema acceptance or repurpose its PASS verdict.
+
+A future Stage 9C-specific **read-only** audit should:
+
+1. Require the expected target DB, writable primary, exact revision `0004_stage9c_supervision_runs`, and explicit frozen cutover/event boundary. Read the exact authorized run's persisted `started_at` and deadline rather than inventing a new cutover.
+2. Inspect all eligible physical background-start events from `started_at - interval '1 hour'` through the checkpoint time, using `occurred_at, event_id` ordering. Evaluate the strict trailing-hour maximum over the Stage 9C supervision interval, including the pre-supervision context and any peak that has since expired.
+3. Keep the post-boundary event ledger reconciliation, throttle/persistence checks, identity validation, and queue/provenance inspection separate from the rolling-hour budget dataset; never interpret a missing table, failed query, or unverifiable event coverage as zero starts.
+4. Compare physical-start event evidence with scheduler claim/attempt accounting and known persistence failure modes. Explicitly report coverage and uncertainty; fail closed if a complete budget cannot be established.
+5. Use bounded queries with reviewed indexes and a documented query-time budget. No mutation, migration, scheduling, collector startup, or Battlelog requests.
+
+**Current decision:** design reconciliation documented; Stage 9C-specific checkpoint tool and live-ledger completeness audit remain pending. HOLD.
