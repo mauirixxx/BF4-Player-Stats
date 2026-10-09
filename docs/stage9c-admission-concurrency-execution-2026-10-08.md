@@ -175,3 +175,18 @@ This confirms the previously passing two-transaction final-slot race still passe
 ### Independent cleanup after post-fix claim-race regression
 
 Operator independently queried the isolated Stage 9C scratch database after the corrected-code claim-race regression. Counts were **0** for `collectors`, `soldiers`, `collection_jobs`, `collection_events`, and `stage9c_supervision_runs`; output: `PASS: Independent claim-race regression cleanup`. This closes the cleanup gate for the post-fix claim-race rerun. Below-ceiling and started-lease regression reruns remain pending. Stage 9C production trial remains HOLD.
+
+## Below-ceiling reclaim regression after accounting correction
+
+The first corrected-code rerun at `9693234` exited 1 on an obsolete harness expectation (`expired reservation unexpectedly disappeared`); its marker-owned cleanup reported PASS. Operator independently verified all five scratch tables were empty after that failed run. The harness assertion was updated in `58a3436` to expect expired unstarted reservations to release capacity. Operator pulled `58a3436`, compiled the harness, and reran:
+
+```text
+PASS: expired unstarted lease reclaimed with fresh token
+PASS: old token rejected for run, renew, finalize
+PASS: reclaimed reservation counted once; final slot enforced
+Battlelog requests: 0
+PASS: exact scratch fixture cleanup
+HARNESS EXIT CODE: 0
+```
+
+The rerun PASSED. Independent five-table cleanup verification **after the successful rerun** is still pending. Started-lease regression remains pending. Stage 9C production trial remains HOLD.
