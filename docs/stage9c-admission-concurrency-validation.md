@@ -100,3 +100,23 @@ Reviewed `bf4ps/detailed_collector.py` and `bf4ps/background_service.py` against
 - **Unresolved duplicate-start risk:** the writer shown does not itself query for an existing matching start event or use an `ON CONFLICT` clause. `_usage` counts all rolling-hour start-event rows, not distinct attempts. Do not assert idempotency or absence of duplicate starts without reviewing migration constraints and exercising the production writer. A duplicate event might conservatively overcount; it must still be classified as a correctness defect if one physical attempt is charged twice.
 - Next implementation must test the production detailed writer, not only a hand-authored SQL insert. A direct second writer invocation is a fault-injection scenario, **not** evidence that normal runtime makes two HTTP requests. Test no HTTP and assert explicit event count.
 - Verify weapons and vehicles start-writer equivalents before claiming cross-resource transition coverage. **No scratch execution performed in this source review.**
+
+## Expired lease reclaim — source review checkpoint (2026-10-08)
+
+Source-verified against `bf4ps/background_service.py::_usage` and `claim_production_background_job`, `bf4ps/collection_jobs.py::claim_next_job`, and the documented lease shape in `docs/database-schema-reference.md`:
+
+- `_usage` charges every `claimed` or `running` background job without a matching start event for its **current** attempt, regardless of whether `lease_expires_at <= now()`.
+- `claim_next_job` permits reclaiming an expired claimed/running job, resets its claim/start fields, increments `attempt_count`, and issues a new lease token. It uses row locking and `SKIP LOCKED`.
+- The aggregate budget decision precedes the reclaim operation. **Potential capacity deadlock:** if the ceiling is fully consumed and an unstarted reservation expires, its existing charge can prevent the admission path from reaching the reclaim that would replace it. This is a source-level hypothesis; test it on scratch before changing production code.
+- For an **already started** expired lease, the previous durable start event remains charged for the rolling hour. A reclaimed attempt requires another admission slot and a new lease token. Old-token writes must be fenced out.
+
+### Next scratch test plan (not yet executed)
+
+1. Use a fresh empty, allowlisted scratch DB at documented migration head. Seed a uniquely marked collector, soldier, pending detailed job, and exactly 1,295 synthetic started events. Admit and commit one unstarted claim (usage 1,296).
+2. In a scratch-only transaction, force that lease expiration using DB time, without sleeping or calling HTTP. Verify its old ownership token and the unchanged usage count.
+3. Attempt production background admission for the same expired job. Record whether it returns `None` at the ceiling. **This may be the expected red test**; do not silently alter assertions or claim a pass.
+4. In a separate below-ceiling fixture, reclaim an expired unstarted lease, confirm `attempt_count` increments and `lease_token` changes, old token cannot mark running or write a durable start, and the replacement reservation is charged only once.
+5. In a separate started-lease fixture, record a durable production start event, expire its lease, reclaim below the ceiling, and verify both the old physical attempt and the new reservation are charged (two slots). Test old-token fencing.
+6. Include transaction rollback, exact marker-owned cleanup, no HTTP, and independent five-table emptiness verification. Do not touch production or remote hosts.
+
+**Gate:** no production activation; Stage 9C remains HOLD. If the full-ceiling case fails, first document the reproduced behavior and design the fix before implementation.
