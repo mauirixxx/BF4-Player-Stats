@@ -71,3 +71,7 @@ Operator independently verified after `df70d00` harness: `collectors=0`, `soldie
 ## T2 duplicate physical-start source guard — implementation pending validation
 
 Reviewed `docs/database-schema-reference.md` and `migrations/versions/0001_initial_schema.py`: `collection_events` has a nonunique job index and no uniqueness constraint for physical starts. The detailed, weapons and vehicles start writers previously locked the running job but unconditionally inserted a second `collection_attempt_started` for the same job attempt if invoked twice. Added a duplicate physical-start existence check **inside the existing `collection_jobs FOR UPDATE` transaction** in all three writers; a duplicate raises before HTTP. Same-job contenders serialize on the job row, so the later contender observes the committed first start under READ COMMITTED. No migration. **Not yet tested; T2 remains OPEN**, requiring targeted duplicate-start tests including distinct attempts/retries and independent cleanup. Production HOLD.
+
+### T2 offline regression checkpoint
+
+Operator pulled `0f74057` on `tcou`; all three collector modules compiled and `pytest -q` reported **412 passed in 1.22s**, exit 0. This confirms existing regression compatibility only. Focused PostgreSQL duplicate-start and concurrency tests, legitimate next-attempt retry, and independent cleanup are still required. T2 OPEN; Stage 9C HOLD.
