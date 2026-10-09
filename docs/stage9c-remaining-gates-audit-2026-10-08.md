@@ -37,3 +37,13 @@ References: docs/stage9c-admission-concurrency-validation.md; docs/stage9c-admis
 4. Resolve T5 and O1–O4 through authorized preflight and operational checks.
 
 Do not change production, run migrations, activate collectors, or send Battlelog requests. Stage 9C HOLD remains in force.
+
+## T1–T3 source review checkpoint (2026-10-08)
+
+Reviewed `scripts/bf4ps_production_collector.py`, `bf4ps/background_service.py`, `bf4ps/detailed_collector.py`, `bf4ps/weapon_collector.py`, and `bf4ps/vehicle_collector.py`.
+
+- Production collector sets `enforce_production_budget=True` for all three resources, and all three collector functions invoke the shared `claim_production_background_job` under that flag. All three write a committed start event before outbound HTTP. This is source-level wiring evidence, not a mixed-resource scratch PASS.
+- Weapons and vehicles wrap successful persistence in `try/except Exception`, and on failure attempt a fresh-transaction `collection_persistence_failure` ledger event before re-raising. Failure to write that diagnostic is logged and original exception retained.
+- Detailed success persistence currently has no equivalent exception handler or diagnostic-event writer. This is a **confirmed source-level observability gap** relative to the documented collection-event contract. FI-3 did not cover this logging behavior. Design/implement parity and test with no HTTP before trial.
+- The detailed start writer inserts without a visible duplicate check. Review actual migration/index constraints and weapons/vehicles start writers before selecting a duplicate-start fix; do not claim a demonstrated duplicate until tested.
+- No remote hosts, database writes, or HTTP were used in this source review. Production HOLD.
