@@ -51,3 +51,7 @@ Reviewed `scripts/bf4ps_production_collector.py`, `bf4ps/background_service.py`,
 ## Offline validation after detailed diagnostic patch
 
 Operator pulled `31d99aa` on `tcou`; `py_compile bf4ps/detailed_collector.py` succeeded; full offline pytest reported **412 passed in 1.23s**, exit 0. This confirms existing regression compatibility only. It does **not** yet establish that the new detailed `collection_persistence_failure` event commits after a deliberately failed persistence transaction; targeted diagnostic validation remains required. Production Stage 9C remains HOLD.
+
+## Detailed diagnostic scratch checkpoint
+
+Operator executed `scripts.phase5b_stage9c_detailed_diagnostic_scratch --execute` at `e122ed8`: PASS for committed `collection_persistence_failure` after injected persistence rollback, retained physical-start event, rolled-back current/history/state/success, slot 1296 still charged, zero Battlelog requests, exact fixture cleanup, exit 0. **Independent post-run five-table census remains pending.** This harness invokes the production diagnostic helper directly and does not yet exercise the full `collect_one_detailed_job` exception path. T3 remains partially open; production HOLD.
