@@ -57,3 +57,19 @@ PASS: Scratch database clean after claim race
 **This is one successful scratch concurrency scenario, not Stage 9C production acceptance.** Still required: reservation-to-start replacement accounting; expired unstarted and started lease reclaim; retry consumption; mixed-resource and retry races; rollback/failure paths; exact rolling-hour expiry; physical-start ledger completeness; host-local guard/systemd safety; independent deployment preflight; and explicit operator authorization for any six-hour production trial.
 
 Do not rerun or extend scratch tests without rechecking the documented schema, migration head, target allowlist, fixture ownership, and cleanup/failure behavior. Preserve **HOLD**.
+
+## Reservation-to-start execution — 2026-10-08
+
+Operator executed `python -m scripts.phase5b_stage9c_reservation_start_scratch --execute` from the isolated `tcou` validation checkout at `7e22611`, after a passing 412-test offline regression and a read-only preflight showing zero rows in all five scratch tables.
+
+Operator-reported results:
+
+```text
+PASS: production start event replaces committed reservation
+PASS: aggregate usage remains 1296; next claim denied
+Battlelog requests: 0
+PASS: exact scratch fixture cleanup
+HARNESS EXIT CODE: 0
+```
+
+**Evidence scope:** production detailed start-event writer was invoked against isolated scratch PostgreSQL with no outbound HTTP. It converted the winning committed reservation into one durable start event, kept aggregate accounting at the 1,296/hour ceiling, and denied another background claim. Harness-reported exact cleanup passed. **An independent post-run read-only emptiness check has not yet been reported** for this execution. Duplicate-start, lease reclaim, retries, mixed resources, rollback boundaries, and distributed hosts remain unproven. Production Stage 9C stays **HOLD**.
