@@ -95,3 +95,7 @@ HARNESS EXIT CODE: 0
 ### Independent cleanup after expired-lease diagnostic
 
 Operator ran the separate read-only scratch census following the full-ceiling expired-lease diagnostic. Each table returned **0**: `collectors`, `soldiers`, `collection_jobs`, `collection_events`, `stage9c_supervision_runs`. Output: `PASS: Independent expired-lease cleanup verification`. This verifies cleanup, **not** correct reclaim behavior. The deadlock remains reproduced; production Stage 9C remains HOLD.
+
+### Independent post-run expired-lease cleanup
+
+Operator independently verified that all five scratch tables contain zero rows: `collectors`, `soldiers`, `collection_jobs`, `collection_events`, `stage9c_supervision_runs`. Output: `PASS: Independent expired-lease cleanup verification`. The confirmed full-ceiling reclaim defect remains open; Stage 9C remains HOLD.
