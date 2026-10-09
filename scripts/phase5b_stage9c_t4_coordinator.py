@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import create_engine, text
 from bf4ps.background_service import BACKGROUND_SLOTS_PER_HOUR, _usage
 from scripts.phase5b_stage9c_abort_drain_scratch import check
+from scripts.phase5b_stage9c_t4_barrier import READY, RELEASE, DONE, events, emit, verify_ready, verify_done
 from scripts.phase5b_stage9c_postgres_integration import refuse_unsafe_target
 
 HOSTS = ("tcou", "hnl-01", "kah-01")
@@ -14,7 +15,7 @@ TABLES = ("collectors", "soldiers", "collection_jobs", "collection_events", "sta
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("action", choices=("seed", "inspect", "cleanup"))
+    p.add_argument("action", choices=("seed", "release", "inspect", "cleanup"))
     p.add_argument("--execute", action="store_true")
     p.add_argument("--run-id", help="UUID printed by seed; required for inspect/cleanup")
     args = p.parse_args()
@@ -88,7 +89,21 @@ def main():
                 """), {"tcou":marker+"_tcou","hnl":marker+"_hnl-01","kah":marker+"_kah-01"}).all()
                 if len(owners)!=3 or {x.hostname for x in owners}!=set(HOSTS):
                     raise RuntimeError("REFUSING collector identity drift")
-                if args.action=="inspect":
+                if args.action=="release":
+                    verify_ready(conn, marker)
+                    if events(conn,marker,RELEASE) or events(conn,marker,DONE):
+                        raise RuntimeError("REFUSING duplicate/late release")
+                    if job.status!="pending" or job.attempt_count!=0:
+                        raise RuntimeError("REFUSING release after claim")
+                    if _usage(conn).total!=BACKGROUND_SLOTS_PER_HOUR-1:
+                        raise RuntimeError("REFUSING changed budget before release")
+                    emit(conn,marker,RELEASE)
+                    print("PASS: three hosts ready; release committed")
+                elif args.action=="inspect":
+                    verify_ready(conn,marker)
+                    verify_done(conn,marker)
+                    if len(events(conn,marker,RELEASE))!=1:
+                        raise AssertionError("release ledger mismatch")
                     usage=_usage(conn)
                     print("JOB",job)
                     print("USAGE",usage)
@@ -98,6 +113,10 @@ def main():
                         raise AssertionError("budget incorrect after winner reservation")
                     print("PASS: one claimed job, 1296/1296 used (host logs still required)")
                 else:
+                    verify_ready(conn,marker)
+                    verify_done(conn,marker)
+                    if len(events(conn,marker,RELEASE))!=1:
+                        raise RuntimeError("REFUSING cleanup without exactly one release")
                     # Refuse cleanup until any winning lease has expired.
                     # Operator must first confirm all participants exited.
                     if job.status in ("claimed", "running"):
@@ -110,8 +129,8 @@ def main():
                     n=conn.execute(text("""
                         DELETE FROM collection_events WHERE metadata->>'stage9c_t4_marker'=:marker
                     """), {"marker":marker}).rowcount
-                    if n!=BACKGROUND_SLOTS_PER_HOUR-1:
-                        raise RuntimeError(f"REFUSING unexpected synthetic event count {n}")
+                    if n!=BACKGROUND_SLOTS_PER_HOUR-1+7:
+                        raise RuntimeError(f"REFUSING unexpected fixture event count {n}")
                     n=conn.execute(text("DELETE FROM collection_jobs WHERE job_id=:jid AND reason=:marker"),
                                    {"jid":job.job_id,"marker":marker}).rowcount
                     if n!=1: raise RuntimeError("REFUSING job cleanup mismatch")
