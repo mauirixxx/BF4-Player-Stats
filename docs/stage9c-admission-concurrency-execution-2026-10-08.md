@@ -99,3 +99,18 @@ Operator ran the separate read-only scratch census following the full-ceiling ex
 ### Independent post-run expired-lease cleanup
 
 Operator independently verified that all five scratch tables contain zero rows: `collectors`, `soldiers`, `collection_jobs`, `collection_events`, `stage9c_supervision_runs`. Output: `PASS: Independent expired-lease cleanup verification`. The confirmed full-ceiling reclaim defect remains open; Stage 9C remains HOLD.
+
+## Below-ceiling expired unstarted reservation reclaim — operator execution
+
+On `tcou`, branch `test/stage9c-admission-concurrency` at `1648508`, the new scratch-only harness `scripts/phase5b_stage9c_reclaim_below_ceiling_scratch.py` compiled and the offline suite reported **412 passed**. Operator ran the harness with `--execute` against the isolated Stage 9C scratch database:
+
+```text
+PASS: expired unstarted lease reclaimed with fresh token
+PASS: old token rejected for run, renew, finalize
+PASS: reclaimed reservation counted once; final slot enforced
+Battlelog requests: 0
+PASS: exact scratch fixture cleanup
+HARNESS EXIT CODE: 0
+```
+
+**Interpretation:** below the 1,296/hour ceiling, the production reclaim path advances the attempt, changes the lease token, rejects stale-token operations, and counts the new reservation once. This is a scoped PASS; it does not resolve the separately reproduced full-ceiling deadlock. The harness reports exact cleanup, but **independent post-run zero-row census is still pending** for this execution. Stage 9C remains HOLD.
