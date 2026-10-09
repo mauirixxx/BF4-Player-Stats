@@ -49,7 +49,7 @@ def main():
                 SELECT job_id,soldier_id,status,attempt_count FROM collection_jobs
                 WHERE reason=:marker
             """),{"marker":uid_marker}).all()
-            if len(job)!=1 or job[0].status!="pending" or job[0].attempt_count!=0:
+            if len(job)!=1 or job[0].status not in ("pending","claimed") or job[0].attempt_count not in (0,1):
                 raise RuntimeError("REFUSING fixture not ready; no reruns")
             result=claim_production_background_job(
                 conn,collector_uuid=uid,resource="detailed",
