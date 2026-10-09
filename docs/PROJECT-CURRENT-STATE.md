@@ -87,3 +87,10 @@ The first two commits on the current branch were documentation and offline safet
 ## Change log
 
 - **2026-10-08:** Established living checkpoint from current repository and readiness evidence. Explicitly scoped remaining concurrency work to avoid duplicating Stage 9C rolling-budget, watchdog, read-only checkpoint, and earlier Phase 3 queue/lease proofs.
+
+### Admission concurrency build checkpoint — 2026-10-08
+
+- Commit `0008a37` adds `scripts/phase5b_stage9c_admission_lock_scratch.py`: two independent PostgreSQL connections, production advisory lock, production `_usage()`, synthetic 1,295→1,296 physical-start ledger transition, explicit scratch-target allowlist and exact event-marker cleanup.
+- **Authored, not executed.** This probe checks lock/usage visibility, **not** actual `claim_production_background_job()` concurrent queue claims, reservation accounting, retries, or lease reclamation. It must not be described as the Stage 9C admission gate passing.
+- Before operator execution, review failure-path cleanup, transaction timing/barrier strength, and strict scratch database emptiness; only run with explicit authorization against the allowlisted disposable database.
+- Next: improve deterministic barrier assertions; then add a genuine multi-connection `claim_production_background_job()` test with valid scratch soldiers/collectors/jobs and verify resource/retry/reclaim behavior. Maintain Stage 9C HOLD.
