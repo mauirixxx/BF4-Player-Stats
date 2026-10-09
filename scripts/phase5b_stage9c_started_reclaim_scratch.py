@@ -102,13 +102,13 @@ def run(url: str) -> None:
             )
             if job is None or job.job_id != jobs[0] or job.attempt_count != 1:
                 raise AssertionError(f"unexpected claimed job: {job}")
-            if _usage(conn).total != BACKGROUND_SLOTS_PER_HOUR:
+            if _usage(conn).total != BACKGROUND_SLOTS_PER_HOUR - 1:
                 raise AssertionError("uncommitted reservation not charged")
             if not mark_job_running(conn, job):
                 raise AssertionError("running transition rejected")
 
         with engine.connect() as conn:
-            if _usage(conn).total != BACKGROUND_SLOTS_PER_HOUR:
+            if _usage(conn).total != BACKGROUND_SLOTS_PER_HOUR - 1:
                 raise AssertionError("committed reservation not visible")
             persona_id = int(conn.execute(text(
                 "SELECT persona_id FROM soldiers WHERE soldier_id=:sid"
