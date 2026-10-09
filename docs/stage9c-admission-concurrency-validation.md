@@ -49,3 +49,9 @@ Pass requires reproducible green integration evidence for all scenarios, with no
 ## Potential issue to investigate before harness implementation
 
 The rolling-hour query filters start events by `occurred_at`, while outstanding reservations are counted without an age filter. Verify the intended behavior for expired, unstarted claims and whether a later reclaimed attempt changes the counted reservation. The test must distinguish **admission reservation** from **actual physical request**; they are not interchangeable.
+
+## Execution checkpoint — 2026-10-08
+
+The first real scratch claim-race scenario **PASSED** on `tcou` at tested commit `821dfb5`: 1,295 synthetic start events, one committed weapons claim reserving slot 1,296, competing vehicles claim denied, lease reconciled, and marker-owned fixture cleanup. Independent post-run verification found all five scratch tables empty. Offline tests: 6 targeted and 412 total PASS. Full command, environment, output, and limitations: [execution record](stage9c-admission-concurrency-execution-2026-10-08.md).
+
+**Not yet validated:** reservation-to-start event transition, reclaim of expired unstarted/started leases, retry and mixed-resource consumption, rollback/failure injection, and hour-boundary expiry. This checkpoint closes only the specified two-transaction claim race, not the whole admission gate. Production Stage 9C remains **HOLD**.
