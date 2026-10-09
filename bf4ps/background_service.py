@@ -68,6 +68,7 @@ def _usage(conn: Connection) -> BackgroundServiceUsage:
                 FROM collection_jobs AS j
                 WHERE j.lane = 'background'
                   AND j.status IN ('claimed', 'running')
+                  AND j.lease_expires_at > now()
                   AND NOT EXISTS (
                       SELECT 1
                       FROM collection_events AS e
