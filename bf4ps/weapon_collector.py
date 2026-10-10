@@ -337,6 +337,20 @@ def collect_one_weapon_job(
                 egress_key=identity.egress_key, duration_ms=duration_ms,
                 response_bytes=fetched.response_bytes, http_status=200,
             )
+    except RuntimeError as exc:
+        if "weapon success rejected: job lease is no longer owned" in str(exc):
+            # Persistence has rolled back. Only a committed competing success
+            # qualifies as a duplicate; otherwise preserve the original error.
+            with engine.begin() as conn:
+                from bf4ps.distributed_duplicate_events import record_discarded_duplicate
+                if record_discarded_duplicate(
+                    conn, job=job, persona_id=persona_id, platform=platform,
+                    collector_name=identity.collector_name,
+                    hostname=identity.hostname, egress_key=identity.egress_key,
+                    duration_ms=duration_ms, http_status=200,
+                ):
+                    return None
+        raise
     except Exception as exc:
         _record_persistence_failure(
             engine,
