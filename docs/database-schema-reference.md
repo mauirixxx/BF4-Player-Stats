@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current documented head: `0004_stage9c_supervision_runs`
+Current documented head: `0005_stage9c_dispatch_ledger` (inert D2 schema only; production HOLD)
 
 ## Mandatory SQL development rule
 
@@ -20,6 +20,7 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0002_drop_gun_master_score` | `0001_initial_schema` | Removes non-authoritative `gun_master_score` from detailed current/history |
 | `0003_request_gates` | `0002_drop_gun_master_score` | Adds PostgreSQL-coordinated outbound request gates |
 | `0004_stage9c_supervision_runs` | `0003_request_gates` | Adds inert Stage 9C watchdog run/lease state (no data backfill or activation) |
+| `0005_stage9c_dispatch_ledger` | `0004_stage9c_supervision_runs` | Adds inert durable outbound dispatch evidence table; no HTTP admission or activation |
 
 ### Important migration consequence: Gun Master
 
@@ -334,3 +335,17 @@ Every schema-changing Alembic migration must update this document in the **same 
 4. SQL/persistence code is checked against the resulting schema.
 
 The next planned improvement is a schema-introspection validation utility that compares selected critical invariants in this reference against a live BF4PS database. The utility should validate rather than generate authoritative schema: Alembic remains the executable source of truth.
+
+## Stage 9C inert outbound dispatch ledger (0005)
+
+`outbound_dispatches` is **DDL only**, not integrated into production collectors or admission logic. Production remains HOLD; the 1,296 actual-HTTP/hour guarantee is unresolved.
+
+- `dispatch_id`: UUID primary key.
+- Immutable identity columns: `job_id` bigint, `attempt_number` integer, `resource` text, `lease_token` UUID. Unique `(job_id, attempt_number, resource, lease_token)`.
+- Ownership and request binding: `collector_uuid` UUID, `egress_key` text, `lane` text, `payload_fingerprint` text; all required.
+- Timestamps: `admitted_at` timestamptz required; `send_marked_at` and `acknowledged_at` nullable timestamptz.
+- `phase`: `admitted`, `may_have_sent`, `acknowledged`, `ambiguous`; defaults to `admitted` with phase/timestamp consistency checks.
+- Check constraints require positive job/attempt, valid resource/lane, nonempty egress and fingerprint, monotonic send/ack timestamps.
+- Indexes: `ix_outbound_dispatch_background_admitted` (partial background lane) and `ix_outbound_dispatch_egress_admitted`.
+- Deliberately **no foreign key** to mutable `collection_jobs`; evidence must not disappear on job deletion. Downgrade refuses when the ledger is nonempty.
+- There is no automated admission implementation, no transport hook, and no authorization to send HTTP from this table.
