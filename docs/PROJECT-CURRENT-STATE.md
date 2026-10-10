@@ -1,6 +1,6 @@
 # BF4 Player Stats — Current State
 
-**Last reconciled:** 2026-10-09  
+**Last reconciled:** 2026-10-10  
 **Status:** Stage 9C **HOLD / NOT AUTHORIZED**. This is a living navigation checkpoint, not an activation instruction.
 
 ## How to resume
@@ -155,3 +155,10 @@ The first two commits on the current branch were documentation and offline safet
 - **Future design prerequisites:** verify actual Battlelog/EA linkage behavior and available proof-of-ownership mechanisms, define consent/privacy rules and conflict resolution, document schema changes separately, and design tests before implementation.
 
 **Priority:** explicitly far-future/backlog. This note does not authorize schema migrations, linking endpoints, dashboard work, or a change to Stage 9C **HOLD**.
+
+
+## T4 operator checkpoint and inspector correction candidate — 2026-10-10
+
+**Supersedes earlier unexecuted T4 descriptions.** Three-host scratch run `709bc574-6ebf-4f05-adc9-e0fa3ae620a2` yielded one WIN (`hnl-01` job 46), two DENIED (`tcou` job 45; `kah-01` job 47), full 3 READY / 1 RELEASE / 3 DONE ledger, zero BF4 HTTP, all processes stopped, preserved read-only JSON, guarded cleanup PASS and independent five-table zero census PASS. The inspector returned 1295 rather than its unconditional 1296 expectation; `_usage()` excludes expired unstarted leases, and the winner lease expired at 06:21:31 UTC. Exact inspection time unrecorded; hypothesis not proven. See [T4 execution record](stage9c-t4-three-host-execution-and-inspector-investigation.md).
+
+**Current engineering branch:** `fix/stage9c-t4-inspector-lease-expiry` adds a time-aware scratch inspector assertion and offline regression cases. These changes are **authored, not yet operator-tested**. T4 formal closure OPEN, T5 and O1–O4 OPEN, Stage 9C production HOLD / NOT AUTHORIZED.
