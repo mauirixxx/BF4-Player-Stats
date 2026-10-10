@@ -38,3 +38,16 @@ def refuse_foreign_references(conn, marker, rows, owners):
     """), names).scalar_one()
     if foreign_marked:
         raise RuntimeError(f"REFUSING {foreign_marked} marked events linked to foreign identities")
+
+    dependent_tables = (
+        'soldier_sources', 'soldier_names', 'profile_soldiers',
+        'detailed_stats_current', 'detailed_stats_history',
+        'soldier_weapon_stats', 'soldier_vehicle_stats', 'collection_state',
+    )
+    for table in dependent_tables:
+        count = conn.execute(text(
+            f'SELECT COUNT(*) FROM public.{table} WHERE soldier_id IN '
+            '(SELECT soldier_id FROM collection_jobs WHERE reason=:marker)'
+        ), {'marker': marker}).scalar_one()
+        if count:
+            raise RuntimeError(f'REFUSING {count} dependent rows in {table}')
