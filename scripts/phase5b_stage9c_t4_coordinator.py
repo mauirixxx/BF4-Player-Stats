@@ -22,9 +22,9 @@ def main():
     p.add_argument("--rollback-probe", action="store_true",
                    help="For cleanup/recover only: deliberately abort after marked-event DELETE; never commit")
     p.add_argument("--confirm-all-participants-stopped", action="store_true",
-                   help="Required for recovery; operator has verified all three processes exited")
+                   help="Required for cleanup/recovery; operator verified all participant processes exited")
     p.add_argument("--confirm-preserved-evidence", action="store_true",
-                   help="Required for recovery; diagnostic output and host logs saved externally")
+                   help="Required for cleanup/recovery; diagnostic output and host logs preserved")
     p.add_argument("--run-id", help="UUID printed by seed; required for inspect/cleanup")
     args = p.parse_args()
     if not args.execute:
@@ -33,8 +33,8 @@ def main():
         p.error("--run-id required")
     if args.rollback_probe and args.action not in ("cleanup", "recover"):
         p.error("--rollback-probe only valid for cleanup/recover")
-    if args.action == "recover" and not (args.confirm_all_participants_stopped and args.confirm_preserved_evidence):
-        p.error("recovery requires explicit stopped-participants and preserved-evidence confirmations")
+    if args.action in ("cleanup", "recover") and not (args.confirm_all_participants_stopped and args.confirm_preserved_evidence):
+        p.error("cleanup/recovery requires stopped-participants and preserved-evidence confirmations")
     url = os.environ.get("BF4PS_STAGE9C_INTEGRATION_URL", "")
     refuse_unsafe_target(url)
     engine = create_engine(url, pool_pre_ping=True, connect_args={"connect_timeout":5,"options":"-c statement_timeout=15000"})
