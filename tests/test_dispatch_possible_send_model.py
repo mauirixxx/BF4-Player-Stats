@@ -16,8 +16,8 @@ def test_confirmed_send_ages_out_only_after_full_window():
     model = PossibleSendAuthority(1)
     assert model.reserve("a", at=0)
     model.confirm_send("a", sent_at=1)
-    assert not model.reserve("b", at=3601)
-    assert model.reserve("b", at=3602)
+    assert not model.reserve("b", at=3600)
+    assert model.reserve("b", at=3601)
 
 
 def test_resolved_no_send_releases_capacity_only_by_explicit_proof():
