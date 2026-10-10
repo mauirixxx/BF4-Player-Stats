@@ -45,3 +45,18 @@ Do **not** change the production budget algorithm to count expired leases. A saf
 ## Historical/operational caution
 
 Earlier T4 attempts included an incorrect manually transcribed UUID and a partially seeded fixture that was safely recovered. Preserve historical output as evidence, but do not interpret zero marker-scoped rows as proof the whole scratch DB is empty; use independent `--check`. No future remote execution is implied by this record.
+
+
+## Lease-expiry safety source review — follow-up (2026-10-10 UTC)
+
+**Status: new unproven boundary; fail closed.** Inspected actual branch sources `bf4ps/background_service.py`, `bf4ps/collection_jobs.py`, `bf4ps/detailed_collector.py`, and `scripts/bf4ps_production_collector.py`.
+
+- `claim_production_background_job` holds a PostgreSQL transaction advisory lock while admitting claims and accounts for currently unexpired, unstarted reservations.
+- `mark_job_running` checks lease ownership/token and unexpired lease.
+- `_record_detailed_attempt_started` locks the job row, verifies token and unexpired lease, rejects duplicate physical-start events for the attempt, and commits a `collection_attempt_started` event before HTTP.
+- **Remaining time-of-check/time-of-use boundary:** `collect_one_detailed_job` calls `_record_detailed_attempt_started` (which returns after its transaction commits), then separately invokes `fetch_detailed_stats`. No lease check or lock is held across that boundary. A paused worker can potentially resume after its lease expires/reassignment and issue the HTTP call. The durable event still counts for one hour, so this is not by itself proof of exceeding 1,296 starts, but it invalidates any blanket claim that an expired worker *cannot* issue HTTP.
+- **Additional concern:** `_usage` excludes a job reservation if any matching start event exists, regardless of whether that event has aged out of the rolling-hour window. Reassignment and long delays need adversarial coverage before treating accounting as proven.
+- `release_for_retry` checks ownership/token but not lease expiry; assess whether stale release before reassignment is acceptable or should be rejected.
+- Weapons and vehicles paths must be audited separately; this review only establishes the detailed path.
+
+**Required next work before formal T4/T5 closure:** write deterministic, no-HTTP pause/resume tests around the *committed-start → fetch* boundary, expired pre-start rejection, replacement admission, and time-window transitions. Choose a documented safe invariant (budget counts physical starts even after lease expiry; stale worker must not create an unledgered request). Do not assume a simple post-commit lease recheck makes the boundary atomic. Any production-path changes require design review, tests, and separate operator-approved scratch validation. **Production HOLD / NOT AUTHORIZED.**
