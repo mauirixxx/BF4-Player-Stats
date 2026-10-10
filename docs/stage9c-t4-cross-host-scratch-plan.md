@@ -126,3 +126,8 @@ Review of the coordinator found a safety asymmetry: interrupted-run `recover` re
 ### Controlled rehearsal decision boundary
 
 Current status is **preparation only**. A clean read-only five-table zero census and 26 offline tests were reported on tcou. The next operator command is an offline syntax/test check of the new CLI gate; no seed, cleanup, recover, rollback-probe, or remote participant commands are approved. Before any scratch writes, require explicit operator permission for a scoped, single-host fixture rehearsal, review exact commands, and preserve before/after evidence. The full cross-host concurrency trial requires separate approval. Production HOLD.
+
+
+## Operator execution addendum — 2026-10-10 UTC
+
+**This is a later result, superseding earlier “not yet executed” statements, not retroactive authorization.** The three-host scratch-only barrier executed under operator approval. Run `709bc574-6ebf-4f05-adc9-e0fa3ae620a2`: three READY, one RELEASE, three DONE; `hnl-01` won job 46 (attempt 1), `tcou` and `kah-01` denied (pending, attempt 0). Participant processes stopped, read-only evidence captured, guarded cleanup PASS, independent five-table empty census PASS. Zero BF4 HTTP from participant commands. The inspector's unconditional 1296 budget assertion failed because `_usage` returned 1295; winning lease expired at 06:21:31 UTC, and a post-expiry inspection would correctly omit the reservation. Exact inspect time unknown; investigate before marking T4 CLOSED. See [execution and investigation](stage9c-t4-three-host-execution-and-inspector-investigation.md). T5 and other open gates unaffected; production HOLD.
