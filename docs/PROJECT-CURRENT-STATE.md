@@ -1,6 +1,6 @@
 # BF4 Player Stats — Current State
 
-**Last reconciled:** 2026-10-08  
+**Last reconciled:** 2026-10-09  
 **Status:** Stage 9C **HOLD / NOT AUTHORIZED**. This is a living navigation checkpoint, not an activation instruction.
 
 ## How to resume
@@ -113,6 +113,21 @@ The first two commits on the current branch were documentation and offline safet
 - Scope: **one successful two-transaction, cross-resource production claim boundary test** with reservation and ownership assertions. Does **not** establish all retry, reclaim, reservation-to-start, rollback, physical-start completeness, one-hour boundary, or systemd/host-local safety cases. Stage 9C production six-hour trial remains **HOLD** pending remaining gates and explicit operator authorization.
 
 - Post-run independent operator read-only check on `tcou`: `collectors=0`, `soldiers=0`, `collection_jobs=0`, `collection_events=0`, `stage9c_supervision_runs=0`; `PASS: Scratch database clean after claim race`. This verifies cleanup separately from the harness's own cleanup assertion.
+
+## Stage 9C admission gate checkpoint — 2026-10-09 (operator-verified)
+
+**Status: T1–T3 CLOSED; T4 OPEN; T5 OPEN; O1–O4 OPEN; Stage 9C production HOLD / NOT AUTHORIZED.** This checkpoint supplements the earlier 2026-10-08 admission-race record and does not change historical acceptance.
+
+- **T1 (global rolling-budget, cross-resource starts/retries): CLOSED** per subsequent scratch validation record; do not confuse this with T5 physical-start ledger completeness.
+- **T2 (duplicate physical-start prevention): CLOSED** per scratch concurrent/sequential rejection and accepted attempt-2 evidence.
+- **T3 (persistence failure/rollback): CLOSED** per scratch fault-path diagnostic evidence.
+- **T4 (three-host admission at final global slot): OPEN.** A planned `tcou` / `hnl-01` / `kah-01` barrier uses three independent detailed background jobs and a 1,295-of-1,296 synthetic start budget. The read-only preflight succeeded, but **no three-host T4 fixture run or concurrent participant execution has occurred**. Plan: [T4 cross-host scratch plan](stage9c-t4-cross-host-scratch-plan.md).
+- **T4 recovery/cleanup safeguards implemented:** pure interrupted-ledger validator; read-only foreign-reference checks (including marked events pointing at foreign identities); required operator attestations for *both* normal cleanup and recovery; explicit `--rollback-probe` fault injection inside the cleanup transaction. **These are not yet a live PostgreSQL rollback proof.**
+- **T4 evidence tooling implemented:** read-only repeatable-read, five-table full-row SHA-256 fingerprint capture and offline before/after comparison. On `tcou`, invoking as `.venv/bin/python -m scripts.phase5b_stage9c_t4_evidence` succeeded; direct script-path invocation failed with `ModuleNotFoundError` before DB access. The successful preflight produced `/tmp/bf4ps-t4-evidence-preflight.json` with zero rows in `collectors`, `soldiers`, `collection_jobs`, `collection_events`, `stage9c_supervision_runs`, and empty marker event counts. This was **read-only operator evidence**, not a seeded rehearsal.
+- **Latest offline validation:** `tcou` checkout `/opt/bf4ps-stage9c-validation`, branch `test/stage9c-admission-concurrency`, commit `8f9c4e9`: syntax exit 0; **35/35 targeted T4 offline tests PASS in 0.51 s**, pytest exit 0. Breakdown: recovery rules 15, cleanup guards 5, evidence comparison 6, CLI safety 9. These are targeted tests, **not a full repository suite rerun**.
+- **Scratch identity:** dedicated `bf4ps_scratch_stage9c_integration` on `mak-db-02.bf4statusbot.com` (`192.168.10.78`), role `bf4ps_stage9c_integration`, documented Alembic head `0004_stage9c_supervision_runs`. Keep the original `/opt/bf4-player-stats` checkout untouched. Scratch schema/connection identity must be checked before any writes.
+- **Next gates:** (1) finish code/SQL and failure-path review, (2) obtain explicit approval for *single-host scratch fixture writes*, (3) independently capture before/after evidence for a deliberately aborted cleanup transaction and verify exact equality, (4) separately approve actual cleanup/recovery and verify independent zero census, (5) separately approve the three-host T4 admission rehearsal and reconcile host logs, (6) T5 read-only physical-start ledger completeness reconciliation. No approval is implied by passing offline tests or a read-only capture.
+- **Operational limits:** no outbound BF4/Battlelog HTTP, no production writes, no migration, no remote host commands, and no activation while these gates remain open.
 
 ## Deferred feature roadmap — cross-platform combined profiles (not Stage 9C)
 
