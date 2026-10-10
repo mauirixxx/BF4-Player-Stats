@@ -63,6 +63,32 @@ def record_discarded_duplicate(
         raise ValueError("unsupported platform")
     if persona_id <= 0 or duration_ms < 0 or not 100 <= http_status <= 599:
         raise ValueError("invalid duplicate observation")
+    # Serialize duplicate evidence for this exact job/attempt across processes.
+    # The advisory lock is transaction-scoped and must be held through commit.
+    conn.execute(
+        text("""
+            SELECT pg_advisory_xact_lock(
+                hashtext('bf4ps:duplicate-discard'),
+                hashtext(:attempt_identity)
+            )
+        """),
+        {"attempt_identity": f"{job.job_id}:{job.attempt_count}:{job.lease_token}"},
+    )
+    already_recorded = conn.execute(
+        text("""
+            SELECT 1 FROM collection_events
+            WHERE event_type = 'collection_duplicate_discarded'
+              AND metadata->>'original_job_id' = :original_job_id
+              AND metadata->>'original_lease_token' = :original_lease_token
+              AND attempt_number = :attempt_number
+            LIMIT 1
+        """),
+        {"original_job_id": str(job.job_id),
+         "original_lease_token": str(job.lease_token),
+         "attempt_number": job.attempt_count},
+    ).one_or_none()
+    if already_recorded is not None:
+        return False
     verdict = classify_stale_result(conn, job=job)
     if not verdict.duplicate:
         return False
