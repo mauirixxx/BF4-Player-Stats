@@ -44,7 +44,7 @@ def snapshot(conn, marker):
         digest = hashlib.sha256()
         for row in rows:
             digest.update(row.encode("utf-8"))
-            digest.update(b"\\n")
+            digest.update(b"\n")
             count += 1
         result["tables"][table] = {"rows": count, "sha256": digest.hexdigest()}
     events = conn.execute(text("""
@@ -100,7 +100,7 @@ def main():
                 conn.rollback()
         with path.open("x", encoding="utf-8") as handle:
             json.dump(data, handle, indent=2, sort_keys=True)
-            handle.write("\\n")
+            handle.write("\n")
         print("PASS: read-only evidence captured", path)
         print("TABLE COUNTS", {k:v["rows"] for k,v in data["tables"].items()})
         print("MARKED EVENT COUNTS", data["marked_event_counts"])
