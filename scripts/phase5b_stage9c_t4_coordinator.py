@@ -15,14 +15,20 @@ TABLES = ("collectors", "soldiers", "collection_jobs", "collection_events", "sta
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("action", choices=("seed", "release", "inspect", "cleanup"))
+    p.add_argument("action", choices=("seed", "release", "inspect", "cleanup", "recover"))
     p.add_argument("--execute", action="store_true")
+    p.add_argument("--confirm-all-participants-stopped", action="store_true",
+                   help="Required for recovery; operator has verified all three processes exited")
+    p.add_argument("--confirm-preserved-evidence", action="store_true",
+                   help="Required for recovery; diagnostic output and host logs saved externally")
     p.add_argument("--run-id", help="UUID printed by seed; required for inspect/cleanup")
     args = p.parse_args()
     if not args.execute:
         p.error("explicit --execute required")
     if args.action != "seed" and not args.run_id:
         p.error("--run-id required")
+    if args.action == "recover" and not (args.confirm_all_participants_stopped and args.confirm_preserved_evidence):
+        p.error("recovery requires explicit stopped-participants and preserved-evidence confirmations")
     url = os.environ.get("BF4PS_STAGE9C_INTEGRATION_URL", "")
     refuse_unsafe_target(url)
     engine = create_engine(url, pool_pre_ping=True, connect_args={"connect_timeout":5,"options":"-c statement_timeout=15000"})
@@ -130,10 +136,36 @@ def main():
                         raise AssertionError("budget incorrect after winner reservation")
                     print("PASS: one claimed job, 1296/1296 used (host logs still required)")
                 else:
-                    verify_ready(conn,marker)
-                    verify_done(conn,marker)
-                    if len(events(conn,marker,RELEASE))!=1:
-                        raise RuntimeError("REFUSING cleanup without exactly one release")
+                    if args.action=="cleanup":
+                        verify_ready(conn,marker)
+                        verify_done(conn,marker)
+                        if len(events(conn,marker,RELEASE))!=1:
+                            raise RuntimeError("REFUSING cleanup without exactly one release")
+                    else:
+                        # Recovery deliberately supports partial READY/RELEASE/DONE ledgers.
+                        # Never silently remove a complete run via the recovery path.
+                        ready, released, done = (events(conn,marker,k) for k in (READY,RELEASE,DONE))
+                        if len(ready)==3 and len(released)==1 and len(done)==3:
+                            raise RuntimeError("REFUSING recover of complete run; use normal cleanup")
+                        if len(ready)>3 or len(released)>1 or len(done)>3:
+                            raise RuntimeError("REFUSING malformed recovery ledger")
+                        if len({x.host for x in ready})!=len(ready) or any(x.host not in HOSTS for x in ready):
+                            raise RuntimeError("REFUSING malformed READY identities")
+                        if len({x.host for x in done})!=len(done) or any(x.host not in HOSTS or x.outcome not in ("WIN","DENIED") for x in done):
+                            raise RuntimeError("REFUSING malformed DONE identities")
+                        if any(x.host is not None or x.outcome is not None for x in released):
+                            raise RuntimeError("REFUSING malformed RELEASE")
+                        if done and not released:
+                            raise RuntimeError("REFUSING DONE without RELEASE")
+                        if any(x.host not in {y.host for y in ready} for x in done):
+                            raise RuntimeError("REFUSING DONE without READY")
+                        if len([x for x in done if x.outcome=="WIN"])>1:
+                            raise RuntimeError("REFUSING multiple WIN events")
+                        if any(j.status not in ("pending","claimed","running") or j.attempt_count not in (0,1) for j in rows):
+                            raise RuntimeError("REFUSING unexpected job state")
+                        if sum(j.attempt_count for j in rows)>1:
+                            raise RuntimeError("REFUSING multiple admitted jobs")
+                        print("RECOVERY: partial ledger accepted only after operator confirmations")
                     # Refuse cleanup until any winning lease has expired.
                     # Operator must first confirm all participants exited.
                     for job in rows:
@@ -144,11 +176,23 @@ def main():
                             if not expired:
                                 raise RuntimeError("REFUSING cleanup of unexpired lease")
                     # Remove events before jobs: FK ON DELETE SET NULL.
+                    counts=conn.execute(text("""
+                        SELECT event_type,COUNT(*) AS n FROM collection_events
+                        WHERE metadata->>'stage9c_t4_marker'=:marker
+                        GROUP BY event_type
+                    """), {"marker":marker}).all()
+                    observed={x.event_type:x.n for x in counts}
+                    allowed={"collection_attempt_started",READY,RELEASE,DONE}
+                    if set(observed)-allowed or observed.get("collection_attempt_started")!=BACKGROUND_SLOTS_PER_HOUR-1:
+                        raise RuntimeError(f"REFUSING unexpected event types/counts: {observed}")
+                    expected=BACKGROUND_SLOTS_PER_HOUR-1+sum(observed.get(k,0) for k in (READY,RELEASE,DONE))
+                    if args.action=="cleanup" and expected!=BACKGROUND_SLOTS_PER_HOUR-1+7:
+                        raise RuntimeError("REFUSING unexpected complete-run ledger counts")
                     n=conn.execute(text("""
                         DELETE FROM collection_events WHERE metadata->>'stage9c_t4_marker'=:marker
                     """), {"marker":marker}).rowcount
-                    if n!=BACKGROUND_SLOTS_PER_HOUR-1+7:
-                        raise RuntimeError(f"REFUSING unexpected fixture event count {n}")
+                    if n!=expected:
+                        raise RuntimeError(f"REFUSING unexpected fixture event count {n}; expected {expected}")
                     n=conn.execute(text("DELETE FROM collection_jobs WHERE reason=:marker"),
                                    {"marker":marker}).rowcount
                     if n!=3: raise RuntimeError("REFUSING job cleanup mismatch")
