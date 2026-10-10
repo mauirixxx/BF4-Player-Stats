@@ -24,10 +24,14 @@ class FakeHTTPHandler(HTTPHandler):
             headers = Message()
             headers["Location"] = "https://battlelog.invalid/redirected"
             headers["Content-Type"] = "text/plain"
-            return addinfourl(BytesIO(b""), headers, request.full_url, code=302)
+            response = addinfourl(BytesIO(b""), headers, request.full_url, code=302)
+            response.msg = "Found"
+            return response
         headers = Message()
         headers["Content-Type"] = "application/json"
-        return addinfourl(BytesIO(b"{}"), headers, request.full_url, code=200)
+        response = addinfourl(BytesIO(b"{}"), headers, request.full_url, code=200)
+        response.msg = "OK"
+        return response
 
     https_open = http_open
 
