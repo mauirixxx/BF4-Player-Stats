@@ -9,6 +9,7 @@ from bf4ps.background_service import BACKGROUND_SLOTS_PER_HOUR, _usage
 from scripts.phase5b_stage9c_abort_drain_scratch import check
 from scripts.phase5b_stage9c_t4_barrier import READY, RELEASE, DONE, events, emit, verify_ready, verify_done
 from scripts.phase5b_stage9c_postgres_integration import refuse_unsafe_target
+from scripts.phase5b_stage9c_t4_recovery_rules import validate_partial_ledger
 
 HOSTS = ("tcou", "hnl-01", "kah-01")
 TABLES = ("collectors", "soldiers", "collection_jobs", "collection_events", "stage9c_supervision_runs")
@@ -145,26 +146,7 @@ def main():
                         # Recovery deliberately supports partial READY/RELEASE/DONE ledgers.
                         # Never silently remove a complete run via the recovery path.
                         ready, released, done = (events(conn,marker,k) for k in (READY,RELEASE,DONE))
-                        if len(ready)==3 and len(released)==1 and len(done)==3:
-                            raise RuntimeError("REFUSING recover of complete run; use normal cleanup")
-                        if len(ready)>3 or len(released)>1 or len(done)>3:
-                            raise RuntimeError("REFUSING malformed recovery ledger")
-                        if len({x.host for x in ready})!=len(ready) or any(x.host not in HOSTS for x in ready):
-                            raise RuntimeError("REFUSING malformed READY identities")
-                        if len({x.host for x in done})!=len(done) or any(x.host not in HOSTS or x.outcome not in ("WIN","DENIED") for x in done):
-                            raise RuntimeError("REFUSING malformed DONE identities")
-                        if any(x.host is not None or x.outcome is not None for x in released):
-                            raise RuntimeError("REFUSING malformed RELEASE")
-                        if done and not released:
-                            raise RuntimeError("REFUSING DONE without RELEASE")
-                        if any(x.host not in {y.host for y in ready} for x in done):
-                            raise RuntimeError("REFUSING DONE without READY")
-                        if len([x for x in done if x.outcome=="WIN"])>1:
-                            raise RuntimeError("REFUSING multiple WIN events")
-                        if any(j.status not in ("pending","claimed","running") or j.attempt_count not in (0,1) for j in rows):
-                            raise RuntimeError("REFUSING unexpected job state")
-                        if sum(j.attempt_count for j in rows)>1:
-                            raise RuntimeError("REFUSING multiple admitted jobs")
+                        validate_partial_ledger(ready, released, done, rows)
                         print("RECOVERY: partial ledger accepted only after operator confirmations")
                     # Refuse cleanup until any winning lease has expired.
                     # Operator must first confirm all participants exited.
