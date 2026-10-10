@@ -118,3 +118,11 @@ The coordinator has an opt-in `--rollback-probe` flag, valid only for `cleanup` 
 ## Read-only rollback evidence capture and comparison (2026-10-09)
 
 `scripts/phase5b_stage9c_t4_evidence.py` offers `--capture --run-id UUID --output NEW.json` and offline `--compare --before BEFORE.json --after AFTER.json`. Capture requires the pinned scratch connection identity and Alembic revision, then uses one `REPEATABLE READ READ ONLY` transaction to fingerprint **every row in each of the five fixture tables** using ordered JSONB text and SHA-256, plus marker-scoped event counts. The output file is created exclusively and never overwritten. Compare requires exact JSON evidence equality; it makes no database connection. Capture itself is read-only, but **do not run a rollback probe or fixture writes without separate operator authorization**. Run offline tests first. Evidence captures at different times can differ legitimately due to external changes; any difference blocks rollback PASS until investigated. This is not a substitute for independently verifying that participants stopped or leases expired.
+
+## Pre-write coordinator review (2026-10-09)
+
+Review of the coordinator found a safety asymmetry: interrupted-run `recover` required both operator attestations, while ordinary `cleanup` did not. Both destructive actions now require `--confirm-all-participants-stopped` and `--confirm-preserved-evidence`, including when `--rollback-probe` is selected. The flags are operator attestations, **not** proof of process termination or preserved evidence. New offline CLI tests reject either destructive action when one/both confirmations are absent, and reject rollback-probe on non-cleanup actions.
+
+### Controlled rehearsal decision boundary
+
+Current status is **preparation only**. A clean read-only five-table zero census and 26 offline tests were reported on tcou. The next operator command is an offline syntax/test check of the new CLI gate; no seed, cleanup, recover, rollback-probe, or remote participant commands are approved. Before any scratch writes, require explicit operator permission for a scoped, single-host fixture rehearsal, review exact commands, and preserve before/after evidence. The full cross-host concurrency trial requires separate approval. Production HOLD.
