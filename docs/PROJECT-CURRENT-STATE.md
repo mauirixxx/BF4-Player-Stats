@@ -129,6 +129,13 @@ The first two commits on the current branch were documentation and offline safet
 - **Next gates:** (1) finish code/SQL and failure-path review, (2) obtain explicit approval for *single-host scratch fixture writes*, (3) independently capture before/after evidence for a deliberately aborted cleanup transaction and verify exact equality, (4) separately approve actual cleanup/recovery and verify independent zero census, (5) separately approve the three-host T4 admission rehearsal and reconcile host logs, (6) T5 read-only physical-start ledger completeness reconciliation. No approval is implied by passing offline tests or a read-only capture.
 - **Operational limits:** no outbound BF4/Battlelog HTTP, no production writes, no migration, no remote host commands, and no activation while these gates remain open.
 
+
+### T4 cleanup cascade safety — 2026-10-09 (implementation pending operator validation)
+
+- The documented schema and initial migration identify eight soldier-dependent tables with cascading foreign keys: `soldier_sources`, `soldier_names`, `profile_soldiers`, `detailed_stats_current`, `detailed_stats_history`, `soldier_weapon_stats`, `soldier_vehicle_stats`, and `collection_state`.
+- T4 cleanup/recovery now queries each for fixture-soldier references and refuses deletion if any are present. This prevents silent deletion of unexpected dependent rows. Eight new offline rejection cases were added.
+- **Code pushed, not yet operator-tested**; the previous 35/35 result predates these changes. Next checkpoint: compile and run the targeted 43-test suite. No scratch writes or T4 rollback rehearsal approved. Production HOLD.
+
 ## Deferred feature roadmap — cross-platform combined profiles (not Stage 9C)
 
 **Status: idea accepted for much later; design only, no implementation or scheduling.** Keep this out of collector reliability, Stage 9C admission, and activation gates.
