@@ -136,6 +136,12 @@ The first two commits on the current branch were documentation and offline safet
 - T4 cleanup/recovery now queries each for fixture-soldier references and refuses deletion if any are present. This prevents silent deletion of unexpected dependent rows. Eight new offline rejection cases were added.
 - **Code pushed, not yet operator-tested**; the previous 35/35 result predates these changes. Next checkpoint: compile and run the targeted 43-test suite. No scratch writes or T4 rollback rehearsal approved. Production HOLD.
 
+### T4 fixture identity review — 2026-10-09 (operator test pending)
+
+- Operator confirmed the prior cascade safety patch at commit `380911b`: **43/43 targeted offline tests PASS**, syntax exit 0, pytest exit 0, on `tcou`.
+- New read-only pre-delete checks now refuse job-to-soldier identity drift (expected synthetic name, PC platform, detailed/background/active job), fixture collector name/hostname/lane/egress drift, and foreign collector `current_job_id` references to fixture jobs.
+- Three new fake-connection rejection tests added. **Changes pushed but not yet operator validated**; expected targeted total is **46 tests**. No scratch fixture writes authorized; PostgreSQL rollback probe and three-host execution remain untested. Stage 9C production HOLD.
+
 ## Deferred feature roadmap — cross-platform combined profiles (not Stage 9C)
 
 **Status: idea accepted for much later; design only, no implementation or scheduling.** Keep this out of collector reliability, Stage 9C admission, and activation gates.
