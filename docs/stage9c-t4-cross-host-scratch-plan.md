@@ -89,3 +89,9 @@ The scratch-only coordinator now accepts a separate `recover` action (commit `20
 Recovery refuses a fully completed three-READY/one-RELEASE/three-DONE run (use normal cleanup), malformed host identities, duplicate or unexpected ledger records, unrecognized event types, unexpected synthetic event counts, multiple admitted jobs, and unexpired claimed/running leases. Deletions remain in a single PostgreSQL transaction with exact rowcount checks; any exception rolls back. It never performs HTTP or remote execution.
 
 **Still unvalidated:** the recovery implementation has not passed a tcou syntax check or scratch failure-injection tests. Its assumptions about concurrent process exit depend on external operator evidence. Before authorizing fixture execution, add targeted offline recovery tests and inspect all SQL against the documented schema. Preserve the independent post-cleanup five-table census requirement. T4 OPEN, production HOLD.
+
+## Cleanup referential-integrity audit (2026-10-09)
+
+Commit `c115cef` adds fail-closed pre-delete checks against the documented `collection_events.job_id`, `collection_events.soldier_id`, `collection_events.collector_uuid`, and `collection_jobs.soldier_id` relationships. An unmarked event linked to a fixture identity, a fixture job owned by an unknown collector, or an unrelated job on a fixture soldier blocks both normal cleanup and recovery before any DELETE. This protects event evidence from FK SET NULL and unrelated jobs from FK CASCADE.
+
+These checks have not yet been syntax-checked on tcou or exercised with PostgreSQL fixture mutations. The existing offline recovery rule suite (15/15) does not cover these new SQL guards. **Do not run cleanup/recover/seed** until targeted scratch rollback tests and independent census are complete. T4 OPEN, production HOLD.
