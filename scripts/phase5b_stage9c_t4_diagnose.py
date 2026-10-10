@@ -65,9 +65,11 @@ def inspect(conn, marker):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--run-id", required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--run-id", help="Existing T4 fixture UUID")
+    mode.add_argument("--check", action="store_true", help="Read-only scratch connectivity/schema/empty-fixture preflight")
     args = parser.parse_args()
-    marker = "stage9c_t4_" + str(UUID(args.run_id))
+    marker = "stage9c_t4_" + str(UUID(args.run_id)) if args.run_id else None
     url = os.environ.get("BF4PS_STAGE9C_INTEGRATION_URL", "")
     refuse_unsafe_target(url)
     engine = create_engine(url, pool_pre_ping=True, connect_args={
@@ -77,7 +79,16 @@ def main():
         with engine.connect() as conn:
             conn.exec_driver_sql("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
             try:
-                inspect(conn, marker)
+                if args.check:
+                    inspect(conn, "stage9c_t4_00000000-0000-0000-0000-000000000000")
+                    counts = {table: conn.execute(text(f"SELECT COUNT(*) FROM public.{table}")).scalar_one()
+                              for table in ("collectors", "soldiers", "collection_jobs",
+                                            "collection_events", "stage9c_supervision_runs")}
+                    if any(counts.values()):
+                        raise RuntimeError(f"REFUSING nonempty scratch fixture: {counts}")
+                    print("PASS: read-only T4 diagnostic scratch preflight; fixture tables empty")
+                else:
+                    inspect(conn, marker)
             finally:
                 conn.rollback()
     finally:
