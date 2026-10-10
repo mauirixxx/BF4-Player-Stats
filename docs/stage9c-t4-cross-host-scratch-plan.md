@@ -77,3 +77,7 @@ Review found that a single pending job cannot distinguish a global budget cap fr
 ## Read-only incomplete-run diagnostic (2026-10-09)
 
 New `scripts/phase5b_stage9c_t4_diagnose.py` provides read-only, repeatable-read scratch diagnostics of collector, soldier, job, lease and READY/RELEASE/DONE events for a specified UUID. It performs no cleanup or lease release. It has not yet been validated on tcou. This is a forensic aid, **not** a complete recovery path. Cleanup of incomplete runs remains blocked pending reviewed participant-exit verification, ownership checks, and post-cleanup census. Do not run the fixture yet. Production HOLD.
+
+## Diagnostic --check checkpoint (2026-10-09)
+
+`python -m scripts.phase5b_stage9c_t4_diagnose --check` is the next proposed **read-only** tcou validation. It uses a repeatable-read, read-only transaction to verify scratch target identity, migration revision, diagnostic queries, and zero rows in collectors, soldiers, collection_jobs, collection_events, and stage9c_supervision_runs. No UUID, fixture seed, participants, release, HTTP, or remote host execution is required. It is not yet runtime-validated; a syntax pass alone is insufficient. If any table is nonempty or the database identity differs, stop and inspect without cleanup. Recovery cleanup remains unimplemented and T4 remains OPEN.
