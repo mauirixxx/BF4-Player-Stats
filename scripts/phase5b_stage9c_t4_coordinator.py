@@ -10,6 +10,7 @@ from scripts.phase5b_stage9c_abort_drain_scratch import check
 from scripts.phase5b_stage9c_t4_barrier import READY, RELEASE, DONE, events, emit, verify_ready, verify_done
 from scripts.phase5b_stage9c_postgres_integration import refuse_unsafe_target
 from scripts.phase5b_stage9c_t4_recovery_rules import validate_partial_ledger
+from scripts.phase5b_stage9c_t4_cleanup_guards import refuse_foreign_references
 
 HOSTS = ("tcou", "hnl-01", "kah-01")
 TABLES = ("collectors", "soldiers", "collection_jobs", "collection_events", "stage9c_supervision_runs")
@@ -148,32 +149,7 @@ def main():
                         ready, released, done = (events(conn,marker,k) for k in (READY,RELEASE,DONE))
                         validate_partial_ledger(ready, released, done, rows)
                         print("RECOVERY: partial ledger accepted only after operator confirmations")
-                    # Fail closed if fixture identities have references outside the marked ledger.
-                    # Otherwise FK SET NULL could silently orphan unrelated event evidence.
-                    foreign_events = conn.execute(text("""
-                        SELECT COUNT(*) FROM collection_events e
-                        WHERE (e.job_id IN (SELECT job_id FROM collection_jobs WHERE reason=:marker)
-                           OR e.soldier_id IN (SELECT soldier_id FROM collection_jobs WHERE reason=:marker)
-                           OR e.collector_uuid IN (
-                               SELECT collector_uuid FROM collectors
-                               WHERE collector_name IN (:tcou,:hnl,:kah)))
-                          AND e.metadata->>'stage9c_t4_marker' IS DISTINCT FROM :marker
-                    """), {"marker":marker,"tcou":marker+"_tcou",
-                           "hnl":marker+"_hnl-01","kah":marker+"_kah-01"}).scalar_one()
-                    if foreign_events:
-                        raise RuntimeError(f"REFUSING {foreign_events} unmarked fixture-linked events")
-                    if any(j.collector_uuid is not None and
-                           j.collector_uuid not in {x.collector_uuid for x in owners}
-                           for j in rows):
-                        raise RuntimeError("REFUSING job owned by foreign collector")
-                    # Reject unmarked jobs on fixture soldiers, which could cascade on deletion.
-                    foreign_jobs = conn.execute(text("""
-                        SELECT COUNT(*) FROM collection_jobs
-                        WHERE soldier_id IN (SELECT soldier_id FROM collection_jobs WHERE reason=:marker)
-                          AND reason<>:marker
-                    """), {"marker":marker}).scalar_one()
-                    if foreign_jobs:
-                        raise RuntimeError(f"REFUSING {foreign_jobs} unrelated jobs on fixture soldiers")
+                    refuse_foreign_references(conn, marker, rows, owners)
                     # Refuse cleanup until any winning lease has expired.
                     # Operator must first confirm all participants exited.
                     for job in rows:
