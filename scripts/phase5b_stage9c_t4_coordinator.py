@@ -19,6 +19,8 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("action", choices=("seed", "release", "inspect", "cleanup", "recover"))
     p.add_argument("--execute", action="store_true")
+    p.add_argument("--rollback-probe", action="store_true",
+                   help="For cleanup/recover only: deliberately abort after marked-event DELETE; never commit")
     p.add_argument("--confirm-all-participants-stopped", action="store_true",
                    help="Required for recovery; operator has verified all three processes exited")
     p.add_argument("--confirm-preserved-evidence", action="store_true",
@@ -29,6 +31,8 @@ def main():
         p.error("explicit --execute required")
     if args.action != "seed" and not args.run_id:
         p.error("--run-id required")
+    if args.rollback_probe and args.action not in ("cleanup", "recover"):
+        p.error("--rollback-probe only valid for cleanup/recover")
     if args.action == "recover" and not (args.confirm_all_participants_stopped and args.confirm_preserved_evidence):
         p.error("recovery requires explicit stopped-participants and preserved-evidence confirmations")
     url = os.environ.get("BF4PS_STAGE9C_INTEGRATION_URL", "")
@@ -177,6 +181,8 @@ def main():
                     """), {"marker":marker}).rowcount
                     if n!=expected:
                         raise RuntimeError(f"REFUSING unexpected fixture event count {n}; expected {expected}")
+                    if args.rollback_probe:
+                        raise RuntimeError("EXPECTED T4 ROLLBACK PROBE: marked-event DELETE executed; transaction must roll back")
                     n=conn.execute(text("DELETE FROM collection_jobs WHERE reason=:marker"),
                                    {"marker":marker}).rowcount
                     if n!=3: raise RuntimeError("REFUSING job cleanup mismatch")
