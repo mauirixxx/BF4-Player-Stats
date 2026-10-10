@@ -99,3 +99,8 @@ The detailed collector validates a still-owned running lease under row lock and 
 - Conduct read-only preflight on the main test DB only after confirming the approved operator command; no migration or activation implied.
 
 **Decision:** HOLD. Passing scratch tests validate important safety primitives but do not authorize the six-hour trial.
+
+
+## Later T4 operator evidence — 2026-10-10 UTC
+
+Three-host scratch-only Stage 9C T4 admission executed on `tcou`, `hnl-01`, `kah-01`, run `709bc574-6ebf-4f05-adc9-e0fa3ae620a2`. Barrier and committed job ownership show one WIN/two DENIED across three independent jobs; all participants exited and guarded cleanup plus independent five-table census PASS. Coordinator inspector failed an unconditional post-claim 1296 budget assertion after `_usage` reported 1295. Source audit suggests lease-expiry sensitivity (unstarted reservations count only with live lease), not proven without exact inspect timestamp. See [detailed T4 evidence and investigation](stage9c-t4-three-host-execution-and-inspector-investigation.md). **Formal T4 remains OPEN; T5 ledger completeness and other activation gates remain OPEN. Production HOLD / NOT AUTHORIZED.**
