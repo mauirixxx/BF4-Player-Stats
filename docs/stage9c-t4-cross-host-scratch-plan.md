@@ -81,3 +81,11 @@ New `scripts/phase5b_stage9c_t4_diagnose.py` provides read-only, repeatable-read
 ## Diagnostic --check checkpoint (2026-10-09)
 
 `python -m scripts.phase5b_stage9c_t4_diagnose --check` is the next proposed **read-only** tcou validation. It uses a repeatable-read, read-only transaction to verify scratch target identity, migration revision, diagnostic queries, and zero rows in collectors, soldiers, collection_jobs, collection_events, and stage9c_supervision_runs. No UUID, fixture seed, participants, release, HTTP, or remote host execution is required. It is not yet runtime-validated; a syntax pass alone is insufficient. If any table is nonempty or the database identity differs, stop and inspect without cleanup. Recovery cleanup remains unimplemented and T4 remains OPEN.
+
+## Partial-run recovery implementation checkpoint (2026-10-09)
+
+The scratch-only coordinator now accepts a separate `recover` action (commit `2011039`). It requires `--execute --run-id UUID --confirm-all-participants-stopped --confirm-preserved-evidence`. **These flags are operator attestations, not automated process verification.** Do not use them until the operator has confirmed all three processes have exited and saved the read-only diagnostic and host logs.
+
+Recovery refuses a fully completed three-READY/one-RELEASE/three-DONE run (use normal cleanup), malformed host identities, duplicate or unexpected ledger records, unrecognized event types, unexpected synthetic event counts, multiple admitted jobs, and unexpired claimed/running leases. Deletions remain in a single PostgreSQL transaction with exact rowcount checks; any exception rolls back. It never performs HTTP or remote execution.
+
+**Still unvalidated:** the recovery implementation has not passed a tcou syntax check or scratch failure-injection tests. Its assumptions about concurrent process exit depend on external operator evidence. Before authorizing fixture execution, add targeted offline recovery tests and inspect all SQL against the documented schema. Preserve the independent post-cleanup five-table census requirement. T4 OPEN, production HOLD.
