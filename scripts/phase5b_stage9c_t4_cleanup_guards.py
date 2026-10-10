@@ -51,3 +51,36 @@ def refuse_foreign_references(conn, marker, rows, owners):
         ), {'marker': marker}).scalar_one()
         if count:
             raise RuntimeError(f'REFUSING {count} dependent rows in {table}')
+
+    # Verify that each fixture job still points at its expected synthetic soldier.
+    # Matching a job reason alone is insufficient authorization to remove a soldier.
+    bad_identity = conn.execute(text("""
+        SELECT COUNT(*) FROM collection_jobs j
+        LEFT JOIN soldiers s ON s.soldier_id = j.soldier_id
+        WHERE j.reason=:marker
+          AND (s.soldier_id IS NULL
+               OR s.current_name NOT IN (:tcou,:hnl,:kah)
+               OR s.platform <> 'pc'
+               OR j.resource <> 'detailed'
+               OR j.lane <> 'background'
+               OR j.priority_class <> 'active')
+    """), names).scalar_one()
+    if bad_identity:
+        raise RuntimeError(f"REFUSING {bad_identity} fixture job/soldier identity mismatches")
+    mismatched_collectors = conn.execute(text("""
+        SELECT COUNT(*) FROM collectors c
+        WHERE c.collector_name IN (:tcou,:hnl,:kah)
+          AND (c.collector_name <> :marker || '_' || c.hostname
+               OR c.lane <> 'background'
+               OR c.egress_key <> c.collector_name)
+    """), names).scalar_one()
+    if mismatched_collectors:
+        raise RuntimeError(f"REFUSING {mismatched_collectors} fixture collector identity mismatches")
+    foreign_current_jobs = conn.execute(text("""
+        SELECT COUNT(*) FROM collectors c
+        WHERE c.current_job_id IN (
+            SELECT job_id FROM collection_jobs WHERE reason=:marker
+        ) AND c.collector_name NOT IN (:tcou,:hnl,:kah)
+    """), names).scalar_one()
+    if foreign_current_jobs:
+        raise RuntimeError(f"REFUSING {foreign_current_jobs} foreign collector current-job references")
