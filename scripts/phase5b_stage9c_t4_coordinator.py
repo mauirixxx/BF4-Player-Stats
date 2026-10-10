@@ -11,6 +11,7 @@ from scripts.phase5b_stage9c_t4_barrier import READY, RELEASE, DONE, events, emi
 from scripts.phase5b_stage9c_postgres_integration import refuse_unsafe_target
 from scripts.phase5b_stage9c_t4_recovery_rules import validate_partial_ledger
 from scripts.phase5b_stage9c_t4_cleanup_guards import refuse_foreign_references
+from scripts.phase5b_stage9c_t4_inspect_budget import verify_t4_usage
 
 HOSTS = ("tcou", "hnl-01", "kah-01")
 TABLES = ("collectors", "soldiers", "collection_jobs", "collection_events", "stage9c_supervision_runs")
@@ -138,9 +139,18 @@ def main():
                     pending=[j for j in rows if j.status=="pending" and j.attempt_count==0]
                     if len(winners)!=1 or len(pending)!=2:
                         raise AssertionError("three independent jobs did not yield exactly one reservation")
-                    if usage.total!=BACKGROUND_SLOTS_PER_HOUR:
-                        raise AssertionError("budget incorrect after winner reservation")
-                    print("PASS: one claimed job, 1296/1296 used (host logs still required)")
+                    # _usage() uses PostgreSQL now(), which is transaction-stable.
+                    # Expired unstarted leases are intentionally excluded.
+                    observed_at = conn.execute(text("SELECT now()")).scalar_one()
+                    lease_expires_at = conn.execute(text(
+                        "SELECT lease_expires_at FROM collection_jobs WHERE job_id=:jid"
+                    ), {"jid": winners[0].job_id}).scalar_one()
+                    print(verify_t4_usage(
+                        observed_total=usage.total,
+                        lease_expires_at=lease_expires_at,
+                        observed_at=observed_at,
+                    ))
+                    print("PASS: one claimed job, two pending; host logs still required")
                 else:
                     if args.action=="cleanup":
                         verify_ready(conn,marker)
