@@ -38,3 +38,15 @@ C. Run offline tests, then operator-approved scratch-only PostgreSQL validation 
 D. Reconcile T4 inspector proof separately from T5 actual physical-start ledger. Keep both formal gates OPEN until acceptance evidence exists.
 
 No scratch writes, migrations, host launches, or real HTTP are authorized by this document.
+
+## External distributed-systems lessons — scoped decision
+
+**Adopt concepts, not new infrastructure.** Fencing/epoch validation is useful for PostgreSQL mutations, but Battlelog cannot reject our tokens. Idempotent retries help with duplicate state transitions but do not stop an already-authorized late HTTP dispatch. Lease-based leadership does not imply an exclusive external side effect. Keep PostgreSQL as the coordination authority; do not add Temporal/Kubernetes/Redis to solve this single boundary.
+
+**Prioritized development path:**
+1. Keep the three passing fake-fetch characterization tests as evidence of the current reachable post-commit boundary; do not label them safety acceptance.
+2. Specify a bounded authorization/dispatch contract and how it relates to a strict rolling-hour **actual HTTP dispatch** ceiling. Define process-pause and crash assumptions, clock source, maximum dispatch skew, and what happens if the worker resumes after deadline.
+3. Prefer a small shared dispatch helper used by all three resources, if a rigorous contract can be implemented. Avoid three independent copies of a safety-sensitive fix.
+4. Prove the contract with fake transport barriers and controlled time, then scratch PostgreSQL verification; retain production HOLD until evidence satisfies T4/T5 gates.
+
+**Caveat:** no purely application-level lease check followed by a separate network call can atomically fence an arbitrary OS pause at that boundary. If the contract truly demands a strict ceiling under arbitrary process suspension, evaluate an independently enforced egress dispatcher/proxy with durable accounting, or explicitly narrow the operational failure model. Do not claim the simple bounded-permit approach alone proves strict physical dispatch timing.
