@@ -19,10 +19,10 @@ def fixture():
     return [Row(collector_uuid=None)], [Row(collector_uuid="owner")]
 
 def test_clean_references():
-    conn=FakeConnection([0]*11)
+    conn=FakeConnection([0]*14)
     jobs, owners=fixture()
     refuse_foreign_references(conn,"stage9c_t4_test",jobs,owners)
-    assert len(conn.queries)==11
+    assert len(conn.queries)==14
 
 @pytest.mark.parametrize("counts,fragment",[
     ([1],"unmarked fixture-linked events"),
@@ -56,3 +56,17 @@ def test_refuse_dependent_rows(index, table):
     with pytest.raises(RuntimeError, match=table):
         refuse_foreign_references(conn, "stage9c_t4_test", jobs, owners)
     assert table in str(conn.queries[-1][0])
+
+@pytest.mark.parametrize("offset,fragment", [
+    (0, "job/soldier identity mismatches"),
+    (1, "collector identity mismatches"),
+    (2, "foreign collector current-job references"),
+])
+def test_refuse_identity_drift(offset, fragment):
+    counts = [0] * 14
+    counts[11 + offset] = 1
+    conn = FakeConnection(counts)
+    jobs, owners = fixture()
+    with pytest.raises(RuntimeError, match=fragment):
+        refuse_foreign_references(conn, "stage9c_t4_test", jobs, owners)
+    assert len(conn.queries) == 12 + offset
