@@ -33,8 +33,9 @@ def test_supervision_migration_is_inert_and_reversible():
         assert forbidden not in source
 
 
-def test_schema_reference_matches_new_head():
+def test_schema_reference_keeps_supervision_and_tracks_current_head():
     schema = SCHEMA.read_text()
-    assert "Current documented head: `0004_stage9c_supervision_runs`" in schema
+    assert "Current documented head: `0005_stage9c_dispatch_ledger`" in schema
+    assert "| `0004_stage9c_supervision_runs` |" in schema
     assert "### `stage9c_supervision_runs`" in schema
     assert "sticky abort" in schema
