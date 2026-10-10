@@ -19,10 +19,10 @@ def fixture():
     return [Row(collector_uuid=None)], [Row(collector_uuid="owner")]
 
 def test_clean_references():
-    conn=FakeConnection([0,0,0])
+    conn=FakeConnection([0]*11)
     jobs, owners=fixture()
     refuse_foreign_references(conn,"stage9c_t4_test",jobs,owners)
-    assert len(conn.queries)==3
+    assert len(conn.queries)==11
 
 @pytest.mark.parametrize("counts,fragment",[
     ([1],"unmarked fixture-linked events"),
@@ -42,3 +42,17 @@ def test_refuse_foreign_collector_owner():
     with pytest.raises(RuntimeError,match="foreign collector"):
         refuse_foreign_references(conn,"stage9c_t4_test",jobs,owners)
     assert len(conn.queries)==1
+
+@pytest.mark.parametrize("index,table", list(enumerate((
+    "soldier_sources", "soldier_names", "profile_soldiers",
+    "detailed_stats_current", "detailed_stats_history",
+    "soldier_weapon_stats", "soldier_vehicle_stats", "collection_state",
+))))
+def test_refuse_dependent_rows(index, table):
+    counts = [0] * 11
+    counts[3 + index] = 1
+    conn = FakeConnection(counts)
+    jobs, owners = fixture()
+    with pytest.raises(RuntimeError, match=table):
+        refuse_foreign_references(conn, "stage9c_t4_test", jobs, owners)
+    assert table in str(conn.queries[-1][0])
