@@ -99,3 +99,18 @@ These checks have not yet been syntax-checked on tcou or exercised with PostgreS
 ## Cleanup reference guard offline test checkpoint (2026-10-09)
 
 The SQL reference checks are extracted to `scripts/phase5b_stage9c_t4_cleanup_guards.py`, called by the coordinator before DELETE. They reject both unmarked events linked to fixture identities and marked events linked to foreign identities, foreign job owners, and unrelated jobs on fixture soldiers. `tests/test_stage9c_t4_cleanup_guards.py` provides five offline fake-connection tests. These validate query order and refusal logic but **not** PostgreSQL semantics or transaction rollback; run them on tcou before further work. A PostgreSQL scratch fixture rollback rehearsal remains a distinct unapproved gate. Production HOLD.
+
+## T4 rollback probe design (2026-10-09)
+
+The coordinator has an opt-in `--rollback-probe` flag, valid only for `cleanup` or `recover`. After all normal identity, ledger, lease and reference guards pass, it performs the marker-scoped collection_events DELETE, checks the affected rowcount, then intentionally raises `RuntimeError("EXPECTED T4 ROLLBACK PROBE...")` **inside** the `engine.begin()` context. The exception must escape the transaction scope, causing rollback of the event deletion. No other fixture DELETE should execute. The command must exit nonzero; **a nonzero exit is expected, but is not itself proof of rollback**.
+
+### Mandatory evidence before authorizing a scratch rollback probe
+
+1. Separate operator approval for scratch fixture writes and the rollback probe; no remote host activity or production database connections.
+2. Capture a read-only, transaction-consistent pre-probe census of the five fixture tables, plus marker-scoped event counts and identities. Retain the run UUID and logs.
+3. Require all participant processes exited, all claimed/running leases expired, and a valid normal-cleanup or partial-recovery ledger. If the fixture is incomplete, the recovery confirmations are required.
+4. Execute the exact approved command with `--rollback-probe` on tcou only; expect the explicit exception and nonzero exit.
+5. Independently capture the same read-only census and marker-scoped event counts. They must match the pre-probe snapshot exactly. If any mismatch, STOP and preserve evidence; do not run ordinary cleanup.
+6. Only after reviewing the probe evidence, separately approve normal cleanup/recovery and verify the independent five-table zero census.
+
+**No fixture has been seeded and no rollback probe has been run.** This option is not a dry-run: it issues a DELETE inside a transaction and therefore must never be invoked without the explicit scratch rehearsal approval. T4 OPEN; production HOLD.
