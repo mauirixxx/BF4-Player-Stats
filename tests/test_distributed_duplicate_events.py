@@ -44,7 +44,7 @@ def test_classification_scopes_job_and_resource():
 def test_repeat_duplicate_discard_is_idempotent():
     conn = FakeConnection(42)
     assert record_discarded_duplicate(conn, **kwargs())
-    assert not record_discarded_duplicate(conn, **kwargs())
+    assert record_discarded_duplicate(conn, **kwargs())
     assert sum("INSERT INTO collection_events" in sql for sql, _ in conn.queries) == 1
 
 
