@@ -338,7 +338,10 @@ def collect_one_vehicle_job(
                 response_bytes=fetched.response_bytes, http_status=200,
             )
     except RuntimeError as exc:
-        if "vehicle success rejected: job lease is no longer owned" in str(exc):
+        if str(exc) in {
+            "vehicle success rejected: job lease is no longer owned",
+            "vehicle success rejected during finalization: lease ownership lost",
+        }:
             # Persistence has rolled back. Only a committed competing success
             # qualifies as a duplicate; otherwise preserve the original error.
             with engine.begin() as conn:
