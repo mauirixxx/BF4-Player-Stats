@@ -129,7 +129,7 @@ def main(argv=None):
             if args.heartbeat is not None:
                 fd = os.open(args.heartbeat, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
                 with os.fdopen(fd, "a", encoding="utf-8") as stream:
-                    stream.write(json.dumps(item, sort_keys=True) + "\\n")
+                    stream.write(json.dumps(item, sort_keys=True) + "\n")
         report = run(manifest_document=doc, state=state,
                      host=socket.gethostname().split(".")[0].lower(),
                      index=args.worker_index,
@@ -143,7 +143,7 @@ def main(argv=None):
             fd = os.open(args.report, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             with os.fdopen(fd, "w", encoding="utf-8") as stream:
                 json.dump(report, stream, sort_keys=True)
-                stream.write("\\n")
+                stream.write("\n")
         print(json.dumps(report, sort_keys=True), flush=True)
     except (OSError, ValueError, RuntimeError, TypeError, KeyError) as exc:
         parser.error(str(exc))
