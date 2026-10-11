@@ -24,6 +24,7 @@ def run(url: str) -> None:
     engine = create_engine(url, connect_args={"connect_timeout": 5})
     marker = "synthetic-failure-audit-" + uuid4().hex
     soldier_id = None
+    collector_ids = []
     try:
         with engine.connect() as conn:
             identity = conn.execute(text(
@@ -57,6 +58,12 @@ def run(url: str) -> None:
         )
         for index, (resource, module, fn_name) in enumerate(modules):
             collector_uuid = uuid4()
+            with engine.begin() as conn:
+                conn.execute(text("""
+                    INSERT INTO collectors (collector_uuid,collector_name,hostname,lane,egress_key)
+                    VALUES (:uuid,:name,'tcou','background','synthetic-no-http')
+                """), {"uuid": collector_uuid, "name": marker + resource})
+            collector_ids.append(collector_uuid)
             job = ClaimedJob(1_500_000_000 + index, soldier_id, resource,
                              "background", 1, collector_uuid, uuid4())
             identity = module.CollectorIdentity(
@@ -92,6 +99,8 @@ def run(url: str) -> None:
                                  {"sid": soldier_id})
                     conn.execute(text("DELETE FROM soldiers WHERE soldier_id=:sid AND current_name=:name"),
                                  {"sid": soldier_id, "name": marker})
+                    conn.execute(text("DELETE FROM collectors WHERE collector_uuid=ANY(:ids)"),
+                                 {"ids": collector_ids})
         finally:
             engine.dispose()
 
