@@ -136,8 +136,8 @@ def main(argv=None):
         parser.error("BF4PS_STAGE9C_D2_URL required")
     try:
         manifest = validate_manifest_document(json.loads(args.manifest.read_text()))
-        if args.action == "prepare" and args.state.exists():
-            raise RuntimeError("REFUSING to overwrite coordinator state")
+        if args.action == "prepare":
+            raise RuntimeError("prepare disabled until crash-safe coordinator state publication is implemented")
         state = None if args.action == "prepare" else json.loads(args.state.read_text())
         check_database_identity(url)
         engine = create_engine(url, connect_args={"connect_timeout": 5})
