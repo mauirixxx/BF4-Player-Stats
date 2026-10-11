@@ -76,8 +76,8 @@ def run(url: str) -> None:
         with ThreadPoolExecutor(max_workers=2) as pool:
             futures = [pool.submit(loser) for _ in range(2)]
             outcomes = [f.result(timeout=20) for f in futures]
-        if sorted(outcomes) != [False, True]:
-            raise AssertionError(f"expected one recorded and one suppressed: {outcomes}")
+        if sorted(outcomes) != [True, True]:
+            raise AssertionError(f"expected both handled with one audit insertion: {outcomes}")
         with engine.connect() as conn:
             count = conn.execute(text("""
                 SELECT count(*) FROM collection_events
