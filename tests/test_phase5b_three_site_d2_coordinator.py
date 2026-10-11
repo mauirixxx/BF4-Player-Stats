@@ -1,6 +1,6 @@
 """Offline safety checks for the D2 coordinator state envelope."""
 import pytest
-from scripts.phase5b_three_site_d2_coordinator import cohort_prefix, validate_state
+from scripts.phase5b_three_site_d2_coordinator import cohort_prefix, validate_state, cleanup
 from scripts.phase5b_three_site_manifest import RunManifest
 
 
@@ -31,3 +31,56 @@ def test_mismatched_state_rejected(field, value):
     state[field] = value
     with pytest.raises(ValueError):
         validate_state(manifest, state)
+
+
+class CleanupResult:
+    def __init__(self, count):
+        self.count = count
+
+    def scalar_one(self):
+        return self.count
+
+
+class CleanupConnection:
+    def __init__(self, active=0):
+        self.active = active
+        self.calls = []
+
+    def execute(self, statement, parameters=None):
+        sql = str(statement)
+        self.calls.append((sql, parameters))
+        if "status IN ('claimed','running')" in sql:
+            return CleanupResult(self.active)
+        if sql.startswith("SELECT count(*)"):
+            return CleanupResult(0)
+        return CleanupResult(0)
+
+
+def test_cleanup_refuses_active_claims_before_deletion(monkeypatch):
+    manifest, state = fixture_state()
+    monkeypatch.setattr(
+        "scripts.phase5b_three_site_d2_coordinator.verify",
+        lambda conn, manifest, state: {"jobs": 2},
+    )
+    conn = CleanupConnection(active=1)
+    with pytest.raises(RuntimeError, match="claimed or running"):
+        cleanup(conn, manifest, state)
+    assert not any("DELETE FROM" in sql for sql, _ in conn.calls)
+
+
+def test_cleanup_uses_literal_prefix_not_sql_wildcards(monkeypatch):
+    manifest, state = fixture_state()
+    monkeypatch.setattr(
+        "scripts.phase5b_three_site_d2_coordinator.verify",
+        lambda conn, manifest, state: {"jobs": 2},
+    )
+    conn = CleanupConnection()
+    cleanup(conn, manifest, state)
+    deletions = [(sql, params) for sql, params in conn.calls if "DELETE FROM" in sql]
+    assert len(deletions) == 5
+    named = [(sql, params) for sql, params in deletions if ":prefix" in sql]
+    assert len(named) == 2
+    for sql, params in named:
+        assert "LIKE" not in sql
+        assert "left(" in sql
+        assert params["prefix"] == cohort_prefix(manifest.run_id)
