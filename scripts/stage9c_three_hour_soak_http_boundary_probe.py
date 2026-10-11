@@ -37,7 +37,7 @@ def insert_starts(conn,job,site,count,offset):
            event_type,attempt_number,metadata)
         SELECT :uuid,:name,:site,:egress,:job,:soldier,'detailed',
                'background','collection_attempt_started',
-               generate_series(:lo,:hi),jsonb_build_object('physical_request',true)
+               generate_series(CAST(:lo AS integer),CAST(:hi AS integer)),jsonb_build_object('physical_request',true)
     """),{"uuid":ci.collector_uuid,"name":ci.collector_name,
            "site":site,"egress":ci.egress_key,"job":job.job_id,
            "soldier":job.soldier_id,"lo":offset+1,"hi":offset+count})
