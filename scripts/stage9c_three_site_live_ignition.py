@@ -72,7 +72,7 @@ def work(e,node):
         ids=validate(conn)
         allowed=[ids[persona] for name,persona,owner in COHORT if owner==node]
         rows=conn.execute(text("SELECT soldier_id,status FROM collection_jobs WHERE resource='detailed'")).all()
-        if len(rows)!=9 or any(status not in ("pending","claimed","running") for sid,status in rows):
+        if any(status not in ("pending","claimed","running") or sid not in ids.values() for sid,status in rows):
             raise RuntimeError("unexpected queue state; stop for inspection")
         own_status={sid:status for sid,status in rows if sid in allowed}
         if len(own_status)!=3 or any(status!="pending" for status in own_status.values()):
