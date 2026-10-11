@@ -17,6 +17,7 @@ from sqlalchemy import create_engine, text
 from bf4ps.collection_jobs import enqueue_job
 from scripts.phase5b_three_site_manifest import validate_manifest_document
 from scripts.phase5b_three_site_worker import check_database_identity
+from scripts.phase5b_three_site_recovery import write_intent, read_intent, recover_state
 
 
 def cohort_prefix(run_id: str) -> str:
@@ -124,7 +125,7 @@ def cleanup(conn, manifest, state):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "verify", "cleanup"))
+    parser.add_argument("action", choices=("prepare", "recover", "verify", "cleanup"))
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--state", required=True, type=Path)
     parser.add_argument("--execute", action="store_true")
@@ -136,24 +137,37 @@ def main(argv=None):
         parser.error("BF4PS_STAGE9C_D2_URL required")
     try:
         manifest = validate_manifest_document(json.loads(args.manifest.read_text()))
+        intent_path = args.state.with_suffix(args.state.suffix + ".intent")
         if args.action == "prepare":
-            raise RuntimeError("prepare disabled until crash-safe coordinator state publication is implemented")
-        state = None if args.action == "prepare" else json.loads(args.state.read_text())
+            if args.state.exists():
+                raise RuntimeError("REFUSING existing state")
+            write_intent(intent_path, manifest.report())
+            state = None
+        else:
+            if read_intent(intent_path) != manifest.report():
+                raise RuntimeError("REFUSING mismatched intent")
+            state = None if args.action == "recover" else json.loads(args.state.read_text())
         check_database_identity(url)
         engine = create_engine(url, connect_args={"connect_timeout": 5})
         try:
             with engine.begin() as conn:
                 if args.action == "prepare":
                     result = prepare(conn, manifest)
+                elif args.action == "recover":
+                    result = recover_state(conn, manifest)
+                    if result is None:
+                        raise RuntimeError("No committed synthetic cohort to recover")
                 elif args.action == "verify":
                     result = verify(conn, manifest, state)
                 else:
                     result = cleanup(conn, manifest, state)
         finally:
             engine.dispose()
-        if args.action == "prepare":
-            # State must be retained for scoped cleanup.
-            args.state.write_text(json.dumps(result, sort_keys=True), encoding="utf-8")
+        if args.action in ("prepare", "recover"):
+            if args.state.exists():
+                raise RuntimeError("REFUSING existing state file")
+            from scripts.phase5b_three_site_recovery import write_state
+            write_state(args.state, result)
         print(json.dumps(result, sort_keys=True))
     except (OSError, ValueError, RuntimeError, TypeError, KeyError) as exc:
         parser.error(str(exc))
