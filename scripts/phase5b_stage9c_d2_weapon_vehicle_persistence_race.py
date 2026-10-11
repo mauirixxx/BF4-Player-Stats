@@ -9,6 +9,9 @@ from uuid import uuid4
 from sqlalchemy import create_engine, text
 
 from bf4ps.collection_jobs import claim_next_job, enqueue_job, mark_job_running
+from bf4ps.battlelog_weapons import NormalizedWeaponStat
+from bf4ps.battlelog_vehicles import NormalizedVehicleStat
+from decimal import Decimal
 from bf4ps.weapon_persistence import persist_weapon_success
 from bf4ps.vehicle_persistence import persist_vehicle_success
 from bf4ps.distributed_duplicate_events import record_discarded_duplicate
@@ -72,13 +75,24 @@ def run(url: str, resource: str) -> None:
             assert winner and winner.job_id == job_id and mark_job_running(conn, winner)
 
         persist = persist_weapon_success if resource == "weapons" else persist_vehicle_success
-        payload = {"weapons": []} if resource == "weapons" else {"vehicles": []}
+        if resource == "weapons":
+            payload = {"weapons": [NormalizedWeaponStat(
+                weapon_guid=marker, name="Synthetic Weapon", slug="synthetic-weapon",
+                category="assault", kills=3, headshots=1, shots_fired=30,
+                shots_hit=12, time_equipped_seconds=120,
+            )]}
+        else:
+            payload = {"vehicles": [NormalizedVehicleStat(
+                vehicle_guid=marker, name="Synthetic Vehicle", slug="synthetic-vehicle",
+                category="armor", kills=2, time_in_seconds=90,
+                destroy_x_in_y=Decimal("4"),
+            )]}
         with engine.begin() as conn:
             assert persist(
                 conn, job=winner, **payload, source_fetched_at=datetime.now(timezone.utc),
                 persona_id=1, platform="pc", collector_name=marker + "1",
                 hostname="tcou", egress_key=marker + "1", duration_ms=5, response_bytes=0,
-            ) == 0
+            ) == 1
 
         try:
             with engine.begin() as conn:
@@ -117,7 +131,7 @@ def run(url: str, resource: str) -> None:
                 SELECT count(*) FROM collection_jobs WHERE soldier_id=:s
             """), {"s": soldier_id}).scalar_one()
             conn.rollback()
-        assert counts == [0] and success == 1 and discarded == 1 and remaining == 0, (
+        assert counts == [1] and success == 1 and discarded == 1 and remaining == 0, (
             counts, success, discarded, remaining
         )
         print(f"PASS: real {resource} persistence winner 1, stale loser rejected, duplicate 1, job 0")
@@ -130,6 +144,10 @@ def run(url: str, resource: str) -> None:
                                  {"s": soldier_id})
                     conn.execute(text("DELETE FROM soldiers WHERE soldier_id=:s AND current_name=:name"),
                                  {"s": soldier_id, "name": marker})
+                    if resource == "weapons":
+                        conn.execute(text("DELETE FROM weapon_catalog WHERE weapon_guid=:marker"), {"marker": marker})
+                    else:
+                        conn.execute(text("DELETE FROM vehicle_catalog WHERE vehicle_guid=:marker"), {"marker": marker})
                     conn.execute(text("DELETE FROM collectors WHERE collector_uuid IN (:a,:b)"),
                                  {"a": collectors[0], "b": collectors[1]})
         finally:
