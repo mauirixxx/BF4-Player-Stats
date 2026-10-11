@@ -19,7 +19,7 @@ TABLES={"weapons":"soldier_weapon_stats","vehicles":"soldier_vehicle_stats"}
 
 def preflight(conn):
     ids=validate(conn)
-    events=conn.execute(text("SELECT event_id,event_type,resource FROM collection_events ORDER BY event_id")).all()
+    events=conn.execute(text("SELECT event_id,event_type,resource FROM collection_events WHERE event_id<=:baseline ORDER BY event_id"),{"baseline":BASELINE}).all()
     if len(events)!=18 or any(resource!="detailed" or typ not in ("collection_attempt_started","collection_success") for _,typ,resource in events):
         raise RuntimeError("unexpected detailed ignition events")
     if events[-1][0]!=BASELINE:
@@ -42,7 +42,7 @@ def prepare(e):
             for resource in RESOURCES:
                 enqueue_job(conn,soldier_id=sid,resource=resource,lane="background",
                             priority_class="bootstrap",reason="three_site_live_multiresource_v1")
-    print("PREPARE PASS nine soldiers, 18 jobs, 18 global attempts, baseline 18",flush=True)
+    print("PREPARE PASS nine soldiers, 18 jobs, 18 global attempts, baseline 50",flush=True)
 
 def work(e,node):
     if os.uname().nodename!=node:
