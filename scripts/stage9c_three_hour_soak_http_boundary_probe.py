@@ -55,16 +55,17 @@ def main():
             ignite(conn,ids)
             jobs=admit_round(conn,ids,1)
             job=SimpleNamespace(job_id=jobs[0],soldier_id=ids[0])
+            # 107 total: tcou 35, hnl 36, kah 36.
             insert_starts(conn,job,"tcou",35,0)
-            admit_physical_start(conn,job,identity("tcou"))
-            insert_starts(conn,job,"tcou",1,35)
-            denied(conn,job,identity("tcou"))
-            # At 107 total, kah still has 36 slots available locally.
             insert_starts(conn,job,"hnl-01",36,100)
             insert_starts(conn,job,"kah-01",36,200)
-            # total is now 108: tcou36 + hnl36 + kah36
+            admit_physical_start(conn,job,identity("tcou"))
+            denied(conn,job,identity("hnl-01"))
+            # Consuming the final tcou slot also exhausts the global budget.
+            insert_starts(conn,job,"tcou",1,35)
+            denied(conn,job,identity("tcou"))
             denied(conn,job,identity("kah-01"))
-            print("HTTP BOUNDARY PASS site35=allowed site36=blocked global108=blocked")
+            print("HTTP BOUNDARY PASS global107=allowed site36=blocked global108=blocked")
         finally:
             tx.rollback()
     with e.connect() as conn:
