@@ -84,3 +84,21 @@ def recover_state(conn, manifest):
         "worker_count": len(expected),
         "job_count": len(jobs),
     }
+
+
+def write_state(path: Path, state: dict) -> None:
+    """Durably publish a recovered or newly committed cohort state."""
+    if path.exists():
+        raise RuntimeError("REFUSING to overwrite existing state")
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        json.dump(state, handle, sort_keys=True)
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    directory = os.open(str(path.parent), os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
