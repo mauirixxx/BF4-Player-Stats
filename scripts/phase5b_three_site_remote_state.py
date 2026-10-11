@@ -22,9 +22,9 @@ def reconstruct(conn, manifest):
         SELECT s.soldier_id,j.job_id
         FROM soldiers s
         JOIN collection_jobs j ON j.soldier_id=s.soldier_id
-        WHERE s.current_name LIKE :prefix
+        WHERE left(s.current_name, length(:prefix)) = :prefix
         ORDER BY s.soldier_id
-    """), {"prefix": cohort_prefix(manifest.run_id) + "%"}).all()
+    """), {"prefix": cohort_prefix(manifest.run_id)}).all()
     if len(rows) != manifest.job_count:
         raise RuntimeError("REFUSING incomplete synthetic cohort")
     state = {
