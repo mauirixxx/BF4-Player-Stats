@@ -140,14 +140,16 @@ def main():
         for sid,resource,state,count,events,jobs in rows:
             print(f"RESOURCE soldier={sid} resource={resource} state={state} rows={count} events={events} jobs={jobs}")
         return
-    if attempts>=limit:
-        raise RuntimeError("attempt budget exhausted")
-    if any(jobs for _,_,_,_,_,jobs in rows):
-        raise RuntimeError("existing queued work requires operator inspection before run")
     pending=[(sid,resource) for sid,resource,state,count,_,_ in rows if state=="never_attempted"]
     if not pending:
-        print("NO-OP: all resources already collected",flush=True)
-        return
+        if all(state=="success" and count>0 and jobs==0 for _,_,state,count,_,jobs in rows):
+            print(f"NO-OP: all resources already collected; attempts={attempts}/{limit}",flush=True)
+            return
+        raise RuntimeError("no pristine work remains but batch is incomplete; inspect failure events")
+    if attempts>=limit:
+        raise RuntimeError("attempt budget exhausted")
+    if any(jobs and (sid,resource) not in pending for sid,resource,_,_,_,jobs in rows):
+        raise RuntimeError("queued work conflicts with persisted state")
     if len(pending)>limit-attempts:
         raise RuntimeError("remaining attempt budget cannot cover all pending resources")
     with engine.begin() as conn:
