@@ -64,3 +64,35 @@ def test_execute_required(tmp_path):
     args.remove("--execute")
     with pytest.raises(SystemExit):
         main(args)
+
+
+def test_later_worker_failure_detected_while_first_still_running(tmp_path):
+    args = setup(tmp_path)
+    first = Mock()
+    first.poll.return_value = None
+    first.communicate.return_value = ("", "")
+    first.wait.return_value = 0
+    failed = fake_process(1, returncode=7)
+    third = fake_process(2)
+    with patch("scripts.phase5b_three_site_soak_host.socket.gethostname", return_value="tcou"), \
+         patch("scripts.phase5b_three_site_soak_host.subprocess.Popen",
+               side_effect=[first, failed, third]):
+        with pytest.raises(RuntimeError, match="worker 1 failed"):
+            main(args)
+    first.terminate.assert_called_once()
+
+
+def test_host_deadline_rejects_hung_worker(tmp_path):
+    args = setup(tmp_path)
+    stuck = Mock()
+    stuck.poll.return_value = None
+    stuck.wait.return_value = 0
+    stuck.communicate.return_value = ("", "")
+    with patch("scripts.phase5b_three_site_soak_host.socket.gethostname", return_value="tcou"), \
+         patch("scripts.phase5b_three_site_soak_host.subprocess.Popen",
+               side_effect=[stuck, fake_process(1), fake_process(2)]), \
+         patch("scripts.phase5b_three_site_soak_host.time.monotonic",
+               side_effect=[0, 100]):
+        with pytest.raises(RuntimeError, match="deadline exceeded"):
+            main(args)
+    stuck.terminate.assert_called_once()
