@@ -20,7 +20,7 @@ def test_retry_still_requires_future_eligibility():
 
 def test_aging_uses_eligibility_not_error_timestamp():
     sql = (Path(__file__).resolve().parents[1] / "bf4ps" / "collection_jobs.py").read_text()
-    ordering = sql.split("ORDER BY\\n                    CASE priority_class", 1)[1].split("FOR UPDATE SKIP LOCKED", 1)[0]
+    ordering = sql.split("ORDER BY\n                    CASE priority_class", 1)[1].split("FOR UPDATE SKIP LOCKED", 1)[0]
     assert "last_error_at IS NOT NULL" in ordering
     assert "eligible_at <= now() - interval '30 minutes'" in ordering
     assert "last_error_at <= now() - interval '30 minutes'" not in ordering
