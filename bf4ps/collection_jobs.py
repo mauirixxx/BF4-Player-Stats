@@ -239,10 +239,16 @@ def claim_next_job(
                         WHEN 'bootstrap' THEN 1
                         ELSE 0
                     END DESC,
-                    -- Within each priority class, defer failed attempts behind
-                    -- fresh eligible jobs, regardless of the old priority value.
-                    -- Interactive class remains ahead of background classes.
-                    CASE WHEN last_error_at IS NULL THEN 0 ELSE 1 END ASC,
+                    -- Within a priority class, an eligible retry starts behind
+                    -- fresh work. After 30 minutes waiting *since eligible_at*,
+                    -- it ages ahead of fresh work to avoid indefinite starvation.
+                    -- Cooldown time before eligible_at never counts as waiting.
+                    CASE
+                        WHEN last_error_at IS NOT NULL
+                         AND eligible_at <= now() - interval '30 minutes' THEN 0
+                        WHEN last_error_at IS NULL THEN 1
+                        ELSE 2
+                    END ASC,
                     priority_value DESC,
                     eligible_at ASC,
                     created_at ASC,
