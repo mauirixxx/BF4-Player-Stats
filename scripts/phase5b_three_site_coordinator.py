@@ -29,9 +29,9 @@ class FleetPlan:
             raise ValueError("each host must have 0..32 workers")
         if not 1 <= sum(distribution.values()) <= 96:
             raise ValueError("fleet must contain 1..96 workers")
-        WorkerConfig.build(host=next(h for h, n in distribution.items() if n),
-                           worker_index=0, workers_on_host=next(n for n in distribution.values() if n),
-                           run_id=run_id)
+        first_host, first_count = next((h, n) for h, n in distribution.items() if n)
+        WorkerConfig.build(host=first_host, worker_index=0,
+                           workers_on_host=first_count, run_id=run_id)
         return cls(run_id, dict(distribution))
 
     def workers(self):
