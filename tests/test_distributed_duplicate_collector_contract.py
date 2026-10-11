@@ -19,3 +19,9 @@ def test_duplicate_handler_is_after_success_persistence(name):
     source = (Path(__file__).resolve().parents[1] / "bf4ps" / f"{name}_collector.py").read_text()
     assert source.index(f"persist_{name}_success(") < source.index("except RuntimeError as exc:")
     assert source.index("except RuntimeError as exc:") < source.index("record_discarded_duplicate(")
+
+
+@pytest.mark.parametrize("name", ["detailed", "weapon", "vehicle"])
+def test_finalization_lease_loss_is_classified(name):
+    source = (Path(__file__).resolve().parents[1] / "bf4ps" / f"{name}_collector.py").read_text()
+    assert f"{name} success rejected during finalization: lease ownership lost" in source
