@@ -54,7 +54,7 @@ def main():
             finally:
                 gate.SITE_ATTEMPTS = original_site
             conn.execute(text("""
-                UPDATE soak_runs SET deadline_at=clock_timestamp()-interval '1 second'
+                UPDATE soak_runs SET start_at=clock_timestamp()-interval '4 hours',\n                  deadline_at=clock_timestamp()-interval '1 second'
                 WHERE run_id=:run
             """), {"run":RUN_ID})
             denied(conn, job, ci, "deadline expired")
