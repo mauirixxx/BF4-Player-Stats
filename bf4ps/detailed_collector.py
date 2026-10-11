@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from time import monotonic, sleep
-from typing import Sequence
+from typing import Callable, Sequence
 from uuid import UUID
 
 from sqlalchemy import text
@@ -76,6 +76,7 @@ def _record_detailed_attempt_started(
     identity: CollectorIdentity,
     persona_id: int,
     platform: str,
+    pre_http_admission: Callable | None = None,
 ) -> None:
     """Durably record the physical outbound attempt before issuing HTTP."""
     with engine.begin() as conn:
@@ -119,6 +120,9 @@ def _record_detailed_attempt_started(
         ).one_or_none()
         if duplicate is not None:
             raise RuntimeError("detailed attempt start rejected: physical start already recorded")
+
+        if pre_http_admission is not None:
+            pre_http_admission(conn, job, identity)
 
         conn.execute(
             text(
@@ -234,6 +238,7 @@ def collect_one_detailed_job(
     attempts_after_event_id: int | None = None,
     attempt_ceiling_resources: Sequence[str] | None = None,
     enforce_production_budget: bool = False,
+    pre_http_admission: Callable | None = None,
 ) -> CollectedJob | FailedJob | None:
     """Claim and execute at most one detailed job.
 
@@ -294,6 +299,7 @@ def collect_one_detailed_job(
         identity=identity,
         persona_id=persona_id,
         platform=platform,
+        pre_http_admission=pre_http_admission,
     )
 
     started = monotonic()
