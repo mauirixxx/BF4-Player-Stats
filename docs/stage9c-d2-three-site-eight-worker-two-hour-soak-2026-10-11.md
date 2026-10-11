@@ -24,7 +24,7 @@
 | kah-01 | 2 | 10831 | 10831 | 0 | 0 | 0 | 0 |
 | hnl-01 | 0 | 11233 | 11233 | 0 | 0 | 0 | 0 |
 | hnl-01 | 1 | 11235 | 11235 | 0 | 0 | 0 | 0 |
-| **Total** | **8** | **97533** | **97533** | **0** | **0** | **0** | **0** |
+| **Total** | **8** | **97733** | **97733** | **0** | **0** | **0** | **0** |
 
 All eight reports had `status=complete`, `duration_seconds=7200`, matching run/manifest identities. Earliest start: 2026-10-11 09:53:53.924911 UTC; latest finish: 2026-10-11 11:53:57.072922 UTC. All eight workers overlapped for essentially the entire two hours. Host launchers independently reported PASS.
 
