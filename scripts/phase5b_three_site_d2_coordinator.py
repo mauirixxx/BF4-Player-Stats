@@ -110,16 +110,22 @@ def validate_state(manifest, state):
 def cleanup(conn, manifest, state):
     verify(conn, manifest, state)
     prefix = cohort_prefix(manifest.run_id)
+    active = conn.execute(text("""
+        SELECT count(*) FROM collection_jobs
+        WHERE job_id=ANY(:ids) AND status IN ('claimed','running')
+    """), {"ids": state["job_ids"]}).scalar_one()
+    if active:
+        raise RuntimeError("REFUSING cleanup while synthetic jobs are claimed or running")
     conn.execute(text("DELETE FROM collection_events WHERE soldier_id=ANY(:ids)"),
                  {"ids": state["soldier_ids"]})
     conn.execute(text("DELETE FROM collection_state WHERE soldier_id=ANY(:ids)"),
                  {"ids": state["soldier_ids"]})
     conn.execute(text("DELETE FROM collection_jobs WHERE job_id=ANY(:ids)"),
                  {"ids": state["job_ids"]})
-    conn.execute(text("DELETE FROM soldiers WHERE soldier_id=ANY(:ids) AND current_name LIKE :prefix"),
-                 {"ids": state["soldier_ids"], "prefix": prefix + "%"})
-    conn.execute(text("DELETE FROM collectors WHERE collector_uuid=ANY(:ids) AND collector_name LIKE :prefix"),
-                 {"ids": manifest.payload()["collector_uuids"], "prefix": prefix + "%"})
+    conn.execute(text("DELETE FROM soldiers WHERE soldier_id=ANY(:ids) AND left(current_name, length(:prefix)) = :prefix"),
+                 {"ids": state["soldier_ids"], "prefix": prefix})
+    conn.execute(text("DELETE FROM collectors WHERE collector_uuid=ANY(:ids) AND left(collector_name, length(:prefix)) = :prefix"),
+                 {"ids": manifest.payload()["collector_uuids"], "prefix": prefix})
     return assert_clean(conn)
 
 
