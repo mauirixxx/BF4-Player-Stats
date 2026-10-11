@@ -366,7 +366,10 @@ def collect_one_detailed_job(
                 http_status=200,
             )
     except RuntimeError as exc:
-        if "detailed success rejected: job lease is no longer owned" in str(exc):
+        if str(exc) in {
+            "detailed success rejected: job lease is no longer owned",
+            "detailed success rejected during finalization: lease ownership lost",
+        }:
             # Persistence has rolled back. Only a committed competing success
             # qualifies as a duplicate; otherwise preserve the original error.
             with engine.begin() as conn:
