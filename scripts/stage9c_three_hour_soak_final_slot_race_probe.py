@@ -34,7 +34,7 @@ def worker(e, job, start):
                event_type,attempt_number,metadata)
             VALUES (:uuid,:name,'tcou',:egress,:job,:soldier,'detailed',
                     'background','collection_attempt_started',:attempt,
-                    '{"physical_request":true}'::jsonb)
+                    jsonb_build_object('physical_request',true))
         """),{"uuid":UUIDS["tcou"],"name":RUN+":tcou",
               "egress":RUN+":tcou","job":job.job_id,
               "soldier":job.soldier_id,"attempt":job.attempt_count})
@@ -66,7 +66,7 @@ def main():
                    event_type,attempt_number,metadata)
                 SELECT :uuid,:name,'tcou',:egress,:job,:soldier,'detailed',
                        'background','collection_attempt_started',
-                       generate_series(100,134),'{"physical_request":true}'::jsonb
+                       generate_series(100,134),jsonb_build_object('physical_request',true)
             """),{"uuid":UUIDS["tcou"],"name":RUN+":tcou",
                   "egress":RUN+":tcou","job":fixture_jobs[0],"soldier":ids[0]})
         jobs=[SimpleNamespace(job_id=fixture_jobs[i],soldier_id=ids[i],
