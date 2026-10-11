@@ -11,6 +11,7 @@ import os
 import signal
 import socket
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlalchemy import create_engine
@@ -32,7 +33,7 @@ def request_stop(_signum, _frame):
 def run(*, manifest_document: dict, state: dict, host: str, index: int,
         duration_seconds: float, interval_seconds: float, max_iterations: int,
         execute: bool, url: str | None, monotonic=time.monotonic,
-        sleep=time.sleep) -> dict:
+        sleep=time.sleep, should_stop=None, heartbeat=None) -> dict:
     """Bounded, serialized synthetic lease cycles with token-fenced release."""
     manifest = validate_manifest_document(manifest_document)
     validate_state(manifest, state)
@@ -47,6 +48,8 @@ def run(*, manifest_document: dict, state: dict, host: str, index: int,
         raise ValueError("host not enabled in manifest")
     worker = WorkerConfig.build(host=host, worker_index=index,
                                 workers_on_host=count, run_id=manifest.run_id)
+    if should_stop is None:
+        should_stop = lambda: _stop
     report = {
         "run_id": manifest.run_id, "manifest_sha256": manifest.report()["sha256"],
         "host": host, "worker_index": index,
@@ -54,7 +57,8 @@ def run(*, manifest_document: dict, state: dict, host: str, index: int,
         "mode": "synthetic-d2-soak" if execute else "dry-run",
         "http_requests": 0, "claims": 0, "releases": 0,
         "empty_polls": 0, "lease_losses": 0, "iterations": 0,
-        "duration_seconds": duration_seconds,
+        "duration_seconds": duration_seconds, "errors": 0,
+        "started_at": datetime.now(timezone.utc).isoformat(),
     }
     if not execute:
         return report
@@ -70,7 +74,7 @@ def run(*, manifest_document: dict, state: dict, host: str, index: int,
                                   collector_uuid=worker.collector_uuid, host=host)
             conn.rollback()
         deadline = monotonic() + duration_seconds
-        while not _stop and monotonic() < deadline and report["iterations"] < max_iterations:
+        while not should_stop() and monotonic() < deadline and report["iterations"] < max_iterations:
             report["iterations"] += 1
             with engine.begin() as conn:
                 job = claim_next_job(conn, collector_uuid=worker.collector_uuid,
@@ -89,9 +93,12 @@ def run(*, manifest_document: dict, state: dict, host: str, index: int,
                 else:
                     report["lease_losses"] += 1
             remaining = deadline - monotonic()
-            if remaining > 0 and not _stop:
+            if heartbeat is not None:
+                heartbeat(dict(report))
+            if remaining > 0 and not should_stop():
                 sleep(min(interval_seconds, remaining))
-        report["status"] = "stopped" if _stop else "complete"
+        report["status"] = "stopped" if should_stop() else "complete"
+        report["finished_at"] = datetime.now(timezone.utc).isoformat()
         return report
     finally:
         engine.dispose()
@@ -106,12 +113,23 @@ def main(argv=None):
     parser.add_argument("--interval-seconds", type=float, default=1.0)
     parser.add_argument("--max-iterations", type=int, default=100000)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--report", type=Path, help="Restricted JSON summary path")
+    parser.add_argument("--heartbeat", type=Path, help="Restricted JSONL progress path")
     args = parser.parse_args(argv)
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
     try:
         doc = json.loads(args.manifest.read_text())
         state = json.loads(args.state.read_text())
+        if args.report is not None and args.report.exists():
+            raise ValueError("REFUSING existing report")
+        if args.heartbeat is not None and args.heartbeat.exists():
+            raise ValueError("REFUSING existing heartbeat")
+        def write_heartbeat(item):
+            if args.heartbeat is not None:
+                fd = os.open(args.heartbeat, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+                with os.fdopen(fd, "a", encoding="utf-8") as stream:
+                    stream.write(json.dumps(item, sort_keys=True) + "\\n")
         report = run(manifest_document=doc, state=state,
                      host=socket.gethostname().split(".")[0].lower(),
                      index=args.worker_index,
@@ -119,7 +137,13 @@ def main(argv=None):
                      interval_seconds=args.interval_seconds,
                      max_iterations=args.max_iterations,
                      execute=args.execute,
-                     url=os.environ.get("BF4PS_STAGE9C_D2_URL"))
+                     url=os.environ.get("BF4PS_STAGE9C_D2_URL"),
+                     heartbeat=write_heartbeat)
+        if args.report is not None:
+            fd = os.open(args.report, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                json.dump(report, stream, sort_keys=True)
+                stream.write("\\n")
         print(json.dumps(report, sort_keys=True), flush=True)
     except (OSError, ValueError, RuntimeError, TypeError, KeyError) as exc:
         parser.error(str(exc))
