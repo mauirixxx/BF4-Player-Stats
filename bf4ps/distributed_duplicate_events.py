@@ -104,10 +104,10 @@ def record_discarded_duplicate(
                  'collection_duplicate_discarded', :attempt_number,
                  'duplicate_discarded', :duration_ms, :http_status,
                  jsonb_build_object(
-                     'original_job_id', :job_id,
-                     'original_collector_uuid', :collector_uuid,
-                     'original_lease_token', :lease_token,
-                     'winner_event_id', :winner_event_id,
+                     'original_job_id', CAST(:job_id AS bigint),
+                     'original_collector_uuid', CAST(:collector_uuid AS text),
+                     'original_lease_token', CAST(:lease_token AS text),
+                     'winner_event_id', CAST(:winner_event_id AS bigint),
                      'reason', 'confirmed_competing_success'))
         """),
         {
