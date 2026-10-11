@@ -1,0 +1,3 @@
+# D2 guarded worker integration checklist
+
+The worker entry point must explicitly pass `pre_http_admission=admit_physical_start` to `collect_one_detailed_job`. Use the existing three collector UUIDs, shared unrestricted nine-soldier cohort, 108 global ceiling, baseline event 109, ten-second egress interval, 120-second lease, thirty-second timeout, and 3600-second retry delay. Require the isolated D2 schema revision 0006, running soak state, unexpired deadline, and an enqueued round. Refuse execution by default unless an explicit operator execute flag is present. Do not ignite the run automatically. Run rollback-only and crash/restart tests before real HTTP. No production changes.
