@@ -11,6 +11,7 @@ import os
 import socket
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from scripts.phase5b_three_site_manifest import validate_manifest_document
@@ -49,11 +50,25 @@ def main(argv=None):
             ]
             processes.append((index, subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)))
+        # One host-wide deadline; detect failures without waiting on earlier workers.
+        deadline = time.monotonic() + a.duration_seconds + 45
+        pending = {index: proc for index, proc in processes}
+        while pending:
+            for index, proc in list(pending.items()):
+                result = proc.poll()
+                if result is None:
+                    continue
+                if result:
+                    _, err = proc.communicate()
+                    raise RuntimeError(f"worker {index} failed ({result}): {err[-500:]}")
+                pending.pop(index)
+            if pending:
+                if time.monotonic() >= deadline:
+                    raise RuntimeError(f"host soak deadline exceeded; pending workers: {sorted(pending)}")
+                time.sleep(min(0.1, max(0, deadline - time.monotonic())))
         reports = []
         for index, proc in processes:
-            out, err = proc.communicate(timeout=a.duration_seconds + 45)
-            if proc.returncode:
-                raise RuntimeError(f"worker {index} failed ({proc.returncode}): {err[-500:]}")
+            out, err = proc.communicate()
             report = json.loads(out)
             if (report["status"] != "complete" or report["claims"] != report["releases"]
                     or report["lease_losses"] or report["http_requests"] or report["errors"]):
@@ -74,6 +89,10 @@ def main(argv=None):
                 except subprocess.TimeoutExpired:
                     proc.kill()
                     proc.wait()
+        for _, proc in processes:
+            if proc.poll() is not None:
+                proc.communicate()
+
 
 
 if __name__ == "__main__":
