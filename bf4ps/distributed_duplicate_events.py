@@ -54,8 +54,10 @@ def record_discarded_duplicate(
 ) -> bool:
     """Record a confirmed redundant completed fetch; never store its payload.
 
-    Returns False if no committed winner is visible. Job ID is deliberately
-    metadata-only because successful collection deletes collection_jobs.
+    Returns True if a confirmed duplicate was handled, including a previously
+    recorded duplicate for the same attempt. Returns False only when no
+    committed winner is visible. Job ID is metadata-only because successful
+    collection deletes collection_jobs.
     """
     if job.resource not in {"detailed", "weapons", "vehicles"}:
         raise ValueError("unsupported retained resource")
@@ -88,7 +90,7 @@ def record_discarded_duplicate(
          "attempt_number": job.attempt_count},
     ).one_or_none()
     if already_recorded is not None:
-        return False
+        return True
     verdict = classify_stale_result(conn, job=job)
     if not verdict.duplicate:
         return False
