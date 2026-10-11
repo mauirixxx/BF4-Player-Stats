@@ -6,7 +6,7 @@
 
 For every real time `t`, actual physical HTTP request dispatches across all BF4PS collectors, gateways, redirects, retries, proxies and egress paths in the rolling interval `(t-3600,t]` must be at most **1296**. This is an **actual-send** constraint, not a cap on job claims, reservations, responses, or logical fetches. Safety must survive network partitions, stale senders, process restarts and PostgreSQL failover. If proof is unavailable, deny new sends.
 
-The 2026-10-11 two-hour synthetic soak passed (eight workers, three sites, 97,533 balanced claim/release cycles, zero lease losses and HTTP), but is **not** evidence of this physical-send bound.
+The 2026-10-11 two-hour synthetic soak passed (eight workers, three sites, 97,733 balanced claim/release cycles, zero lease losses and HTTP), but is **not** evidence of this physical-send bound.
 
 ## Evidence and remaining proof obligations
 
