@@ -59,7 +59,7 @@ def run(url: str) -> None:
                      event_type,attempt_number,result,metadata)
                 VALUES (:job_id,:soldier_id,1,'pc','detailed','background',
                         'collection_success',2,'success',
-                        jsonb_build_object('synthetic_marker',:marker))
+                        jsonb_build_object('synthetic_marker',CAST(:marker AS text)))
             """), {"job_id": job_id, "soldier_id": soldier_id, "marker": marker})
         job = ClaimedJob(job_id, soldier_id, "detailed", "background", 1, uuid4(), lease)
         barrier = Barrier(2)
