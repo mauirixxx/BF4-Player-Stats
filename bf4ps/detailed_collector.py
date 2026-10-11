@@ -365,8 +365,8 @@ def collect_one_detailed_job(
                 duration_ms=duration_ms,
                 http_status=200,
             )
-    except RuntimeError as exc:
-        if str(exc) in {
+    except Exception as exc:
+        if isinstance(exc, RuntimeError) and str(exc) in {
             "detailed success rejected: job lease is no longer owned",
             "detailed success rejected during finalization: lease ownership lost",
         }:
@@ -381,8 +381,6 @@ def collect_one_detailed_job(
                     duration_ms=duration_ms, http_status=200,
                 ):
                     return None
-        raise
-    except Exception as exc:
         _record_detailed_persistence_failure(
             engine,
             job=job,
