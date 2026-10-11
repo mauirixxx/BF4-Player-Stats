@@ -13,7 +13,7 @@ from bf4ps.weapon_collector import CollectorIdentity as WeaponIdentity,Collected
 from bf4ps.vehicle_collector import CollectorIdentity as VehicleIdentity,CollectedVehicleJob,collect_one_vehicle_job
 from scripts.stage9c_three_site_live_ignition import engine,validate,COHORT,NODES,UUIDS
 RESOURCES=("weapons","vehicles")
-BASELINE=18
+BASELINE=50
 MAX_ATTEMPTS=18
 TABLES={"weapons":"soldier_weapon_stats","vehicles":"soldier_vehicle_stats"}
 
