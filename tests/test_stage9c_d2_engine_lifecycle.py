@@ -149,3 +149,10 @@ def test_worker_rejects_incomplete_site_mapping_without_collection():
         with pytest.raises(RuntimeError, match="invalid soldier mapping"):
             guarded._work_with_engine("tcou", db)
     collect.assert_not_called()
+
+
+def test_all_three_sites_have_disjoint_three_persona_assignments():
+    from scripts.stage9c_three_site_live_ignition import COHORT, NODES
+    groups = {site: {persona for _, persona, owner in COHORT if owner == site} for site in NODES}
+    assert all(len(group) == 3 for group in groups.values())
+    assert len(set.union(*groups.values())) == 9
