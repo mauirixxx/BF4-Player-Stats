@@ -58,20 +58,16 @@ def worker_loop(node):
         e.dispose()
 
 def _worker_loop_with_engine(node,e):
-    db_failures=0
     while True:
         try:
             result=work(node,db_engine=e)
-            db_failures=0
             if result is not None:print("SOAK WORK",node,repr(result),flush=True)
             else:time.sleep(3)
         except (OperationalError, SQLAlchemyTimeoutError) as exc:
-            # The collector may have reached HTTP. Never replay it blindly.
-            # Wait for the lease to expire and let the DB's durable state decide.
-            db_failures+=1
-            delay=min(120, 15 * (2 ** min(db_failures-1, 3)))
-            print("SOAK DB UNAVAILABLE",node,repr(exc),"backoff_seconds",delay,flush=True)
-            time.sleep(delay)
+            # Ambiguous: the HTTP-capable collector may already have sent a request.
+            # Fail closed; never replay it without durable reconciliation.
+            print("SOAK DB ERROR: manual reconciliation required",node,repr(exc),flush=True)
+            raise
         except RuntimeError as exc:
             if str(exc) in ("SOAK BLOCK: run not running","SOAK BLOCK: deadline expired"):
                 print("SOAK WORKER STOP",node,str(exc),flush=True)
