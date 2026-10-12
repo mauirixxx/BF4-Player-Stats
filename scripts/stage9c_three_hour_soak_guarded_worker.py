@@ -1,7 +1,7 @@
 """Isolated D2 guarded soak worker; no automatic ignition."""
 import argparse
 import os
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 from bf4ps.detailed_collector import CollectorIdentity, collect_one_detailed_job
 from scripts.stage9c_three_site_live_ignition import engine, NODES, RUN, UUIDS
 from scripts.stage9c_three_hour_soak_cohort import cohort_ids
@@ -23,10 +23,23 @@ def preflight(conn,node):
         raise RuntimeError("SOAK BLOCK: no enqueued round")
     return ids
 
-def work(node):
+def soak_engine():
+    """Bound one D2 worker process to one pooled database connection."""
+    return create_engine(os.environ["BF4PS_STAGE9C_D2_URL"], pool_size=1,
+                         max_overflow=0, pool_timeout=5, pool_pre_ping=True)
+
+def work(node, *, db_engine=None):
     if node not in NODES or os.uname().nodename!=node:
         raise RuntimeError("SOAK BLOCK: hostname mismatch")
-    e=engine()
+    owned = db_engine is None
+    e = soak_engine() if owned else db_engine
+    try:
+        return _work_with_engine(node, e)
+    finally:
+        if owned:
+            e.dispose()
+
+def _work_with_engine(node, e):
     with e.connect() as conn:
         ids=preflight(conn,node)
     identity=CollectorIdentity(
@@ -50,8 +63,12 @@ def main():
     if a.command=="work" and not a.execute:
         p.error("work requires --execute")
     if a.command=="preflight":
-        with engine().connect() as conn:
-            preflight(conn,a.node)
+        e = soak_engine()
+        try:
+            with e.connect() as conn:
+                preflight(conn,a.node)
+        finally:
+            e.dispose()
         print("SOAK PREFLIGHT PASS",a.node)
     else:
         print("SOAK WORKER RESULT",work(a.node),flush=True)
