@@ -1,0 +1,2108 @@
+{
+  "purpose": "D3 real data ramp identity candidates only; not approved for HTTP",
+  "source": "scripts/phase4c_cohort.py; historical bf4_playerstats_test soldier IDs are not valid IDs in D3",
+  "selection": "first 100 per platform from frozen historical 150/platform; round-robin sites offset by platform",
+  "status": "READ_ONLY_CANDIDATES_UNVALIDATED_IN_TARGET",
+  "rows": [
+    {
+      "source_soldier_id": 1728,
+      "persona_id": 354253499,
+      "name": "CabraSux",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1729,
+      "persona_id": 354412344,
+      "name": "Chaos_Kildar",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1730,
+      "persona_id": 354451237,
+      "name": "taffylewis1",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1731,
+      "persona_id": 354638505,
+      "name": "quakeI337",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1732,
+      "persona_id": 354660358,
+      "name": "XPrincessaMiaX",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1733,
+      "persona_id": 354682114,
+      "name": "Yragan152",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1734,
+      "persona_id": 354699822,
+      "name": "IgnoranceIsBliss",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1735,
+      "persona_id": 354813775,
+      "name": "Dapy26",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1736,
+      "persona_id": 354838051,
+      "name": "Neldoreth_Inf",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1737,
+      "persona_id": 354917894,
+      "name": "KgE8tWLm4eF",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1738,
+      "persona_id": 354962034,
+      "name": "TheDude_DC",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1739,
+      "persona_id": 355003763,
+      "name": "82Shadow",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1740,
+      "persona_id": 355111212,
+      "name": "xMxkxL",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1741,
+      "persona_id": 355164825,
+      "name": "Den501GG",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1742,
+      "persona_id": 355290710,
+      "name": "manaito",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1743,
+      "persona_id": 355344746,
+      "name": "tossyok",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1744,
+      "persona_id": 355432630,
+      "name": "whitefox2298",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1745,
+      "persona_id": 355496105,
+      "name": "Fieldflashfilda",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1746,
+      "persona_id": 355597712,
+      "name": "SAPUDDY",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1747,
+      "persona_id": 355642152,
+      "name": "DoctorTche",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1748,
+      "persona_id": 355828506,
+      "name": "SandMan3419",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1749,
+      "persona_id": 355857736,
+      "name": "DAMSKIYGODNIK2I7",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1750,
+      "persona_id": 356116662,
+      "name": "IIDUDETORII",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1751,
+      "persona_id": 356142187,
+      "name": "DOMINATRIX-SPAIN",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1752,
+      "persona_id": 356326767,
+      "name": "killcty",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1753,
+      "persona_id": 356501904,
+      "name": "august023",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1754,
+      "persona_id": 356526637,
+      "name": "Matlock248",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1755,
+      "persona_id": 356666940,
+      "name": "Kiwimadd",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1756,
+      "persona_id": 356862023,
+      "name": "MadMax0067",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1757,
+      "persona_id": 356966861,
+      "name": "Dr_Ninja1",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1758,
+      "persona_id": 357076430,
+      "name": "flangemike",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1759,
+      "persona_id": 357147249,
+      "name": "RagnarHES",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1760,
+      "persona_id": 357204667,
+      "name": "Moosbur",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1761,
+      "persona_id": 357598399,
+      "name": "Glassbreak_F20",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1762,
+      "persona_id": 357605132,
+      "name": "VILLAGEWEIRDO",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1763,
+      "persona_id": 357632478,
+      "name": "SIBIRYAK_RU",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1764,
+      "persona_id": 357715965,
+      "name": "cor_atrum",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1765,
+      "persona_id": 357742109,
+      "name": "MustanGT70",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1766,
+      "persona_id": 357767466,
+      "name": "Gevaermann",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1767,
+      "persona_id": 357803764,
+      "name": "DeVascon1957",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1768,
+      "persona_id": 357900934,
+      "name": "Ivan-Lu1z",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1769,
+      "persona_id": 357955615,
+      "name": "D0GFACE_JIM",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1770,
+      "persona_id": 358007792,
+      "name": "misiukosta",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1771,
+      "persona_id": 358096002,
+      "name": "Kankey",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1772,
+      "persona_id": 358605531,
+      "name": "ForestDm",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1773,
+      "persona_id": 358982465,
+      "name": "mongul1997",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1774,
+      "persona_id": 359007415,
+      "name": "Mirtav",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1775,
+      "persona_id": 359554335,
+      "name": "MeuchteFoese",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1776,
+      "persona_id": 359936056,
+      "name": "airbornevet78",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1777,
+      "persona_id": 359973505,
+      "name": "pmarTrepuS",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1778,
+      "persona_id": 360110994,
+      "name": "dz-zhou",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1779,
+      "persona_id": 360127630,
+      "name": "IgorKaz22",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1780,
+      "persona_id": 360968821,
+      "name": "FatDon_1",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1781,
+      "persona_id": 361290325,
+      "name": "riipm4x",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1782,
+      "persona_id": 361330423,
+      "name": "YouRustInPeace",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1783,
+      "persona_id": 361486403,
+      "name": "dirtysamuel",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1784,
+      "persona_id": 361496429,
+      "name": "ESPerroSanchez",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1785,
+      "persona_id": 361521395,
+      "name": "MiscreantFRINGE",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1786,
+      "persona_id": 361717602,
+      "name": "Amstaffer",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1787,
+      "persona_id": 361863149,
+      "name": "JohnTequila",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1788,
+      "persona_id": 362157976,
+      "name": "se4t07",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1789,
+      "persona_id": 362224438,
+      "name": "achilles182",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1790,
+      "persona_id": 362254142,
+      "name": "BERC75",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1791,
+      "persona_id": 362285951,
+      "name": "-tiGEReyezz-",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1792,
+      "persona_id": 362318741,
+      "name": "seqrviator",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1793,
+      "persona_id": 362323595,
+      "name": "CHRSRCKT",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1794,
+      "persona_id": 362378968,
+      "name": "fm_crab",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1795,
+      "persona_id": 362515455,
+      "name": "HALPERTjim",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1796,
+      "persona_id": 362536126,
+      "name": "Trumppoilthief",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1797,
+      "persona_id": 362536994,
+      "name": "_V5G_4X1_",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1798,
+      "persona_id": 362619981,
+      "name": "uesi69",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1799,
+      "persona_id": 362713349,
+      "name": "Burzator",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1800,
+      "persona_id": 362845134,
+      "name": "SigSlays",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1801,
+      "persona_id": 362855697,
+      "name": "FragRounds4u",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1802,
+      "persona_id": 362878269,
+      "name": "IVskin",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1803,
+      "persona_id": 362878661,
+      "name": "mdmale",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1804,
+      "persona_id": 363002664,
+      "name": "vee-duber",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1805,
+      "persona_id": 363058752,
+      "name": "dograce06",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1806,
+      "persona_id": 363076213,
+      "name": "Jinharo",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1807,
+      "persona_id": 363090207,
+      "name": "PHIOLEe",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1808,
+      "persona_id": 363100040,
+      "name": "Demonotorium",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1809,
+      "persona_id": 363103176,
+      "name": "EdigarAs0",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1810,
+      "persona_id": 363104238,
+      "name": "Pagan008",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1811,
+      "persona_id": 363106014,
+      "name": "ToroZ-W",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1812,
+      "persona_id": 363130274,
+      "name": "M0RG13",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1813,
+      "persona_id": 363147186,
+      "name": "NeophyteITA",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1814,
+      "persona_id": 363153402,
+      "name": "AirBorne_1812",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1815,
+      "persona_id": 363169180,
+      "name": "JAWBR3AKER69",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1816,
+      "persona_id": 363189779,
+      "name": "ThinkLaterDieNow",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1817,
+      "persona_id": 363241989,
+      "name": "Mormegil_16",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1818,
+      "persona_id": 363273837,
+      "name": "Xx---Amilo---xX",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1819,
+      "persona_id": 363326459,
+      "name": "BlinkBlinkDead",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1820,
+      "persona_id": 363345150,
+      "name": "6_5_Grendel_USA",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1821,
+      "persona_id": 363444529,
+      "name": "fartonu",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1822,
+      "persona_id": 363465888,
+      "name": "xGorillaUnitx",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1823,
+      "persona_id": 363465944,
+      "name": "yoda_6666",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1824,
+      "persona_id": 363468509,
+      "name": "Werewolf525",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1825,
+      "persona_id": 363490977,
+      "name": "VanSag2025",
+      "platform": "pc",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1826,
+      "persona_id": 363547786,
+      "name": "BraveFartX",
+      "platform": "pc",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1827,
+      "persona_id": 363584892,
+      "name": "joep3nl",
+      "platform": "pc",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8741,
+      "persona_id": 886105093,
+      "name": "RonJBurgundy",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8742,
+      "persona_id": 886162551,
+      "name": "DA-DUKE",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8743,
+      "persona_id": 890575243,
+      "name": "ToriFaith",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8744,
+      "persona_id": 890895330,
+      "name": "DryBones444",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8745,
+      "persona_id": 904587861,
+      "name": "sky_line-R32",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8746,
+      "persona_id": 904805418,
+      "name": "Kleber-321",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8747,
+      "persona_id": 905354443,
+      "name": "coc1965",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8748,
+      "persona_id": 906790001,
+      "name": "L-E-O-II",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8749,
+      "persona_id": 912856022,
+      "name": "Architekt187",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8750,
+      "persona_id": 914954346,
+      "name": "ILUV40S",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8751,
+      "persona_id": 927147929,
+      "name": "mafia_boss95",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8752,
+      "persona_id": 931079162,
+      "name": "Hendrix89-",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8753,
+      "persona_id": 932580361,
+      "name": "ki61ki84",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8754,
+      "persona_id": 933276610,
+      "name": "loop-mo",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8755,
+      "persona_id": 936351122,
+      "name": "Super_Soldier213",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8756,
+      "persona_id": 940453310,
+      "name": "Killjoybadger",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8757,
+      "persona_id": 943868939,
+      "name": "L880K",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8758,
+      "persona_id": 944501377,
+      "name": "Chase7642",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8759,
+      "persona_id": 944510674,
+      "name": "letsknifefight",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8760,
+      "persona_id": 946649313,
+      "name": "That_Boi_Pac",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8761,
+      "persona_id": 947095378,
+      "name": "God_of_BF",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8762,
+      "persona_id": 947488006,
+      "name": "SerHedgeKnight",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8763,
+      "persona_id": 952713266,
+      "name": "ThePaintInhaler",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8764,
+      "persona_id": 957318383,
+      "name": "Zv--CriMiNaLz-vZ",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8765,
+      "persona_id": 958057731,
+      "name": "guatemala1967",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8766,
+      "persona_id": 958773835,
+      "name": "paratrooper6655",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8767,
+      "persona_id": 961346498,
+      "name": "Nigtachi_",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8768,
+      "persona_id": 962150040,
+      "name": "MK_klash",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8769,
+      "persona_id": 962483015,
+      "name": "laurionlinessa",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8770,
+      "persona_id": 963411288,
+      "name": "joe_eff",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8771,
+      "persona_id": 964287298,
+      "name": "uc93p",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8772,
+      "persona_id": 974552167,
+      "name": "The_Awaken_Few",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8773,
+      "persona_id": 975083316,
+      "name": "lilbonez1",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8774,
+      "persona_id": 980268481,
+      "name": "iliktumuvitmuvit",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8775,
+      "persona_id": 980753836,
+      "name": "Lightning-III",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8776,
+      "persona_id": 981060612,
+      "name": "P-M_cha",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8777,
+      "persona_id": 981873844,
+      "name": "cy3621",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8778,
+      "persona_id": 984117793,
+      "name": "Kanki_216",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8779,
+      "persona_id": 985431835,
+      "name": "Kxn_omarr",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8780,
+      "persona_id": 987660347,
+      "name": "Dolan0528",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8781,
+      "persona_id": 992077908,
+      "name": "crusty_ol_dude",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8782,
+      "persona_id": 992786048,
+      "name": "raze-in-a-face",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8783,
+      "persona_id": 993033605,
+      "name": "krokodil_gescha",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8784,
+      "persona_id": 994450558,
+      "name": "ibupurofen450mg",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8785,
+      "persona_id": 994705743,
+      "name": "fernandez1204",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8786,
+      "persona_id": 994723743,
+      "name": "felipebarral",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8787,
+      "persona_id": 994863532,
+      "name": "noriotakei",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8788,
+      "persona_id": 998084203,
+      "name": "Epiphaneia-JC",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8789,
+      "persona_id": 999516932,
+      "name": "KrazyK0802",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8790,
+      "persona_id": 999731420,
+      "name": "tarutaru___",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8791,
+      "persona_id": 1004194389,
+      "name": "DAST0120",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8792,
+      "persona_id": 1005915697,
+      "name": "MartineDawn_",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8793,
+      "persona_id": 1014649924,
+      "name": "DrCoxmsk",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8794,
+      "persona_id": 1015314624,
+      "name": "Ahmad1301",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8795,
+      "persona_id": 1018228186,
+      "name": "ZumiHiko_pan",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8796,
+      "persona_id": 1024127676,
+      "name": "theunusedgamer91",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8797,
+      "persona_id": 1029426968,
+      "name": "Gorkini7",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8798,
+      "persona_id": 1031106231,
+      "name": "tote1224",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8799,
+      "persona_id": 1038339135,
+      "name": "jeanrodrigues201",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8800,
+      "persona_id": 1040815659,
+      "name": "PawnToBeWild",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8801,
+      "persona_id": 1043113875,
+      "name": "McRibEater",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8802,
+      "persona_id": 1051091819,
+      "name": "claudioboxe",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8803,
+      "persona_id": 1054257626,
+      "name": "EdenVibe",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8804,
+      "persona_id": 1064055887,
+      "name": "SAMURAl-0729",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8805,
+      "persona_id": 1077479006,
+      "name": "Adachlys",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8806,
+      "persona_id": 1095441982,
+      "name": "Slykier",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8807,
+      "persona_id": 1105136474,
+      "name": "YoungDrippy630",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8808,
+      "persona_id": 1111963648,
+      "name": "utdkaya1",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8809,
+      "persona_id": 1112261394,
+      "name": "TheGreyPilgrim03",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8810,
+      "persona_id": 1115891558,
+      "name": "mystangblue94",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8811,
+      "persona_id": 1121967546,
+      "name": "Double_D_Dog_75",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8812,
+      "persona_id": 1122199533,
+      "name": "PAULIE0828",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8813,
+      "persona_id": 1124532570,
+      "name": "llarmandoGx1",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8814,
+      "persona_id": 1128330040,
+      "name": "Ko0304-1107",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8815,
+      "persona_id": 1131451356,
+      "name": "sin-arice-0728",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8816,
+      "persona_id": 1134438711,
+      "name": "courtney_collins",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8817,
+      "persona_id": 1138010438,
+      "name": "Toke1973",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8818,
+      "persona_id": 1139721460,
+      "name": "pabcu250",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8819,
+      "persona_id": 1145750987,
+      "name": "tjinthehood",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8820,
+      "persona_id": 1171962204,
+      "name": "akamamire69",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8821,
+      "persona_id": 1177277375,
+      "name": "xandelopess",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8822,
+      "persona_id": 1222034326,
+      "name": "Madreeewww",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8823,
+      "persona_id": 1228155167,
+      "name": "Noakie_92",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8824,
+      "persona_id": 1230118294,
+      "name": "l3Str8Heat3l",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8825,
+      "persona_id": 1232133435,
+      "name": "Stevehiroki",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8826,
+      "persona_id": 1244190515,
+      "name": "LA_Hoschi",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8827,
+      "persona_id": 1257280384,
+      "name": "kart-96666",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8828,
+      "persona_id": 1263004220,
+      "name": "ArizonaRaw",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8829,
+      "persona_id": 1282101333,
+      "name": "CDUBnc",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8830,
+      "persona_id": 1303352422,
+      "name": "s1gl3r22",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8831,
+      "persona_id": 1306301785,
+      "name": "b1sh5",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8832,
+      "persona_id": 1308369443,
+      "name": "cmp123456789",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8833,
+      "persona_id": 1325411024,
+      "name": "subtoxic54",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8834,
+      "persona_id": 1340432755,
+      "name": "smokeblack55",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8835,
+      "persona_id": 1370040931,
+      "name": "Firo-Forger",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8836,
+      "persona_id": 1381748731,
+      "name": "skunks1001",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8837,
+      "persona_id": 1389015099,
+      "name": "Zeeyon-777",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 8838,
+      "persona_id": 1429769627,
+      "name": "KiNgZ_SnAke",
+      "platform": "ps4",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 8839,
+      "persona_id": 1453958537,
+      "name": "Tucan-Seltzer",
+      "platform": "ps4",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 8840,
+      "persona_id": 1469551614,
+      "name": "sebbi_evans",
+      "platform": "ps4",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1147,
+      "persona_id": 1006766564389,
+      "name": "Otec90",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1148,
+      "persona_id": 1006904839132,
+      "name": "Samuel FQ",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1149,
+      "persona_id": 1006936560319,
+      "name": "xD34R5ANT4x",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1150,
+      "persona_id": 1007106060576,
+      "name": "More2569",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1151,
+      "persona_id": 1007122113011,
+      "name": "Grek8122",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1152,
+      "persona_id": 1007158529835,
+      "name": "HK Waxie",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1153,
+      "persona_id": 1007239765330,
+      "name": "OGchezzzy",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1154,
+      "persona_id": 1007279602657,
+      "name": "FIags",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1155,
+      "persona_id": 1007507453617,
+      "name": "Me YYDS4252",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1156,
+      "persona_id": 1007521554837,
+      "name": "FINAL Cri3s",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1157,
+      "persona_id": 1007523090424,
+      "name": "D1MEBAG357",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1158,
+      "persona_id": 1007536144025,
+      "name": "SadlerWade",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1159,
+      "persona_id": 1007691841763,
+      "name": "BvG Venom",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1160,
+      "persona_id": 1007699919178,
+      "name": "TacitZ1417",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1161,
+      "persona_id": 1007759018754,
+      "name": "El charles5220",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1162,
+      "persona_id": 1007866763018,
+      "name": "Geedup6625",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1163,
+      "persona_id": 1007934429227,
+      "name": "BurnZilda9483",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1164,
+      "persona_id": 1007998957839,
+      "name": "Sloppyslap3877",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1165,
+      "persona_id": 1008073109366,
+      "name": "Zendejas550",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1166,
+      "persona_id": 1008085083565,
+      "name": "seanhyena26",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1167,
+      "persona_id": 1008149124069,
+      "name": "ZloyDed4236",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1168,
+      "persona_id": 1008177322993,
+      "name": "Tacosdpr0XD",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1169,
+      "persona_id": 1008196030608,
+      "name": "Voyager2978",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1170,
+      "persona_id": 1008251314771,
+      "name": "KILLERSTPBRO",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1171,
+      "persona_id": 1008265348615,
+      "name": "pakos6163",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1172,
+      "persona_id": 1008290618743,
+      "name": "RandyLahey4997",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1173,
+      "persona_id": 1008338463751,
+      "name": "Wizgame9165",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1174,
+      "persona_id": 1008349286600,
+      "name": "ShaneHaveHam622",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1175,
+      "persona_id": 1008361711187,
+      "name": "East Asian6253",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1176,
+      "persona_id": 1008365940766,
+      "name": "BARBAdeBIXO",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1177,
+      "persona_id": 1008365965843,
+      "name": "Clinton6015",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1178,
+      "persona_id": 1008438110072,
+      "name": "Snaipr56iraq",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1179,
+      "persona_id": 1008521099696,
+      "name": "ADuckOnQuack573",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1180,
+      "persona_id": 1008571873176,
+      "name": "Popeye531778",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1181,
+      "persona_id": 1008577770665,
+      "name": "GlazeGlizzer",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1182,
+      "persona_id": 1008611441102,
+      "name": "Guardiank8560",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1183,
+      "persona_id": 1008669258286,
+      "name": "BricksOfSnow",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1184,
+      "persona_id": 1008673701642,
+      "name": "Nickkutte",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1185,
+      "persona_id": 1008827278286,
+      "name": "fweedomfytur",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1186,
+      "persona_id": 1008896830423,
+      "name": "BickleBilly",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1187,
+      "persona_id": 1009177364581,
+      "name": "Monsterman22694",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1188,
+      "persona_id": 1009207622384,
+      "name": "Vigyori20",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1189,
+      "persona_id": 1009239704219,
+      "name": "BrunoCrazy0071",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1190,
+      "persona_id": 1009259285041,
+      "name": "MindPhahKinU",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1191,
+      "persona_id": 1009326899615,
+      "name": "PositivPercy",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1192,
+      "persona_id": 1009333458616,
+      "name": "peepjason",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1193,
+      "persona_id": 1009478702946,
+      "name": "Karim1261151",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1194,
+      "persona_id": 1009586088934,
+      "name": "Twisted Tex5896",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1195,
+      "persona_id": 1009634104061,
+      "name": "SteveO1925",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1196,
+      "persona_id": 1009652498333,
+      "name": "Readeup",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1197,
+      "persona_id": 1009652819198,
+      "name": "illnhess",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1198,
+      "persona_id": 1009755077745,
+      "name": "Danwolf07119155",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1199,
+      "persona_id": 1009814828166,
+      "name": "OMiNoUsWoRlD191",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1200,
+      "persona_id": 1010166638868,
+      "name": "Fat Hadl3y",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1201,
+      "persona_id": 1010775095190,
+      "name": "DizzyDwarf6138",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 1202,
+      "persona_id": 1011030545969,
+      "name": "SwellGoose6515",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 1203,
+      "persona_id": 1012400124836,
+      "name": "Bobert2x",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 1204,
+      "persona_id": 1012525124554,
+      "name": "UnitedAsp4441",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9360,
+      "persona_id": 442608,
+      "name": "JohnP77",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9361,
+      "persona_id": 469809,
+      "name": "BOSSMAN1005",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9362,
+      "persona_id": 617962,
+      "name": "DW76",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9363,
+      "persona_id": 36700082,
+      "name": "Real CorkLanger",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9364,
+      "persona_id": 169522582,
+      "name": "LabaFIN",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9365,
+      "persona_id": 170186032,
+      "name": "II M33SH II",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9366,
+      "persona_id": 170214772,
+      "name": "ZAMUNDAKING",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9367,
+      "persona_id": 170614350,
+      "name": "NYstryker",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9368,
+      "persona_id": 172063283,
+      "name": "Cpt Winky 85",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9369,
+      "persona_id": 174442523,
+      "name": "NeuroticAlias",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9370,
+      "persona_id": 174446542,
+      "name": "Gavinda Jai Jai",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9371,
+      "persona_id": 174622047,
+      "name": "FNGTOTZ",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9372,
+      "persona_id": 175736229,
+      "name": "BONE SANDWICH",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9373,
+      "persona_id": 175926028,
+      "name": "MTF Silent",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9374,
+      "persona_id": 176023441,
+      "name": "alxc7",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9375,
+      "persona_id": 177254671,
+      "name": "LoneStarBred",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9376,
+      "persona_id": 178754842,
+      "name": "vivahuntsvegas",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9377,
+      "persona_id": 179595627,
+      "name": "LORDxHELMUT",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9378,
+      "persona_id": 181768837,
+      "name": "White Knight524",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9379,
+      "persona_id": 182576906,
+      "name": "Spears221",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9380,
+      "persona_id": 182827157,
+      "name": "system debugger",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9381,
+      "persona_id": 182861726,
+      "name": "Taxi Jef",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9382,
+      "persona_id": 182885010,
+      "name": "JSHADOW1",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9383,
+      "persona_id": 183286183,
+      "name": "LORDVADER708763",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9384,
+      "persona_id": 184208522,
+      "name": "That Fitz Kid",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9385,
+      "persona_id": 184391328,
+      "name": "biggbadteeroy",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9386,
+      "persona_id": 184783855,
+      "name": "Sentenza1955",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9387,
+      "persona_id": 185530358,
+      "name": "Nottheone10",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9388,
+      "persona_id": 185874722,
+      "name": "Bambammonkey911",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9389,
+      "persona_id": 186110462,
+      "name": "Asylum Shepard",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9390,
+      "persona_id": 186224769,
+      "name": "LonelySix",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9391,
+      "persona_id": 186585319,
+      "name": "Katzengott",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9392,
+      "persona_id": 186705922,
+      "name": "fubofam",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9393,
+      "persona_id": 187514920,
+      "name": "LeadFarmer559",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9394,
+      "persona_id": 187936532,
+      "name": "FIRE MAC77",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9395,
+      "persona_id": 189599196,
+      "name": "HABSPOV",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9396,
+      "persona_id": 190566669,
+      "name": "darkstalker fc",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9397,
+      "persona_id": 191111900,
+      "name": "Ju5t A FRIDGE",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9398,
+      "persona_id": 192656266,
+      "name": "XPLORAH",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    },
+    {
+      "source_soldier_id": 9399,
+      "persona_id": 192711282,
+      "name": "CB Judo",
+      "platform": "xboxone",
+      "site": "tcou"
+    },
+    {
+      "source_soldier_id": 9400,
+      "persona_id": 194632283,
+      "name": "RemiX025",
+      "platform": "xboxone",
+      "site": "kah-01"
+    },
+    {
+      "source_soldier_id": 9401,
+      "persona_id": 195493024,
+      "name": "XGOYABEANX",
+      "platform": "xboxone",
+      "site": "hnl-01"
+    }
+  ]
+}
