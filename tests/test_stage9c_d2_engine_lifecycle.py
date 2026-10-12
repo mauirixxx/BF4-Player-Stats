@@ -156,3 +156,29 @@ def test_all_three_sites_have_disjoint_three_persona_assignments():
     groups = {site: {persona for _, persona, owner in COHORT if owner == site} for site in NODES}
     assert all(len(group) == 3 for group in groups.values())
     assert len(set.union(*groups.values())) == 9
+
+
+def test_http_admission_rejects_foreign_site_before_counting():
+    from scripts import stage9c_three_hour_soak_http_gate as gate
+    from scripts.stage9c_three_site_live_ignition import COHORT
+    from types import SimpleNamespace
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    run = SimpleNamespace(state="running", deadline_at=now + timedelta(hours=1),
+                          attempt_ceiling=gate.MAX_ATTEMPTS,
+                          site_attempt_ceiling=gate.SITE_ATTEMPTS,
+                          baseline_event_id=gate.BASELINE_EVENT)
+    persona = next(p for _, p, owner in COHORT if owner == "tcou")
+    conn = MagicMock()
+    response = conn.execute.return_value
+    response.one_or_none.side_effect = [run, SimpleNamespace(persona_id=persona)]
+    response.scalar_one.return_value = now
+    response.first.return_value = (1,)
+    job = SimpleNamespace(job_id=5, soldier_id=7)
+    identity = SimpleNamespace(hostname="hnl-01", lane="background",
+                               collector_uuid="uuid", collector_name="name",
+                               egress_key="egress")
+    with patch.object(gate, "guard"):
+        with pytest.raises(RuntimeError, match="cross-site soldier ownership"):
+            gate.admit_physical_start(conn, job, identity)
+    assert conn.execute.call_count == 6
