@@ -33,3 +33,33 @@ def test_duplicate_or_inconsistent_events_are_anomalies():
     now = datetime.now(timezone.utc)
     assert classify_job(row(starts=2, successes=1), now) == "anomalous_events"
     assert classify_job(row(starts=0, successes=1), now) == "anomalous_events"
+
+def test_terminal_outcome_discrepancy_is_not_silent():
+    from unittest.mock import MagicMock, patch
+    from scripts import stage9c_d2_terminal_report as report
+    now = datetime.now(timezone.utc)
+    run = {"run_id": report.RUN_ID, "state": "completed",
+           "baseline_event_id": report.BASELINE_EVENT}
+    rounds = [{"round_number": n, "state": "completed"} for n in range(1, 13)]
+    jobs = [{"round_number": n, "job_id": (n - 1) * 9 + i,
+             "soldier_id": i, "outcome": "success", "queue_status": None,
+             "lease_expires_at": None, "queued": False, "starts": 1,
+             "successes": 1} for n in range(1, 13) for i in range(1, 10)]
+    conn = MagicMock()
+    def configure():
+        results = [MagicMock(), MagicMock(), MagicMock()]
+        results[0].mappings.return_value.one_or_none.return_value = run
+        results[1].mappings.return_value.all.return_value = rounds
+        results[2].mappings.return_value.all.return_value = jobs
+        conn.execute.side_effect = results
+    configure()
+    with patch.object(report, "guard"):
+        baseline = report.inspect_terminal(conn, now=now)
+    assert baseline["complete"] is True
+    assert baseline["outcome_discrepancies"] == []
+    jobs[45]["outcome"] = "pending"
+    configure()
+    with patch.object(report, "guard"):
+        changed = report.inspect_terminal(conn, now=now)
+    assert changed["complete"] is False
+    assert changed["outcome_discrepancies"][0]["job_id"] == 46
