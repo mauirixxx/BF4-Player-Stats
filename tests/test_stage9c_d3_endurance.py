@@ -44,4 +44,3 @@ def test_reset_requires_evidence(monkeypatch):
     with pytest.raises(RuntimeError,match='evidence'):reset(c,execute=True,evidence_path=None)
     c.execute.assert_not_called()
 
-[executed on device: tcou (720a0073-649a-4660-8c09-00c2e6d0e587)]
