@@ -55,3 +55,48 @@ def test_hostname_guard_blocks_before_engine(monkeypatch):
         with pytest.raises(RuntimeError, match="hostname mismatch"):
             guarded.work("tcou")
     factory.assert_not_called()
+
+
+def _db_unavailable():
+    from sqlalchemy.exc import OperationalError
+    return OperationalError("SELECT 1", {}, Exception("connection refused"))
+
+
+def test_preflight_recovers_from_transient_connection_error():
+    db = MagicMock()
+    db.connect.side_effect = [_db_unavailable(), MagicMock()]
+    with patch.object(guarded, "preflight", return_value={101}) as check:
+        result = guarded.preflight_with_db_retry(db, "tcou", sleep=lambda _: None)
+    assert result == {101}
+    assert db.connect.call_count == 2
+    check.assert_called_once()
+
+
+def test_preflight_connection_error_is_bounded():
+    db = MagicMock()
+    db.connect.side_effect = _db_unavailable()
+    delays = []
+    with pytest.raises(Exception) as exc:
+        guarded.preflight_with_db_retry(db, "tcou", sleep=delays.append)
+    from sqlalchemy.exc import OperationalError
+    assert isinstance(exc.value, OperationalError)
+    assert db.connect.call_count == 3
+    assert delays == [1, 2]
+
+
+def test_collector_error_never_retries_http_capable_work():
+    db = MagicMock()
+    with patch.object(guarded, "preflight_with_db_retry", return_value={101}), patch.object(
+        guarded, "collect_one_detailed_job", side_effect=_db_unavailable()
+    ) as collect:
+        with pytest.raises(Exception):
+            guarded._work_with_engine("tcou", db)
+    collect.assert_called_once()
+
+
+def test_safety_block_does_not_retry_preflight():
+    db = MagicMock()
+    with patch.object(guarded, "preflight", side_effect=RuntimeError("SOAK BLOCK: deadline expired")) as check:
+        with pytest.raises(RuntimeError, match="deadline expired"):
+            guarded.preflight_with_db_retry(db, "tcou", sleep=lambda _: None)
+    check.assert_called_once()
