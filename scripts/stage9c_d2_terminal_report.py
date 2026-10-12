@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from sqlalchemy import text
 
 from scripts.stage9c_three_site_live_ignition import engine
-from scripts.stage9c_three_hour_soak_ledger import RUN_ID, BASELINE_EVENT, guard
+from scripts.stage9c_three_hour_soak_ledger import RUN_ID, BASELINE_EVENT, ROUNDS, guard
 
 
 def classify_job(row, now):
@@ -73,14 +73,24 @@ def inspect_terminal(conn, *, now=None):
     """), {"run": RUN_ID, "base": BASELINE_EVENT}).mappings().all()
     classified = [{**dict(row), "classification": classify_job(row, observed_at)} for row in rows]
     totals = dict(sorted(Counter(row["classification"] for row in classified).items()))
+    discrepancies = [
+        {"round_number": row["round_number"], "job_id": row["job_id"],
+         "outcome": row["outcome"], "classification": row["classification"]}
+        for row in classified
+        if (row["classification"] == "durable_success" and row["outcome"] != "success")
+        or (row["outcome"] == "success" and row["classification"] != "durable_success")
+    ]
     return {
         "run": dict(run), "observed_at": observed_at,
         "rounds": [dict(r) for r in rounds],
-        "classification_counts": totals, "jobs": classified,
-        "complete": (run["state"] == "completed" and len(rounds) == 12
+        "classification_counts": totals, "outcome_discrepancies": discrepancies, "jobs": classified,
+        "complete": (run["state"] == "completed" and len(rounds) == ROUNDS
+                     and [r["round_number"] for r in rounds] == list(range(1, ROUNDS + 1))
                      and all(r["state"] == "completed" for r in rounds)
-                     and len(classified) == 108
-                     and totals == {"durable_success": 108}),
+                     and len(classified) == ROUNDS * 9
+                     and totals == {"durable_success": ROUNDS * 9}
+                     and not discrepancies
+                     and all(row["outcome"] == "success" for row in classified)),
         "read_only": True,
     }
 
