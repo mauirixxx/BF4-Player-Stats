@@ -54,12 +54,21 @@ def preflight_with_db_retry(e, node, *, attempts=3, sleep=time.sleep):
 
 def _work_with_engine(node, e):
     ids=preflight_with_db_retry(e,node)
+    permitted_personas={persona for _,persona,owner in COHORT if owner==node}
+    if len(permitted_personas)!=3:
+        raise RuntimeError('SOAK BLOCK: invalid site partition')
+    with e.connect() as conn:
+        rows=conn.execute(text('SELECT soldier_id,persona_id FROM soldiers')).all()
+    by_persona={int(persona):int(sid) for sid,persona in rows}
+    if len(rows)!=9 or len(by_persona)!=9 or set(by_persona.values())!=set(ids):
+        raise RuntimeError('SOAK BLOCK: invalid soldier mapping')
+    permitted_ids=sorted(by_persona[p] for p in permitted_personas)
     identity=CollectorIdentity(
         collector_uuid=UUIDS[node],collector_name=RUN+":"+node,
         hostname=node,egress_key=RUN+":"+node,lane="background")
     return collect_one_detailed_job(
         e,identity=identity,request_interval_seconds=10.0,
-        allowed_soldier_ids=ids,max_total_attempts=MAX_ATTEMPTS,
+        allowed_soldier_ids=permitted_ids,max_total_attempts=MAX_ATTEMPTS,
         attempts_after_event_id=BASELINE_EVENT,
         attempt_ceiling_resources=["detailed"],
         enforce_production_budget=True,lease_seconds=120,
