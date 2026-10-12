@@ -62,6 +62,8 @@ def _work_with_engine(node, e):
     by_persona={int(persona):int(sid) for sid,persona in rows}
     if len(rows)!=9 or len(by_persona)!=9 or set(by_persona.values())!=set(ids):
         raise RuntimeError('SOAK BLOCK: invalid soldier mapping')
+    if not permitted_personas.issubset(by_persona):
+        raise RuntimeError('SOAK BLOCK: missing site persona')
     permitted_ids=sorted(by_persona[p] for p in permitted_personas)
     identity=CollectorIdentity(
         collector_uuid=UUIDS[node],collector_name=RUN+":"+node,
