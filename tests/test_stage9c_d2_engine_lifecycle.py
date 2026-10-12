@@ -119,3 +119,29 @@ def test_worker_loop_stops_on_expired_deadline_without_replay():
     with patch.object(supervisor, "work", side_effect=RuntimeError("SOAK BLOCK: deadline expired")) as collector:
         supervisor._worker_loop_with_engine("tcou", db)
     collector.assert_called_once()
+
+
+def test_worker_claims_only_its_three_site_soldiers():
+    from scripts.stage9c_three_site_live_ignition import COHORT
+    from types import SimpleNamespace
+    db = MagicMock()
+    db.connect.return_value.__enter__.return_value.execute.return_value.all.return_value = [
+        (i + 1, persona) for i, (_name, persona, _owner) in enumerate(COHORT)
+    ]
+    expected = [i + 1 for i, (_name, _persona, owner) in enumerate(COHORT) if owner == "tcou"]
+    with patch.object(guarded, "preflight_with_db_retry", return_value=list(range(1, 10))), patch.object(
+        guarded, "collect_one_detailed_job", return_value=None
+    ) as collect:
+        guarded._work_with_engine("tcou", db)
+    assert collect.call_args.kwargs["allowed_soldier_ids"] == expected
+
+
+def test_worker_rejects_incomplete_site_mapping_without_collection():
+    db = MagicMock()
+    db.connect.return_value.__enter__.return_value.execute.return_value.all.return_value = []
+    with patch.object(guarded, "preflight_with_db_retry", return_value=list(range(1, 10))), patch.object(
+        guarded, "collect_one_detailed_job"
+    ) as collect:
+        with pytest.raises(RuntimeError, match="invalid soldier mapping"):
+            guarded._work_with_engine("tcou", db)
+    collect.assert_not_called()
