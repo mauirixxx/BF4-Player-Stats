@@ -223,4 +223,3 @@ def main():
 if __name__=='__main__':
     main()
 
-[executed on device: tcou (720a0073-649a-4660-8c09-00c2e6d0e587)]
