@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from time import monotonic, sleep
-from typing import Sequence
+from typing import Callable, Sequence
 from uuid import UUID
 
 from sqlalchemy import text
@@ -69,6 +69,7 @@ def _record_attempt_started(
     identity: CollectorIdentity,
     persona_id: int,
     platform: str,
+    pre_http_admission: Callable | None = None,
 ) -> None:
     """Durably record the physical outbound attempt before issuing HTTP."""
     with engine.begin() as conn:
@@ -112,6 +113,9 @@ def _record_attempt_started(
         ).one_or_none()
         if duplicate is not None:
             raise RuntimeError("weapon attempt start rejected: physical start already recorded")
+
+        if pre_http_admission is not None:
+            pre_http_admission(conn, job, identity)
 
         conn.execute(
             text(
@@ -234,6 +238,7 @@ def collect_one_weapon_job(
     attempts_after_event_id: int | None = None,
     attempt_ceiling_resources: Sequence[str] | None = None,
     enforce_production_budget: bool = False,
+    pre_http_admission: Callable | None = None,
 ) -> CollectedWeaponJob | FailedWeaponJob | None:
     """Claim and execute at most one weapon job through the normal lifecycle."""
     if retry_after_seconds is not None and retry_after_seconds < 0:
@@ -287,6 +292,7 @@ def collect_one_weapon_job(
         identity=identity,
         persona_id=persona_id,
         platform=platform,
+        pre_http_admission=pre_http_admission,
     )
 
     started = monotonic()
