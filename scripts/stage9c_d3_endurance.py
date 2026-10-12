@@ -123,6 +123,10 @@ def reset(conn, *, execute, evidence_path):
     locked = conn.execute(text('SELECT job_id FROM collection_jobs ORDER BY job_id FOR UPDATE')).scalars().all()
     if len(locked) != 900:
         raise RuntimeError('Queue changed during reset')
+    locked_report = preflight(conn)
+    locked_normalized = json.loads(json.dumps(locked_report, default=str))
+    if locked_normalized['jobs'] != saved['jobs'] or locked_normalized['collectors'] != saved['collectors']:
+        raise RuntimeError('D3 queue changed under lock; refusing reset')
     conn.execute(text('''UPDATE collection_jobs SET status='pending',attempt_count=0,collector_uuid=NULL,
         lease_token=NULL,claimed_at=NULL,started_at=NULL,lease_expires_at=NULL,eligible_at=now(),updated_at=now()'''))
     conn.execute(text("DELETE FROM collectors WHERE collector_name LIKE 'D3_%'"))
@@ -144,10 +148,15 @@ def worker(engine, *, site, seconds, max_cycles, run_id):
         raise RuntimeError('D3 reset in progress')
     guard.commit()
     collector_name = 'D3_ENDURANCE_' + site + '_' + run_id
-    with engine.begin() as conn:
-        uid = conn.execute(text('''INSERT INTO collectors(collector_name,hostname,lane,egress_key)
+    try:
+        with engine.begin() as conn:
+            uid = conn.execute(text('''INSERT INTO collectors(collector_name,hostname,lane,egress_key)
              VALUES (:name,:site,'background',:egress) RETURNING collector_uuid'''),
              {'name':collector_name,'site':site,'egress':'d3-endurance-'+site}).scalar_one()
+    except BaseException:
+        guard.execute(text('SELECT pg_advisory_unlock_shared(943900)'))
+        guard.close()
+        raise
     stats = Counter()
     latencies = []
     deadline = time.monotonic() + seconds
