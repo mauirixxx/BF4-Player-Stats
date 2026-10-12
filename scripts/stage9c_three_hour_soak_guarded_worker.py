@@ -1,7 +1,9 @@
 """Isolated D2 guarded soak worker; no automatic ignition."""
 import argparse
 import os
+import time
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError, TimeoutError as SQLAlchemyTimeoutError
 from bf4ps.detailed_collector import CollectorIdentity, collect_one_detailed_job
 from scripts.stage9c_three_site_live_ignition import engine, NODES, RUN, UUIDS
 from scripts.stage9c_three_hour_soak_cohort import cohort_ids
@@ -39,9 +41,19 @@ def work(node, *, db_engine=None):
         if owned:
             e.dispose()
 
+def preflight_with_db_retry(e, node, *, attempts=3, sleep=time.sleep):
+    """Retry DB-only preflight; NEVER replay the HTTP-capable collector."""
+    for index in range(attempts):
+        try:
+            with e.connect() as conn:
+                return preflight(conn, node)
+        except (OperationalError, SQLAlchemyTimeoutError):
+            if index + 1 == attempts:
+                raise
+            sleep(min(2 ** index, 4))
+
 def _work_with_engine(node, e):
-    with e.connect() as conn:
-        ids=preflight(conn,node)
+    ids=preflight_with_db_retry(e,node)
     identity=CollectorIdentity(
         collector_uuid=UUIDS[node],collector_name=RUN+":"+node,
         hostname=node,egress_key=RUN+":"+node,lane="background")
