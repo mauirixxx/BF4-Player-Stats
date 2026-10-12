@@ -100,3 +100,22 @@ def test_safety_block_does_not_retry_preflight():
         with pytest.raises(RuntimeError, match="deadline expired"):
             guarded.preflight_with_db_retry(db, "tcou", sleep=lambda _: None)
     check.assert_called_once()
+
+
+def test_worker_loop_fails_closed_after_ambiguous_database_error():
+    db = MagicMock()
+    with patch.object(supervisor, "work", side_effect=_db_unavailable()) as collector, patch.object(
+        supervisor.time, "sleep"
+    ) as sleeper:
+        from sqlalchemy.exc import OperationalError
+        with pytest.raises(OperationalError):
+            supervisor._worker_loop_with_engine("tcou", db)
+    collector.assert_called_once_with("tcou", db_engine=db)
+    sleeper.assert_not_called()
+
+
+def test_worker_loop_stops_on_expired_deadline_without_replay():
+    db = MagicMock()
+    with patch.object(supervisor, "work", side_effect=RuntimeError("SOAK BLOCK: deadline expired")) as collector:
+        supervisor._worker_loop_with_engine("tcou", db)
+    collector.assert_called_once()
