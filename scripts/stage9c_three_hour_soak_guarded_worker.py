@@ -5,7 +5,7 @@ import time
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError, TimeoutError as SQLAlchemyTimeoutError
 from bf4ps.detailed_collector import CollectorIdentity, collect_one_detailed_job
-from scripts.stage9c_three_site_live_ignition import engine, NODES, RUN, UUIDS
+from scripts.stage9c_three_site_live_ignition import engine, NODES, RUN, UUIDS, COHORT
 from scripts.stage9c_three_hour_soak_cohort import cohort_ids
 from scripts.stage9c_three_hour_soak_ledger import RUN_ID, BASELINE_EVENT, MAX_ATTEMPTS, guard
 from scripts.stage9c_three_hour_soak_http_gate import admit_physical_start
