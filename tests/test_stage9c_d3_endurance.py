@@ -44,3 +44,31 @@ def test_reset_requires_evidence(monkeypatch):
     with pytest.raises(RuntimeError,match='evidence'):reset(c,execute=True,evidence_path=None)
     c.execute.assert_not_called()
 
+
+def test_reset_rejects_snapshot_changed_under_lock(monkeypatch, tmp_path):
+    import json
+    import scripts.stage9c_d3_endurance as d3
+    report = {'database': d3.DB, 'jobs': [{'job_id': 1}], 'collectors': []}
+    saved = tmp_path / 'snapshot.json'
+    saved.write_text(json.dumps(report))
+    monkeypatch.setattr(d3, 'preflight', Mock(side_effect=[report, {**report, 'jobs': [{'job_id': 2}]}]))
+    conn = Mock()
+    conn.execute.return_value.scalar_one.return_value = True
+    conn.execute.return_value.scalars.return_value.all.return_value = list(range(900))
+    with pytest.raises(RuntimeError, match='changed under lock'):
+        d3.reset(conn, execute=True, evidence_path=str(saved))
+    assert not any('UPDATE collection_jobs' in str(call) for call in conn.execute.call_args_list)
+
+
+def test_reset_rejects_active_advisory_lock(monkeypatch, tmp_path):
+    import json
+    import scripts.stage9c_d3_endurance as d3
+    report = {'database': d3.DB, 'jobs': [], 'collectors': []}
+    saved = tmp_path / 'snapshot.json'
+    saved.write_text(json.dumps(report))
+    monkeypatch.setattr(d3, 'preflight', lambda conn: report)
+    conn = Mock()
+    conn.execute.return_value.scalar_one.return_value = False
+    with pytest.raises(RuntimeError, match='worker active'):
+        d3.reset(conn, execute=True, evidence_path=str(saved))
+    assert conn.execute.call_count == 1
