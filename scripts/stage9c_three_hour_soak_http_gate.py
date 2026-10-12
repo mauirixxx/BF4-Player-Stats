@@ -4,6 +4,7 @@ Must be passed as pre_http_admission to collect_one_detailed_job.
 Never call independently as an authorization to issue HTTP.
 """
 from sqlalchemy import text
+from scripts.stage9c_three_site_live_ignition import COHORT
 from scripts.stage9c_three_hour_soak_ledger import (
     RUN_ID, BASELINE_EVENT, MAX_ATTEMPTS, SITE_ATTEMPTS, guard,
 )
@@ -47,6 +48,12 @@ def admit_physical_start(conn, job, identity):
     """), {"run": RUN_ID, "job": job.job_id, "soldier": job.soldier_id}).first()
     if attributed is None:
         raise RuntimeError("SOAK BLOCK: job not attributed to active round")
+    owner_by_persona = {persona: site for _name, persona, site in COHORT}
+    soldier = conn.execute(text(
+        'SELECT persona_id FROM soldiers WHERE soldier_id=:sid'
+    ), {'sid': job.soldier_id}).one_or_none()
+    if soldier is None or owner_by_persona.get(int(soldier.persona_id)) != identity.hostname:
+        raise RuntimeError('SOAK BLOCK: cross-site soldier ownership')
     counts = conn.execute(text("""
         SELECT count(DISTINCT (job_id,attempt_number)) AS total,
                count(DISTINCT (job_id,attempt_number))
