@@ -142,6 +142,10 @@ def main():
         if not a.execute:
             p.error("prepare requires --execute")
         prepare(e)
+    elif a.command == "repair-unstarted":
+        if not a.execute:
+            p.error("repair-unstarted requires --execute")
+        repair_unstarted(e)
     else:
         verify(e)
 
