@@ -31,9 +31,18 @@ def cohort():
     rows = json.loads(raw)["rows"]
     if len(rows) != 300:
         raise RuntimeError("manifest must contain 300")
-    # Explicit per-site platform quotas: 10 each platform globally.\n    quotas = {\n        "tcou": {"pc": 4, "ps4": 3, "xboxone": 3},\n        "kah-01": {"pc": 3, "ps4": 4, "xboxone": 3},\n        "hnl-01": {"pc": 3, "ps4": 3, "xboxone": 4},\n    }\n    selected = [r for node in NODES for platform in ("pc", "ps4", "xboxone")\n                for r in [x for x in rows if x["site"] == node and x["platform"] == platform][:quotas[node][platform]]]
+    # Explicit per-site platform quotas: 10 each platform globally.
+    quotas = {
+        "tcou": {"pc": 4, "ps4": 3, "xboxone": 3},
+        "kah-01": {"pc": 3, "ps4": 4, "xboxone": 3},
+        "hnl-01": {"pc": 3, "ps4": 3, "xboxone": 4},
+    }
+    selected = [r for node in NODES for platform in ("pc", "ps4", "xboxone")
+                for r in [x for x in rows if x["site"] == node and x["platform"] == platform][:quotas[node][platform]]]
     if len(selected) != 30 or any(sum(r["site"] == n for r in selected) != 10 for n in NODES):
         raise RuntimeError("30-player site split failed")
+    if any(sum(r["platform"] == p for r in selected) != 10 for p in ("pc","ps4","xboxone")):
+        raise RuntimeError("30-player platform split failed")
     return selected
 
 
@@ -87,7 +96,28 @@ def prepare(e):
     print("D4 PREPARE PASS: 30 real soldiers, 90 pending jobs, three registered collectors, zero HTTP", flush=True)
 
 
-\ndef repair_unstarted(e):\n    """Replace mistakenly PC-only queue; only allowed before any HTTP/claim."""\n    if os.uname().nodename != "tcou":\n        raise RuntimeError("repair only from tcou")\n    with e.begin() as conn:\n        ids = guard(conn)\n        if conn.execute(text("SELECT count(*) FROM collection_events")).scalar_one():\n            raise RuntimeError("cannot repair after any collection events")\n        rows = conn.execute(text("SELECT status,attempt_count,reason FROM collection_jobs FOR UPDATE")).all()\n        if len(rows) != 90 or any(status != "pending" or attempts != 0 or reason != RUN\n                                  for status, attempts, reason in rows):\n            raise RuntimeError("cannot repair modified queue")\n        conn.execute(text("DELETE FROM collection_jobs"))\n        for row in cohort():\n            sid = ids[(row["persona_id"], row["platform"])]\n            for resource in RESOURCES:\n                enqueue_job(conn,soldier_id=sid,resource=resource,lane="background",\n                            priority_class="bootstrap",reason=RUN)\n    print("D4 REPAIR PASS: 10 PC, 10 PS4, 10 Xbox One; 90 pending, zero HTTP",flush=True)\n\ndef verify(e):
+
+def repair_unstarted(e):
+    """Replace mistakenly PC-only queue; only allowed before any HTTP/claim."""
+    if os.uname().nodename != "tcou":
+        raise RuntimeError("repair only from tcou")
+    with e.begin() as conn:
+        ids = guard(conn)
+        if conn.execute(text("SELECT count(*) FROM collection_events")).scalar_one():
+            raise RuntimeError("cannot repair after any collection events")
+        rows = conn.execute(text("SELECT status,attempt_count,reason FROM collection_jobs FOR UPDATE")).all()
+        if len(rows) != 90 or any(status != "pending" or attempts != 0 or reason != RUN
+                                  for status, attempts, reason in rows):
+            raise RuntimeError("cannot repair modified queue")
+        conn.execute(text("DELETE FROM collection_jobs"))
+        for row in cohort():
+            sid = ids[(row["persona_id"], row["platform"])]
+            for resource in RESOURCES:
+                enqueue_job(conn,soldier_id=sid,resource=resource,lane="background",
+                            priority_class="bootstrap",reason=RUN)
+    print("D4 REPAIR PASS: 10 PC, 10 PS4, 10 Xbox One; 90 pending, zero HTTP",flush=True)
+
+def verify(e):
     with e.connect() as conn:
         ids = guard(conn)
         selected = cohort()
