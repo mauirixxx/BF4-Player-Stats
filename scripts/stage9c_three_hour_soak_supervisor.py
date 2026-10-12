@@ -6,11 +6,11 @@ from scripts.stage9c_three_hour_soak_cohort import cohort_ids
 from scripts.stage9c_three_hour_soak_ledger import RUN_ID,ROUNDS,ROUND_SECONDS,create_prepared_run,admit_round,guard
 from scripts.stage9c_three_hour_soak_lifecycle import ignite,stop
 from scripts.stage9c_three_hour_soak_reconcile import reconcile
-from scripts.stage9c_three_hour_soak_guarded_worker import work
+from scripts.stage9c_three_hour_soak_guarded_worker import work,soak_engine
 
 def supervisor():
     if os.uname().nodename!="tcou":raise RuntimeError("coordinator must be tcou")
-    e=engine()
+    e=soak_engine()
     with e.begin() as c:
         ids=cohort_ids(c)
         create_prepared_run(c,ids)
@@ -47,9 +47,16 @@ def supervisor():
 
 def worker_loop(node):
     if os.uname().nodename!=node:raise RuntimeError("hostname mismatch")
+    e=soak_engine()
+    try:
+        _worker_loop_with_engine(node,e)
+    finally:
+        e.dispose()
+
+def _worker_loop_with_engine(node,e):
     while True:
         try:
-            result=work(node)
+            result=work(node,db_engine=e)
             if result is not None:print("SOAK WORK",node,repr(result),flush=True)
             else:time.sleep(3)
         except RuntimeError as exc:
