@@ -53,7 +53,7 @@ def test_reset_rejects_snapshot_changed_under_lock(monkeypatch, tmp_path):
     saved.write_text(json.dumps(report))
     monkeypatch.setattr(d3, 'preflight', Mock(side_effect=[report, {**report, 'jobs': [{'job_id': 2}]}]))
     conn = Mock()
-    conn.execute.return_value.scalar_one.return_value = True
+    conn.execute.return_value.scalar_one.side_effect = [True, 0]
     conn.execute.return_value.scalars.return_value.all.return_value = list(range(900))
     with pytest.raises(RuntimeError, match='changed under lock'):
         d3.reset(conn, execute=True, evidence_path=str(saved))
