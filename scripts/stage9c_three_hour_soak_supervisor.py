@@ -1,6 +1,7 @@
 """Explicitly authorized D2 3-hour soak supervisor; isolated DB only."""
 import argparse,os,time,traceback
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError, TimeoutError as SQLAlchemyTimeoutError
 from scripts.stage9c_three_site_live_ignition import engine,NODES
 from scripts.stage9c_three_hour_soak_cohort import cohort_ids
 from scripts.stage9c_three_hour_soak_ledger import RUN_ID,ROUNDS,ROUND_SECONDS,create_prepared_run,admit_round,guard
@@ -57,11 +58,20 @@ def worker_loop(node):
         e.dispose()
 
 def _worker_loop_with_engine(node,e):
+    db_failures=0
     while True:
         try:
             result=work(node,db_engine=e)
+            db_failures=0
             if result is not None:print("SOAK WORK",node,repr(result),flush=True)
             else:time.sleep(3)
+        except (OperationalError, SQLAlchemyTimeoutError) as exc:
+            # The collector may have reached HTTP. Never replay it blindly.
+            # Wait for the lease to expire and let the DB's durable state decide.
+            db_failures+=1
+            delay=min(120, 15 * (2 ** min(db_failures-1, 3)))
+            print("SOAK DB UNAVAILABLE",node,repr(exc),"backoff_seconds",delay,flush=True)
+            time.sleep(delay)
         except RuntimeError as exc:
             if str(exc) in ("SOAK BLOCK: run not running","SOAK BLOCK: deadline expired"):
                 print("SOAK WORKER STOP",node,str(exc),flush=True)
