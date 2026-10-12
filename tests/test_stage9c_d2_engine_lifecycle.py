@@ -86,7 +86,11 @@ def test_preflight_connection_error_is_bounded():
 
 def test_collector_error_never_retries_http_capable_work():
     db = MagicMock()
-    with patch.object(guarded, "preflight_with_db_retry", return_value={101}), patch.object(
+    from scripts.stage9c_three_site_live_ignition import COHORT
+    db.connect.return_value.__enter__.return_value.execute.return_value.all.return_value = [
+        (i + 1, persona) for i, (_name, persona, _owner) in enumerate(COHORT)
+    ]
+    with patch.object(guarded, "preflight_with_db_retry", return_value=list(range(1, 10))), patch.object(
         guarded, "collect_one_detailed_job", side_effect=_db_unavailable()
     ) as collect:
         with pytest.raises(Exception):
