@@ -108,7 +108,8 @@ def reset(conn, *, execute, evidence_path):
     if not evidence_path or not Path(evidence_path).is_file():
         raise RuntimeError('Pre-reset evidence file required')
     saved = json.loads(Path(evidence_path).read_text())
-    if saved.get('database') != DB or saved.get('jobs') != report['jobs'] or saved.get('collectors') != report['collectors']:
+    normalized = json.loads(json.dumps(report, default=str))
+    if saved.get('database') != DB or saved.get('jobs') != normalized['jobs'] or saved.get('collectors') != normalized['collectors']:
         raise RuntimeError('Pre-reset evidence does not match current database state')
     if not conn.execute(text('SELECT pg_try_advisory_xact_lock(943900)')).scalar_one():
         raise RuntimeError('D3 worker active; refusing reset')
