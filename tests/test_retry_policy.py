@@ -60,3 +60,11 @@ def test_vehicle_failure_validates_vehicle_resource():
     source = Path("bf4ps/vehicle_failure.py").read_text()
     assert 'if job.resource != "vehicles":' in source
     assert 'if job.resource != "weapons":' not in source
+
+
+def test_profile_is_supported_by_shared_retry_policy():
+    from bf4ps.retry_policy import SUPPORTED_RETRY_RESOURCES
+    assert "profile" in SUPPORTED_RETRY_RESOURCES
+    source = Path("bf4ps/profile_collector.py").read_text()
+    assert 'resource="profile"' in source
+    assert "retry_delay_for_failure(" in source
