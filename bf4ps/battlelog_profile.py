@@ -45,7 +45,7 @@ class _ProfileHTML(HTMLParser):
         if is_location:
             self._location_count += 1
         if self._location_count and tag == "img":
-            match = re.search(r"/flags/([a-z]{2})\\.gif(?:[?#]|$)", a.get("src") or "", re.I)
+            match = re.search(r"/flags/([a-z]{2})\.gif(?:[?#]|$)", a.get("src") or "", re.I)
             if match:
                 self.flag_candidates.append(
                     (match.group(1).upper(), a.get("alt") or a.get("data-tooltip"))
