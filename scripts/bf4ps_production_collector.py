@@ -29,12 +29,14 @@ def request_stop(*_args) -> None:
     STOP = True
 
 
-def collect_one(engine, identity: CollectorIdentity, resource: str):
+def collect_one(engine, identity: CollectorIdentity, resource: str, *, allowed_soldier_ids=None, max_total_attempts=None):
     common = dict(
         identity=identity,
         request_interval_seconds=REQUEST_INTERVAL_SECONDS,
         lease_seconds=LEASE_SECONDS,
         enforce_production_budget=True,
+        allowed_soldier_ids=allowed_soldier_ids,
+        max_total_attempts=max_total_attempts,
     )
     if resource == "detailed":
         return collect_one_detailed_job(engine, timeout_seconds=30.0, **common)
