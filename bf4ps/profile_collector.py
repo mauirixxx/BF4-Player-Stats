@@ -79,7 +79,9 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
                attempt_number, lease_token, metadata)
             VALUES (:uuid, :name, :host, :egress, :job_id, :soldier_id, :persona,
               :platform, 'profile', :lane, 'collection_attempt_started',
-              :attempt, :token, jsonb_build_object('physical_request', true))
+              :attempt, :token, jsonb_build_object('physical_request', true, 'priority_class',
+                (SELECT priority_class FROM collection_jobs WHERE job_id=:job_id),
+                'retry', (SELECT last_error_at IS NOT NULL FROM collection_jobs WHERE job_id=:job_id)))
         """), dict(uuid=job.collector_uuid, name=identity.collector_name,
                    host=identity.hostname, egress=identity.egress_key,
                    job_id=job.job_id, soldier_id=job.soldier_id,
