@@ -1,14 +1,8 @@
-.venv/
-__pycache__/
-*.py[cod]
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
 .env
 .env.*
-!.env.example
-
-# Docker deployment secrets
-deploy/docker/discovery.env
-deploy/docker/collector.env
+__pycache__/
+*.pyc
+*.log
+temp-stats-data.json
+*.sql
+*.dump
