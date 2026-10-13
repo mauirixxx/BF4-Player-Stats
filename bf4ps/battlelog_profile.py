@@ -28,29 +28,47 @@ class _ProfileHTML(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.flag_candidates: list[tuple[str, str | None]] = []
-        self._location_depth = 0
-        self._depth = 0
+        self._stack: list[tuple[str, bool]] = []
+        self._location_count = 0
         self.text_parts: list[str] = []
         self.has_presentation = False
-        self._presentation_depth = 0
+
+    _VOID_TAGS = frozenset({
+        "area", "base", "br", "col", "embed", "hr", "img", "input",
+        "link", "meta", "param", "source", "track", "wbr",
+    })
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         a = dict(attrs)
         classes = (a.get("class") or "").split()
-        self._depth += 1
-        if "location-information" in classes:
-            self._location_depth = self._depth
-        if self._location_depth and tag == "img":
-            match = re.search(r"/flags/([a-z]{2})\.gif(?:[?#]|$)", a.get("src") or "", re.I)
+        is_location = "location-information" in classes
+        if is_location:
+            self._location_count += 1
+        if self._location_count and tag == "img":
+            match = re.search(r"/flags/([a-z]{2})\\.gif(?:[?#]|$)", a.get("src") or "", re.I)
             if match:
-                self.flag_candidates.append((match.group(1).upper(), a.get("alt") or a.get("data-tooltip")))
+                self.flag_candidates.append(
+                    (match.group(1).upper(), a.get("alt") or a.get("data-tooltip"))
+                )
         if "presentation" in classes:
             self.has_presentation = True
+        if tag not in self._VOID_TAGS:
+            self._stack.append((tag, is_location))
+        elif is_location:
+            self._location_count -= 1
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+        if tag not in self._VOID_TAGS:
+            self.handle_endtag(tag)
 
     def handle_endtag(self, tag: str) -> None:
-        if self._depth == self._location_depth:
-            self._location_depth = 0
-        self._depth = max(0, self._depth - 1)
+        for i in range(len(self._stack) - 1, -1, -1):
+            if self._stack[i][0] == tag:
+                removed = self._stack[i:]
+                self._stack = self._stack[:i]
+                self._location_count -= sum(1 for _, location in removed if location)
+                break
 
     def handle_data(self, data: str) -> None:
         self.text_parts.append(data)
