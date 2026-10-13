@@ -6,6 +6,8 @@ from typing import Sequence
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from bf4ps.battlelog_profile import ProfileFetchError, fetch_profile
+from bf4ps.account_resolution import fetch_account_username, AccountResolutionError
+from urllib.error import HTTPError, URLError
 from bf4ps.collection_jobs import claim_next_job, mark_job_running
 from bf4ps.background_service import claim_production_background_job
 from bf4ps.detailed_collector import CollectorIdentity
@@ -58,11 +60,33 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
             WHERE soldier_id=:soldier_id
         """), dict(soldier_id=job.soldier_id)).one()
     persona_id, platform, username = int(soldier[0]), str(soldier[1]), str(soldier[2])
-    with engine.begin() as conn:
-        permit = reserve_request_slot(conn, egress_key=identity.egress_key,
-                                      interval_seconds=request_interval_seconds)
-    if permit.wait_seconds:
-        sleep(permit.wait_seconds)
+    def reserve_and_wait():
+        with engine.begin() as conn:
+            permit = reserve_request_slot(conn, egress_key=identity.egress_key,
+                                          interval_seconds=request_interval_seconds)
+        if permit.wait_seconds:
+            sleep(permit.wait_seconds)
+
+    # Existing successful profile links are an authoritative identity cache.
+    # Never infer account names from the soldier's current display name.
+    with engine.connect() as conn:
+        username = conn.execute(text("""
+            SELECT bp.battlelog_username FROM profile_soldiers ps
+            JOIN battlelog_profiles bp ON bp.profile_id=ps.profile_id
+            WHERE ps.soldier_id=:soldier_id
+            ORDER BY ps.last_seen_at DESC LIMIT 1
+        """), {"soldier_id": job.soldier_id}).scalar_one_or_none()
+    resolution_error = None
+    if username is None:
+        try:
+            reserve_and_wait()
+            username = fetch_account_username(str(soldier[2]), persona_id, platform,
+                                              timeout_seconds=timeout_seconds)
+        except (AccountResolutionError, HTTPError, URLError, TimeoutError, OSError,
+                UnicodeDecodeError, ValueError) as exc:
+            resolution_error = ProfileFetchError(f"account resolution failed: {exc}")
+    if resolution_error is None:
+        reserve_and_wait()
     with engine.begin() as conn:
         owned = conn.execute(text("""
             SELECT 1 FROM collection_jobs WHERE job_id=:job_id AND soldier_id=:soldier_id
@@ -89,6 +113,8 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
                    attempt=job.attempt_count, token=job.lease_token))
     started = monotonic()
     try:
+        if resolution_error is not None:
+            raise resolution_error
         observation = fetch_profile(username, timeout_seconds=timeout_seconds)
     except ProfileFetchError as exc:
         duration_ms = max(0, int((monotonic()-started)*1000))
