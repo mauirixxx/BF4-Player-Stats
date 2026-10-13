@@ -18,10 +18,10 @@ with e.begin() as c:
  ident=CollectorIdentity(uuid5(NAMESPACE_DNS,'four-resource-30-20261012:'+node),'four-resource-30-20261012:'+node,node,'four-resource-30-20261012:'+node,'background')
  register_collector(c,identity=ident,software_version='four-resource-30-smoke')
 print('START',node,'soldiers',len(ids),flush=True)
-for cycle in range(35):
+for cycle in range(80):
  any_result=False
  for resource in RESOURCES:
-  result=collect_one(e,ident,resource,allowed_soldier_ids=ids,max_total_attempts=30)
+  result=collect_one(e,ident,resource,allowed_soldier_ids=ids,max_total_attempts=180)
   if result is None: continue
   any_result=True
   message,throttle=describe_result(resource,result)
