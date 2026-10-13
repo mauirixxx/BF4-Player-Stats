@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Long-running BF4PS production background collector.
 
 This is orchestration only: queue ordering, budget/fairness, retry state,
@@ -18,6 +17,7 @@ from bf4ps.detailed_collector import CollectedJob, FailedJob, CollectorIdentity,
 from bf4ps.production_hosts import HOSTS, LEASE_SECONDS, REQUEST_INTERVAL_SECONDS, RESOURCES, SOFTWARE_VERSION
 from bf4ps.vehicle_collector import CollectedVehicleJob, FailedVehicleJob, collect_one_vehicle_job
 from bf4ps.weapon_collector import CollectedWeaponJob, FailedWeaponJob, collect_one_weapon_job
+from bf4ps.profile_collector import CollectedProfileJob, FailedProfileJob, collect_one_profile_job
 
 STOP = False
 HEARTBEAT_SECONDS = 15.0
@@ -42,17 +42,19 @@ def collect_one(engine, identity: CollectorIdentity, resource: str):
         return collect_one_weapon_job(engine, timeout_seconds=30.0, **common)
     if resource == "vehicles":
         return collect_one_vehicle_job(engine, timeout_seconds=30.0, **common)
+    if resource == "profile":
+        return collect_one_profile_job(engine, timeout_seconds=30.0, **common)
     raise ValueError(f"unsupported production resource: {resource}")
 
 
 def describe_result(resource: str, result) -> tuple[str, bool]:
-    if isinstance(result, (CollectedJob, CollectedWeaponJob, CollectedVehicleJob)):
+    if isinstance(result, (CollectedJob, CollectedWeaponJob, CollectedVehicleJob, CollectedProfileJob)):
         return (
             f"SUCCESS resource={resource} soldier={result.soldier_id} "
             f"job={result.job_id} platform={result.platform} duration_ms={result.duration_ms}",
             False,
         )
-    if isinstance(result, (FailedJob, FailedWeaponJob, FailedVehicleJob)):
+    if isinstance(result, (FailedJob, FailedWeaponJob, FailedVehicleJob, FailedProfileJob)):
         throttle = result.http_status in {403, 429} or result.error_class == "battlelog_throttle"
         return (
             f"FAILURE resource={resource} soldier={result.soldier_id} "
