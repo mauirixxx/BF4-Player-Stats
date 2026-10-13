@@ -10,6 +10,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 import re
+import hashlib
 
 
 class ProfileFetchError(Exception):
@@ -32,6 +33,8 @@ class _ProfileHTML(HTMLParser):
         self._location_count = 0
         self.text_parts: list[str] = []
         self.has_presentation = False
+        self.account_ids: list[str] = []
+        self.soldier_identities: set[tuple[int, str]] = set()
 
     _VOID_TAGS = frozenset({
         "area", "base", "br", "col", "embed", "hr", "img", "input",
@@ -40,6 +43,12 @@ class _ProfileHTML(HTMLParser):
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         a = dict(attrs)
+        if tag == 'section' and a.get('id') == 'user' and re.fullmatch(r'[0-9]+', a.get('data-user-id') or ''):
+            self.account_ids.append(a['data-user-id'])
+        if tag == 'a':
+            soldier = re.fullmatch(r'/bf4/soldier/[^/]+/stats/([0-9]+)/(pc|ps4|xboxone)/', a.get('href') or '')
+            if soldier:
+                self.soldier_identities.add((int(soldier.group(1)), soldier.group(2)))
         classes = (a.get("class") or "").split()
         is_location = "location-information" in classes
         if is_location:
@@ -80,7 +89,7 @@ def profile_url(username: str) -> str:
     return "https://battlelog.battlefield.com/bf4/user/" + quote(username.strip(), safe="") + "/"
 
 
-def parse_profile_html(username: str, html: str) -> ProfileObservation:
+def parse_profile_html(username: str, html: str, *, expected_persona_id: int | None = None, expected_platform: str | None = None) -> ProfileObservation:
     if not html.strip():
         raise ProfileFetchError("empty Battlelog profile HTML")
     parser = _ProfileHTML()
@@ -95,10 +104,14 @@ def parse_profile_html(username: str, html: str) -> ProfileObservation:
         return ProfileObservation(username, "public_country", code, name)
     if parser.has_presentation or "presentation" in text:
         return ProfileObservation(username, "public_no_country", None, None)
+    if (expected_persona_id is not None and expected_platform is not None
+            and len(parser.account_ids) == 1
+            and (expected_persona_id, expected_platform) in parser.soldier_identities):
+        return ProfileObservation(username, "public_no_country", None, None)
     raise ProfileFetchError("unrecognized Battlelog profile HTML; not safe to classify")
 
 
-def fetch_profile(username: str, *, timeout_seconds: float = 15.0) -> ProfileObservation:
+def fetch_profile(username: str, *, timeout_seconds: float = 15.0, expected_persona_id: int | None = None, expected_platform: str | None = None) -> ProfileObservation:
     request = Request(profile_url(username), headers={
         "Accept": "text/html",
         "User-Agent": "BF4PlayerStats/0.1 (+https://bf4playerstats.com)",
@@ -116,4 +129,18 @@ def fetch_profile(username: str, *, timeout_seconds: float = 15.0) -> ProfileObs
         html = body.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise ProfileFetchError("invalid profile HTML encoding") from exc
-    return parse_profile_html(username, html)
+    try:
+        return parse_profile_html(username, html, expected_persona_id=expected_persona_id, expected_platform=expected_platform)
+    except ProfileFetchError as exc:
+        markers = {
+            "presentation_class": 'class="presentation' in html,
+            "presentation_word": "presentation" in html.casefold(),
+            "location_information": "location-information" in html,
+            "battlelog": "battlelog" in html.casefold(),
+            "login": "log in" in html.casefold(),
+        }
+        fingerprint = hashlib.sha256(body).hexdigest()[:16]
+        raise ProfileFetchError(
+            f"{exc}; diagnostic=status:200 bytes:{len(body)} sha256:{fingerprint} "
+            f"markers:{markers}"
+        ) from exc

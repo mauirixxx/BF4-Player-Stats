@@ -1,5 +1,6 @@
 """One leased Battlelog profile job; optional enrichment."""
 from dataclasses import dataclass
+import os
 from datetime import datetime, timezone
 from time import monotonic, sleep
 from typing import Sequence
@@ -115,11 +116,12 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
     try:
         if resolution_error is not None:
             raise resolution_error
-        observation = fetch_profile(username, timeout_seconds=timeout_seconds)
+        observation = fetch_profile(username, timeout_seconds=timeout_seconds,
+                                    expected_persona_id=persona_id, expected_platform=platform)
     except ProfileFetchError as exc:
         duration_ms = max(0, int((monotonic()-started)*1000))
         with engine.connect() as conn:
-            retry = retry_delay_for_failure(conn, soldier_id=job.soldier_id, resource="profile")
+            retry = (int(os.environ["BF4PS_PROFILE_DIAGNOSTIC_RETRY_SECONDS"]) if "BF4PS_PROFILE_DIAGNOSTIC_RETRY_SECONDS" in os.environ else retry_delay_for_failure(conn, soldier_id=job.soldier_id, resource="profile"))
         with engine.begin() as conn:
             persist_profile_failure(conn, job=job,
                 failure=ProfileFailure("battlelog_profile_fetch", str(exc)),

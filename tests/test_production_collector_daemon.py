@@ -35,7 +35,7 @@ def test_production_host_contract_is_stable_and_not_step_harness_owned():
     assert len({h.egress_key for h in HOSTS.values()}) == 3
     assert REQUEST_INTERVAL_SECONDS == 5.0
     assert LEASE_SECONDS == 120
-    assert RESOURCES == ("detailed", "weapons", "vehicles")
+    assert RESOURCES == ("detailed", "weapons", "vehicles", "profile")
 
 
 @pytest.mark.parametrize(
@@ -44,6 +44,7 @@ def test_production_host_contract_is_stable_and_not_step_harness_owned():
         ("detailed", "collect_one_detailed_job"),
         ("weapons", "collect_one_weapon_job"),
         ("vehicles", "collect_one_vehicle_job"),
+        ("profile", "collect_one_profile_job"),
     ],
 )
 def test_collect_one_passes_only_production_runtime_contract(monkeypatch, resource, function_name):
@@ -67,20 +68,22 @@ def test_collect_one_passes_only_production_runtime_contract(monkeypatch, resour
         "lease_seconds": 120,
         "enforce_production_budget": True,
         "timeout_seconds": 30.0,
+        "allowed_soldier_ids": None,
+        "max_total_attempts": None,
     }
 
 
 def test_collect_one_rejects_nonproduction_resource():
     module = _module()
     with pytest.raises(ValueError, match="unsupported production resource"):
-        module.collect_one(object(), object(), "profile")
+        module.collect_one(object(), object(), "not_a_resource")
 
 
 def test_production_daemon_uses_production_budget_without_test_bounds():
     s = _source()
     assert "enforce_production_budget=True" in s
-    assert "allowed_soldier_ids" not in s
-    assert "max_total_attempts" not in s
+    assert "allowed_soldier_ids=allowed_soldier_ids" in s
+    assert "max_total_attempts=max_total_attempts" in s
     assert "attempts_after_event_id" not in s
     assert "GLOBAL_ATTEMPT_CEILING" not in s
     assert "phase5b_step7" not in s.lower()
