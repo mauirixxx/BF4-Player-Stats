@@ -62,7 +62,7 @@ def main():
             resource = RESOURCES[resource_index]
             resource_index = (resource_index + 1) % len(RESOURCES)
             result = collect_one(engine, ident, resource,
-                                 allowed_soldier_ids=ids, max_total_attempts=180)
+                                 allowed_soldier_ids=ids, max_total_attempts=300)
             if result is None:
                 time.sleep(0.5)
                 continue
