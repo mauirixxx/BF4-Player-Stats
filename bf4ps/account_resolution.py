@@ -5,6 +5,7 @@ Network callers must account for each soldier-page request in the shared rate ga
 """
 from html.parser import HTMLParser
 from urllib.parse import quote, unquote, urlsplit
+from urllib.request import Request, urlopen
 
 
 class AccountResolutionError(ValueError):
@@ -54,3 +55,16 @@ def resolve_account_username(html: str) -> str:
     if len(usernames) != 1:
         raise AccountResolutionError(f"expected one account link; found {len(usernames)}")
     return usernames.pop()
+
+
+def fetch_account_username(name: str, persona_id: int, platform: str, *, timeout_seconds: float = 30.0) -> str:
+    """Fetch soldier HTML and extract its account link; caller must reserve a request slot."""
+    request = Request(soldier_url(name, persona_id, platform), headers={
+        "Accept": "text/html",
+        "User-Agent": "BF4PlayerStats/0.1 (+https://bf4playerstats.com)",
+    })
+    with urlopen(request, timeout=timeout_seconds) as response:
+        if response.status != 200:
+            raise AccountResolutionError(f"soldier page HTTP {response.status}")
+        body = response.read()
+    return resolve_account_username(body.decode("utf-8"))
