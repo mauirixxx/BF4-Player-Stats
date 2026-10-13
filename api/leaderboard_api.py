@@ -93,4 +93,6 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self,503,{'status':'unavailable','message':'Statistics temporarily unavailable'})
     def log_message(self,*args):pass
 if __name__=='__main__':
-    ThreadingHTTPServer(('127.0.0.1',8765),Handler).serve_forever()
+    port=int(os.environ.get('BF4PS_API_PORT','8765'))
+    if not 1 <= port <= 65535:raise ValueError('Invalid BF4PS_API_PORT')
+    ThreadingHTTPServer(('127.0.0.1',port),Handler).serve_forever()
