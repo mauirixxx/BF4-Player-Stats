@@ -8,3 +8,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# Docker deployment secrets
+deploy/docker/discovery.env
+deploy/docker/collector.env
