@@ -5,7 +5,7 @@ from __future__ import annotations
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-SUPPORTED_RETRY_RESOURCES = ("detailed", "weapons", "vehicles")
+SUPPORTED_RETRY_RESOURCES = ("detailed", "weapons", "vehicles", "profile")
 RETRY_BACKOFF_SECONDS = (15 * 60, 60 * 60, 6 * 60 * 60, 24 * 60 * 60)
 
 
