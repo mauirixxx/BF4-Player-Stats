@@ -14,7 +14,7 @@ from sqlalchemy import create_engine
 
 from bf4ps.collector_runtime import heartbeat_collector, register_collector, stop_collector
 from bf4ps.detailed_collector import CollectedJob, FailedJob, CollectorIdentity, collect_one_detailed_job
-from bf4ps.production_hosts import HOSTS, LEASE_SECONDS, REQUEST_INTERVAL_SECONDS, RESOURCES, SOFTWARE_VERSION
+from bf4ps.production_hosts import HOSTS, LEASE_SECONDS, REQUEST_INTERVAL_SECONDS, RESOURCES, SOFTWARE_VERSION, resolve_production_host
 from bf4ps.vehicle_collector import CollectedVehicleJob, FailedVehicleJob, collect_one_vehicle_job
 from bf4ps.weapon_collector import CollectedWeaponJob, FailedWeaponJob, collect_one_weapon_job
 from bf4ps.profile_collector import CollectedProfileJob, FailedProfileJob, collect_one_profile_job
@@ -69,10 +69,10 @@ def describe_result(resource: str, result) -> tuple[str, bool]:
 
 
 def main() -> int:
-    host = socket.gethostname().split(".", 1)[0]
-    configured = HOSTS.get(host)
-    if configured is None:
-        raise SystemExit(f"REFUSING: host {host!r} has no production collector identity")
+    try:
+        host, configured = resolve_production_host()
+    except ValueError as exc:
+        raise SystemExit(f"REFUSING: {exc}") from exc
 
     url = os.environ.get("BF4PS_DATABASE_URL")
     if not url:

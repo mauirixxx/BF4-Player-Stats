@@ -9,12 +9,12 @@ Status: **PENDING**, not tagged/released. Source: archive/pre-v1-soak-worktree-2
 - Canonical database schema documentation and operator runbook; regression tests kept in repository but excluded from image.
 
 ## Archived in Git history, excluded from Docker
-- Phase1–Phase5 experimental scripts, 1800-soak seed/ramp/requeue tools, one-off preflights, historic validation notes. Do not delete their historical commits.
+- 153 experimental scripts, 50 phase/stage harness tests, and 5 experiment-only library modules removed from the release branch and preserved in `archive/pre-v1-soak-worktree-20261013` (commit `a028528`). Production-facing tests remain in `tests/`. Historical validation documentation remains accessible via the archive branch; curated operational documentation stays in release.
 - Website/dashboard currently lives outside this repository on tcou; separately package and version it before production deployment.
 
 ## Release gates
 1. Docker build and isolated smoke test; non-root runtime and credentials handling.
-2. Replace hard-coded collector hostname mapping with stable configurable worker IDs/egress, with collision protection.
+2. Stable configurable collector UUID/name/egress is implemented, preserving legacy host mappings. Verify fleet-wide UUID uniqueness and egress sharing under Docker; add collision protection acceptance tests.
 3. Verify migrations against documented and live schemas; fresh install, upgrade, backup/restore and rollback procedure.
 4. Document explicit discovery materialization/cutover, queue feeder and retry policy; test initial 191k-identity scale without a request storm.
 5. Add health/readiness and restart/recovery checks, validate three-node Docker deployment.

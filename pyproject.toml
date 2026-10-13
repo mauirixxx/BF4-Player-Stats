@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bf4-player-stats"
-version = "0.1.0"
+version = "1.0.0rc1"
 description = "Battlefield 4 player statistics collection and presentation service"
 requires-python = ">=3.12"
 dependencies = [

@@ -14,6 +14,5 @@ services:
     image: bf4-player-stats:1.0.0-rc
     restart: unless-stopped
     env_file: ./collector.env
-    hostname: ${BF4PS_COLLECTOR_HOSTNAME:?Set an existing approved collector host identity}
     command: ["python", "/app/scripts/bf4ps_production_collector.py"]
     profiles: ["collector"]
