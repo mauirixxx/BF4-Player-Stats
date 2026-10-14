@@ -210,7 +210,7 @@ vehicle,48,WARSAW_ID_P_XP3_WNAME_RAWR,RAWR,RAWR,wiki_candidate_unverified_battle
 vehicle,17,WARSAW_ID_P_VNAME_SPM3,SPM3,SPM-3,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,11,WARSAW_ID_P_VNAME_TOW,TOW,M220 TOW Launcher,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,8,WARSAW_ID_P_VNAME_50CAL,50CAL,.50 Cal,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,82,WARSAW_ID_P_VNAME_50CALNOSHIELD,50CALNOSHIELD,.50 CAL (NO SHIELD),needs_manual_review,raw key; requires manual Battlelog comparison
+vehicle,82,WARSAW_ID_P_VNAME_50CALNOSHIELD,50CALNOSHIELD,.50 CAL (NO SHIELD),operator_confirmed_hidden_from_picker,"Battlelog screenshot XPrincessaMiaX .50 CAL (RU/US/CN) each 541 matches D3 ID82 541; operator requests hide, never delete; WEBSITE PR #9"
 vehicle,52,WARSAW_ID_P_VNAME_KA60,KA60,KA-60 Kasatka,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,43,WARSAW_ID_P_VNAME_QUAD,QUAD,Quad Bike,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,16,WARSAW_ID_P_XP1_VNAME_BOMBER,BOMBER,BOMBER,operator_confirmed_killfeed,operator confirmed exact in-game kill-feed label BOMBER; Battlelog stats-screen wording not separately checked

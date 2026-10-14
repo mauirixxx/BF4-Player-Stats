@@ -179,3 +179,11 @@ D3 COUGAR item 81 candidates: PC `DeVascon1957` 3,230 kills; `Sorenson44` 1,844;
 **Vehicle catalog ID 81: `COUGAR` → `MRAP` is Battlelog-confirmed.** Screenshots show the MRAP name and exact matching counts for two different players. This supersedes the earlier candidate-only status.
 
 Additional names visible in Sorenson44 screenshot: `KA-60 KASATKA`, `LYT2021`, `PWC`, `QUAD BIKE`. Treat as screenshot evidence for spelling, without altering their records in this commit.
+
+### Operator decision — hide .50 CAL NO SHIELD without deleting
+
+| Vehicle ID | Raw suffix | D3 kills | Battlelog evidence | Decision |
+|---:|---|---:|---|---|
+| 82 | 50CALNOSHIELD | 541 (XPrincessaMiaX, PC) | `.50 CAL (RU)`, `(US)`, `(CN)` each 541 | **Hide from vehicle picker only; preserve API and database records** |
+
+Implemented on WEBSITE via [PR #9](https://github.com/mauirixxx/BF4-Player-Stats/pull/9). This is a visibility policy, not a deletion or statistical merge. Faction-specific Battlelog labels remain evidence, not separate dropdown items.
