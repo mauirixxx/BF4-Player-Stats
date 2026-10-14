@@ -131,14 +131,20 @@ def claim_production_background_job(
     if interactive_pending:
         return None
 
+    limit = int(conn.execute(text(
+        "SELECT background_slots_per_hour FROM runtime_budgets WHERE singleton = true"
+    )).scalar_one())
+    active_slots = int(limit * ACTIVE_SHARE)
+    bootstrap_slots = int(limit * BOOTSTRAP_FLOOR)
+    recovery_slots = limit - active_slots - bootstrap_slots
     usage = _usage(conn)
-    if usage.total >= BACKGROUND_SLOTS_PER_HOUR:
+    if usage.total >= limit:
         return None
 
     # Starvation floors take precedence while their reserved share remains
     # unused. If no eligible job exists in a floor, the slot is immediately
     # borrowable by another class.
-    if usage.bootstrap < BOOTSTRAP_SLOTS:
+    if usage.bootstrap < bootstrap_slots:
         job = claim_next_job(
             conn,
             collector_uuid=collector_uuid,
@@ -155,7 +161,7 @@ def claim_production_background_job(
         if job is not None:
             return job
 
-    if usage.recovery < RECOVERY_SLOTS:
+    if usage.recovery < recovery_slots:
         job = claim_next_job(
             conn,
             collector_uuid=collector_uuid,
@@ -187,7 +193,7 @@ def claim_production_background_job(
         if job is not None:
             return job
 
-    if usage.active < ACTIVE_SLOTS:
+    if usage.active < active_slots:
         job = claim_next_job(
             conn,
             collector_uuid=collector_uuid,
