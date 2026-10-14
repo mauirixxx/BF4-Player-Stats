@@ -458,3 +458,20 @@ Read-only D3 high-count comparison targets:
 | BPKNIFE7 (89) | ranbers | pc | 609 | 927983334 |
 
 These leaderboard counts are **comparison targets only**, not independent confirmation of knife names.
+
+## Knife audit closure — all eight BPKNIFE identities confirmed
+
+Operator verified the remaining four mappings using other players’ Battlelog statistics: **BPKNIFE3 → TRENCH**, **BPKNIFE4 → CARBON FIBER**, **BPKNIFE7 → BOOT**, and **BPKNIFE8 → SEAL**. These supersede the ambiguous candidates in the earlier knife section.
+
+| Internal key | Catalog ID | Approved name |
+|---|---:|---|
+| BPKNIFE1 | 69 | IMPROVISED |
+| BPKNIFE2 | 48 | SCOUT |
+| BPKNIFE3 | 139 | TRENCH |
+| BPKNIFE4 | 113 | CARBON FIBER |
+| BPKNIFE5 | 42 | SURVIVAL |
+| BPKNIFE6 | 150 | BOWIE |
+| BPKNIFE7 | 89 | BOOT |
+| BPKNIFE8 | 107 | SEAL |
+
+All eight knife IDs now have operator-confirmed display names. No changes to raw identifiers, catalog IDs, kill counts, API, database, collectors, or deployed website.
