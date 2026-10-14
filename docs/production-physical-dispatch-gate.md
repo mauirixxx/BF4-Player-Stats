@@ -29,3 +29,11 @@ Across **all production BF4PS collector workers and egress keys**, authorize no 
 - Approve the production physical-dispatch ceiling only after all checks pass; undrain explicitly as a separate operator action.
 
 No changes in this document authorize collector resume.
+
+## Stage 9C migration discovery (2026-10-13)
+- Migration `0005_stage9c_dispatch_ledger` **already defines** `outbound_dispatches`: `dispatch_id`, `job_id`, `attempt_number`, `resource`, `lease_token`, `collector_uuid`, `egress_key`, `lane`, `payload_fingerprint`, `admitted_at`, `phase`, `send_marked_at`, `acknowledged_at`. Its docstring explicitly states admission and actual-send guarantee are unimplemented.
+- The unique constraint `uq_outbound_dispatch_identity` on `(job_id, attempt_number, resource, lease_token)` prevents using two rows for two physical HTTP calls in one profile attempt. A compatible additive schema change is needed if this ledger is reused; preserve historical records and do not rewrite prior evidence.
+- Migration `0006_stage9c_soak_round_ledger` is explicitly marked scratch-only. Do **not** infer from the revision number that production migrations or tables may be modified. Read-only inspect the production schema and migration state before deciding the safe production migration path.
+- Existing `outbound_dispatches` index `ix_outbound_dispatch_background_admitted` is background-scoped. A fleet-wide physical gate must count every production collector lane and egress, not just background.
+- `bf4ps/profile_collector.py` makes the account-resolution request before its `collection_attempt_started` event; therefore event-based accounting is not sufficient.
+- Next: reconcile the Stage 9C ledger semantics and migration constraints with actual production DDL, then implement physical reservations, send markers, redirect policy, and isolated tests. No undrain authorized.
