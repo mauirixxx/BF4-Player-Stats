@@ -15,6 +15,7 @@ from bf4ps.battlelog_vehicles import VehicleStatsError, fetch_vehicle_stats, nor
 from bf4ps.collection_jobs import claim_next_job, mark_job_running
 from bf4ps.background_service import claim_production_background_job
 from bf4ps.request_gate import reserve_request_slot
+from bf4ps.physical_dispatch_gate import authorized_http_attempt
 from bf4ps.retry_policy import retry_delay_for_failure
 from bf4ps.vehicle_failure import classify_vehicle_failure, persist_vehicle_retry_failure
 from bf4ps.vehicle_persistence import persist_vehicle_success
@@ -275,6 +276,13 @@ def collect_one_vehicle_job(
 
     started = monotonic()
     try:
+        if enforce_production_budget:
+            with authorized_http_attempt(
+                engine, job=job, identity=identity, resource="vehicles",
+                request_ordinal=1, request_label=f"vehicles:{persona_id}:{platform}",
+            ):
+            fetched = fetch_vehicle_stats(persona_id, platform, timeout_seconds=timeout_seconds)
+        else:
         fetched = fetch_vehicle_stats(persona_id, platform, timeout_seconds=timeout_seconds)
         vehicles = normalize_vehicle_stats(
             fetched.payload,
