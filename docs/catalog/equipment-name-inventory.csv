@@ -184,42 +184,42 @@ vehicle,32,WARSAW_ID_P_VNAME_LAVAD,LAVAD,LAV-AD,wiki_candidate_unverified_battle
 vehicle,33,WARSAW_ID_P_VNAME_MI28,MI28,Mi-28 Havoc,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
 vehicle,2,WARSAW_ID_P_VNAME_DV15,DV15,DV-15 Interceptor,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
 vehicle,74,WARSAW_ID_P_VNAME_PGZ95,PGZ95,Type 95 AA,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,3,WARSAW_ID_P_INAME_MORTAR,MORTAR,,unreviewed,
+vehicle,3,WARSAW_ID_P_INAME_MORTAR,MORTAR,M224 MORTAR,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,44,WARSAW_ID_P_VNAME_9K22,9K22,9K22 Tunguska-M,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,10,WARSAW_ID_P_XP1_VNAME_UCAV,UCAV,,unreviewed,
+vehicle,10,WARSAW_ID_P_XP1_VNAME_UCAV,UCAV,UCAV,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,22,WARSAW_ID_P_VNAME_Q5,Q5,Q-5 Fantan,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,1,WARSAW_ID_P_VNAME_HIMARS,HIMARS,M142 (HIMARS),existing_site_label_unverified_battlelog,site/index.html
 vehicle,19,WARSAW_ID_P_XP1_VNAME_F35,F35,F-35,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
-vehicle,58,WARSAW_ID_P_VNAME_SU39,SU39,,unreviewed,
+vehicle,58,WARSAW_ID_P_VNAME_SU39,SU39,SU-39,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,50,WARSAW_ID_P_VNAME_A10,A10,A-10 Warthog,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,40,WARSAW_ID_P_VNAME_J20,J20,J-20,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
 vehicle,18,WARSAW_ID_P_VNAME_PAKFA,PAKFA,Su-50,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,49,WARSAW_ID_P_VNAME_RIB,RIB,RHIB Boat,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,4,WARSAW_ID_P_VNAME_UH1Y,UH1Y,UH-1Y Venom,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,66,WARSAW_ID_P_XP1_VNAME_SUAV,SUAV,,unreviewed,
+vehicle,66,WARSAW_ID_P_XP1_VNAME_SUAV,SUAV,SUAV,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,7,WARSAW_ID_P_VNAME_AAV,AAV,AAV-7A1 AMTRAC,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,29,WARSAW_ID_P_INAME_EOD,EOD,,unreviewed,
+vehicle,29,WARSAW_ID_P_INAME_EOD,EOD,EOD BOT,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,39,WARSAW_ID_P_VNAME_Z9,Z9,Z-9 Haitun,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,81,WARSAW_ID_P_VNAME_COUGAR,COUGAR,,unreviewed,
+vehicle,81,WARSAW_ID_P_VNAME_COUGAR,COUGAR,COUGAR,needs_manual_review,raw key; requires manual Battlelog comparison
 vehicle,14,WARSAW_ID_P_VNAME_ZFB05,ZFB05,ZFB-05,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,25,WARSAW_ID_P_VNAME_AC130,AC130,AC-130 Gunship,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,35,WARSAW_ID_P_VNAME_LYT2021,LYT2021,LYT2021,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,9,WARSAW_ID_P_INAME_MAV,MAV,,unreviewed,
+vehicle,9,WARSAW_ID_P_INAME_MAV,MAV,MAV,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,61,WARSAW_ID_P_VNAME_VDV,VDV,VDV Buggy,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,48,WARSAW_ID_P_XP3_WNAME_RAWR,RAWR,,unreviewed,
+vehicle,48,WARSAW_ID_P_XP3_WNAME_RAWR,RAWR,RAWR,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,17,WARSAW_ID_P_VNAME_SPM3,SPM3,SPM-3,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,11,WARSAW_ID_P_VNAME_TOW,TOW,M220 TOW Launcher,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,8,WARSAW_ID_P_VNAME_50CAL,50CAL,.50 Cal,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,82,WARSAW_ID_P_VNAME_50CALNOSHIELD,50CALNOSHIELD,,unreviewed,
+vehicle,82,WARSAW_ID_P_VNAME_50CALNOSHIELD,50CALNOSHIELD,.50 CAL (NO SHIELD),needs_manual_review,raw key; requires manual Battlelog comparison
 vehicle,52,WARSAW_ID_P_VNAME_KA60,KA60,KA-60 Kasatka,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,43,WARSAW_ID_P_VNAME_QUAD,QUAD,Quad Bike,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,16,WARSAW_ID_P_XP1_VNAME_BOMBER,BOMBER,,unreviewed,
+vehicle,16,WARSAW_ID_P_XP1_VNAME_BOMBER,BOMBER,BOMBER,needs_manual_review,raw key; requires manual Battlelog comparison
 vehicle,64,WARSAW_ID_P_VNAME_KORNET,KORNET,9M133 Kornet Launcher,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,70,WARSAW_ID_P_VNAME_GROWLER,GROWLER,,unreviewed,
+vehicle,70,WARSAW_ID_P_VNAME_GROWLER,GROWLER,GROWLER ITV,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,79,WARSAW_ID_P_XP4_MP_VNAME_HTANK,HTANK,HT-95 LEVKOV,existing_site_label_unverified_battlelog,site/index.html
-vehicle,31,WARSAW_ID_P_XP2_INAME_AAMINE,AAMINE,,unreviewed,
+vehicle,31,WARSAW_ID_P_XP2_INAME_AAMINE,AAMINE,AA MINE,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,65,WARSAW_ID_P_VNAME_HJ8,HJ8,HJ-8 Launcher,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,57,WARSAW_ID_P_XP4_WNAME_MKV,MKV,,unreviewed,
+vehicle,57,WARSAW_ID_P_XP4_WNAME_MKV,MKV,MKV,needs_manual_review,raw key; requires manual Battlelog comparison
 vehicle,72,WARSAW_ID_P_XP1_VNAME_DIRTBIKE,DIRTBIKE,Dirt Bike,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,6,WARSAW_ID_P_XP4_MP_VNAME_METAL,METAL,SCHIPUNOV 42,existing_site_label_unverified_battlelog,site/index.html
 vehicle,51,WARSAW_ID_P_XP0_VNAME_DPV,DPV,Desert Patrol Vehicle,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4

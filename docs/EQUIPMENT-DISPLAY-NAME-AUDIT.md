@@ -89,3 +89,27 @@ These are Battlefield Wiki **BF4 vehicle-list names**, not yet independently ver
 Reference: https://battlefield.fandom.com/wiki/Battlefield_4 (Vehicles of Battlefield 4).
 
 **Note:** Several raw keys differ substantially from wiki names (e.g. `PAKFA` → `Su-50`, `CB90` → `RCB-90`); these remain candidates until Battlelog confirms the exact display wording.
+
+## Batch 3 — remaining 13 vehicle catalog entries
+
+**Candidate names only.** Names here are not independently confirmed as exact Battlelog strings. Ambiguous entries explicitly require manual review. Vehicle classification remains unchanged.
+
+| Vehicle ID | Raw key suffix | Proposed name | Status |
+|---:|---|---|---|
+| 3 | MORTAR | M224 MORTAR | Wiki candidate; Battlelog unverified |
+| 9 | MAV | MAV | Wiki candidate; Battlelog unverified |
+| 10 | UCAV | UCAV | Wiki candidate; Battlelog unverified |
+| 16 | BOMBER | BOMBER | Manual review needed |
+| 29 | EOD | EOD BOT | Wiki candidate; Battlelog unverified |
+| 31 | AAMINE | AA MINE | Wiki candidate; Battlelog unverified |
+| 48 | RAWR | RAWR | Wiki candidate; Battlelog unverified |
+| 57 | MKV | MKV | Manual review needed |
+| 58 | SU39 | SU-39 | Wiki candidate; Battlelog unverified |
+| 66 | SUAV | SUAV | Wiki candidate; Battlelog unverified |
+| 70 | GROWLER | GROWLER ITV | Wiki candidate; Battlelog unverified |
+| 81 | COUGAR | COUGAR | Manual review needed |
+| 82 | 50CALNOSHIELD | .50 CAL (NO SHIELD) | Manual review needed |
+
+Potential ambiguity: COUGAR may have a fuller model name; .50 CAL (NO SHIELD) may share Battlelog label with another variant; BOMBER may be a generic stat grouping; MKV may refer to a DLC pickup. Verify these directly before approving display labels.
+
+Reference: https://battlefield.fandom.com/wiki/Category:Gadgets_of_Battlefield_4 and https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
