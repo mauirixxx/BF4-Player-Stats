@@ -3,6 +3,7 @@
 This module deliberately does not guess usernames from soldier display names.
 Network callers must account for each soldier-page request in the shared rate gate.
 """
+from bf4ps.single_request_transport import single_request_urlopen
 from html.parser import HTMLParser
 from urllib.parse import quote, unquote, urlsplit
 from urllib.request import Request, urlopen
@@ -63,7 +64,7 @@ def fetch_account_username(name: str, persona_id: int, platform: str, *, timeout
         "Accept": "text/html",
         "User-Agent": "BF4PlayerStats/0.1 (+https://bf4playerstats.com)",
     })
-    with urlopen(request, timeout=timeout_seconds) as response:
+    with single_request_urlopen(request, timeout=timeout_seconds) as response:
         if response.status != 200:
             raise AccountResolutionError(f"soldier page HTTP {response.status}")
         body = response.read()
