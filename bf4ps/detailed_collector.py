@@ -17,6 +17,7 @@ from bf4ps.background_service import claim_production_background_job
 from bf4ps.detailed_failure import classify_detailed_failure, persist_detailed_retry_failure
 from bf4ps.detailed_persistence import persist_detailed_success
 from bf4ps.request_gate import reserve_request_slot
+from bf4ps.physical_dispatch_gate import authorized_http_attempt
 from bf4ps.retry_policy import retry_delay_for_failure
 
 
@@ -223,6 +224,13 @@ def collect_one_detailed_job(
 
     started = monotonic()
     try:
+        if enforce_production_budget:
+            with authorized_http_attempt(
+                engine, job=job, identity=identity, resource="detailed",
+                request_ordinal=1, request_label=f"detailed:{persona_id}:{platform}",
+            ):
+            fetched = fetch_detailed_stats(
+        else:
         fetched = fetch_detailed_stats(
             persona_id,
             platform,
