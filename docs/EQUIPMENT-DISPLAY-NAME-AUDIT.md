@@ -231,3 +231,69 @@ First-pass readable naming candidates, derived from BF4 equipment conventions. *
 | 173 | AN94 | AN-94 | Candidate; verify |
 
 **Special attention:** `ACR` → `ACW-R`, `GALIL23` → `ACE 23`, `GALIL52` → `ACE 52 CQB`, `GALIL21` → `ACE 21 CQB`, `GALIL53` → `ACE 53 SV`, `STEYRAUG` → `AUG A3`, and `M4A1` → `M4` should be checked directly against Battlelog before declaring exact spelling.
+
+## Batch 4 sign-off — operator approved
+
+The operator approved the 31 Batch 4 weapon display-name candidates for website use. This is an approval of proposed presentation names, not independent Battlelog screenshot verification for each row. CSV per-row verification evidence remains unchanged.
+
+## Batch 5 — PDWs, LMGs, shotguns and precision rifles (53 candidates)
+
+Proposed BF4-readable labels; exact Battlelog spelling not independently verified. **Do not confuse operator approval with Battlelog screenshot confirmation.**
+
+| Weapon ID | Raw suffix | Proposed label | Status |
+|---:|---|---|---|
+| 1 | RPK74 | RPK-74M | Candidate; review |
+| 4 | M98B | M98B | Candidate; review |
+| 5 | L86A1 | L86A2 | Candidate; review |
+| 7 | 870 | 870 MCS | Candidate; review |
+| 9 | RPK12 | RPK-12 | Candidate; review |
+| 19 | SHORTY | SHORTY 12G | Candidate; review |
+| 27 | UMP45 | UMP-45 | Candidate; review |
+| 28 | MG4 | MG4 | Candidate; review |
+| 29 | MP7 | MP7 | Candidate; review |
+| 33 | DBV12 | DBV-12 | Candidate; review |
+| 34 | L96A1 | L96A1 | Candidate; review |
+| 35 | CBJMS | CBJ-MS | Candidate; review |
+| 37 | UTAS | UTS 15 | Candidate; review |
+| 38 | DAO12 | DAO-12 | Candidate; review |
+| 49 | SCARHSV | SCAR-H SV | Candidate; review |
+| 50 | PECHENEG | PKP PECHENEG | Candidate; review |
+| 52 | M240 | M240B | Candidate; review |
+| 53 | SRS | 338-RECON | Candidate; review |
+| 55 | GOL | GOL MAGNUM | Candidate; review |
+| 58 | UMP9 | UMP-9 | Candidate; review |
+| 59 | PP2000 | PP-2000 | Candidate; review |
+| 67 | LSAT | LSAT | Candidate; review |
+| 68 | JNG90 | JNG-90 | Candidate; review |
+| 71 | MK11 | MK11 MOD 0 | Candidate; review |
+| 73 | USAS12 | USAS-12 | Candidate; review |
+| 77 | SCOUTELIT | SCOUT ELITE | Candidate; review |
+| 78 | QBB95 | QBB-95-1 | Candidate; review |
+| 91 | SR338 | SR338 | Candidate; review |
+| 94 | SV98 | SV-98 | Candidate; review |
+| 96 | M40A5 | M40A5 | Candidate; review |
+| 97 | SAIGA12 | SAIGA 12K | Candidate; review |
+| 100 | AWS | AWS | Candidate; review |
+| 104 | HAWK | HAWK 12G | Candidate; review |
+| 108 | MPX | MPX | Candidate; review |
+| 114 | SCORP | CZ-3A1 | Candidate; review |
+| 116 | M249 | M249 | Candidate; review |
+| 124 | ASVAL | AS VAL | Candidate; review |
+| 125 | M60E4 | M60-E4 | Candidate; review |
+| 126 | SVD12 | SVD-12 | Candidate; review |
+| 128 | P90 | P90 | Candidate; review |
+| 132 | JS2 | JS2 | Candidate; review |
+| 135 | SKS | SKS | Candidate; review |
+| 138 | TYPE88 | TYPE 88 LMG | Candidate; review |
+| 146 | CSLR4 | CS-LR4 | Candidate; review |
+| 147 | CS5 | CS5 | Candidate; review |
+| 154 | SR2 | SR-2 | Candidate; review |
+| 157 | M39 | M39 EMR | Candidate; review |
+| 159 | MX4 | MX4 | Candidate; review |
+| 161 | QBU88 | QBU-88 | Candidate; review |
+| 163 | M200 | SRR-61 | Candidate; review |
+| 165 | SPAS12 | SPAS-12 | Candidate; review |
+| 166 | M1014 | M1014 | Candidate; review |
+| 167 | PDR | PDW-R | Candidate; review |
+
+**Worth checking closely:** `SCORP` → `CZ-3A1`, `M200` → `SRR-61`, `SRS` → `338-RECON`, `L86A1` → `L86A2`, `CBJMS` → `CBJ-MS`, and `PECHENEG` → `PKP PECHENEG`. These are plausible BF4 display names but are not direct Battlelog confirmations.
