@@ -10,7 +10,7 @@ import signal
 import socket
 import time
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from bf4ps.collector_runtime import heartbeat_collector, register_collector, stop_collector
 from bf4ps.detailed_collector import CollectedJob, FailedJob, CollectorIdentity, collect_one_detailed_job
@@ -87,6 +87,18 @@ def main() -> int:
         "background",
     )
     engine = create_engine(url, pool_pre_ping=True)
+
+    # Refuse to register, claim, or send anything on an unprepared database.
+    # This is a read-only startup preflight; schema upgrades are operator-led.
+    with engine.connect() as conn:
+        db_name = conn.execute(text("SELECT current_database()")).scalar_one()
+        if db_name != "bf4_playerstats":
+            raise SystemExit(f"REFUSING: production collector database is {db_name!r}")
+        revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+        if revision != "0007_physical_dispatch_gate":
+            raise SystemExit(
+                f"REFUSING: physical dispatch gate migration required; found {revision!r}"
+            )
 
     with engine.begin() as conn:
         control = register_collector(conn, identity=identity, software_version=SOFTWARE_VERSION)
