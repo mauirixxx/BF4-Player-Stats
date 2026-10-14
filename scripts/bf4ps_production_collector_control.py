@@ -20,6 +20,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=("drain", "resume"))
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--approve-production-physical-dispatch", action="store_true")
     args = parser.parse_args()
     if not args.execute:
         raise SystemExit("REFUSING: --execute is required")
@@ -29,6 +30,8 @@ def main() -> int:
     except ValueError as exc:
         raise SystemExit(f"REFUSING: {exc}") from exc
 
+    if args.approve_production_physical_dispatch and args.action != "resume":
+        raise SystemExit("REFUSING: production approval flag is only valid for resume")
     engine = create_engine(database_url(), pool_pre_ping=True, connect_args={"connect_timeout": 3, "options": "-c statement_timeout=3000 -c lock_timeout=1000"})
     desired = args.action == "drain"
     try:
@@ -37,10 +40,10 @@ def main() -> int:
             revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
             recovery = bool(conn.execute(text("SELECT pg_is_in_recovery()")).scalar_one())
             read_only = conn.execute(text("SELECT current_setting('transaction_read_only')")).scalar_one()
-            # Production may only be drained here. Resuming requires a separate
-            # physical-dispatch safety approval and must not be accidental.
-            allowed_db = db == TEST_DATABASE or (desired and db == PRODUCTION_DATABASE)
-            allowed_revision = (EXPECTED_REVISION, STAGE9C_REVISION, STAGE9C_SOAK_REVISION) if desired else (EXPECTED_REVISION,)
+            # Production resume requires an explicit, separate operator approval flag.
+            production_resume = not desired and db == PRODUCTION_DATABASE
+            allowed_db = db == TEST_DATABASE or (db == PRODUCTION_DATABASE and (desired or args.approve_production_physical_dispatch))
+            allowed_revision = (EXPECTED_REVISION, STAGE9C_REVISION, STAGE9C_SOAK_REVISION, "0007_physical_dispatch_gate") if desired else (("0007_physical_dispatch_gate",) if production_resume else (EXPECTED_REVISION,))
             if not allowed_db or revision not in allowed_revision or recovery or read_only != "off":
                 raise RuntimeError(
                     f"wrong target db={db!r} revision={revision!r} recovery={recovery} read_only={read_only!r}"
