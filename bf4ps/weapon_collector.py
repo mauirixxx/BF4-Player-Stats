@@ -281,9 +281,9 @@ def collect_one_weapon_job(
                 engine, job=job, identity=identity, resource="weapons",
                 request_ordinal=1, request_label=f"weapons:{persona_id}:{platform}",
             ):
-            fetched = fetch_weapon_stats(persona_id, platform, timeout_seconds=timeout_seconds)
+                fetched = fetch_weapon_stats(persona_id, platform, timeout_seconds=timeout_seconds)
         else:
-        fetched = fetch_weapon_stats(persona_id, platform, timeout_seconds=timeout_seconds)
+            fetched = fetch_weapon_stats(persona_id, platform, timeout_seconds=timeout_seconds)
         weapons = normalize_weapon_stats(
             fetched.payload,
             expected_persona_id=persona_id,
