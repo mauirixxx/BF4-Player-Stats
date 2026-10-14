@@ -424,3 +424,22 @@ Read-only D3 leaderboard sample for weapon catalog ID 148 (`RFBTARGET`): Meuchte
 - **Weapon 148 `WARSAW_ID_P_WNAME_RFBTARGET` → RFB — Battlelog supported.** Operator screenshot of PC soldier `MeuchteFoese` shows RFB **44,564 kills** versus D3 weapon-148 **44,541** (difference +23). Consistent with more recent Battlelog stats; unlike weapon 140, not an exact-count match. This supersedes the previous unknown status.
 
 Neither correction changes raw catalog keys, catalog IDs, kill counts, database contents, or collection behavior.
+
+## Batch 7 final operator review — FLIR and knife verification cohort
+
+Operator approved remaining Batch 7 proposals, with correction **weapon 15 `USAS12NV` → USAS-12 FLIR** (supersedes `USAS-12 NV`). The eight numbered Battlepack knife mappings remain unresolved.
+
+Read-only D3 soldier data for **mauirixxx** (PC persona **236753552**), snapshot **2026-10-13 02:36 UTC**:
+
+| Internal knife | Catalog ID | D3 kills | Battlelog name |
+|---|---:|---:|---|
+| BPKNIFE1 | 69 | 5 | Awaiting comparison |
+| BPKNIFE2 | 48 | 3 | Awaiting comparison |
+| BPKNIFE3 | 139 | 25 | Awaiting comparison |
+| BPKNIFE4 | 113 | 10 | Awaiting comparison |
+| BPKNIFE5 | 42 | 6 | Awaiting comparison |
+| BPKNIFE6 | 150 | 2,083 | Awaiting comparison |
+| BPKNIFE7 | 89 | 10 | Awaiting comparison |
+| BPKNIFE8 | 107 | 25 | Awaiting comparison |
+
+**Caution:** BPKNIFE3 and BPKNIFE8 both have 25 kills; BPKNIFE4 and BPKNIFE7 both have 10 kills. A kill-count-only match is ambiguous for these pairs. Seek independent player evidence or another distinguishing statistic before mapping them. No knife names have been assigned yet.
