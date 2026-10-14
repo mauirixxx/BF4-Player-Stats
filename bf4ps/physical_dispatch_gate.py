@@ -7,7 +7,7 @@ No production collector should be undrained until all HTTP paths use it.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
@@ -65,7 +65,7 @@ def authorize_physical_dispatch(
             FROM outbound_dispatches
             WHERE admitted_at > :cutoff AND admitted_at <= :now
         """),
-        {"cutoff": db_now.replace() - __import__("datetime").timedelta(seconds=3600), "now": db_now},
+        {"cutoff": db_now - timedelta(seconds=3600), "now": db_now},
     ).scalar_one())
     if used >= PHYSICAL_DISPATCHES_PER_HOUR:
         raise PhysicalDispatchBudgetExhausted(
