@@ -417,3 +417,10 @@ References: https://battlefield.fandom.com/wiki/Knife/Battlefield_4 and https://
 Operator approved the other Batch 7 naming candidates but **rejected** `RFBTARGET` → `RFB` and `ULTIM` → `U-100 MK5`; both are **unknown** until Battlelog matching. Operator explicitly requests website display `M60ULT` → **M60 Ultimate** (in-game M60-ULT) and `SPYDER` → **Phantom Bow** (in-game PHANTOM). These decisions supersede earlier Batch 7 proposals.
 
 Read-only D3 leaderboard sample for weapon catalog ID 148 (`RFBTARGET`): MeuchteFoese (PC) **44,541**, ONE_PIECE_81 (PS4) **19,986**, UK-ToeTag (PC) **8,231**. For weapon ID 140 (`ULTIM`): XxJohnnyxX3263 (Xbox One) **10,730**, d801226 (PS4) **10,021**, Suzems (PC) **2,500**. These counts identify Battlelog comparison targets; **they do not identify the equipment**. Do not promote either to a named mapping until independently verified.
+
+## Batch 7 follow-up — Battlelog screenshot verification (supersedes unknown status)
+
+- **Weapon 140 `WARSAW_ID_P_WNAME_ULTIM` → U-100 MK5 — Battlelog confirmed.** Operator screenshot of Xbox One soldier `XxJohnnyxX3263` shows U-100 MK5 **10,730 kills**, exactly matching the D3 weapon-140 leaderboard **10,730**. This supersedes the previous unknown / unverified candidate.
+- **Weapon 148 `WARSAW_ID_P_WNAME_RFBTARGET` → RFB — Battlelog supported.** Operator screenshot of PC soldier `MeuchteFoese` shows RFB **44,564 kills** versus D3 weapon-148 **44,541** (difference +23). Consistent with more recent Battlelog stats; unlike weapon 140, not an exact-count match. This supersedes the previous unknown status.
+
+Neither correction changes raw catalog keys, catalog IDs, kill counts, database contents, or collection behavior.

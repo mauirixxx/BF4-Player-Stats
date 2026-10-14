@@ -73,7 +73,7 @@ weapon,145,WARSAW_ID_P_WNAME_SAR21,SAR21,SAR-21,weapon_candidate_unverified_batt
 weapon,34,WARSAW_ID_P_XP1_WNAME_L96A1,L96A1,L96A1,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,55,WARSAW_ID_P_XP0_WNAME_GOL,GOL,GOL MAGNUM,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,124,WARSAW_ID_P_XP0_WNAME_ASVAL,ASVAL,AS VAL,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
-weapon,148,WARSAW_ID_P_WNAME_RFBTARGET,RFBTARGET,,needs_manual_review,"Operator rejects prior RFB guess; D3 weapon 148 leader MeuchteFoese PC 44541 kills, ONE_PIECE_81 PS4 19986; Battlelog comparison pending"
+weapon,148,WARSAW_ID_P_WNAME_RFBTARGET,RFBTARGET,RFB,battlelog_confirmed,Operator Battlelog screenshot MeuchteFoese PC: RFB 44564 kills vs D3 weapon 148 RFBTARGET 44541 (23 newer kills); identity supported by matching player and close count
 weapon,98,WARSAW_ID_P_WNAME_QBS09,QBS09,QBS-09,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,17,WARSAW_ID_P_WNAME_CZ805,CZ805,CZ-805,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,58,WARSAW_ID_P_WNAME_UMP9,UMP9,UMP-9,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
@@ -96,7 +96,7 @@ weapon,94,WARSAW_ID_P_WNAME_SV98,SV98,SV-98,weapon_candidate_unverified_battlelo
 weapon,61,WARSAW_ID_P_WNAME_P226,P226,P226,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,79,WARSAW_ID_P_INAME_M34,M34,M34 INCENDIARY,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,245,WARSAW_ID_P_XP4_WNAME_SPYDER,SPYDER,Phantom Bow,operator_approved_display_name,Operator explicitly approved display Phantom Bow; in-game PHANTOM
-weapon,140,WARSAW_ID_P_WNAME_ULTIM,ULTIM,,needs_manual_review,"Operator rejects prior U-100 MK5 guess; D3 weapon 140 leader XxJohnnyxX3263 Xbox One 10730 kills, Suzems PC 2500; Battlelog comparison pending"
+weapon,140,WARSAW_ID_P_WNAME_ULTIM,ULTIM,U-100 MK5,battlelog_confirmed,Operator Battlelog screenshot XxJohnnyxX3263 Xbox One: U-100 MK5 10730 kills equals D3 weapon 140 ULTIM 10730
 weapon,154,WARSAW_ID_P_XP2_WNAME_SR2,SR2,SR-2,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,132,WARSAW_ID_P_WNAME_JS2,JS2,JS2,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,165,WARSAW_ID_P_WNAME_SPAS12,SPAS12,SPAS-12,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
