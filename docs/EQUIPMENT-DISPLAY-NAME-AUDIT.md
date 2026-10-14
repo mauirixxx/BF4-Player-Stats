@@ -158,3 +158,13 @@ This supersedes the earlier MKV unknown and rejected RORSCH guesses. Screenshot 
 | 10 | UCAV | **UCAV** | **Keep current website label and statistical behavior unchanged.** Operator explicitly approved; do not split into UCAV (RU) and UCAV (US) despite Battlelog displaying those separately. |
 
 This decision supersedes earlier suggestions to investigate faction-specific UCAV handling for purposes of this display-name audit. Do not alter UCAV aggregation or naming unless the operator explicitly requests it.
+
+### COUGAR naming review — MRAP candidate
+
+| Vehicle ID | Raw key | Proposed Battlelog-readable label | Status |
+|---:|---|---|---|
+| 81 | `WARSAW_ID_P_VNAME_COUGAR` | **MRAP** | Operator naming and Battlefield Wiki vehicle identification agree; **player stats cross-check pending** |
+
+The Battlefield Wiki MRAP page describes the Cougar H as the vehicle model; the operator confirms players recognize this vehicle as **MRAP**, not COUGAR. Do not change raw catalog ID or aggregation.
+
+D3 COUGAR item 81 candidates: PC `DeVascon1957` 3,230 kills; `Sorenson44` 1,844; `maqser` 1,030. PS4 `Jag_ska_bara` 2,401. Compare the corresponding Battlelog MRAP statistics before marking `battlelog_confirmed`.
