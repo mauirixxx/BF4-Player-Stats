@@ -17,7 +17,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-PHYSICAL_DISPATCHES_PER_HOUR = 1296
+PHYSICAL_DISPATCHES_PER_HOUR = 3000
 GATE_LOCK_KEY = "bf4ps:production-physical-dispatch-v1"
 
 
