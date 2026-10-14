@@ -186,7 +186,7 @@ vehicle,2,WARSAW_ID_P_VNAME_DV15,DV15,DV-15 Interceptor,wiki_candidate_unverifie
 vehicle,74,WARSAW_ID_P_VNAME_PGZ95,PGZ95,Type 95 AA,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,3,WARSAW_ID_P_INAME_MORTAR,MORTAR,M224 MORTAR,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,44,WARSAW_ID_P_VNAME_9K22,9K22,9K22 Tunguska-M,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,10,WARSAW_ID_P_XP1_VNAME_UCAV,UCAV,UCAV,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,10,WARSAW_ID_P_XP1_VNAME_UCAV,UCAV,UCAV,operator_confirmed_keep_existing,Operator explicitly approved current UCAV display and aggregation; retain exactly as-is despite Battlelog faction-specific rows
 vehicle,22,WARSAW_ID_P_VNAME_Q5,Q5,Q-5 Fantan,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,1,WARSAW_ID_P_VNAME_HIMARS,HIMARS,M142 (HIMARS),existing_site_label_unverified_battlelog,site/index.html
 vehicle,19,WARSAW_ID_P_XP1_VNAME_F35,F35,F-35,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4

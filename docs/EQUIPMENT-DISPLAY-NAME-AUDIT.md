@@ -150,3 +150,11 @@ This supersedes the earlier MKV unknown and rejected RORSCH guesses. Screenshot 
 | Suzems (PC) | 439 | 439 | Exact match; second player |
 
 **Status: Battlelog-confirmed.** The second screenshot independently confirms the same name and count on another player. The earlier pending-independent status is superseded. COUGAR and 50CALNOSHIELD remain unverified.
+
+### Operator decision — UCAV is final as implemented
+
+| Vehicle ID | Key | Display label | Decision |
+|---:|---|---|---|
+| 10 | UCAV | **UCAV** | **Keep current website label and statistical behavior unchanged.** Operator explicitly approved; do not split into UCAV (RU) and UCAV (US) despite Battlelog displaying those separately. |
+
+This decision supersedes earlier suggestions to investigate faction-specific UCAV handling for purposes of this display-name audit. Do not alter UCAV aggregation or naming unless the operator explicitly requests it.
