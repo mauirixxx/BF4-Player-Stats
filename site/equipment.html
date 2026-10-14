@@ -12,13 +12,13 @@
 <section class="strip panel"><div class="strip-top"><h2 id="stripHeading">Browse weapons</h2><span id="stripCount">Loading catalog…</span></div><div class="tiles" id="tiles" aria-label="Equipment selection"></div></section>
 <p class="foot">BF4 Player Stats is a community project, not affiliated with EA or DICE. HUD silhouettes in the browser and showcase renders where available are sourced from Battlefield Wiki; game assets belong to EA/DICE. Missing large renders use text placeholders. Player portraits are placeholders.</p></main>
 <script src="/equipment-names.js"></script>
-<script src="/equipment-artwork.js"></script>
+<script src="/equipment-artwork.js?v=6d9d88e-fix2"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);const fmt=n=>Number(n||0).toLocaleString();const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const labels={pc:'PC',ps4:'PlayStation',xboxone:'Xbox'};
 let platform='pc',kind='weapon',catalog=[],chosen='',request=0,searchDelay;
 function displayName(name){return equipmentLabels[name]||String(name||'UNKNOWN').replace(/^WARSAW_ID_(?:P_)?(?:XP\d+_)?(?:MP_)?(?:WNAME|VNAME|INAME)_/,'').replace(/_/g,' ').replace(/([a-z])([0-9])/g,'$1 $2')}
-function artFor(item,role){const a=equipmentArtwork[kind+'-'+item.id]||null;return a&&a.role===role?a:null}
+function artFor(item,role){return equipmentArtwork[kind+'-'+item.id]?.[role]||null}
 function imageFor(item){const a=artFor(item,'hud');return a?'<img src="'+safe(a.local)+'" alt="" loading="lazy" decoding="async">':iconFor()}
 function iconFor(){return kind==='vehicle'?'🚁':'⚔'}
 async function api(params){const u=new URL('/bf4ps-api/leaderboard',location.origin);for(const [k,v] of Object.entries(params))u.searchParams.set(k,v);const r=await fetch(u,{cache:'no-store',signal:AbortSignal.timeout(12000)});if(!r.ok)throw Error('Leaderboard API returned '+r.status);return r.json()}
