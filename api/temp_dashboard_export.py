@@ -31,6 +31,32 @@ def export():
                   (select count(*) from collection_events where event_type='collection_failure') failures,
                   pg_database_size(current_database()) db_bytes
             """)).mappings().one()),
+            'failure_health': dict(c.execute(text("""
+                WITH failed_jobs AS (
+                    SELECT DISTINCT job_id FROM collection_events
+                    WHERE event_type='collection_failure' AND job_id IS NOT NULL
+                ), classified AS (
+                    SELECT f.job_id,
+                           EXISTS(SELECT 1 FROM collection_events e
+                                  WHERE e.job_id=f.job_id AND e.event_type='collection_success') recovered,
+                           j.status, j.eligible_at
+                    FROM failed_jobs f LEFT JOIN collection_jobs j ON j.job_id=f.job_id
+                )
+                SELECT count(*) affected_jobs,
+                       count(*) FILTER (WHERE recovered) recovered_jobs,
+                       count(*) FILTER (WHERE NOT recovered) outstanding_jobs,
+                       count(*) FILTER (WHERE NOT recovered AND status='pending') retry_pending,
+                       count(*) FILTER (WHERE NOT recovered AND status IN ('claimed','running')) retry_in_progress,
+                       count(*) FILTER (WHERE NOT recovered AND status IS NULL) missing_jobs,
+                       min(eligible_at) FILTER (WHERE NOT recovered AND status='pending') next_retry_at
+                FROM classified
+            """)).mappings().one()),
+            'failure_reasons': rows(c, """
+                SELECT resource,error_class,coalesce(http_status::text,'—') http_status,
+                       count(*) failure_events
+                FROM collection_events WHERE event_type='collection_failure'
+                GROUP BY resource,error_class,http_status ORDER BY failure_events DESC
+            """),
             'soldiers': rows(c, """
                 select s.soldier_id, s.current_name, s.persona_id, s.platform,
                        cs.detailed_state,cs.weapons_state,cs.vehicles_state,cs.profile_state,
