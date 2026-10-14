@@ -15,6 +15,7 @@ from bf4ps.battlelog_weapons import WeaponStatsError, fetch_weapon_stats, normal
 from bf4ps.collection_jobs import claim_next_job, mark_job_running
 from bf4ps.background_service import claim_production_background_job
 from bf4ps.request_gate import reserve_request_slot
+from bf4ps.physical_dispatch_gate import authorized_http_attempt
 from bf4ps.retry_policy import retry_delay_for_failure
 from bf4ps.weapon_failure import classify_weapon_failure, persist_weapon_retry_failure
 from bf4ps.weapon_persistence import persist_weapon_success
@@ -275,6 +276,13 @@ def collect_one_weapon_job(
 
     started = monotonic()
     try:
+        if enforce_production_budget:
+            with authorized_http_attempt(
+                engine, job=job, identity=identity, resource="weapons",
+                request_ordinal=1, request_label=f"weapons:{persona_id}:{platform}",
+            ):
+            fetched = fetch_weapon_stats(persona_id, platform, timeout_seconds=timeout_seconds)
+        else:
         fetched = fetch_weapon_stats(persona_id, platform, timeout_seconds=timeout_seconds)
         weapons = normalize_weapon_stats(
             fetched.payload,
