@@ -297,3 +297,70 @@ Proposed BF4-readable labels; exact Battlelog spelling not independently verifie
 | 167 | PDR | PDW-R | Candidate; review |
 
 **Worth checking closely:** `SCORP` → `CZ-3A1`, `M200` → `SRR-61`, `SRS` → `338-RECON`, `L86A1` → `L86A2`, `CBJMS` → `CBJ-MS`, and `PECHENEG` → `PKP PECHENEG`. These are plausible BF4 display names but are not direct Battlelog confirmations.
+
+## Batch 5 sign-off — operator approved
+
+Operator approved the 53 Batch 5 proposed weapon labels for website use. This is operator approval, not individual Battlelog screenshot verification. CSV evidence statuses remain unchanged.
+
+## Batch 6 — sidearms, explosives, launchers and gadgets (54 candidates)
+
+These are **candidate display labels**, not verified Battlelog strings. Ambiguous knives and rare pickups intentionally remain unreviewed.
+
+| Weapon ID | Raw suffix | Proposed label | Status |
+|---:|---|---|---|
+| 3 | HK45C | COMPACT 45 | Candidate; review |
+| 8 | RPG7 | RPG-7V2 | Candidate; review |
+| 10 | RAILGUN | RORSCH MK-1 | Candidate; review |
+| 11 | STARSTREAK | HVM-II | Candidate; review |
+| 12 | C4 | C4 EXPLOSIVE | Candidate; review |
+| 13 | V40 | V40 MINI | Candidate; review |
+| 22 | TAURUS44 | .44 MAGNUM | Candidate; review |
+| 26 | 40MM | M320 HE | Candidate; review |
+| 31 | M136 | M136 CS | Candidate; review |
+| 32 | SMK | M320 SMK | Candidate; review |
+| 36 | IGLA | SA-18 IGLA | Candidate; review |
+| 41 | M412REX | M412 REX | Candidate; review |
+| 43 | LVG | M320 LVG | Candidate; review |
+| 44 | SHG | M320 BUCK | Candidate; review |
+| 46 | SRAW | SRAW | Candidate; review |
+| 47 | REPAIR | REPAIR TOOL | Candidate; review |
+| 56 | M82A3 | M82A3 | Candidate; review |
+| 57 | CLAYMORE | M18 CLAYMORE | Candidate; review |
+| 61 | P226 | P226 | Candidate; review |
+| 62 | 3GL | M320 3GL | Candidate; review |
+| 63 | QSZ92 | QSZ-92 | Candidate; review |
+| 65 | SW40 | SW40 | Candidate; review |
+| 75 | MP443 | MP443 | Candidate; review |
+| 79 | M34 | M34 INCENDIARY | Candidate; review |
+| 80 | DEFIB | DEFIBRILLATOR | Candidate; review |
+| 81 | SHIELD | BALLISTIC SHIELD | Candidate; review |
+| 83 | FLECHETTE | M26 DART | Candidate; review |
+| 85 | CZ75 | CZ-75 | Candidate; review |
+| 90 | SMK | XM25 SMOKE | Candidate; review |
+| 92 | M15 | M15 AT MINE | Candidate; review |
+| 93 | DEAGLE | DEAGLE 44 | Candidate; review |
+| 99 | FRAG | M26 FRAG | Candidate; review |
+| 101 | FLASH | M320 FB | Candidate; review |
+| 103 | M67 | M67 FRAG | Candidate; review |
+| 110 | M1911 | M1911 | Candidate; review |
+| 111 | 93R | 93R | Candidate; review |
+| 112 | IMPACT | RGO IMPACT | Candidate; review |
+| 115 | MBTLAW | MBT LAW | Candidate; review |
+| 117 | M2 | M2 SLAM | Candidate; review |
+| 119 | M9 | M9 | Candidate; review |
+| 121 | M32MGL | M32 MGL | Candidate; review |
+| 122 | MASS | M26 MASS | Candidate; review |
+| 127 | SMAW | SMAW | Candidate; review |
+| 134 | XM25 | XM25 AIRBURST | Candidate; review |
+| 136 | FLARE | HAND FLARE | Candidate; review |
+| 137 | FLECHETTE | XM25 DART | Candidate; review |
+| 143 | FN57 | FN57 | Candidate; review |
+| 144 | SLUG | M26 SLUG | Candidate; review |
+| 149 | GLOCK18 | G18 | Candidate; review |
+| 151 | FGM148 | FGM-148 JAVELIN | Candidate; review |
+| 152 | M18 | M18 SMOKE | Candidate; review |
+| 155 | FIM92 | FIM-92 STINGER | Candidate; review |
+| 158 | FYJS | FY-JS | Candidate; review |
+| 169 | FLASHBANG | FLASHBANG | Candidate; review |
+
+**Review carefully:** `GLOCK18` → `G18`, `40MM` → `M320 HE`, `M34` → `M34 INCENDIARY`, `M2` → `M2 SLAM`, `HK45C` → `COMPACT 45`, `STARSTREAK` → `HVM-II`, `M26_FLECHETTE` → `M26 DART`, `RAILGUN` → `RORSCH MK-1`, and `SHIELD` → `BALLISTIC SHIELD`. Exact Battlelog names and variant identities still require confirmation.
