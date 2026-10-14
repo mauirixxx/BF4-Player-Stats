@@ -169,6 +169,78 @@ def get(conn,kind,platform,item):
        ORDER BY kills DESC,s.soldier_id
     """),params).mappings()]
     return {'population':population,'rows':rows}
+def get_page(conn, kind, platform, item, page, page_size, search, division):
+    # Rank over full cohort; return one bounded page.
+    stats, cat, key, state = KINDS[kind]
+    params = {'platform':platform, 'item':item, 'search':'%'+search.lower()+'%',
+              'division':division, 'limit':page_size, 'offset':(page-1)*page_size}
+    platform_clause = '' if platform == 'all' else 'AND s.platform=:platform'
+    if kind == 'vehicle':
+        params['item'] = VEHICLE_FAMILIES.get(item,(item,None))[0]
+        family = vehicle_family_sql().replace('t.vehicle_id','raw.vehicle_id')
+        mode = vehicle_mode_sql().replace('t.vehicle_id','raw.vehicle_id')
+        source=f'''WITH raw_per_soldier AS (
+            SELECT s.soldier_id,t.vehicle_id,max(t.kills) AS kills,
+                   max(t.source_fetched_at) AS source_fetched_at
+            FROM soldier_vehicle_stats t JOIN soldiers s ON s.soldier_id=t.soldier_id
+            JOIN collection_state cs ON cs.soldier_id=s.soldier_id
+            WHERE cs.vehicles_state='success' {platform_clause}
+            GROUP BY s.soldier_id,t.vehicle_id
+        ), variants AS (
+            SELECT raw.soldier_id,{family} AS item_id,{mode} AS mode,
+                   raw.kills,raw.source_fetched_at FROM raw_per_soldier raw
+        ), consolidated AS (
+            SELECT soldier_id,item_id,
+                   CASE WHEN max(mode)='sum' THEN sum(kills) ELSE max(kills) END AS kills,
+                   max(source_fetched_at) AS source_fetched_at
+            FROM variants GROUP BY soldier_id,item_id
+        ), cohort AS (
+            SELECT s.soldier_id,s.current_name,s.persona_id,s.platform,
+                   c.kills,c.source_fetched_at FROM consolidated c
+            JOIN soldiers s ON s.soldier_id=c.soldier_id WHERE c.item_id=:item
+        )'''
+    else:
+        source=f'''WITH cohort AS (
+            SELECT s.soldier_id,s.current_name,s.persona_id,s.platform,
+                   max(t.kills) AS kills,max(t.source_fetched_at) AS source_fetched_at
+            FROM soldier_weapon_stats t JOIN soldiers s ON s.soldier_id=t.soldier_id
+            JOIN collection_state cs ON cs.soldier_id=s.soldier_id
+            WHERE t.weapon_id=:item AND cs.weapons_state='success' {platform_clause}
+            GROUP BY s.soldier_id,s.current_name,s.persona_id,s.platform
+        )'''
+    ranked=source+''', ranked AS (
+        SELECT cohort.*,rank() OVER (ORDER BY kills DESC) AS rank,
+               count(*) OVER () AS population FROM cohort
+    ), filtered AS (
+        SELECT *,rank * 100.0 / nullif(population,0) AS top_pct,
+          CASE WHEN rank * 100.0 / nullif(population,0) <= 3 THEN 1
+               WHEN rank * 100.0 / nullif(population,0) <= 8 THEN 2
+               WHEN rank * 100.0 / nullif(population,0) <= 15 THEN 3
+               WHEN rank * 100.0 / nullif(population,0) <= 25 THEN 4
+               WHEN rank * 100.0 / nullif(population,0) <= 35 THEN 5
+               WHEN rank * 100.0 / nullif(population,0) <= 50 THEN 6
+               WHEN rank * 100.0 / nullif(population,0) <= 65 THEN 7
+               WHEN rank * 100.0 / nullif(population,0) <= 80 THEN 8
+               WHEN rank * 100.0 / nullif(population,0) <= 90 THEN 9 ELSE 10 END AS division
+        FROM ranked WHERE (:search='%%' OR lower(current_name) LIKE :search
+                            OR persona_id::text LIKE :search)
+    )'''
+    # Division must be applied after full-cohort ranking; metadata is independent of page.
+    filter_clause='WHERE (:division=0 OR division=:division)'
+    meta=conn.execute(text(ranked+f''' SELECT count(*) AS filtered_count,
+        coalesce(max(population),0) AS population FROM filtered {filter_clause}'''),params).mappings().one()
+    population=int(meta['population'])
+    if population == 0:
+        population=int(conn.execute(text(source+' SELECT count(*) FROM cohort'),params).scalar_one())
+    result=[dict(r) for r in conn.execute(text(ranked+f'''
+        SELECT soldier_id,current_name,persona_id,platform,kills,source_fetched_at,
+               rank,top_pct,division FROM filtered {filter_clause}
+        ORDER BY kills DESC,soldier_id LIMIT :limit OFFSET :offset
+    '''),params).mappings()]
+    return {'population':population,'filtered_count':int(meta['filtered_count']),
+            'page':page,'page_size':page_size,'total_pages':(int(meta['filtered_count'])+page_size-1)//page_size,
+            'rows':result}
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
@@ -184,12 +256,21 @@ class Handler(BaseHTTPRequestHandler):
             kind=q.get('kind',[''])[0];platform=q.get('platform',[''])[0];item=q.get('item',[None])[0]
             if kind not in KINDS or platform not in PLATFORMS or (item is not None and (not item.isdecimal() or len(item)>12)):
                 self.send_error(400);return
+            paging = item is not None and any(k in q for k in ('page','page_size','search','division'))
+            try:
+                page=int(q.get('page',['1'])[0]); page_size=int(q.get('page_size',['50'])[0]);
+                division=int(q.get('division',['0'])[0]); search=q.get('search',[''])[0].strip()
+            except ValueError:
+                self.send_error(400);return
+            if not 1<=page<=100000 or not 1<=page_size<=100 or not 0<=division<=10 or len(search)>100:
+                self.send_error(400);return
             with engine.connect() as c:
                 if c.execute(text('select current_database()')).scalar_one()!='bf4_playerstats':
                     raise RuntimeError('Only D3 scratch database permitted')
                 c.execute(text('SET TRANSACTION READ ONLY'))
                 c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
-                result=get(c,kind,platform,int(item) if item is not None else None)
+                result=(get_page(c,kind,platform,int(item),page,page_size,search,division)
+                        if paging else get(c,kind,platform,int(item) if item is not None else None))
             body=json.dumps(result,default=str).encode()
             self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Content-Length',str(len(body)));self.end_headers();self.wfile.write(body)
         except Exception as exc:
