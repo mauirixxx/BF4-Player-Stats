@@ -411,3 +411,9 @@ Battlefield Wiki provides names for BF4 knives and battle pickups, but **does no
 References: https://battlefield.fandom.com/wiki/Knife/Battlefield_4 and https://battlefield.fandom.com/wiki/Battlefield_4 and https://battlefield.fandom.com/wiki/M60/Battlefield_4.
 
 **Do not deploy unverified BPKNIFE mappings.** Eight numbered `BPKNIFE` rows require a Battlelog profile comparison or authoritative localization lookup. Names such as PHANTOM, C100, and MARE’S LEG are candidates requiring additional ID-specific evidence.
+
+## Batch 7 operator review — corrections and player-stat verification targets
+
+Operator approved the other Batch 7 naming candidates but **rejected** `RFBTARGET` → `RFB` and `ULTIM` → `U-100 MK5`; both are **unknown** until Battlelog matching. Operator explicitly requests website display `M60ULT` → **M60 Ultimate** (in-game M60-ULT) and `SPYDER` → **Phantom Bow** (in-game PHANTOM). These decisions supersede earlier Batch 7 proposals.
+
+Read-only D3 leaderboard sample for weapon catalog ID 148 (`RFBTARGET`): MeuchteFoese (PC) **44,541**, ONE_PIECE_81 (PS4) **19,986**, UK-ToeTag (PC) **8,231**. For weapon ID 140 (`ULTIM`): XxJohnnyxX3263 (Xbox One) **10,730**, d801226 (PS4) **10,021**, Suzems (PC) **2,500**. These counts identify Battlelog comparison targets; **they do not identify the equipment**. Do not promote either to a named mapping until independently verified.

@@ -73,7 +73,7 @@ weapon,145,WARSAW_ID_P_WNAME_SAR21,SAR21,SAR-21,weapon_candidate_unverified_batt
 weapon,34,WARSAW_ID_P_XP1_WNAME_L96A1,L96A1,L96A1,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,55,WARSAW_ID_P_XP0_WNAME_GOL,GOL,GOL MAGNUM,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,124,WARSAW_ID_P_XP0_WNAME_ASVAL,ASVAL,AS VAL,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
-weapon,148,WARSAW_ID_P_WNAME_RFBTARGET,RFBTARGET,RFB,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+weapon,148,WARSAW_ID_P_WNAME_RFBTARGET,RFBTARGET,,needs_manual_review,"Operator rejects prior RFB guess; D3 weapon 148 leader MeuchteFoese PC 44541 kills, ONE_PIECE_81 PS4 19986; Battlelog comparison pending"
 weapon,98,WARSAW_ID_P_WNAME_QBS09,QBS09,QBS-09,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,17,WARSAW_ID_P_WNAME_CZ805,CZ805,CZ-805,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,58,WARSAW_ID_P_WNAME_UMP9,UMP9,UMP-9,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
@@ -95,8 +95,8 @@ weapon,91,WARSAW_ID_P_XP2_WNAME_SR338,SR338,SR338,weapon_candidate_unverified_ba
 weapon,94,WARSAW_ID_P_WNAME_SV98,SV98,SV-98,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,61,WARSAW_ID_P_WNAME_P226,P226,P226,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,79,WARSAW_ID_P_INAME_M34,M34,M34 INCENDIARY,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,245,WARSAW_ID_P_XP4_WNAME_SPYDER,SPYDER,PHANTOM,needs_manual_review,https://battlefield.fandom.com/wiki/Battlefield_4; internal key to label association requires verification
-weapon,140,WARSAW_ID_P_WNAME_ULTIM,ULTIM,U-100 MK5,needs_manual_review,https://battlefield.fandom.com/wiki/Battlefield_4; internal key to label association requires verification
+weapon,245,WARSAW_ID_P_XP4_WNAME_SPYDER,SPYDER,Phantom Bow,operator_approved_display_name,Operator explicitly approved display Phantom Bow; in-game PHANTOM
+weapon,140,WARSAW_ID_P_WNAME_ULTIM,ULTIM,,needs_manual_review,"Operator rejects prior U-100 MK5 guess; D3 weapon 140 leader XxJohnnyxX3263 Xbox One 10730 kills, Suzems PC 2500; Battlelog comparison pending"
 weapon,154,WARSAW_ID_P_XP2_WNAME_SR2,SR2,SR-2,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,132,WARSAW_ID_P_WNAME_JS2,JS2,JS2,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,165,WARSAW_ID_P_WNAME_SPAS12,SPAS12,SPAS-12,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
@@ -162,7 +162,7 @@ weapon,137,WARSAW_ID_P_INAME_XM25_FLECHETTE,XM25 FLECHETTE,XM25 DART,weapon_cand
 weapon,30,WARSAW_ID_P_WNAME_AMR2CQB,AMR2CQB,AMR-2 CQB,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 weapon,48,WARSAW_ID_P_INAME_BPKNIFE2,BPKNIFE2,,needs_manual_review,Unresolved BPKNIFE numeric index; BF4 Wiki lists knife names but does not establish this index mapping: https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,169,WARSAW_ID_P_INAME_FLASHBANG,FLASHBANG,FLASHBANG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,60,WARSAW_ID_P_XP6_INAME_M60ULT,M60ULT,M60-ULT,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,60,WARSAW_ID_P_XP6_INAME_M60ULT,M60ULT,M60 Ultimate,operator_approved_display_name,Operator explicitly approved display M60 Ultimate; in-game M60-ULT
 weapon,144,WARSAW_ID_P_INAME_M26_SLUG,M26 SLUG,M26 SLUG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,81,WARSAW_ID_P_XP3_WNAME_SHIELD,SHIELD,BALLISTIC SHIELD,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,32,WARSAW_ID_P_INAME_40MM_SMK,40MM SMK,M320 SMK,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
