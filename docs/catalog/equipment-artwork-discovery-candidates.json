@@ -1,0 +1,900 @@
+{
+  "note": "Discovery only: filenames are NOT image-content verified and MUST NOT be auto-deployed",
+  "candidates": [
+    {
+      "kind": "weapon",
+      "label": "MTAR-21",
+      "raw_key": "WARSAW_ID_P_XP1_WNAME_MTAR21",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 mtar21.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "ACW-R",
+      "raw_key": "WARSAW_ID_P_WNAME_ACR",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 acwr.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 ACW-R-3.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 ACW-R-2.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "G18",
+      "raw_key": "WARSAW_ID_P_WNAME_GLOCK18",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 80,
+            "filename": "BF4 G18-model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 G18-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 G18-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "MG4",
+      "raw_key": "WARSAW_ID_P_WNAME_MG4",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 mg4.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 MG4model.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "CZ-3A1",
+      "raw_key": "WARSAW_ID_P_WNAME_SCORP",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 80,
+            "filename": "BF4 CZ3A1 model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 CZ3A1-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 CZ3A1-3.png"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "ACE 52 CQB",
+      "raw_key": "WARSAW_ID_P_WNAME_GALIL52",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 65,
+            "filename": "Bf4 galil ace52cqb.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 ACE 52 CQB-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 ACE 52 CQB-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "SG553",
+      "raw_key": "WARSAW_ID_P_WNAME_SG553",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 65,
+            "filename": "Bf4 sg553lb.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 SG553-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 SG553-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "ACE 21 CQB",
+      "raw_key": "WARSAW_ID_P_WNAME_GALIL21",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 65,
+            "filename": "Bf4 galil ace21cqb.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 ACE 21 CQB-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 ACE 21 CQB-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "DBV-12",
+      "raw_key": "WARSAW_ID_P_WNAME_DBV12",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 dbv12.png"
+          },
+          {
+            "score": 80,
+            "filename": "DBV12 model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 DBV-12-4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "P90",
+      "raw_key": "WARSAW_ID_P_WNAME_P90",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 p90.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 P90 model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 P90-4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "AKU-12",
+      "raw_key": "WARSAW_ID_P_WNAME_AKU12",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 aku12.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 AKU-12-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 AKU-12-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "SVD-12",
+      "raw_key": "WARSAW_ID_P_WNAME_SVD12",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 svd12.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 SVD12 model.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "RPK-12",
+      "raw_key": "WARSAW_ID_P_WNAME_RPK12",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 rpk12.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 RPK12 model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 RPK-12-4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "PDW-R",
+      "raw_key": "WARSAW_ID_P_WNAME_PDR",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 80,
+            "filename": "BF4 PDWR model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 PDWR-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 PDWR-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "ACE 53 SV",
+      "raw_key": "WARSAW_ID_P_WNAME_GALIL53",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 65,
+            "filename": "Bf4 galil ace53sv.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 ACE 53 SV-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 ACE 53 SV-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "SMAW",
+      "raw_key": "WARSAW_ID_P_INAME_SMAW",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 65,
+            "filename": "Bf4 mk153 smaw.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4SMAWReload.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4SMAWFull.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "MP7",
+      "raw_key": "WARSAW_ID_P_XP1_WNAME_MP7",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 mp7.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 MP7 model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 MP7-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "DAO-12",
+      "raw_key": "WARSAW_ID_P_XP0_WNAME_DAO12",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "BF4 dao12.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 DAO12 model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 DAO-12-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "PP-2000",
+      "raw_key": "WARSAW_ID_P_WNAME_PP2000",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 pp2000.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 PP2000 model.png"
+          },
+          {
+            "score": 65,
+            "filename": "PP-2000 Red Dot BF4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "QBU-88",
+      "raw_key": "WARSAW_ID_P_WNAME_QBU88",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 qbu88.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 QBU88 model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 QBU-88-4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "LSAT",
+      "raw_key": "WARSAW_ID_P_WNAME_LSAT",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 80,
+            "filename": "BF4 LSAT model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 LSAT-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 LSAT-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "RFB",
+      "raw_key": "WARSAW_ID_P_WNAME_RFBTARGET",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 rfb.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 RFB model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 RFB-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "QBS-09",
+      "raw_key": "WARSAW_ID_P_WNAME_QBS09",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 qbs09.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 QBS-09-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 QBS-09-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "MPX",
+      "raw_key": "WARSAW_ID_P_XP3_WNAME_MPX",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 80,
+            "filename": "Mpx fancy.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 MPX-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 MPX-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "SRAW",
+      "raw_key": "WARSAW_ID_P_INAME_SRAW",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 65,
+            "filename": "Bf4 fgm172 sraw.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "L86A2",
+      "raw_key": "WARSAW_ID_P_WNAME_L86A1",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 65,
+            "filename": "BF4 L86A2-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 L86A2-3.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 L86A2-2.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "M39 EMR",
+      "raw_key": "WARSAW_ID_P_WNAME_M39",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 65,
+            "filename": "BF4 M39 EMR-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 M39 EMR-3.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 M39 EMR-2.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "SV-98",
+      "raw_key": "WARSAW_ID_P_WNAME_SV98",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 sv98.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 SV98 model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 SV-98-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "P226",
+      "raw_key": "WARSAW_ID_P_WNAME_P226",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 p226.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 P226-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 P226-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "SR-2",
+      "raw_key": "WARSAW_ID_P_XP2_WNAME_SR2",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "BF4 SR-2.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 SR2 model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 SR2-4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "JS2",
+      "raw_key": "WARSAW_ID_P_WNAME_JS2",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 js2.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 JS2 model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 JS2-4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "SPAS-12",
+      "raw_key": "WARSAW_ID_P_WNAME_SPAS12",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 spas12.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 SPAS-12-4.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 SPAS-12-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "CS5",
+      "raw_key": "WARSAW_ID_P_XP3_WNAME_CS5",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "CS5 BF4.png"
+          },
+          {
+            "score": 80,
+            "filename": "Cs5 fancy.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 CS5-3.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "M2 SLAM",
+      "raw_key": "WARSAW_ID_P_INAME_M2",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "BF4 M2 SLAM.png"
+          },
+          {
+            "score": 80,
+            "filename": "M2 slam fancy@2x.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 M2 SLAM Ground.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "M1911",
+      "raw_key": "WARSAW_ID_P_WNAME_M1911",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 m1911.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 M1911-model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 M1911-4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "USAS-12",
+      "raw_key": "WARSAW_ID_P_WNAME_USAS12",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 65,
+            "filename": "Bf4 usas12 nv.png"
+          },
+          {
+            "score": 65,
+            "filename": "Bf4 usas12 bp.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "M9",
+      "raw_key": "WARSAW_ID_P_WNAME_M9",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 m9.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 M9-model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 M9-4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "QSZ-92",
+      "raw_key": "WARSAW_ID_P_WNAME_QSZ92",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 qsz-92.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 QSZ92-model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 QSZ92-4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "MP443",
+      "raw_key": "WARSAW_ID_P_WNAME_MP443",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 80,
+            "filename": "BF4 MP443-model.png"
+          },
+          {
+            "score": 65,
+            "filename": "Bf4 mp443 grach.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 MP443-4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "CZ-75",
+      "raw_key": "WARSAW_ID_P_WNAME_CZ75",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 cz75.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 CZ75-model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 CZ75-4.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "AMR-2",
+      "raw_key": "WARSAW_ID_P_WNAME_AMR2",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "BF4 AMR-2.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 AMR-2 MID.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 AMR-2 CQB.png"
+          }
+        ],
+        "hud": []
+      }
+    },
+    {
+      "kind": "weapon",
+      "label": "FN57",
+      "raw_key": "WARSAW_ID_P_WNAME_FN57",
+      "candidates": {
+        "fancy": [
+          {
+            "score": 95,
+            "filename": "Bf4 fn57.png"
+          },
+          {
+            "score": 80,
+            "filename": "BF4 FN57-model.png"
+          },
+          {
+            "score": 65,
+            "filename": "BF4 FN57-4.png"
+          }
+        ],
+        "hud": []
+      }
+    }
+  ]
+}
