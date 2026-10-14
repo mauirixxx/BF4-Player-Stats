@@ -68,12 +68,12 @@ weapon,161,WARSAW_ID_P_WNAME_QBU88,QBU88,QBU-88,weapon_candidate_unverified_batt
 weapon,104,WARSAW_ID_P_WNAME_HAWK,HAWK,HAWK 12G,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,121,WARSAW_ID_P_INAME_M32MGL,M32MGL,M32 MGL,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,67,WARSAW_ID_P_WNAME_LSAT,LSAT,LSAT,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
-weapon,131,WARSAW_ID_P_WNAME_M82A3MID,M82A3MID,,unreviewed,
+weapon,131,WARSAW_ID_P_WNAME_M82A3MID,M82A3MID,M82A3 MID,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 weapon,145,WARSAW_ID_P_WNAME_SAR21,SAR21,SAR-21,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,34,WARSAW_ID_P_XP1_WNAME_L96A1,L96A1,L96A1,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,55,WARSAW_ID_P_XP0_WNAME_GOL,GOL,GOL MAGNUM,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,124,WARSAW_ID_P_XP0_WNAME_ASVAL,ASVAL,AS VAL,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
-weapon,148,WARSAW_ID_P_WNAME_RFBTARGET,RFBTARGET,,unreviewed,
+weapon,148,WARSAW_ID_P_WNAME_RFBTARGET,RFBTARGET,RFB,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 weapon,98,WARSAW_ID_P_WNAME_QBS09,QBS09,QBS-09,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,17,WARSAW_ID_P_WNAME_CZ805,CZ805,CZ-805,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,58,WARSAW_ID_P_WNAME_UMP9,UMP9,UMP-9,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
@@ -95,13 +95,13 @@ weapon,91,WARSAW_ID_P_XP2_WNAME_SR338,SR338,SR338,weapon_candidate_unverified_ba
 weapon,94,WARSAW_ID_P_WNAME_SV98,SV98,SV-98,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,61,WARSAW_ID_P_WNAME_P226,P226,P226,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,79,WARSAW_ID_P_INAME_M34,M34,M34 INCENDIARY,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,245,WARSAW_ID_P_XP4_WNAME_SPYDER,SPYDER,,unreviewed,
-weapon,140,WARSAW_ID_P_WNAME_ULTIM,ULTIM,,unreviewed,
+weapon,245,WARSAW_ID_P_XP4_WNAME_SPYDER,SPYDER,PHANTOM,needs_manual_review,https://battlefield.fandom.com/wiki/Battlefield_4; internal key to label association requires verification
+weapon,140,WARSAW_ID_P_WNAME_ULTIM,ULTIM,U-100 MK5,needs_manual_review,https://battlefield.fandom.com/wiki/Battlefield_4; internal key to label association requires verification
 weapon,154,WARSAW_ID_P_XP2_WNAME_SR2,SR2,SR-2,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,132,WARSAW_ID_P_WNAME_JS2,JS2,JS2,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,165,WARSAW_ID_P_WNAME_SPAS12,SPAS12,SPAS-12,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
 weapon,147,WARSAW_ID_P_XP3_WNAME_CS5,CS5,CS5,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
-weapon,88,WARSAW_ID_P_INAME_BAYONETT,BAYONETT,,unreviewed,
+weapon,88,WARSAW_ID_P_INAME_BAYONETT,BAYONETT,BAYONET,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,117,WARSAW_ID_P_INAME_M2,M2,M2 SLAM,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,110,WARSAW_ID_P_WNAME_M1911,M1911,M1911,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,158,WARSAW_ID_P_WNAME_FYJS,FYJS,FY-JS,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
@@ -115,54 +115,54 @@ weapon,73,WARSAW_ID_P_WNAME_USAS12,USAS12,USAS-12,weapon_candidate_unverified_ba
 weapon,41,WARSAW_ID_P_WNAME_M412REX,M412REX,M412 REX,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,119,WARSAW_ID_P_WNAME_M9,M9,M9,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,3,WARSAW_ID_P_WNAME_HK45C,HK45C,COMPACT 45,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,76,WARSAW_ID_P_WNAME_M82A3CQB,M82A3CQB,,unreviewed,
+weapon,76,WARSAW_ID_P_WNAME_M82A3CQB,M82A3CQB,M82A3 CQB,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 weapon,63,WARSAW_ID_P_WNAME_QSZ92,QSZ92,QSZ-92,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,15,WARSAW_ID_P_SP_WNAME_USAS12NV,WARSAW ID P SP WNAME USAS12NV,,unreviewed,
-weapon,118,WARSAW_ID_P_XP3_WNAME_UN6,UN6,,unreviewed,
+weapon,15,WARSAW_ID_P_SP_WNAME_USAS12NV,WARSAW ID P SP WNAME USAS12NV,USAS-12 NV,needs_manual_review,https://battlefield.fandom.com/wiki/Battlefield_4; internal key to label association requires verification
+weapon,118,WARSAW_ID_P_XP3_WNAME_UN6,UN6,UNICA 6,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 weapon,75,WARSAW_ID_P_WNAME_MP443,MP443,MP443,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,141,WARSAW_ID_P_XP4_INAME_KNIFEBIPOD,KNIFEBIPOD,,unreviewed,
+weapon,141,WARSAW_ID_P_XP4_INAME_KNIFEBIPOD,KNIFEBIPOD,C100,needs_manual_review,https://battlefield.fandom.com/wiki/Knife/Battlefield_4; internal key to label association requires verification
 weapon,85,WARSAW_ID_P_WNAME_CZ75,CZ75,CZ-75,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,151,WARSAW_ID_P_INAME_FGM148,FGM148,FGM-148 JAVELIN,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,65,WARSAW_ID_P_XP2_WNAME_SW40,SW40,SW40,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,130,WARSAW_ID_P_WNAME_AMR2,AMR2,,unreviewed,
+weapon,130,WARSAW_ID_P_WNAME_AMR2,AMR2,AMR-2,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 weapon,36,WARSAW_ID_P_INAME_IGLA,IGLA,SA-18 IGLA,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,143,WARSAW_ID_P_WNAME_FN57,FN57,FN57,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,2,WARSAW_ID_P_INAME_NECKKNIFE,NECKKNIFE,,unreviewed,
-weapon,172,WARSAW_ID_P_WNAME_AMR2MID,AMR2MID,,unreviewed,
-weapon,150,WARSAW_ID_P_INAME_BPKNIFE6,BPKNIFE6,,unreviewed,
+weapon,2,WARSAW_ID_P_INAME_NECKKNIFE,NECKKNIFE,NECK,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,172,WARSAW_ID_P_WNAME_AMR2MID,AMR2MID,AMR-2 MID,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+weapon,150,WARSAW_ID_P_INAME_BPKNIFE6,BPKNIFE6,,needs_manual_review,Unresolved BPKNIFE numeric index; BF4 Wiki lists knife names but does not establish this index mapping: https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,47,WARSAW_ID_P_INAME_REPAIR,REPAIR,REPAIR TOOL,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,80,WARSAW_ID_P_INAME_DEFIB,DEFIB,DEFIBRILLATOR,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,11,WARSAW_ID_P_INAME_STARSTREAK,STARSTREAK,HVM-II,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,113,WARSAW_ID_P_INAME_BPKNIFE4,BPKNIFE4,,unreviewed,
-weapon,160,WARSAW_ID_P_INAME_KNIFE14100BT,KNIFE14100BT,,unreviewed,
-weapon,102,WARSAW_ID_P_WNAME_SADDLEGUN,SADDLEGUN,,unreviewed,
-weapon,51,WARSAW_ID_P_INAME_MACHETE,MACHETE,,unreviewed,
-weapon,82,WARSAW_ID_P_XP4_INAME_KNIFEWEAVER,KNIFEWEAVER,,unreviewed,
-weapon,89,WARSAW_ID_P_INAME_BPKNIFE7,BPKNIFE7,,unreviewed,
-weapon,139,WARSAW_ID_P_INAME_BPKNIFE3,BPKNIFE3,,unreviewed,
-weapon,142,WARSAW_ID_P_XP4_INAME_KNIFETANTO,KNIFETANTO,,unreviewed,
-weapon,69,WARSAW_ID_P_INAME_BPKNIFE1,BPKNIFE1,,unreviewed,
+weapon,113,WARSAW_ID_P_INAME_BPKNIFE4,BPKNIFE4,,needs_manual_review,Unresolved BPKNIFE numeric index; BF4 Wiki lists knife names but does not establish this index mapping: https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,160,WARSAW_ID_P_INAME_KNIFE14100BT,KNIFE14100BT,C100,needs_manual_review,https://battlefield.fandom.com/wiki/Knife/Battlefield_4; internal key to label association requires verification
+weapon,102,WARSAW_ID_P_WNAME_SADDLEGUN,SADDLEGUN,MARE’S LEG,needs_manual_review,https://battlefield.fandom.com/wiki/Battlefield_4; internal key to label association requires verification
+weapon,51,WARSAW_ID_P_INAME_MACHETE,MACHETE,MACHETE,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,82,WARSAW_ID_P_XP4_INAME_KNIFEWEAVER,KNIFEWEAVER,WEAVER,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,89,WARSAW_ID_P_INAME_BPKNIFE7,BPKNIFE7,,needs_manual_review,Unresolved BPKNIFE numeric index; BF4 Wiki lists knife names but does not establish this index mapping: https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,139,WARSAW_ID_P_INAME_BPKNIFE3,BPKNIFE3,,needs_manual_review,Unresolved BPKNIFE numeric index; BF4 Wiki lists knife names but does not establish this index mapping: https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,142,WARSAW_ID_P_XP4_INAME_KNIFETANTO,KNIFETANTO,TANTO,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,69,WARSAW_ID_P_INAME_BPKNIFE1,BPKNIFE1,,needs_manual_review,Unresolved BPKNIFE numeric index; BF4 Wiki lists knife names but does not establish this index mapping: https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,122,WARSAW_ID_P_INAME_M26_MASS,M26 MASS,M26 MASS,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,153,WARSAW_ID_P_INAME_KNIFE2142,KNIFE2142,,unreviewed,
-weapon,162,WARSAW_ID_P_INAME_ACB90,ACB90,,unreviewed,
-weapon,129,WARSAW_ID_P_INAME_KNIFEPRECISION,KNIFEPRECISION,,unreviewed,
+weapon,153,WARSAW_ID_P_INAME_KNIFE2142,KNIFE2142,BJ-2,needs_manual_review,https://battlefield.fandom.com/wiki/Knife/Battlefield_4; internal key to label association requires verification
+weapon,162,WARSAW_ID_P_INAME_ACB90,ACB90,ACB-90,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,129,WARSAW_ID_P_INAME_KNIFEPRECISION,KNIFEPRECISION,PRECISION,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,31,WARSAW_ID_P_INAME_M136,M136,M136 CS,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,62,WARSAW_ID_P_XP2_INAME_40MM_3GL,40MM 3GL,M320 3GL,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,107,WARSAW_ID_P_INAME_BPKNIFE8,BPKNIFE8,,unreviewed,
-weapon,106,WARSAW_ID_P_INAME_SHANK,SHANK,,unreviewed,
-weapon,42,WARSAW_ID_P_INAME_BPKNIFE5,BPKNIFE5,,unreviewed,
+weapon,107,WARSAW_ID_P_INAME_BPKNIFE8,BPKNIFE8,,needs_manual_review,Unresolved BPKNIFE numeric index; BF4 Wiki lists knife names but does not establish this index mapping: https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,106,WARSAW_ID_P_INAME_SHANK,SHANK,SHANK,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,42,WARSAW_ID_P_INAME_BPKNIFE5,BPKNIFE5,,needs_manual_review,Unresolved BPKNIFE numeric index; BF4 Wiki lists knife names but does not establish this index mapping: https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,83,WARSAW_ID_P_INAME_M26_FLECHETTE,M26 FLECHETTE,M26 DART,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,10,WARSAW_ID_P_XP4_WNAME_RAILGUN,RAILGUN,RORSCH MK-1,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,101,WARSAW_ID_P_INAME_40MM_FLASH,40MM FLASH,M320 FB,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,164,WARSAW_ID_P_INAME_DIVERKNIFE,DIVERKNIFE,,unreviewed,
+weapon,164,WARSAW_ID_P_INAME_DIVERKNIFE,DIVERKNIFE,DIVE,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,56,WARSAW_ID_P_WNAME_M82A3,M82A3,M82A3,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,44,WARSAW_ID_P_INAME_40MM_SHG,40MM SHG,M320 BUCK,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,99,WARSAW_ID_P_INAME_M26_FRAG,M26 FRAG,M26 FRAG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,137,WARSAW_ID_P_INAME_XM25_FLECHETTE,XM25 FLECHETTE,XM25 DART,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,30,WARSAW_ID_P_WNAME_AMR2CQB,AMR2CQB,,unreviewed,
-weapon,48,WARSAW_ID_P_INAME_BPKNIFE2,BPKNIFE2,,unreviewed,
+weapon,30,WARSAW_ID_P_WNAME_AMR2CQB,AMR2CQB,AMR-2 CQB,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+weapon,48,WARSAW_ID_P_INAME_BPKNIFE2,BPKNIFE2,,needs_manual_review,Unresolved BPKNIFE numeric index; BF4 Wiki lists knife names but does not establish this index mapping: https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,169,WARSAW_ID_P_INAME_FLASHBANG,FLASHBANG,FLASHBANG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,60,WARSAW_ID_P_XP6_INAME_M60ULT,M60ULT,,unreviewed,
+weapon,60,WARSAW_ID_P_XP6_INAME_M60ULT,M60ULT,M60-ULT,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,144,WARSAW_ID_P_INAME_M26_SLUG,M26 SLUG,M26 SLUG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,81,WARSAW_ID_P_XP3_WNAME_SHIELD,SHIELD,BALLISTIC SHIELD,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,32,WARSAW_ID_P_INAME_40MM_SMK,40MM SMK,M320 SMK,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified

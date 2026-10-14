@@ -364,3 +364,50 @@ These are **candidate display labels**, not verified Battlelog strings. Ambiguou
 | 169 | FLASHBANG | FLASHBANG | Candidate; review |
 
 **Review carefully:** `GLOCK18` → `G18`, `40MM` → `M320 HE`, `M34` → `M34 INCENDIARY`, `M2` → `M2 SLAM`, `HK45C` → `COMPACT 45`, `STARSTREAK` → `HVM-II`, `M26_FLECHETTE` → `M26 DART`, `RAILGUN` → `RORSCH MK-1`, and `SHIELD` → `BALLISTIC SHIELD`. Exact Battlelog names and variant identities still require confirmation.
+
+## Batch 6 sign-off — operator approved
+
+Operator approved the 54 Batch 6 display-name candidates for website use; this is not individual Battlelog screenshot confirmation. Existing CSV verification statuses remain intact.
+
+## Batch 7 — final 32 equipment identifiers
+
+Battlefield Wiki provides names for BF4 knives and battle pickups, but **does not document which numbered `BPKNIFE` key maps to which knife**. Those remain unresolved, not guessed.
+
+| Weapon ID | Raw suffix | Proposed name | Review status |
+|---:|---|---|---|
+| 2 | NECKKNIFE | NECK | Wiki-name candidate |
+| 15 | USAS12NV | USAS-12 NV | Candidate; direct match needed |
+| 30 | AMR2CQB | AMR-2 CQB | Wiki-name candidate |
+| 42 | BPKNIFE5 | UNKNOWN | Unresolved index — needs evidence |
+| 48 | BPKNIFE2 | UNKNOWN | Unresolved index — needs evidence |
+| 51 | MACHETE | MACHETE | Wiki-name candidate |
+| 60 | M60ULT | M60-ULT | Wiki-name candidate |
+| 69 | BPKNIFE1 | UNKNOWN | Unresolved index — needs evidence |
+| 76 | M82A3CQB | M82A3 CQB | Wiki-name candidate |
+| 82 | KNIFEWEAVER | WEAVER | Wiki-name candidate |
+| 88 | BAYONETT | BAYONET | Wiki-name candidate |
+| 89 | BPKNIFE7 | UNKNOWN | Unresolved index — needs evidence |
+| 102 | SADDLEGUN | MARE’S LEG | Candidate; direct match needed |
+| 106 | SHANK | SHANK | Wiki-name candidate |
+| 107 | BPKNIFE8 | UNKNOWN | Unresolved index — needs evidence |
+| 113 | BPKNIFE4 | UNKNOWN | Unresolved index — needs evidence |
+| 118 | UN6 | UNICA 6 | Wiki-name candidate |
+| 129 | KNIFEPRECISION | PRECISION | Wiki-name candidate |
+| 130 | AMR2 | AMR-2 | Wiki-name candidate |
+| 131 | M82A3MID | M82A3 MID | Wiki-name candidate |
+| 139 | BPKNIFE3 | UNKNOWN | Unresolved index — needs evidence |
+| 140 | ULTIM | U-100 MK5 | Candidate; direct match needed |
+| 141 | KNIFEBIPOD | C100 | Candidate; direct match needed |
+| 142 | KNIFETANTO | TANTO | Wiki-name candidate |
+| 148 | RFBTARGET | RFB | Wiki-name candidate |
+| 150 | BPKNIFE6 | UNKNOWN | Unresolved index — needs evidence |
+| 153 | KNIFE2142 | BJ-2 | Candidate; direct match needed |
+| 160 | KNIFE14100BT | C100 | Candidate; direct match needed |
+| 162 | ACB90 | ACB-90 | Wiki-name candidate |
+| 164 | DIVERKNIFE | DIVE | Wiki-name candidate |
+| 172 | AMR2MID | AMR-2 MID | Wiki-name candidate |
+| 245 | SPYDER | PHANTOM | Candidate; direct match needed |
+
+References: https://battlefield.fandom.com/wiki/Knife/Battlefield_4 and https://battlefield.fandom.com/wiki/Battlefield_4 and https://battlefield.fandom.com/wiki/M60/Battlefield_4.
+
+**Do not deploy unverified BPKNIFE mappings.** Eight numbered `BPKNIFE` rows require a Battlelog profile comparison or authoritative localization lookup. Names such as PHANTOM, C100, and MARE’S LEG are candidates requiring additional ID-specific evidence.
