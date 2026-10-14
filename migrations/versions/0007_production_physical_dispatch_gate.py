@@ -1,6 +1,6 @@
 """Allow multiple physical HTTP dispatches within one job attempt.
 
-Revision ID: 0007_production_physical_dispatch_gate
+Revision ID: 0007_physical_dispatch_gate
 Revises: 0006_stage9c_soak_round_ledger
 
 No production collector activation is implied by this migration.
@@ -8,7 +8,7 @@ No production collector activation is implied by this migration.
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0007_production_physical_dispatch_gate"
+revision = "0007_physical_dispatch_gate"
 down_revision = "0006_stage9c_soak_round_ledger"
 branch_labels = None
 depends_on = None
