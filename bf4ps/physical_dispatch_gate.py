@@ -7,6 +7,10 @@ No production collector should be undrained until all HTTP paths use it.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from contextlib import contextmanager
+from hashlib import sha256
+from typing import Iterator
+from sqlalchemy.engine import Engine
 from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
@@ -131,3 +135,48 @@ def acknowledge_physical_dispatch(conn: Connection, dispatch_id: UUID) -> None:
     )
     if changed.rowcount != 1:
         raise RuntimeError("dispatch not in may_have_sent state")
+
+
+@contextmanager
+def authorized_http_attempt(
+    engine: Engine,
+    *,
+    job,
+    identity,
+    resource: str,
+    request_ordinal: int,
+    request_label: str,
+) -> Iterator[PhysicalDispatchPermit]:
+    """Fail-closed durable authorization for one physical outbound HTTP call.
+
+    Authorization and may-have-sent evidence commit before caller can enter
+    the body. This is not a retry or redirect wrapper; callers must disable
+    implicit HTTP redirects and retries or authorize each subsequent attempt.
+    """
+    if not request_label.strip():
+        raise ValueError("request_label must not be blank")
+    with engine.begin() as conn:
+        owned = conn.execute(
+            text("""
+                SELECT 1 FROM collection_jobs
+                WHERE job_id=:job_id AND collector_uuid=:collector_uuid
+                  AND lease_token=:lease_token AND status='running'
+                  AND lease_expires_at > now()
+                FOR UPDATE
+            """),
+            dict(job_id=job.job_id, collector_uuid=job.collector_uuid,
+                 lease_token=job.lease_token),
+        ).one_or_none()
+        if owned is None:
+            raise RuntimeError("physical HTTP authorization rejected: lease not owned")
+        permit = authorize_physical_dispatch(
+            conn, job_id=job.job_id, attempt_number=job.attempt_count,
+            request_ordinal=request_ordinal, resource=resource,
+            lease_token=job.lease_token, collector_uuid=job.collector_uuid,
+            egress_key=identity.egress_key, lane=job.lane,
+            payload_fingerprint=sha256(request_label.encode("utf-8")).hexdigest(),
+        )
+        mark_physical_dispatch_may_have_sent(conn, permit.dispatch_id)
+    yield permit
+    with engine.begin() as conn:
+        acknowledge_physical_dispatch(conn, permit.dispatch_id)
