@@ -47,7 +47,9 @@ def resolve_production_host(*, environ=None, hostname=None):
     keys are logical request-gate domains, not automatically unique per host.
     """
     env = os.environ if environ is None else environ
-    host = (hostname or socket.gethostname()).split(".", 1)[0]
+    host = (hostname or env.get("BF4PS_HOSTNAME") or socket.gethostname()).split(".", 1)[0]
+    if not host.strip():
+        raise ValueError("collector hostname must be non-empty")
     configured = (env.get("BF4PS_COLLECTOR_UUID"), env.get("BF4PS_COLLECTOR_NAME"), env.get("BF4PS_EGRESS_KEY"))
     if any(configured):
         if not all(configured):
