@@ -1,0 +1,234 @@
+kind,catalog_id,raw_key,current_label,proposed_label,status,source
+weapon,64,WARSAW_ID_P_WNAME_AEK971,AEK971,AEK-971,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,24,WARSAW_ID_P_XP1_WNAME_MTAR21,MTAR21,MTAR-21,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,23,WARSAW_ID_P_WNAME_ACR,ACR,ACW-R,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,149,WARSAW_ID_P_WNAME_GLOCK18,GLOCK18,G18,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,66,WARSAW_ID_P_WNAME_GALIL23,GALIL23,ACE 23,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,25,WARSAW_ID_P_XP0_WNAME_F2000,F2000,F2000,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,109,WARSAW_ID_P_WNAME_M16A4,M16A4,M16A4,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,28,WARSAW_ID_P_WNAME_MG4,MG4,MG4,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,97,WARSAW_ID_P_WNAME_SAIGA12,SAIGA12,SAIGA 12K,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,45,WARSAW_ID_P_WNAME_M416,M416,M416,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,57,WARSAW_ID_P_INAME_CLAYMORE,CLAYMORE,M18 CLAYMORE,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,100,WARSAW_ID_P_XP2_WNAME_AWS,AWS,AWS,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,103,WARSAW_ID_P_INAME_M67,M67,M67 FRAG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,18,WARSAW_ID_P_WNAME_AK5C,AK5C,AK 5C,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,114,WARSAW_ID_P_WNAME_SCORP,SCORP,CZ-3A1,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,26,WARSAW_ID_P_INAME_40MM,40MM,M320 HE,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,95,WARSAW_ID_P_WNAME_FAMAS,FAMAS,FAMAS,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,123,WARSAW_ID_P_WNAME_GALIL52,GALIL52,ACE 52 CQB,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,39,WARSAW_ID_P_WNAME_SCARH,SCARH,SCAR-H,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,133,WARSAW_ID_P_WNAME_A91,A91,A-91,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,163,WARSAW_ID_P_WNAME_M200,M200,SRR-61,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,6,WARSAW_ID_P_WNAME_SG553,SG553,SG553,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,12,WARSAW_ID_P_INAME_C4,C4,C4 EXPLOSIVE,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,8,WARSAW_ID_P_INAME_RPG7,RPG7,RPG-7V2,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,171,WARSAW_ID_P_WNAME_GALIL21,GALIL21,ACE 21 CQB,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,116,WARSAW_ID_P_WNAME_M249,M249,M249,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,7,WARSAW_ID_P_WNAME_870,870,870 MCS,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,43,WARSAW_ID_P_INAME_40MM_LVG,40MM LVG,M320 LVG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,33,WARSAW_ID_P_WNAME_DBV12,DBV12,DBV-12,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,138,WARSAW_ID_P_WNAME_TYPE88,TYPE88,TYPE 88 LMG,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,166,WARSAW_ID_P_WNAME_M1014,M1014,M1014,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,115,WARSAW_ID_P_INAME_MBTLAW,MBTLAW,MBT LAW,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,49,WARSAW_ID_P_WNAME_SCARHSV,SCARHSV,SCAR-H SV,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,87,WARSAW_ID_P_WNAME_GROZA1,GROZA1,GROZA-1,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,54,WARSAW_ID_P_WNAME_STEYRAUG,STEYRAUG,AUG A3,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,156,WARSAW_ID_P_XP2_WNAME_AR160,AR160,AR160,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,134,WARSAW_ID_P_INAME_XM25,XM25,XM25 AIRBURST,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,128,WARSAW_ID_P_WNAME_P90,P90,P90,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,21,WARSAW_ID_P_WNAME_G36C,G36C,G36C,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,135,WARSAW_ID_P_WNAME_SKS,SKS,SKS,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,70,WARSAW_ID_P_WNAME_AKU12,AKU12,AKU-12,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,71,WARSAW_ID_P_WNAME_MK11,MK11,MK11 MOD 0,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,126,WARSAW_ID_P_WNAME_SVD12,SVD12,SVD-12,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,16,WARSAW_ID_P_WNAME_TYPE95B1,TYPE95B1,TYPE-95B-1,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,9,WARSAW_ID_P_WNAME_RPK12,RPK12,RPK-12,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,50,WARSAW_ID_P_WNAME_PECHENEG,PECHENEG,PKP PECHENEG,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,167,WARSAW_ID_P_WNAME_PDR,PDR,PDW-R,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,159,WARSAW_ID_P_WNAME_MX4,MX4,MX4,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,105,WARSAW_ID_P_WNAME_GALIL53,GALIL53,ACE 53 SV,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,78,WARSAW_ID_P_WNAME_QBB95,QBB95,QBB-95-1,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,4,WARSAW_ID_P_WNAME_M98B,M98B,M98B,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,120,WARSAW_ID_P_WNAME_M4A1,M4A1,M4,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,173,WARSAW_ID_P_WNAME_AN94,AN94,AN-94,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,112,WARSAW_ID_P_INAME_IMPACT,IMPACT,RGO IMPACT,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,127,WARSAW_ID_P_INAME_SMAW,SMAW,SMAW,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,86,WARSAW_ID_P_XP3_WNAME_BULLDOG,BULLDOG,BULLDOG,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,168,WARSAW_ID_P_XP1_WNAME_L85A2,L85A2,L85A2,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,29,WARSAW_ID_P_XP1_WNAME_MP7,MP7,MP7,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,38,WARSAW_ID_P_XP0_WNAME_DAO12,DAO12,DAO-12,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,59,WARSAW_ID_P_WNAME_PP2000,PP2000,PP-2000,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,35,WARSAW_ID_P_WNAME_CBJMS,CBJMS,CBJ-MS,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,52,WARSAW_ID_P_WNAME_M240,M240,M240B,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,170,WARSAW_ID_P_WNAME_AK12,AK12,AK-12,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,27,WARSAW_ID_P_WNAME_UMP45,UMP45,UMP-45,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,125,WARSAW_ID_P_XP0_WNAME_M60E4,M60E4,M60-E4,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,161,WARSAW_ID_P_WNAME_QBU88,QBU88,QBU-88,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,104,WARSAW_ID_P_WNAME_HAWK,HAWK,HAWK 12G,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,121,WARSAW_ID_P_INAME_M32MGL,M32MGL,M32 MGL,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,67,WARSAW_ID_P_WNAME_LSAT,LSAT,LSAT,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,131,WARSAW_ID_P_WNAME_M82A3MID,M82A3MID,M82A3 MID,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+weapon,145,WARSAW_ID_P_WNAME_SAR21,SAR21,SAR-21,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,34,WARSAW_ID_P_XP1_WNAME_L96A1,L96A1,L96A1,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,55,WARSAW_ID_P_XP0_WNAME_GOL,GOL,GOL MAGNUM,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,124,WARSAW_ID_P_XP0_WNAME_ASVAL,ASVAL,AS VAL,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,148,WARSAW_ID_P_WNAME_RFBTARGET,RFBTARGET,RFB,battlelog_confirmed,Operator Battlelog screenshot MeuchteFoese PC: RFB 44564 kills vs D3 weapon 148 RFBTARGET 44541 (23 newer kills); identity supported by matching player and close count
+weapon,98,WARSAW_ID_P_WNAME_QBS09,QBS09,QBS-09,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,17,WARSAW_ID_P_WNAME_CZ805,CZ805,CZ-805,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,58,WARSAW_ID_P_WNAME_UMP9,UMP9,UMP-9,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,53,WARSAW_ID_P_WNAME_SRS,SRS,338-RECON,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,111,WARSAW_ID_P_WNAME_93R,93R,93R,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,1,WARSAW_ID_P_XP1_WNAME_RPK74,RPK74,RPK-74M,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,108,WARSAW_ID_P_XP3_WNAME_MPX,MPX,MPX,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,46,WARSAW_ID_P_INAME_SRAW,SRAW,SRAW,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,146,WARSAW_ID_P_WNAME_CSLR4,CSLR4,CS-LR4,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,5,WARSAW_ID_P_WNAME_L86A1,L86A1,L86A2,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,22,WARSAW_ID_P_WNAME_TAURUS44,TAURUS44,.44 MAGNUM,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,93,WARSAW_ID_P_XP3_WNAME_DEAGLE,DEAGLE,DEAGLE 44,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,96,WARSAW_ID_P_WNAME_M40A5,M40A5,M40A5,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,68,WARSAW_ID_P_WNAME_JNG90,JNG90,JNG-90,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,157,WARSAW_ID_P_WNAME_M39,M39,M39 EMR,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,92,WARSAW_ID_P_INAME_M15,M15,M15 AT MINE,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,19,WARSAW_ID_P_WNAME_SHORTY,SHORTY,SHORTY 12G,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,91,WARSAW_ID_P_XP2_WNAME_SR338,SR338,SR338,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,94,WARSAW_ID_P_WNAME_SV98,SV98,SV-98,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,61,WARSAW_ID_P_WNAME_P226,P226,P226,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,79,WARSAW_ID_P_INAME_M34,M34,M34 INCENDIARY,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,245,WARSAW_ID_P_XP4_WNAME_SPYDER,SPYDER,Phantom Bow,operator_approved_display_name,Operator explicitly approved display Phantom Bow; in-game PHANTOM
+weapon,140,WARSAW_ID_P_WNAME_ULTIM,ULTIM,U-100 MK5,battlelog_confirmed,Operator Battlelog screenshot XxJohnnyxX3263 Xbox One: U-100 MK5 10730 kills equals D3 weapon 140 ULTIM 10730
+weapon,154,WARSAW_ID_P_XP2_WNAME_SR2,SR2,SR-2,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,132,WARSAW_ID_P_WNAME_JS2,JS2,JS2,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,165,WARSAW_ID_P_WNAME_SPAS12,SPAS12,SPAS-12,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,147,WARSAW_ID_P_XP3_WNAME_CS5,CS5,CS5,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,88,WARSAW_ID_P_INAME_BAYONETT,BAYONETT,BAYONET,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,117,WARSAW_ID_P_INAME_M2,M2,M2 SLAM,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,110,WARSAW_ID_P_WNAME_M1911,M1911,M1911,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,158,WARSAW_ID_P_WNAME_FYJS,FYJS,FY-JS,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,74,WARSAW_ID_P_WNAME_GROZA4,GROZA4,GROZA-4,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,84,WARSAW_ID_P_WNAME_QBZ951,QBZ951,QBZ-95-1,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,37,WARSAW_ID_P_WNAME_UTAS,UTAS,UTS 15,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,77,WARSAW_ID_P_WNAME_SCOUTELIT,SCOUTELIT,SCOUT ELITE,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,13,WARSAW_ID_P_INAME_V40,V40,V40 MINI,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,155,WARSAW_ID_P_INAME_FIM92,FIM92,FIM-92 STINGER,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,73,WARSAW_ID_P_WNAME_USAS12,USAS12,USAS-12,weapon_candidate_unverified_battlelog,Battlefield 4 weapon-name candidate; exact Battlelog spelling awaiting review
+weapon,41,WARSAW_ID_P_WNAME_M412REX,M412REX,M412 REX,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,119,WARSAW_ID_P_WNAME_M9,M9,M9,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,3,WARSAW_ID_P_WNAME_HK45C,HK45C,COMPACT 45,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,76,WARSAW_ID_P_WNAME_M82A3CQB,M82A3CQB,M82A3 CQB,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+weapon,63,WARSAW_ID_P_WNAME_QSZ92,QSZ92,QSZ-92,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,15,WARSAW_ID_P_SP_WNAME_USAS12NV,WARSAW ID P SP WNAME USAS12NV,USAS-12 FLIR,operator_approved_display_name,Operator explicitly approved USAS-12 FLIR as website display label; supersedes USAS-12 NV candidate
+weapon,118,WARSAW_ID_P_XP3_WNAME_UN6,UN6,UNICA 6,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+weapon,75,WARSAW_ID_P_WNAME_MP443,MP443,MP443,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,141,WARSAW_ID_P_XP4_INAME_KNIFEBIPOD,KNIFEBIPOD,C100,needs_manual_review,https://battlefield.fandom.com/wiki/Knife/Battlefield_4; internal key to label association requires verification
+weapon,85,WARSAW_ID_P_WNAME_CZ75,CZ75,CZ-75,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,151,WARSAW_ID_P_INAME_FGM148,FGM148,FGM-148 JAVELIN,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,65,WARSAW_ID_P_XP2_WNAME_SW40,SW40,SW40,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,130,WARSAW_ID_P_WNAME_AMR2,AMR2,AMR-2,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+weapon,36,WARSAW_ID_P_INAME_IGLA,IGLA,SA-18 IGLA,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,143,WARSAW_ID_P_WNAME_FN57,FN57,FN57,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,2,WARSAW_ID_P_INAME_NECKKNIFE,NECKKNIFE,NECK,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,172,WARSAW_ID_P_WNAME_AMR2MID,AMR2MID,AMR-2 MID,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+weapon,150,WARSAW_ID_P_INAME_BPKNIFE6,BPKNIFE6,BOWIE,operator_battlelog_confirmed,Operator compared mauirixxx PC Battlelog knife counts to D3; BPKNIFE6=BOWIE
+weapon,47,WARSAW_ID_P_INAME_REPAIR,REPAIR,REPAIR TOOL,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,80,WARSAW_ID_P_INAME_DEFIB,DEFIB,DEFIBRILLATOR,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,11,WARSAW_ID_P_INAME_STARSTREAK,STARSTREAK,HVM-II,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,113,WARSAW_ID_P_INAME_BPKNIFE4,BPKNIFE4,CARBON FIBER,operator_battlelog_confirmed,Operator confirmed BPKNIFE4 = CARBON FIBER after comparing second-player Battlelog knife statistics with D3
+weapon,160,WARSAW_ID_P_INAME_KNIFE14100BT,KNIFE14100BT,C100,needs_manual_review,https://battlefield.fandom.com/wiki/Knife/Battlefield_4; internal key to label association requires verification
+weapon,102,WARSAW_ID_P_WNAME_SADDLEGUN,SADDLEGUN,MARE’S LEG,needs_manual_review,https://battlefield.fandom.com/wiki/Battlefield_4; internal key to label association requires verification
+weapon,51,WARSAW_ID_P_INAME_MACHETE,MACHETE,MACHETE,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,82,WARSAW_ID_P_XP4_INAME_KNIFEWEAVER,KNIFEWEAVER,WEAVER,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,89,WARSAW_ID_P_INAME_BPKNIFE7,BPKNIFE7,BOOT,operator_battlelog_confirmed,Operator confirmed BPKNIFE7 = BOOT after comparing second-player Battlelog knife statistics with D3
+weapon,139,WARSAW_ID_P_INAME_BPKNIFE3,BPKNIFE3,TRENCH,operator_battlelog_confirmed,Operator confirmed BPKNIFE3 = TRENCH after comparing second-player Battlelog knife statistics with D3
+weapon,142,WARSAW_ID_P_XP4_INAME_KNIFETANTO,KNIFETANTO,TANTO,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,69,WARSAW_ID_P_INAME_BPKNIFE1,BPKNIFE1,IMPROVISED,operator_battlelog_confirmed,Operator compared mauirixxx PC Battlelog knife counts to D3; BPKNIFE1=IMPROVISED
+weapon,122,WARSAW_ID_P_INAME_M26_MASS,M26 MASS,M26 MASS,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,153,WARSAW_ID_P_INAME_KNIFE2142,KNIFE2142,BJ-2,needs_manual_review,https://battlefield.fandom.com/wiki/Knife/Battlefield_4; internal key to label association requires verification
+weapon,162,WARSAW_ID_P_INAME_ACB90,ACB90,ACB-90,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,129,WARSAW_ID_P_INAME_KNIFEPRECISION,KNIFEPRECISION,PRECISION,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,31,WARSAW_ID_P_INAME_M136,M136,M136 CS,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,62,WARSAW_ID_P_XP2_INAME_40MM_3GL,40MM 3GL,M320 3GL,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,107,WARSAW_ID_P_INAME_BPKNIFE8,BPKNIFE8,SEAL,operator_battlelog_confirmed,Operator confirmed BPKNIFE8 = SEAL after comparing second-player Battlelog knife statistics with D3
+weapon,106,WARSAW_ID_P_INAME_SHANK,SHANK,SHANK,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,42,WARSAW_ID_P_INAME_BPKNIFE5,BPKNIFE5,SURVIVAL,operator_battlelog_confirmed,Operator compared mauirixxx PC Battlelog knife counts to D3; BPKNIFE5=SURVIVAL
+weapon,83,WARSAW_ID_P_INAME_M26_FLECHETTE,M26 FLECHETTE,M26 DART,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,10,WARSAW_ID_P_XP4_WNAME_RAILGUN,RAILGUN,RORSCH MK-1,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,101,WARSAW_ID_P_INAME_40MM_FLASH,40MM FLASH,M320 FB,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,164,WARSAW_ID_P_INAME_DIVERKNIFE,DIVERKNIFE,DIVE,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
+weapon,56,WARSAW_ID_P_WNAME_M82A3,M82A3,M82A3,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,44,WARSAW_ID_P_INAME_40MM_SHG,40MM SHG,M320 BUCK,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,99,WARSAW_ID_P_INAME_M26_FRAG,M26 FRAG,M26 FRAG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,137,WARSAW_ID_P_INAME_XM25_FLECHETTE,XM25 FLECHETTE,XM25 DART,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,30,WARSAW_ID_P_WNAME_AMR2CQB,AMR2CQB,AMR-2 CQB,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+weapon,48,WARSAW_ID_P_INAME_BPKNIFE2,BPKNIFE2,SCOUT,operator_battlelog_confirmed,Operator compared mauirixxx PC Battlelog knife counts to D3; BPKNIFE2=SCOUT
+weapon,169,WARSAW_ID_P_INAME_FLASHBANG,FLASHBANG,FLASHBANG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,60,WARSAW_ID_P_XP6_INAME_M60ULT,M60ULT,M60 Ultimate,operator_approved_display_name,Operator explicitly approved display M60 Ultimate; in-game M60-ULT
+weapon,144,WARSAW_ID_P_INAME_M26_SLUG,M26 SLUG,M26 SLUG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,81,WARSAW_ID_P_XP3_WNAME_SHIELD,SHIELD,BALLISTIC SHIELD,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,32,WARSAW_ID_P_INAME_40MM_SMK,40MM SMK,M320 SMK,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,90,WARSAW_ID_P_INAME_XM25_SMK,XM25 SMK,XM25 SMOKE,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,136,WARSAW_ID_P_INAME_FLARE,FLARE,HAND FLARE,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+weapon,152,WARSAW_ID_P_INAME_M18,M18,M18 SMOKE,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
+vehicle,69,WARSAW_ID_P_VNAME_T99,T99,Type 99 MBT,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+vehicle,47,WARSAW_ID_P_VNAME_M1ABRAMS,M1ABRAMS,M1 Abrams,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+vehicle,27,WARSAW_ID_P_VNAME_T90,T90,T-90A,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+vehicle,46,WARSAW_ID_P_VNAME_LAV25,LAV25,LAV-25,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,20,WARSAW_ID_P_VNAME_ZBD09,ZBD09,ZBD-09,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,45,WARSAW_ID_P_VNAME_AH1Z,AH1Z,AH-1Z Viper,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+vehicle,41,WARSAW_ID_P_VNAME_Z11,Z11,Z-11W,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+vehicle,37,WARSAW_ID_P_VNAME_Z10,Z10,Z-10W,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+vehicle,80,WARSAW_ID_P_VNAME_AH6,AH6,AH-6 Little Bird,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+vehicle,78,WARSAW_ID_P_XP1_VNAME_BTR90,BTR90,BTR-90,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,28,WARSAW_ID_P_VNAME_CB90,CB90,RCB-90,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,32,WARSAW_ID_P_VNAME_LAVAD,LAVAD,LAV-AD,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,33,WARSAW_ID_P_VNAME_MI28,MI28,Mi-28 Havoc,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+vehicle,2,WARSAW_ID_P_VNAME_DV15,DV15,DV-15 Interceptor,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+vehicle,74,WARSAW_ID_P_VNAME_PGZ95,PGZ95,Type 95 AA,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,3,WARSAW_ID_P_INAME_MORTAR,MORTAR,M224 MORTAR,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,44,WARSAW_ID_P_VNAME_9K22,9K22,9K22 Tunguska-M,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,10,WARSAW_ID_P_XP1_VNAME_UCAV,UCAV,UCAV,operator_confirmed_keep_existing,Operator explicitly approved current UCAV display and aggregation; retain exactly as-is despite Battlelog faction-specific rows
+vehicle,22,WARSAW_ID_P_VNAME_Q5,Q5,Q-5 Fantan,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,1,WARSAW_ID_P_VNAME_HIMARS,HIMARS,M142 (HIMARS),existing_site_label_unverified_battlelog,site/index.html
+vehicle,19,WARSAW_ID_P_XP1_VNAME_F35,F35,F-35,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+vehicle,58,WARSAW_ID_P_VNAME_SU39,SU39,SU-39,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,50,WARSAW_ID_P_VNAME_A10,A10,A-10 Warthog,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,40,WARSAW_ID_P_VNAME_J20,J20,J-20,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+vehicle,18,WARSAW_ID_P_VNAME_PAKFA,PAKFA,Su-50,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,49,WARSAW_ID_P_VNAME_RIB,RIB,RHIB Boat,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,4,WARSAW_ID_P_VNAME_UH1Y,UH1Y,UH-1Y Venom,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,66,WARSAW_ID_P_XP1_VNAME_SUAV,SUAV,SUAV,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,7,WARSAW_ID_P_VNAME_AAV,AAV,AAV-7A1 AMTRAC,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,29,WARSAW_ID_P_INAME_EOD,EOD,EOD BOT,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,39,WARSAW_ID_P_VNAME_Z9,Z9,Z-9 Haitun,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,81,WARSAW_ID_P_VNAME_COUGAR,COUGAR,MRAP,battlelog_confirmed,Two independent Battlelog screenshot/D3 comparisons: DeVascon1957 PC 3230=3230; Sorenson44 PC 1844=1844
+vehicle,14,WARSAW_ID_P_VNAME_ZFB05,ZFB05,ZFB-05,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,25,WARSAW_ID_P_VNAME_AC130,AC130,AC-130 Gunship,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,35,WARSAW_ID_P_VNAME_LYT2021,LYT2021,LYT2021,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,9,WARSAW_ID_P_INAME_MAV,MAV,MAV,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,61,WARSAW_ID_P_VNAME_VDV,VDV,VDV Buggy,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,48,WARSAW_ID_P_XP3_WNAME_RAWR,RAWR,RAWR,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,17,WARSAW_ID_P_VNAME_SPM3,SPM3,SPM-3,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,11,WARSAW_ID_P_VNAME_TOW,TOW,M220 TOW Launcher,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,8,WARSAW_ID_P_VNAME_50CAL,50CAL,.50 Cal,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,82,WARSAW_ID_P_VNAME_50CALNOSHIELD,50CALNOSHIELD,.50 CAL (NO SHIELD),operator_confirmed_hidden_from_picker,"Battlelog screenshot XPrincessaMiaX .50 CAL (RU/US/CN) each 541 matches D3 ID82 541; operator requests hide, never delete; WEBSITE PR #9"
+vehicle,52,WARSAW_ID_P_VNAME_KA60,KA60,KA-60 Kasatka,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,43,WARSAW_ID_P_VNAME_QUAD,QUAD,Quad Bike,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,16,WARSAW_ID_P_XP1_VNAME_BOMBER,BOMBER,BOMBER,operator_confirmed_killfeed,operator confirmed exact in-game kill-feed label BOMBER; Battlelog stats-screen wording not separately checked
+vehicle,64,WARSAW_ID_P_VNAME_KORNET,KORNET,9M133 Kornet Launcher,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,70,WARSAW_ID_P_VNAME_GROWLER,GROWLER,GROWLER ITV,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,79,WARSAW_ID_P_XP4_MP_VNAME_HTANK,HTANK,HT-95 LEVKOV,existing_site_label_unverified_battlelog,site/index.html
+vehicle,31,WARSAW_ID_P_XP2_INAME_AAMINE,AAMINE,AA MINE,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,65,WARSAW_ID_P_VNAME_HJ8,HJ8,HJ-8 Launcher,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,57,WARSAW_ID_P_XP4_WNAME_MKV,MKV,XD-1 ACCIPITER,battlelog_confirmed,Two exact Battlelog screenshot/D3 comparisons: mauirixxx PC 57=57; Suzems PC 439=439 (D3 source 2026-10-13); independently cross-checked
+vehicle,72,WARSAW_ID_P_XP1_VNAME_DIRTBIKE,DIRTBIKE,Dirt Bike,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,6,WARSAW_ID_P_XP4_MP_VNAME_METAL,METAL,SCHIPUNOV 42,existing_site_label_unverified_battlelog,site/index.html
+vehicle,51,WARSAW_ID_P_XP0_VNAME_DPV,DPV,Desert Patrol Vehicle,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,75,WARSAW_ID_P_XP4_MP_VNAME_SNOWMO,SNOWMO,SNOWMOBILE,existing_site_label_unverified_battlelog,site/index.html
+vehicle,24,WARSAW_ID_P_VNAME_PWC,PWC,PWC,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,38,WARSAW_ID_P_XP2_VNAME_OLDCANNON,OLDCANNON,Old Cannon,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,42,WARSAW_ID_P_XP2_VNAME_ACV,ACV,ACV,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,77,WARSAW_ID_P_XP0_VNAME_SKIDLOADER,SKIDLOADER,Skid Loader,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,59,WARSAW_ID_P_VNAME_CENTURION,CENTURION,Centurion C-RAM,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,60,WARSAW_ID_P_VNAME_LD2000,LD2000,LD-2000 AA,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,53,WARSAW_ID_P_VNAME_PANTSIR,PANTSIR,Pantsir-S1,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
+vehicle,12,WARSAW_ID_P_XP4_MP_VNAME_POD,POD,LAUNCH POD,existing_site_label_unverified_battlelog,site/index.html
