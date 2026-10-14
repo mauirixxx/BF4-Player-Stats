@@ -8,5 +8,6 @@ COPY migrations ./migrations
 COPY alembic.ini ./alembic.ini
 COPY scripts/bf4ps_production_collector.py ./scripts/bf4ps_production_collector.py
 COPY scripts/bf4ps_production_collector_control.py ./scripts/bf4ps_production_collector_control.py
+RUN chmod 755 /app/scripts && chmod 644 /app/scripts/*.py
 USER 65532:65532
 CMD ["python", "-m", "bf4ps.discovery_service"]
