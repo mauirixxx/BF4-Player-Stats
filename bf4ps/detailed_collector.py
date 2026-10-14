@@ -229,12 +229,16 @@ def collect_one_detailed_job(
                 engine, job=job, identity=identity, resource="detailed",
                 request_ordinal=1, request_label=f"detailed:{persona_id}:{platform}",
             ):
-            fetched = fetch_detailed_stats(
+                fetched = fetch_detailed_stats(
+                persona_id,
+                platform,
+                timeout_seconds=timeout_seconds,
+            )
         else:
-        fetched = fetch_detailed_stats(
-            persona_id,
-            platform,
-            timeout_seconds=timeout_seconds,
+            fetched = fetch_detailed_stats(
+                persona_id,
+                platform,
+                timeout_seconds=timeout_seconds,
         )
         stats = normalize_detailed_stats(
             fetched.payload,
