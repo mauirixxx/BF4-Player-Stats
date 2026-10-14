@@ -133,3 +133,11 @@ Read-only D3 spot check for vehicle item 57: `MeuchteFoese` (PC persona `3595543
 | 16 | BOMBER | **BOMBER — operator confirmed** | Exact in-game kill-feed label; Battlelog stats-screen spelling not separately verified |
 
 **Correction supersedes the earlier Batch 3 follow-up.** Do not use the previously suggested MKV → RORSCH MK-1 mapping. The source-of-truth CSV records the current conclusion.
+
+### Batch 3 update: MKV identified
+
+| Vehicle ID | Key | Name | Evidence |
+|---:|---|---|---|
+| 57 | MKV | **XD-1 ACCIPITER** | Operator Battlelog screenshot shows 57 kills; D3 mauirixxx (persona 236753552) MKV shows 57 kills. Independent player confirmation pending. |
+
+This supersedes the earlier MKV unknown and rejected RORSCH guesses. Screenshot also shows EOD BOT, MAV, M224 MORTAR, SUAV, UCAV (RU), UCAV (US), AA MINE and RAWR. Faction-specific UCAV handling is not yet established.
