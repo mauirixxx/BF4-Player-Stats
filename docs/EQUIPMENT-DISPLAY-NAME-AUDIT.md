@@ -443,3 +443,18 @@ Read-only D3 soldier data for **mauirixxx** (PC persona **236753552**), snapshot
 | BPKNIFE8 | 107 | 25 | Awaiting comparison |
 
 **Caution:** BPKNIFE3 and BPKNIFE8 both have 25 kills; BPKNIFE4 and BPKNIFE7 both have 10 kills. A kill-count-only match is ambiguous for these pairs. Seek independent player evidence or another distinguishing statistic before mapping them. No knife names have been assigned yet.
+
+## Knife mapping — mauirixxx Battlelog comparison
+
+Operator confirmed **BPKNIFE1 = IMPROVISED (5 kills)**, **BPKNIFE2 = SCOUT (3)**, **BPKNIFE5 = SURVIVAL (6)**, **BPKNIFE6 = BOWIE (2,083)** using their Battlelog profile. The remaining pairs are ambiguous: **BPKNIFE3 and BPKNIFE8** are each either **TRENCH** or **SEAL** (25 kills each); **BPKNIFE4 and BPKNIFE7** are each one of **BOOT**, **CARBON FIBER**, **TACTICAL** (10 kills each). Leave all four unmapped pending second-player evidence.
+
+Read-only D3 high-count comparison targets:
+
+| Key | Player | Platform | D3 kills | Persona ID |
+|---|---|---|---:|---:|
+| BPKNIFE3 (139) | Chaos_Kildar | pc | 1,404 | 354412344 |
+| BPKNIFE8 (107) | nikos1408 | pc | 2,207 | 802154787 |
+| BPKNIFE4 (113) | fm_crab | pc | 3,237 | 362378968 |
+| BPKNIFE7 (89) | ranbers | pc | 609 | 927983334 |
+
+These leaderboard counts are **comparison targets only**, not independent confirmation of knife names.

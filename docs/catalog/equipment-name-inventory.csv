@@ -129,28 +129,28 @@ weapon,36,WARSAW_ID_P_INAME_IGLA,IGLA,SA-18 IGLA,weapon_candidate_unverified_bat
 weapon,143,WARSAW_ID_P_WNAME_FN57,FN57,FN57,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,2,WARSAW_ID_P_INAME_NECKKNIFE,NECKKNIFE,NECK,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,172,WARSAW_ID_P_WNAME_AMR2MID,AMR2MID,AMR-2 MID,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-weapon,150,WARSAW_ID_P_INAME_BPKNIFE6,BPKNIFE6,,needs_manual_review,"D3 read-only weapon leaderboard: mauirixxx PC persona 236753552, BPKNIFE6=2083 kills as of 2026-10-13 02:36 UTC; Battlelog knife-name comparison pending"
+weapon,150,WARSAW_ID_P_INAME_BPKNIFE6,BPKNIFE6,BOWIE,operator_battlelog_confirmed,Operator compared mauirixxx PC Battlelog knife counts to D3; BPKNIFE6=BOWIE
 weapon,47,WARSAW_ID_P_INAME_REPAIR,REPAIR,REPAIR TOOL,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,80,WARSAW_ID_P_INAME_DEFIB,DEFIB,DEFIBRILLATOR,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,11,WARSAW_ID_P_INAME_STARSTREAK,STARSTREAK,HVM-II,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,113,WARSAW_ID_P_INAME_BPKNIFE4,BPKNIFE4,,needs_manual_review,"D3 read-only weapon leaderboard: mauirixxx PC persona 236753552, BPKNIFE4=10 kills as of 2026-10-13 02:36 UTC; Battlelog knife-name comparison pending"
+weapon,113,WARSAW_ID_P_INAME_BPKNIFE4,BPKNIFE4,,needs_manual_review,Operator narrowed BPKNIFE4 to BOOT or CARBON FIBER or TACTICAL using mauirixxx Battlelog; independent player needed
 weapon,160,WARSAW_ID_P_INAME_KNIFE14100BT,KNIFE14100BT,C100,needs_manual_review,https://battlefield.fandom.com/wiki/Knife/Battlefield_4; internal key to label association requires verification
 weapon,102,WARSAW_ID_P_WNAME_SADDLEGUN,SADDLEGUN,MARE’S LEG,needs_manual_review,https://battlefield.fandom.com/wiki/Battlefield_4; internal key to label association requires verification
 weapon,51,WARSAW_ID_P_INAME_MACHETE,MACHETE,MACHETE,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,82,WARSAW_ID_P_XP4_INAME_KNIFEWEAVER,KNIFEWEAVER,WEAVER,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
-weapon,89,WARSAW_ID_P_INAME_BPKNIFE7,BPKNIFE7,,needs_manual_review,"D3 read-only weapon leaderboard: mauirixxx PC persona 236753552, BPKNIFE7=10 kills as of 2026-10-13 02:36 UTC; Battlelog knife-name comparison pending"
-weapon,139,WARSAW_ID_P_INAME_BPKNIFE3,BPKNIFE3,,needs_manual_review,"D3 read-only weapon leaderboard: mauirixxx PC persona 236753552, BPKNIFE3=25 kills as of 2026-10-13 02:36 UTC; Battlelog knife-name comparison pending"
+weapon,89,WARSAW_ID_P_INAME_BPKNIFE7,BPKNIFE7,,needs_manual_review,Operator narrowed BPKNIFE7 to BOOT or CARBON FIBER or TACTICAL using mauirixxx Battlelog; independent player needed
+weapon,139,WARSAW_ID_P_INAME_BPKNIFE3,BPKNIFE3,,needs_manual_review,Operator narrowed BPKNIFE3 to TRENCH or SEAL using mauirixxx Battlelog; independent player needed
 weapon,142,WARSAW_ID_P_XP4_INAME_KNIFETANTO,KNIFETANTO,TANTO,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
-weapon,69,WARSAW_ID_P_INAME_BPKNIFE1,BPKNIFE1,,needs_manual_review,"D3 read-only weapon leaderboard: mauirixxx PC persona 236753552, BPKNIFE1=5 kills as of 2026-10-13 02:36 UTC; Battlelog knife-name comparison pending"
+weapon,69,WARSAW_ID_P_INAME_BPKNIFE1,BPKNIFE1,IMPROVISED,operator_battlelog_confirmed,Operator compared mauirixxx PC Battlelog knife counts to D3; BPKNIFE1=IMPROVISED
 weapon,122,WARSAW_ID_P_INAME_M26_MASS,M26 MASS,M26 MASS,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,153,WARSAW_ID_P_INAME_KNIFE2142,KNIFE2142,BJ-2,needs_manual_review,https://battlefield.fandom.com/wiki/Knife/Battlefield_4; internal key to label association requires verification
 weapon,162,WARSAW_ID_P_INAME_ACB90,ACB90,ACB-90,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,129,WARSAW_ID_P_INAME_KNIFEPRECISION,KNIFEPRECISION,PRECISION,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,31,WARSAW_ID_P_INAME_M136,M136,M136 CS,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,62,WARSAW_ID_P_XP2_INAME_40MM_3GL,40MM 3GL,M320 3GL,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,107,WARSAW_ID_P_INAME_BPKNIFE8,BPKNIFE8,,needs_manual_review,"D3 read-only weapon leaderboard: mauirixxx PC persona 236753552, BPKNIFE8=25 kills as of 2026-10-13 02:36 UTC; Battlelog knife-name comparison pending"
+weapon,107,WARSAW_ID_P_INAME_BPKNIFE8,BPKNIFE8,,needs_manual_review,Operator narrowed BPKNIFE8 to TRENCH or SEAL using mauirixxx Battlelog; independent player needed
 weapon,106,WARSAW_ID_P_INAME_SHANK,SHANK,SHANK,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
-weapon,42,WARSAW_ID_P_INAME_BPKNIFE5,BPKNIFE5,,needs_manual_review,"D3 read-only weapon leaderboard: mauirixxx PC persona 236753552, BPKNIFE5=6 kills as of 2026-10-13 02:36 UTC; Battlelog knife-name comparison pending"
+weapon,42,WARSAW_ID_P_INAME_BPKNIFE5,BPKNIFE5,SURVIVAL,operator_battlelog_confirmed,Operator compared mauirixxx PC Battlelog knife counts to D3; BPKNIFE5=SURVIVAL
 weapon,83,WARSAW_ID_P_INAME_M26_FLECHETTE,M26 FLECHETTE,M26 DART,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,10,WARSAW_ID_P_XP4_WNAME_RAILGUN,RAILGUN,RORSCH MK-1,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,101,WARSAW_ID_P_INAME_40MM_FLASH,40MM FLASH,M320 FB,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
@@ -160,7 +160,7 @@ weapon,44,WARSAW_ID_P_INAME_40MM_SHG,40MM SHG,M320 BUCK,weapon_candidate_unverif
 weapon,99,WARSAW_ID_P_INAME_M26_FRAG,M26 FRAG,M26 FRAG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,137,WARSAW_ID_P_INAME_XM25_FLECHETTE,XM25 FLECHETTE,XM25 DART,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,30,WARSAW_ID_P_WNAME_AMR2CQB,AMR2CQB,AMR-2 CQB,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-weapon,48,WARSAW_ID_P_INAME_BPKNIFE2,BPKNIFE2,,needs_manual_review,"D3 read-only weapon leaderboard: mauirixxx PC persona 236753552, BPKNIFE2=3 kills as of 2026-10-13 02:36 UTC; Battlelog knife-name comparison pending"
+weapon,48,WARSAW_ID_P_INAME_BPKNIFE2,BPKNIFE2,SCOUT,operator_battlelog_confirmed,Operator compared mauirixxx PC Battlelog knife counts to D3; BPKNIFE2=SCOUT
 weapon,169,WARSAW_ID_P_INAME_FLASHBANG,FLASHBANG,FLASHBANG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,60,WARSAW_ID_P_XP6_INAME_M60ULT,M60ULT,M60 Ultimate,operator_approved_display_name,Operator explicitly approved display M60 Ultimate; in-game M60-ULT
 weapon,144,WARSAW_ID_P_INAME_M26_SLUG,M26 SLUG,M26 SLUG,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
