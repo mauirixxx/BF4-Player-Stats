@@ -177,6 +177,8 @@ def authorized_http_attempt(
             payload_fingerprint=sha256(request_label.encode("utf-8")).hexdigest(),
         )
         mark_physical_dispatch_may_have_sent(conn, permit.dispatch_id)
+    # A transport failure leaves conservative may_have_sent evidence.
+    # Successful return alone permits acknowledgement.
     yield permit
     with engine.begin() as conn:
         acknowledge_physical_dispatch(conn, permit.dispatch_id)
