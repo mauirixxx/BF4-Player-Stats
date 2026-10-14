@@ -76,7 +76,10 @@ def authorize_physical_dispatch(
         """),
         {"cutoff": db_now - timedelta(seconds=3600), "now": db_now},
     ).scalar_one())
-    if used >= PHYSICAL_DISPATCHES_PER_HOUR:
+    limit = int(conn.execute(text(
+        "SELECT physical_dispatches_per_hour FROM runtime_budgets WHERE singleton = true"
+    )).scalar_one())
+    if used >= limit:
         raise PhysicalDispatchBudgetExhausted(
             f"fleet-wide rolling 3600s physical dispatch ceiling reached ({used})"
         )
@@ -106,7 +109,7 @@ def authorize_physical_dispatch(
             "admitted_at": db_now,
         },
     )
-    return PhysicalDispatchPermit(dispatch_id, db_now, PHYSICAL_DISPATCHES_PER_HOUR - used - 1)
+    return PhysicalDispatchPermit(dispatch_id, db_now, limit - used - 1)
 
 
 def mark_physical_dispatch_may_have_sent(conn: Connection, dispatch_id: UUID) -> None:
