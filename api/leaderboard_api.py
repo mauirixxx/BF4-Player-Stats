@@ -30,13 +30,90 @@ def send_json(handler,status,payload):
 PLATFORMS={'pc','ps4','xboxone','all'}
 KINDS={'weapon':('soldier_weapon_stats','weapon_catalog','weapon_id','weapons_state'),
        'vehicle':('soldier_vehicle_stats','vehicle_catalog','vehicle_id','vehicles_state')}
-# Catalog IDs 10 and 54 are two Battlelog UCAV variants carrying duplicate totals.
-# Canonicalize them in the read model, never sum the duplicate per-soldier rows.
+# Audited D3 families. Values are (canonical ID, aggregation).
+# SUM: distinct variants; MAX: overlapping/mirrored Battlelog statistics.
+VEHICLE_FAMILIES = {
+    2: (2, 'sum'), 30: (2, 'sum'),
+    41: (41, 'sum'), 63: (41, 'sum'),
+    47: (47, 'max'), 67: (47, 'max'),
+    27: (27, 'max'), 5: (27, 'max'),
+    46: (46, 'max'), 56: (46, 'max'),
+    78: (78, 'max'), 68: (78, 'max'),
+    4: (4, 'max'), 36: (4, 'max'), 23: (4, 'max'),
+    1: (1, 'max'), 73: (1, 'max'),
+    17: (17, 'max'), 15: (17, 'max'),
+    52: (52, 'max'), 13: (52, 'max'),
+    16: (16, 'max'), 76: (16, 'max'), 34: (16, 'max'),
+    8: (8, 'max'), 21: (8, 'max'),
+    10: (10, 'max'), 54: (10, 'max'),
+}
+# Suppress zero-only placeholder IDs only while they remain zero.
+ZERO_ONLY_VEHICLE_IDS = {62, 26, 71, 55}
+
+def vehicle_family_sql():
+    cases = ' '.join(f'WHEN {raw} THEN {canonical}'
+                     for raw, (canonical, _) in VEHICLE_FAMILIES.items())
+    return f'CASE t.vehicle_id {cases} ELSE t.vehicle_id END'
+
+def vehicle_mode_sql():
+    sum_ids = sorted(k for k, (_, mode) in VEHICLE_FAMILIES.items() if mode == 'sum')
+    return f"CASE WHEN t.vehicle_id IN ({','.join(map(str, sum_ids))}) THEN 'sum' ELSE 'max' END"
+
 def get(conn,kind,platform,item):
     stats,cat,key,state=KINDS[kind]
-    canonical=(f'CASE WHEN t.{key}=54 THEN 10 ELSE t.{key} END' if kind=='vehicle' else f't.{key}')
     where_platform='' if platform=='all' else 'AND s.platform=:platform'
     params={'platform':platform}
+    if kind == 'vehicle':
+        family = vehicle_family_sql()
+        mode = vehicle_mode_sql()
+        # Deduplicate each raw ID first, then SUM distinct variants or MAX mirrors.
+        # Both catalog and detail queries share this identical CTE.
+        cte=f"""
+          WITH raw_per_soldier AS (
+            SELECT s.soldier_id,t.vehicle_id,max(t.kills) AS kills,
+                   max(t.source_fetched_at) AS source_fetched_at
+            FROM soldier_vehicle_stats t
+            JOIN soldiers s ON s.soldier_id=t.soldier_id
+            JOIN collection_state cs ON cs.soldier_id=s.soldier_id
+            WHERE cs.vehicles_state='success' {where_platform}
+            GROUP BY s.soldier_id,t.vehicle_id
+          ), per_soldier AS (
+            SELECT raw.soldier_id,
+                   {family.replace('t.vehicle_id','raw.vehicle_id')} AS item_id,
+                   {mode.replace('t.vehicle_id','raw.vehicle_id')} AS mode,
+                   raw.kills,raw.source_fetched_at
+            FROM raw_per_soldier raw
+          ), consolidated AS (
+            SELECT soldier_id,item_id,
+                   CASE WHEN max(mode)='sum' THEN sum(kills) ELSE max(kills) END AS kills,
+                   max(source_fetched_at) AS source_fetched_at
+            FROM per_soldier GROUP BY soldier_id,item_id
+          )
+        """
+        # For zero-only placeholders, don't hide future nonzero data.
+        # They are excluded from catalog only when their aggregated total is zero.
+        if item is None:
+            return [dict(r) for r in conn.execute(text(cte+f"""
+                SELECT c.vehicle_id AS id,c.name,c.category,
+                       count(*) AS collected_soldiers,
+                       coalesce(sum(p.kills),0) AS total_kills
+                FROM consolidated p JOIN vehicle_catalog c ON c.vehicle_id=p.item_id
+                GROUP BY c.vehicle_id,c.name,c.category
+                HAVING c.vehicle_id NOT IN ({','.join(map(str,sorted(ZERO_ONLY_VEHICLE_IDS)))})
+                       OR coalesce(sum(p.kills),0)>0
+                ORDER BY total_kills DESC,c.name LIMIT 400
+            """),params).mappings()]
+        canonical_item=VEHICLE_FAMILIES.get(item,(item,None))[0]
+        params['item']=canonical_item
+        result=[dict(r) for r in conn.execute(text(cte+"""
+            SELECT s.soldier_id,s.current_name,s.persona_id,s.platform,
+                   p.kills,p.source_fetched_at
+            FROM consolidated p JOIN soldiers s ON s.soldier_id=p.soldier_id
+            WHERE p.item_id=:item
+            ORDER BY p.kills DESC,s.soldier_id
+        """),params).mappings()]
+        return {'population':len(result),'rows':result}
+    canonical=f't.{key}'
     if item is None:
         catalog = [dict(r) for r in conn.execute(text(f"""
           WITH per_soldier AS (
@@ -74,8 +151,7 @@ def get(conn,kind,platform,item):
                     r['name'] in active_names and int(r['total_kills']) == 0
                 )]
         return catalog
-    canonical_item=10 if kind=='vehicle' and item==54 else item
-    params['item']=canonical_item
+    params['item']=item
     base=f"""FROM {stats} t JOIN soldiers s ON s.soldier_id=t.soldier_id
        JOIN collection_state cs ON cs.soldier_id=s.soldier_id
        WHERE {canonical}=:item AND cs.{state}='success' {where_platform}"""
