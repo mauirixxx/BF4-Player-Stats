@@ -33,7 +33,7 @@ def test_simultaneous_last_slot_is_admitted_once():
             if db != TEST_DB_NAME:
                 pytest.fail(f"REFUSING: expected disposable database {TEST_DB_NAME}, got {db}")
             revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-            if revision != "0007_production_physical_dispatch_gate":
+            if revision != "0007_physical_dispatch_gate":
                 pytest.fail(f"REFUSING: expected revision 0007, got {revision}")
             count = conn.execute(text("SELECT COUNT(*) FROM outbound_dispatches")).scalar_one()
             if count:
