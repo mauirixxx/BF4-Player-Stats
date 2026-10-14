@@ -34,6 +34,7 @@ def export():
             'soldiers': rows(c, """
                 select s.soldier_id, s.current_name, s.persona_id, s.platform,
                        cs.detailed_state,cs.weapons_state,cs.vehicles_state,cs.profile_state,
+                       cs.detailed_last_success_at,cs.weapons_last_success_at,cs.vehicles_last_success_at,cs.profile_last_success_at,
                        d.rank,d.kills,d.deaths,d.wins,d.losses,d.total_score,d.time_played_seconds,
                        d.assault_score, d.engineer_score, d.support_score, d.recon_score, d.commander_score, d.squad_score, d.vehicle_score, d.award_score, d.unlock_score, d.combat_score, d.conquest_score, d.rush_score, d.team_deathmatch_score, d.domination_score, d.obliteration_score, d.defuse_score, d.capture_the_flag_score, d.air_superiority_score, d.carrier_assault_score, d.chain_link_score, d.kill_assists, d.shots_fired, d.shots_hit, d.repairs, d.revives, d.heals, d.resupplies, d.avenger_kills, d.savior_kills, d.suppression_assists, d.quit_percentage, d.flags_captured, d.flags_defended, d.dogtags_taken, d.vehicles_destroyed, d.vehicle_damage, d.headshots, d.longest_headshot, d.highest_kill_streak, d.nemesis_kills, d.highest_nemesis_streak,
                        bp.battlelog_username,
