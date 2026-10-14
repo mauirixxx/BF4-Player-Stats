@@ -45,3 +45,8 @@ No changes in this document authorize collector resume.
 - This confirms the ledger's **shape**, not its contents, indexes, retention policy, active writers, or migration safety. Those require separate read-only checks before any DDL.
 - Schema compatibility choice: prefer adding a per-physical-call ordinal to the existing ledger with a new uniqueness rule, or an equivalent additive design, but verify historic rows and downstream consumers first. Do not drop `uq_outbound_dispatch_identity` until compatibility is established.
 - The operator's read-only query did not report any dispatch rows or traffic counts; no production activation is authorized.
+
+## Production ledger census (operator read-only query, 2026-10-14)
+- `outbound_dispatches` has **0 total rows**, with **0** in each phase: `admitted`, `may_have_sent`, `acknowledged`, `ambiguous`.
+- No historic dispatch rows need transformation at this checkpoint. Do not assume this remains true when a migration is eventually deployed; migration must remain safe if rows appear in the meantime.
+- Preserve the current rnt-01 drained state; this census does not validate dispatch authorization.
