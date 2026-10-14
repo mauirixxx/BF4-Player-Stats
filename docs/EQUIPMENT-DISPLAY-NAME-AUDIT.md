@@ -141,3 +141,12 @@ Read-only D3 spot check for vehicle item 57: `MeuchteFoese` (PC persona `3595543
 | 57 | MKV | **XD-1 ACCIPITER** | Operator Battlelog screenshot shows 57 kills; D3 mauirixxx (persona 236753552) MKV shows 57 kills. Independent player confirmation pending. |
 
 This supersedes the earlier MKV unknown and rejected RORSCH guesses. Screenshot also shows EOD BOT, MAV, M224 MORTAR, SUAV, UCAV (RU), UCAV (US), AA MINE and RAWR. Faction-specific UCAV handling is not yet established.
+
+### Batch 3 independent confirmation — XD-1 ACCIPITER
+
+| Player | D3 MKV kills | Battlelog XD-1 ACCIPITER kills | Result |
+|---|---:|---:|---|
+| mauirixxx (PC) | 57 | 57 | Exact match |
+| Suzems (PC) | 439 | 439 | Exact match; second player |
+
+**Status: Battlelog-confirmed.** The second screenshot independently confirms the same name and count on another player. The earlier pending-independent status is superseded. COUGAR and 50CALNOSHIELD remain unverified.
