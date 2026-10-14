@@ -146,14 +146,15 @@
       "name": "M416",
       "role": "fancy",
       "local": "/assets/equipment/weapon-45-fancy.webp",
-      "source": "https://static.wikia.nocookie.net/battlefield/images/7/79/BF4_M416.png/revision/latest",
-      "filename": "BF4_M416.png",
-      "width": 879,
-      "height": 489,
+      "source": "https://static.wikia.nocookie.net/battlefield/images/5/57/BF4_M416_model.png/revision/latest",
+      "filename": "BF4 M416 model.png",
+      "width": 1418,
+      "height": 584,
       "format": "WEBP",
       "audit_catalog_id": 45,
       "raw_key": "WARSAW_ID_P_WNAME_M416",
-      "production_catalog_id_at_audit": 21
+      "production_catalog_id_at_audit": 21,
+      "verification": "Visually inspected: side-profile M416 weapon render; replaces unrelated gameplay screenshot"
     },
     {
       "kind": "weapon",
