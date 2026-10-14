@@ -3,7 +3,6 @@
   "assets": [
     {
       "kind": "weapon",
-      "id": 64,
       "name": "AEK-971",
       "local": "/assets/equipment/64.webp",
       "source": "https://static.wikia.nocookie.net/battlefield/images/d/d9/Battlefield_4_AEK-971_HUD_Icon.png/revision/latest",
@@ -11,11 +10,13 @@
       "width": 256,
       "height": 64,
       "format": "WEBP",
-      "role": "hud"
+      "role": "hud",
+      "audit_catalog_id": 64,
+      "raw_key": "WARSAW_ID_P_WNAME_AEK971",
+      "production_catalog_id_at_audit": 5
     },
     {
       "kind": "weapon",
-      "id": 100,
       "name": "AWS",
       "local": "/assets/equipment/100.webp",
       "source": "https://static.wikia.nocookie.net/battlefield/images/6/68/Battlefield_4_AWS_HUD_Icon.png/revision/latest",
@@ -23,11 +24,13 @@
       "width": 256,
       "height": 64,
       "format": "WEBP",
-      "role": "hud"
+      "role": "hud",
+      "audit_catalog_id": 100,
+      "raw_key": "WARSAW_ID_P_XP2_WNAME_AWS",
+      "production_catalog_id_at_audit": 22
     },
     {
       "kind": "weapon",
-      "id": 18,
       "name": "AK 5C",
       "local": "/assets/equipment/18.webp",
       "source": "https://static.wikia.nocookie.net/battlefield/images/c/c6/Battlefield_4_AK_5C_HUD_Icon.png/revision/latest",
@@ -35,11 +38,13 @@
       "width": 256,
       "height": 64,
       "format": "WEBP",
-      "role": "hud"
+      "role": "hud",
+      "audit_catalog_id": 18,
+      "raw_key": "WARSAW_ID_P_WNAME_AK5C",
+      "production_catalog_id_at_audit": 49
     },
     {
       "kind": "weapon",
-      "id": 114,
       "name": "CZ-3A1",
       "local": "/assets/equipment/114.webp",
       "source": "https://static.wikia.nocookie.net/battlefield/images/2/23/Battlefield_4_CZ-3A1_HUD_Icon.png/revision/latest",
@@ -47,11 +52,13 @@
       "width": 256,
       "height": 64,
       "format": "WEBP",
-      "role": "hud"
+      "role": "hud",
+      "audit_catalog_id": 114,
+      "raw_key": "WARSAW_ID_P_WNAME_SCORP",
+      "production_catalog_id_at_audit": 75
     },
     {
       "kind": "weapon",
-      "id": 21,
       "name": "G36C",
       "local": "/assets/equipment/21.webp",
       "source": "https://static.wikia.nocookie.net/battlefield/images/0/09/Battlefield_4_G36C_HUD_Icon.png/revision/latest",
@@ -59,11 +66,13 @@
       "width": 256,
       "height": 64,
       "format": "WEBP",
-      "role": "hud"
+      "role": "hud",
+      "audit_catalog_id": 21,
+      "raw_key": "WARSAW_ID_P_WNAME_G36C",
+      "production_catalog_id_at_audit": 88
     },
     {
       "kind": "weapon",
-      "id": 170,
       "name": "AK-12",
       "local": "/assets/equipment/170.webp",
       "source": "https://static.wikia.nocookie.net/battlefield/images/c/ce/Battlefield_4_AK-12_HUD_Icon.png/revision/latest",
@@ -71,11 +80,13 @@
       "width": 256,
       "height": 64,
       "format": "WEBP",
-      "role": "hud"
+      "role": "hud",
+      "audit_catalog_id": 170,
+      "raw_key": "WARSAW_ID_P_WNAME_AK12",
+      "production_catalog_id_at_audit": 32
     },
     {
       "kind": "weapon",
-      "id": 146,
       "name": "CS-LR4",
       "local": "/assets/equipment/146.webp",
       "source": "https://static.wikia.nocookie.net/battlefield/images/0/0e/Battlefield_4_CS-LR4_HUD_Icon.png/revision/latest",
@@ -83,11 +94,13 @@
       "width": 256,
       "height": 64,
       "format": "WEBP",
-      "role": "hud"
+      "role": "hud",
+      "audit_catalog_id": 146,
+      "raw_key": "WARSAW_ID_P_WNAME_CSLR4",
+      "production_catalog_id_at_audit": 63
     },
     {
       "kind": "weapon",
-      "id": 158,
       "name": "FY-JS",
       "local": "/assets/equipment/158.webp",
       "source": "https://static.wikia.nocookie.net/battlefield/images/0/09/Battlefield_4_FY-JS_HUD_Icon.png/revision/latest",
@@ -95,11 +108,13 @@
       "width": 256,
       "height": 64,
       "format": "WEBP",
-      "role": "hud"
+      "role": "hud",
+      "audit_catalog_id": 158,
+      "raw_key": "WARSAW_ID_P_WNAME_FYJS",
+      "production_catalog_id_at_audit": 41
     },
     {
       "kind": "vehicle",
-      "id": 45,
       "name": "AH-1Z Viper",
       "local": "/assets/equipment/vehicle-45-fancy.webp",
       "source": "https://static.wikia.nocookie.net/battlefield/images/1/15/Ah1z_fancy@2x.png/revision/latest",
@@ -107,11 +122,13 @@
       "width": 512,
       "height": 153,
       "format": "WEBP",
-      "role": "fancy"
+      "role": "fancy",
+      "audit_catalog_id": 45,
+      "raw_key": "WARSAW_ID_P_VNAME_AH1Z",
+      "production_catalog_id_at_audit": 45
     },
     {
       "kind": "weapon",
-      "id": 64,
       "name": "AEK-971",
       "role": "fancy",
       "local": "/assets/equipment/weapon-64-fancy.webp",
@@ -119,11 +136,13 @@
       "filename": "BF4_AEK-971.png",
       "width": 954,
       "height": 534,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 64,
+      "raw_key": "WARSAW_ID_P_WNAME_AEK971",
+      "production_catalog_id_at_audit": 5
     },
     {
       "kind": "weapon",
-      "id": 45,
       "name": "M416",
       "role": "fancy",
       "local": "/assets/equipment/weapon-45-fancy.webp",
@@ -131,11 +150,13 @@
       "filename": "BF4_M416.png",
       "width": 879,
       "height": 489,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 45,
+      "raw_key": "WARSAW_ID_P_WNAME_M416",
+      "production_catalog_id_at_audit": 21
     },
     {
       "kind": "weapon",
-      "id": 100,
       "name": "AWS",
       "role": "fancy",
       "local": "/assets/equipment/weapon-100-fancy.webp",
@@ -143,11 +164,13 @@
       "filename": "BF4_AWS.png",
       "width": 496,
       "height": 142,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 100,
+      "raw_key": "WARSAW_ID_P_XP2_WNAME_AWS",
+      "production_catalog_id_at_audit": 22
     },
     {
       "kind": "weapon",
-      "id": 18,
       "name": "AK 5C",
       "role": "fancy",
       "local": "/assets/equipment/weapon-18-fancy.webp",
@@ -155,11 +178,13 @@
       "filename": "Bf4_ak5c.png",
       "width": 425,
       "height": 124,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 18,
+      "raw_key": "WARSAW_ID_P_WNAME_AK5C",
+      "production_catalog_id_at_audit": 49
     },
     {
       "kind": "weapon",
-      "id": 95,
       "name": "FAMAS",
       "role": "fancy",
       "local": "/assets/equipment/weapon-95-fancy.webp",
@@ -167,11 +192,13 @@
       "filename": "BF4_FAMAS.png",
       "width": 879,
       "height": 495,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 95,
+      "raw_key": "WARSAW_ID_P_WNAME_FAMAS",
+      "production_catalog_id_at_audit": 15
     },
     {
       "kind": "weapon",
-      "id": 39,
       "name": "SCAR-H",
       "role": "fancy",
       "local": "/assets/equipment/weapon-39-fancy.webp",
@@ -179,11 +206,13 @@
       "filename": "BF4_SCAR-H.png",
       "width": 949,
       "height": 535,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 39,
+      "raw_key": "WARSAW_ID_P_WNAME_SCARH",
+      "production_catalog_id_at_audit": 29
     },
     {
       "kind": "weapon",
-      "id": 133,
       "name": "A-91",
       "role": "fancy",
       "local": "/assets/equipment/weapon-133-fancy.webp",
@@ -191,11 +220,13 @@
       "filename": "BF4_A91.png",
       "width": 842,
       "height": 467,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 133,
+      "raw_key": "WARSAW_ID_P_WNAME_A91",
+      "production_catalog_id_at_audit": 70
     },
     {
       "kind": "weapon",
-      "id": 163,
       "name": "SRR-61",
       "role": "fancy",
       "local": "/assets/equipment/weapon-163-fancy.webp",
@@ -203,11 +234,13 @@
       "filename": "BF4_SRR61.png",
       "width": 822,
       "height": 518,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 163,
+      "raw_key": "WARSAW_ID_P_WNAME_M200",
+      "production_catalog_id_at_audit": 71
     },
     {
       "kind": "weapon",
-      "id": 116,
       "name": "M249",
       "role": "fancy",
       "local": "/assets/equipment/weapon-116-fancy.webp",
@@ -215,11 +248,13 @@
       "filename": "BF4_M249.png",
       "width": 850,
       "height": 469,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 116,
+      "raw_key": "WARSAW_ID_P_WNAME_M249",
+      "production_catalog_id_at_audit": 137
     },
     {
       "kind": "weapon",
-      "id": 166,
       "name": "M1014",
       "role": "fancy",
       "local": "/assets/equipment/weapon-166-fancy.webp",
@@ -227,11 +262,13 @@
       "filename": "BF4_M1014.png",
       "width": 1920,
       "height": 1080,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 166,
+      "raw_key": "WARSAW_ID_P_WNAME_M1014",
+      "production_catalog_id_at_audit": 69
     },
     {
       "kind": "weapon",
-      "id": 115,
       "name": "MBT LAW",
       "role": "fancy",
       "local": "/assets/equipment/weapon-115-fancy.webp",
@@ -239,11 +276,13 @@
       "filename": "BF4_MBT_LAW.png",
       "width": 1016,
       "height": 441,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 115,
+      "raw_key": "WARSAW_ID_P_INAME_MBTLAW",
+      "production_catalog_id_at_audit": 28
     },
     {
       "kind": "weapon",
-      "id": 54,
       "name": "AUG A3",
       "role": "fancy",
       "local": "/assets/equipment/weapon-54-fancy.webp",
@@ -251,11 +290,13 @@
       "filename": "BF4_AUG-A3.png",
       "width": 947,
       "height": 532,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 54,
+      "raw_key": "WARSAW_ID_P_WNAME_STEYRAUG",
+      "production_catalog_id_at_audit": 23
     },
     {
       "kind": "weapon",
-      "id": 135,
       "name": "SKS",
       "role": "fancy",
       "local": "/assets/equipment/weapon-135-fancy.webp",
@@ -263,11 +304,13 @@
       "filename": "BF4_SKS.png",
       "width": 1920,
       "height": 1080,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 135,
+      "raw_key": "WARSAW_ID_P_WNAME_SKS",
+      "production_catalog_id_at_audit": 57
     },
     {
       "kind": "weapon",
-      "id": 159,
       "name": "MX4",
       "role": "fancy",
       "local": "/assets/equipment/weapon-159-fancy.webp",
@@ -275,11 +318,13 @@
       "filename": "BF4_MX4.png",
       "width": 952,
       "height": 540,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 159,
+      "raw_key": "WARSAW_ID_P_WNAME_MX4",
+      "production_catalog_id_at_audit": 58
     },
     {
       "kind": "weapon",
-      "id": 4,
       "name": "M98B",
       "role": "fancy",
       "local": "/assets/equipment/weapon-4-fancy.webp",
@@ -287,11 +332,13 @@
       "filename": "Bf4_M98B.png",
       "width": 953,
       "height": 540,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 4,
+      "raw_key": "WARSAW_ID_P_WNAME_M98B",
+      "production_catalog_id_at_audit": 40
     },
     {
       "kind": "weapon",
-      "id": 173,
       "name": "AN-94",
       "role": "fancy",
       "local": "/assets/equipment/weapon-173-fancy.webp",
@@ -299,11 +346,13 @@
       "filename": "BF4_AN94.png",
       "width": 484,
       "height": 130,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 173,
+      "raw_key": "WARSAW_ID_P_WNAME_AN94",
+      "production_catalog_id_at_audit": 51
     },
     {
       "kind": "weapon",
-      "id": 35,
       "name": "CBJ-MS",
       "role": "fancy",
       "local": "/assets/equipment/weapon-35-fancy.webp",
@@ -311,11 +360,13 @@
       "filename": "BF4_CBJ-MS.png",
       "width": 847,
       "height": 469,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 35,
+      "raw_key": "WARSAW_ID_P_WNAME_CBJMS",
+      "production_catalog_id_at_audit": 81
     },
     {
       "kind": "weapon",
-      "id": 170,
       "name": "AK-12",
       "role": "fancy",
       "local": "/assets/equipment/weapon-170-fancy.webp",
@@ -323,11 +374,13 @@
       "filename": "Bf4_ak12.png",
       "width": 487,
       "height": 141,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 170,
+      "raw_key": "WARSAW_ID_P_WNAME_AK12",
+      "production_catalog_id_at_audit": 32
     },
     {
       "kind": "weapon",
-      "id": 131,
       "name": "M82A3 MID",
       "role": "fancy",
       "local": "/assets/equipment/weapon-131-fancy.webp",
@@ -335,11 +388,13 @@
       "filename": "Bf4_M82A3_MID.png",
       "width": 511,
       "height": 129,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 131,
+      "raw_key": "WARSAW_ID_P_WNAME_M82A3MID",
+      "production_catalog_id_at_audit": 78
     },
     {
       "kind": "weapon",
-      "id": 124,
       "name": "AS VAL",
       "role": "fancy",
       "local": "/assets/equipment/weapon-124-fancy.webp",
@@ -347,11 +402,13 @@
       "filename": "BF4_asval.png",
       "width": 457,
       "height": 103,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 124,
+      "raw_key": "WARSAW_ID_P_XP0_WNAME_ASVAL",
+      "production_catalog_id_at_audit": 53
     },
     {
       "kind": "weapon",
-      "id": 58,
       "name": "UMP-9",
       "role": "fancy",
       "local": "/assets/equipment/weapon-58-fancy.webp",
@@ -359,11 +416,13 @@
       "filename": "BF4_UMP-9.png",
       "width": 953,
       "height": 540,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 58,
+      "raw_key": "WARSAW_ID_P_WNAME_UMP9",
+      "production_catalog_id_at_audit": 173
     },
     {
       "kind": "weapon",
-      "id": 111,
       "name": "93R",
       "role": "fancy",
       "local": "/assets/equipment/weapon-111-fancy.webp",
@@ -371,11 +430,13 @@
       "filename": "Bf4_m93r.png",
       "width": 269,
       "height": 168,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 111,
+      "raw_key": "WARSAW_ID_P_WNAME_93R",
+      "production_catalog_id_at_audit": 124
     },
     {
       "kind": "weapon",
-      "id": 146,
       "name": "CS-LR4",
       "role": "fancy",
       "local": "/assets/equipment/weapon-146-fancy.webp",
@@ -383,11 +444,13 @@
       "filename": "BF4_CSLR4.png",
       "width": 780,
       "height": 434,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 146,
+      "raw_key": "WARSAW_ID_P_WNAME_CSLR4",
+      "production_catalog_id_at_audit": 63
     },
     {
       "kind": "weapon",
-      "id": 68,
       "name": "JNG-90",
       "role": "fancy",
       "local": "/assets/equipment/weapon-68-fancy.webp",
@@ -395,11 +458,13 @@
       "filename": "BF4_JNG-90.png",
       "width": 953,
       "height": 537,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 68,
+      "raw_key": "WARSAW_ID_P_WNAME_JNG90",
+      "production_catalog_id_at_audit": 126
     },
     {
       "kind": "weapon",
-      "id": 91,
       "name": "SR338",
       "role": "fancy",
       "local": "/assets/equipment/weapon-91-fancy.webp",
@@ -407,11 +472,13 @@
       "filename": "BF4_SR338.png",
       "width": 508,
       "height": 101,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 91,
+      "raw_key": "WARSAW_ID_P_XP2_WNAME_SR338",
+      "production_catalog_id_at_audit": 85
     },
     {
       "kind": "weapon",
-      "id": 76,
       "name": "M82A3 CQB",
       "role": "fancy",
       "local": "/assets/equipment/weapon-76-fancy.webp",
@@ -419,11 +486,13 @@
       "filename": "Bf4_M82A3_CQB.png",
       "width": 511,
       "height": 125,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 76,
+      "raw_key": "WARSAW_ID_P_WNAME_M82A3CQB",
+      "production_catalog_id_at_audit": 158
     },
     {
       "kind": "weapon",
-      "id": 141,
       "name": "C100",
       "role": "fancy",
       "local": "/assets/equipment/weapon-141-fancy.webp",
@@ -431,11 +500,13 @@
       "filename": "BF4_C100.png",
       "width": 446,
       "height": 80,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 141,
+      "raw_key": "WARSAW_ID_P_XP4_INAME_KNIFEBIPOD",
+      "production_catalog_id_at_audit": 76
     },
     {
       "kind": "weapon",
-      "id": 65,
       "name": "SW40",
       "role": "fancy",
       "local": "/assets/equipment/weapon-65-fancy.webp",
@@ -443,11 +514,13 @@
       "filename": "BF4_SW40.png",
       "width": 267,
       "height": 167,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 65,
+      "raw_key": "WARSAW_ID_P_XP2_WNAME_SW40",
+      "production_catalog_id_at_audit": 87
     },
     {
       "kind": "weapon",
-      "id": 160,
       "name": "C100",
       "role": "fancy",
       "local": "/assets/equipment/weapon-160-fancy.webp",
@@ -455,11 +528,13 @@
       "filename": "BF4_C100.png",
       "width": 446,
       "height": 80,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 160,
+      "raw_key": "WARSAW_ID_P_INAME_KNIFE14100BT",
+      "production_catalog_id_at_audit": 129
     },
     {
       "kind": "weapon",
-      "id": 56,
       "name": "M82A3",
       "role": "fancy",
       "local": "/assets/equipment/weapon-56-fancy.webp",
@@ -467,7 +542,10 @@
       "filename": "Bf4_M82A3.png",
       "width": 511,
       "height": 80,
-      "format": "WEBP"
+      "format": "WEBP",
+      "audit_catalog_id": 56,
+      "raw_key": "WARSAW_ID_P_WNAME_M82A3",
+      "production_catalog_id_at_audit": 168
     }
   ]
 }
