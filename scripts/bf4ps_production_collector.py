@@ -23,6 +23,7 @@ from bf4ps.physical_dispatch_gate import PhysicalDispatchBudgetExhausted
 STOP = False
 HEARTBEAT_SECONDS = 15.0
 IDLE_SLEEP_SECONDS = 0.5
+BUDGET_WAIT_SECONDS = 15.0
 
 
 def request_stop(*_args) -> None:
@@ -142,8 +143,9 @@ def main() -> int:
             except PhysicalDispatchBudgetExhausted:
                 # Fail closed: never retry the HTTP request outside the gate.
                 # The claimed lease expires naturally for another cycle.
-                print("PHYSICAL DISPATCH BUDGET EXHAUSTED; stopping collector", flush=True)
-                break
+                print("PHYSICAL DISPATCH BUDGET EXHAUSTED; waiting for capacity", flush=True)
+                time.sleep(BUDGET_WAIT_SECONDS)
+                continue
             if result is None:
                 time.sleep(IDLE_SLEEP_SECONDS)
                 continue
