@@ -13,6 +13,7 @@ TEST_DATABASE = "bf4_playerstats_test"
 PRODUCTION_DATABASE = "bf4_playerstats"
 EXPECTED_REVISION = "0003_request_gates"
 STAGE9C_REVISION = "0004_stage9c_supervision_runs"
+STAGE9C_SOAK_REVISION = "0006_stage9c_soak_round_ledger"
 
 
 def main() -> int:
@@ -39,7 +40,7 @@ def main() -> int:
             # Production may only be drained here. Resuming requires a separate
             # physical-dispatch safety approval and must not be accidental.
             allowed_db = db == TEST_DATABASE or (desired and db == PRODUCTION_DATABASE)
-            allowed_revision = (EXPECTED_REVISION, STAGE9C_REVISION) if desired else (EXPECTED_REVISION,)
+            allowed_revision = (EXPECTED_REVISION, STAGE9C_REVISION, STAGE9C_SOAK_REVISION) if desired else (EXPECTED_REVISION,)
             if not allowed_db or revision not in allowed_revision or recovery or read_only != "off":
                 raise RuntimeError(
                     f"wrong target db={db!r} revision={revision!r} recovery={recovery} read_only={read_only!r}"
