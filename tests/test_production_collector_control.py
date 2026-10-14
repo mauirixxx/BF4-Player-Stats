@@ -15,7 +15,8 @@ def test_control_is_fail_closed():
     assert 'choices=("drain", "resume")' in s
     assert "--execute" in s
     assert "REFUSING: --execute is required" in s
-    assert "EXPECTED_DATABASE = \"bf4_playerstats_test\"" in s
+    assert "TEST_DATABASE = \"bf4_playerstats_test\"" in s
+    assert "PRODUCTION_DATABASE = \"bf4_playerstats\"" in s
     assert "EXPECTED_REVISION = \"0003_request_gates\"" in s
     assert "pg_is_in_recovery()" in s
     assert "transaction_read_only" in s
@@ -23,7 +24,7 @@ def test_control_is_fail_closed():
 
 def test_control_validates_frozen_identity_before_mutation():
     s = P.read_text()
-    assert "HOSTS.get(host)" in s
+    assert "resolve_production_host()" in s
     assert "FOR UPDATE" in s
     assert 'row["collector_uuid"]' in s
     assert 'row["collector_name"]' in s
