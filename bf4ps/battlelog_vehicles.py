@@ -1,6 +1,7 @@
 """Battlelog vehicle-statistics fetch and normalization boundary."""
 
 from __future__ import annotations
+from bf4ps.single_request_transport import single_request_urlopen
 
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -80,7 +81,7 @@ def fetch_vehicle_stats(
         method="GET",
     )
     try:
-        with urlopen(request, timeout=timeout_seconds) as response:
+        with single_request_urlopen(request, timeout=timeout_seconds) as response:
             status = getattr(response, "status", 200)
             body = response.read()
     except HTTPError as exc:
