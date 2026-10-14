@@ -1,0 +1,104 @@
+{
+  "notes": "Only successfully retrieved and image-validated files; game artwork copyright EA/DICE. File-level fair-use analysis remains site operator responsibility.",
+  "assets": [
+    {
+      "kind": "weapon",
+      "id": 64,
+      "name": "AEK-971",
+      "local": "/assets/equipment/64.webp",
+      "source": "https://static.wikia.nocookie.net/battlefield/images/d/d9/Battlefield_4_AEK-971_HUD_Icon.png/revision/latest",
+      "filename": "Battlefield_4_AEK-971_HUD_Icon.png",
+      "width": 256,
+      "height": 64,
+      "format": "WEBP"
+    },
+    {
+      "kind": "weapon",
+      "id": 100,
+      "name": "AWS",
+      "local": "/assets/equipment/100.webp",
+      "source": "https://static.wikia.nocookie.net/battlefield/images/6/68/Battlefield_4_AWS_HUD_Icon.png/revision/latest",
+      "filename": "Battlefield_4_AWS_HUD_Icon.png",
+      "width": 256,
+      "height": 64,
+      "format": "WEBP"
+    },
+    {
+      "kind": "weapon",
+      "id": 18,
+      "name": "AK 5C",
+      "local": "/assets/equipment/18.webp",
+      "source": "https://static.wikia.nocookie.net/battlefield/images/c/c6/Battlefield_4_AK_5C_HUD_Icon.png/revision/latest",
+      "filename": "Battlefield_4_AK_5C_HUD_Icon.png",
+      "width": 256,
+      "height": 64,
+      "format": "WEBP"
+    },
+    {
+      "kind": "weapon",
+      "id": 114,
+      "name": "CZ-3A1",
+      "local": "/assets/equipment/114.webp",
+      "source": "https://static.wikia.nocookie.net/battlefield/images/2/23/Battlefield_4_CZ-3A1_HUD_Icon.png/revision/latest",
+      "filename": "Battlefield_4_CZ-3A1_HUD_Icon.png",
+      "width": 256,
+      "height": 64,
+      "format": "WEBP"
+    },
+    {
+      "kind": "weapon",
+      "id": 21,
+      "name": "G36C",
+      "local": "/assets/equipment/21.webp",
+      "source": "https://static.wikia.nocookie.net/battlefield/images/0/09/Battlefield_4_G36C_HUD_Icon.png/revision/latest",
+      "filename": "Battlefield_4_G36C_HUD_Icon.png",
+      "width": 256,
+      "height": 64,
+      "format": "WEBP"
+    },
+    {
+      "kind": "weapon",
+      "id": 170,
+      "name": "AK-12",
+      "local": "/assets/equipment/170.webp",
+      "source": "https://static.wikia.nocookie.net/battlefield/images/c/ce/Battlefield_4_AK-12_HUD_Icon.png/revision/latest",
+      "filename": "Battlefield_4_AK-12_HUD_Icon.png",
+      "width": 256,
+      "height": 64,
+      "format": "WEBP"
+    },
+    {
+      "kind": "weapon",
+      "id": 146,
+      "name": "CS-LR4",
+      "local": "/assets/equipment/146.webp",
+      "source": "https://static.wikia.nocookie.net/battlefield/images/0/0e/Battlefield_4_CS-LR4_HUD_Icon.png/revision/latest",
+      "filename": "Battlefield_4_CS-LR4_HUD_Icon.png",
+      "width": 256,
+      "height": 64,
+      "format": "WEBP"
+    },
+    {
+      "kind": "weapon",
+      "id": 158,
+      "name": "FY-JS",
+      "local": "/assets/equipment/158.webp",
+      "source": "https://static.wikia.nocookie.net/battlefield/images/0/09/Battlefield_4_FY-JS_HUD_Icon.png/revision/latest",
+      "filename": "Battlefield_4_FY-JS_HUD_Icon.png",
+      "width": 256,
+      "height": 64,
+      "format": "WEBP"
+    },
+    {
+      "kind": "vehicle",
+      "id": 45,
+      "name": "AH-1Z Viper",
+      "local": "/assets/equipment/vehicle-45-fancy.webp",
+      "source": "https://static.wikia.nocookie.net/battlefield/images/1/15/Ah1z_fancy@2x.png/revision/latest",
+      "filename": "Ah1z_fancy@2x.png",
+      "width": 512,
+      "height": 153,
+      "format": "WEBP"
+    }
+  ]
+}
