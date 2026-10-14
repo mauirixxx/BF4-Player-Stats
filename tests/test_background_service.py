@@ -11,10 +11,10 @@ from bf4ps.background_service import (
 
 
 def test_frozen_hourly_background_budget_and_shares():
-    assert BACKGROUND_SLOTS_PER_HOUR == 1296
-    assert ACTIVE_SLOTS == 972
-    assert BOOTSTRAP_SLOTS == 259
-    assert RECOVERY_SLOTS == 65
+    assert BACKGROUND_SLOTS_PER_HOUR == 4800
+    assert ACTIVE_SLOTS == 3600
+    assert BOOTSTRAP_SLOTS == 960
+    assert RECOVERY_SLOTS == 240
     assert ACTIVE_SLOTS + BOOTSTRAP_SLOTS + RECOVERY_SLOTS == BACKGROUND_SLOTS_PER_HOUR
 
 
