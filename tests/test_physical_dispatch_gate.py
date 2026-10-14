@@ -37,6 +37,8 @@ class _FakeConnection:
         self.calls.append((sql, params))
         if "clock_timestamp()" in sql and sql.lstrip().upper().startswith("SELECT"):
             return _Scalar(self.now)
+        if "FROM runtime_budgets" in sql:
+            return _Scalar(PHYSICAL_DISPATCHES_PER_HOUR)
         if "COUNT(*)" in sql:
             return _Scalar(self.used)
         return _Scalar(None)
