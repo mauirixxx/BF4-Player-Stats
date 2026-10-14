@@ -10,7 +10,8 @@
       "filename": "Battlefield_4_AEK-971_HUD_Icon.png",
       "width": 256,
       "height": 64,
-      "format": "WEBP"
+      "format": "WEBP",
+      "role": "hud"
     },
     {
       "kind": "weapon",
@@ -21,7 +22,8 @@
       "filename": "Battlefield_4_AWS_HUD_Icon.png",
       "width": 256,
       "height": 64,
-      "format": "WEBP"
+      "format": "WEBP",
+      "role": "hud"
     },
     {
       "kind": "weapon",
@@ -32,7 +34,8 @@
       "filename": "Battlefield_4_AK_5C_HUD_Icon.png",
       "width": 256,
       "height": 64,
-      "format": "WEBP"
+      "format": "WEBP",
+      "role": "hud"
     },
     {
       "kind": "weapon",
@@ -43,7 +46,8 @@
       "filename": "Battlefield_4_CZ-3A1_HUD_Icon.png",
       "width": 256,
       "height": 64,
-      "format": "WEBP"
+      "format": "WEBP",
+      "role": "hud"
     },
     {
       "kind": "weapon",
@@ -54,7 +58,8 @@
       "filename": "Battlefield_4_G36C_HUD_Icon.png",
       "width": 256,
       "height": 64,
-      "format": "WEBP"
+      "format": "WEBP",
+      "role": "hud"
     },
     {
       "kind": "weapon",
@@ -65,7 +70,8 @@
       "filename": "Battlefield_4_AK-12_HUD_Icon.png",
       "width": 256,
       "height": 64,
-      "format": "WEBP"
+      "format": "WEBP",
+      "role": "hud"
     },
     {
       "kind": "weapon",
@@ -76,7 +82,8 @@
       "filename": "Battlefield_4_CS-LR4_HUD_Icon.png",
       "width": 256,
       "height": 64,
-      "format": "WEBP"
+      "format": "WEBP",
+      "role": "hud"
     },
     {
       "kind": "weapon",
@@ -87,7 +94,8 @@
       "filename": "Battlefield_4_FY-JS_HUD_Icon.png",
       "width": 256,
       "height": 64,
-      "format": "WEBP"
+      "format": "WEBP",
+      "role": "hud"
     },
     {
       "kind": "vehicle",
@@ -98,7 +106,8 @@
       "filename": "Ah1z_fancy@2x.png",
       "width": 512,
       "height": 153,
-      "format": "WEBP"
+      "format": "WEBP",
+      "role": "fancy"
     }
   ]
 }
