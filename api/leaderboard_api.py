@@ -38,7 +38,7 @@ def get(conn,kind,platform,item):
     where_platform='' if platform=='all' else 'AND s.platform=:platform'
     params={'platform':platform}
     if item is None:
-        return [dict(r) for r in conn.execute(text(f"""
+        catalog = [dict(r) for r in conn.execute(text(f"""
           WITH per_soldier AS (
             SELECT s.soldier_id,{canonical} AS item_id,max(t.kills) AS kills
             FROM {stats} t JOIN soldiers s ON s.soldier_id=t.soldier_id
@@ -52,6 +52,28 @@ def get(conn,kind,platform,item):
           GROUP BY c.{key},c.name,c.category
           ORDER BY total_kills DESC,c.name LIMIT 400
         """),params).mappings()]
+        # Cross-catalog zero-only visibility rule: only hide a zero-kill
+        # entry when the identically named counterpart has positive kills
+        # on the requested platform. Keep all source records untouched.
+        if kind == 'weapon':
+            zero_names = {r['name'] for r in catalog if int(r['total_kills']) == 0}
+            if zero_names:
+                counterpart = conn.execute(text("""
+                    SELECT vc.name, COALESCE(SUM(vs.kills), 0) AS kills
+                    FROM soldier_vehicle_stats vs
+                    JOIN vehicle_catalog vc ON vc.vehicle_id = vs.vehicle_id
+                    JOIN soldiers s ON s.soldier_id = vs.soldier_id
+                    JOIN collection_state cs ON cs.soldier_id = s.soldier_id
+                    WHERE cs.vehicles_state = 'success'
+                      AND (:platform = 'all' OR s.platform = :platform)
+                      AND vc.name = ANY(:names)
+                    GROUP BY vc.name
+                """), {'platform': platform, 'names': sorted(zero_names)}).mappings()
+                active_names = {r['name'] for r in counterpart if int(r['kills']) > 0}
+                catalog = [r for r in catalog if not (
+                    r['name'] in active_names and int(r['total_kills']) == 0
+                )]
+        return catalog
     canonical_item=10 if kind=='vehicle' and item==54 else item
     params['item']=canonical_item
     base=f"""FROM {stats} t JOIN soldiers s ON s.soldier_id=t.soldier_id
