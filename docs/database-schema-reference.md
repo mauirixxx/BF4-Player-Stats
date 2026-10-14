@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current documented head: `0004_stage9c_supervision_runs`
+Current documented head: `0007_physical_dispatch_gate`
 
 ## Mandatory SQL development rule
 
@@ -20,6 +20,9 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0002_drop_gun_master_score` | `0001_initial_schema` | Removes non-authoritative `gun_master_score` from detailed current/history |
 | `0003_request_gates` | `0002_drop_gun_master_score` | Adds PostgreSQL-coordinated outbound request gates |
 | `0004_stage9c_supervision_runs` | `0003_request_gates` | Adds inert Stage 9C watchdog run/lease state (no data backfill or activation) |
+| `0005_stage9c_dispatch_ledger` | `0004_stage9c_supervision_runs` | Adds durable outbound dispatch ledger |
+| `0006_stage9c_soak_round_ledger` | `0005_stage9c_dispatch_ledger` | Adds Stage 9C soak run/round/job ledgers; originally designated scratch-only, but production was independently observed at this revision on 2026-10-14 UTC |
+| `0007_physical_dispatch_gate` | `0006_stage9c_soak_round_ledger` | Adds request ordinal and physical-request uniqueness to outbound dispatches; does not activate collection |
 
 ### Important migration consequence: Gun Master
 
@@ -300,6 +303,24 @@ The migration does not modify `collection_jobs`, `collection_events`,
 pending retry debt remain untouched. Operational scripts that hardcode
 Alembic head `0003_request_gates` require a coordinated revision-policy
 update before applying `0004` to the production database.
+
+## Dispatch and soak ledgers (migrations 0005–0007)
+
+### `outbound_dispatches` (0005, modified in 0007)
+
+Columns: `dispatch_id` UUID primary key, `job_id` bigint, `attempt_number` integer, `resource` text, `lease_token` UUID, `collector_uuid` UUID, `egress_key` text, `lane` text, `payload_fingerprint` text, `admitted_at` timestamptz, `phase` text (default `admitted`), `send_marked_at` timestamptz nullable, `acknowledged_at` timestamptz nullable, and (0007) `request_ordinal` integer not null, default 1, check > 0.
+
+`phase` must be `admitted`, `may_have_sent`, `acknowledged`, or `ambiguous`; check constraints enforce positive job/attempt, legal resource/lane, nonblank egress/fingerprint, phase-specific timestamps and chronological send/ack markers. No FK is declared for job or collector identities in this ledger.
+
+At 0005–0006, unique identity is (`job_id`, `attempt_number`, `resource`, `lease_token`). Migration 0007 **replaces** it with (`job_id`, `attempt_number`, `resource`, `lease_token`, `request_ordinal`), allowing multiple physical HTTP requests per job attempt. Indexes: `ix_outbound_dispatch_background_admitted` (partial `lane='background'`), `ix_outbound_dispatch_egress_admitted` (`egress_key`, `admitted_at`), and at 0007 `ix_outbound_dispatch_admitted_at` (`admitted_at`). The 0005 and 0007 downgrades refuse when dispatch evidence exists.
+
+### Stage 9C soak attribution (0006)
+
+- `soak_runs`: `run_id` text PK, `cohort_digest` text, `baseline_event_id` bigint, `attempt_ceiling` and `site_attempt_ceiling` integer, nullable `start_at`/`deadline_at` timestamptz, `state` text default `prepared`, nullable `stop_reason`, `created_at`/`updated_at` timestamptz. State domain: `prepared`, `running`, `stopping`, `completed`, `failed`, `stopped`.
+- `soak_rounds`: composite PK (`run_id`, `round_number`), `run_id` FK to `soak_runs` RESTRICT, `round_number` integer 1–12, `eligible_at` timestamptz, `state` text default `planned`, nullable `enqueued_at`/`completed_at`. State domain: `planned`, `enqueued`, `completed`, `failed`.
+- `soak_round_jobs`: composite PK (`run_id`, `round_number`, `soldier_id`), composite FK to `soak_rounds` RESTRICT, `job_id` bigint unique, `outcome` text default `pending`. Outcome domain: `pending`, `success`, `failed`, `abandoned`. Index `ix_soak_round_jobs_round` on (`run_id`, `round_number`).
+
+**Deployment note:** Migration 0006's docstring explicitly restricted application to isolated Stage 9C scratch testing. However, a read-only production check on 2026-10-14 UTC found `bf4_playerstats` already at `0006_stage9c_soak_round_ledger`, with zero `outbound_dispatches` and zero `soak_runs` rows at that instant. This documents an observed state, not retroactive approval for the original deployment. Migration 0007 is an explicit, separate production change; inspect live schema and ledger again before applying. This reference describes migration head, not a claim that production is already at head.
 
 ## Foreign-key relationship summary
 
