@@ -187,3 +187,47 @@ Additional names visible in Sorenson44 screenshot: `KA-60 KASATKA`, `LYT2021`, `
 | 82 | 50CALNOSHIELD | 541 (XPrincessaMiaX, PC) | `.50 CAL (RU)`, `(US)`, `(CN)` each 541 | **Hide from vehicle picker only; preserve API and database records** |
 
 Implemented on WEBSITE via [PR #9](https://github.com/mauirixxx/BF4-Player-Stats/pull/9). This is a visibility policy, not a deletion or statistical merge. Faction-specific Battlelog labels remain evidence, not separate dropdown items.
+
+## Vehicle naming sign-off — operator approved
+
+Operator approved the **current proposed vehicle display names** for use on the website ("trust me bro"). This is an operator approval of presentation labels, **not** a claim that every vehicle spelling was independently checked against Battlelog. Keep per-row evidence statuses unchanged. Preserve UCAV exactly as implemented, BOMBER as BOMBER, and hide-only policy for vehicle ID 82. Do not alter raw IDs, kill counts or aggregation.
+
+## Batch 4 — assault rifles and carbines (31 proposed labels)
+
+First-pass readable naming candidates, derived from BF4 equipment conventions. **Not yet verified as exact Battlelog strings.** This table is synchronized with the CSV.
+
+| Weapon ID | Raw suffix | Proposed Battlelog-readable name | Status |
+|---:|---|---|---|
+| 6 | SG553 | SG553 | Candidate; verify |
+| 16 | TYPE95B1 | TYPE-95B-1 | Candidate; verify |
+| 17 | CZ805 | CZ-805 | Candidate; verify |
+| 18 | AK5C | AK 5C | Candidate; verify |
+| 21 | G36C | G36C | Candidate; verify |
+| 23 | ACR | ACW-R | Candidate; verify |
+| 24 | MTAR21 | MTAR-21 | Candidate; verify |
+| 25 | F2000 | F2000 | Candidate; verify |
+| 39 | SCARH | SCAR-H | Candidate; verify |
+| 45 | M416 | M416 | Candidate; verify |
+| 54 | STEYRAUG | AUG A3 | Candidate; verify |
+| 64 | AEK971 | AEK-971 | Candidate; verify |
+| 66 | GALIL23 | ACE 23 | Candidate; verify |
+| 70 | AKU12 | AKU-12 | Candidate; verify |
+| 74 | GROZA4 | GROZA-4 | Candidate; verify |
+| 84 | QBZ951 | QBZ-95-1 | Candidate; verify |
+| 86 | BULLDOG | BULLDOG | Candidate; verify |
+| 87 | GROZA1 | GROZA-1 | Candidate; verify |
+| 95 | FAMAS | FAMAS | Candidate; verify |
+| 98 | QBS09 | QBS-09 | Candidate; verify |
+| 105 | GALIL53 | ACE 53 SV | Candidate; verify |
+| 109 | M16A4 | M16A4 | Candidate; verify |
+| 120 | M4A1 | M4 | Candidate; verify |
+| 123 | GALIL52 | ACE 52 CQB | Candidate; verify |
+| 133 | A91 | A-91 | Candidate; verify |
+| 145 | SAR21 | SAR-21 | Candidate; verify |
+| 156 | AR160 | AR160 | Candidate; verify |
+| 168 | L85A2 | L85A2 | Candidate; verify |
+| 170 | AK12 | AK-12 | Candidate; verify |
+| 171 | GALIL21 | ACE 21 CQB | Candidate; verify |
+| 173 | AN94 | AN-94 | Candidate; verify |
+
+**Special attention:** `ACR` → `ACW-R`, `GALIL23` → `ACE 23`, `GALIL52` → `ACE 52 CQB`, `GALIL21` → `ACE 21 CQB`, `GALIL53` → `ACE 53 SV`, `STEYRAUG` → `AUG A3`, and `M4A1` → `M4` should be checked directly against Battlelog before declaring exact spelling.

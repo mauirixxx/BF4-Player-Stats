@@ -1,29 +1,29 @@
 kind,catalog_id,raw_key,current_label,proposed_label,status,source
-weapon,64,WARSAW_ID_P_WNAME_AEK971,AEK971,,unreviewed,
-weapon,24,WARSAW_ID_P_XP1_WNAME_MTAR21,MTAR21,,unreviewed,
-weapon,23,WARSAW_ID_P_WNAME_ACR,ACR,,unreviewed,
+weapon,64,WARSAW_ID_P_WNAME_AEK971,AEK971,AEK-971,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,24,WARSAW_ID_P_XP1_WNAME_MTAR21,MTAR21,MTAR-21,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,23,WARSAW_ID_P_WNAME_ACR,ACR,ACW-R,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,149,WARSAW_ID_P_WNAME_GLOCK18,GLOCK18,,unreviewed,
-weapon,66,WARSAW_ID_P_WNAME_GALIL23,GALIL23,,unreviewed,
-weapon,25,WARSAW_ID_P_XP0_WNAME_F2000,F2000,,unreviewed,
-weapon,109,WARSAW_ID_P_WNAME_M16A4,M16A4,,unreviewed,
+weapon,66,WARSAW_ID_P_WNAME_GALIL23,GALIL23,ACE 23,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,25,WARSAW_ID_P_XP0_WNAME_F2000,F2000,F2000,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,109,WARSAW_ID_P_WNAME_M16A4,M16A4,M16A4,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,28,WARSAW_ID_P_WNAME_MG4,MG4,,unreviewed,
 weapon,97,WARSAW_ID_P_WNAME_SAIGA12,SAIGA12,,unreviewed,
-weapon,45,WARSAW_ID_P_WNAME_M416,M416,,unreviewed,
+weapon,45,WARSAW_ID_P_WNAME_M416,M416,M416,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,57,WARSAW_ID_P_INAME_CLAYMORE,CLAYMORE,,unreviewed,
 weapon,100,WARSAW_ID_P_XP2_WNAME_AWS,AWS,,unreviewed,
 weapon,103,WARSAW_ID_P_INAME_M67,M67,,unreviewed,
-weapon,18,WARSAW_ID_P_WNAME_AK5C,AK5C,,unreviewed,
+weapon,18,WARSAW_ID_P_WNAME_AK5C,AK5C,AK 5C,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,114,WARSAW_ID_P_WNAME_SCORP,SCORP,,unreviewed,
 weapon,26,WARSAW_ID_P_INAME_40MM,40MM,,unreviewed,
-weapon,95,WARSAW_ID_P_WNAME_FAMAS,FAMAS,,unreviewed,
-weapon,123,WARSAW_ID_P_WNAME_GALIL52,GALIL52,,unreviewed,
-weapon,39,WARSAW_ID_P_WNAME_SCARH,SCARH,,unreviewed,
-weapon,133,WARSAW_ID_P_WNAME_A91,A91,,unreviewed,
+weapon,95,WARSAW_ID_P_WNAME_FAMAS,FAMAS,FAMAS,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,123,WARSAW_ID_P_WNAME_GALIL52,GALIL52,ACE 52 CQB,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,39,WARSAW_ID_P_WNAME_SCARH,SCARH,SCAR-H,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,133,WARSAW_ID_P_WNAME_A91,A91,A-91,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,163,WARSAW_ID_P_WNAME_M200,M200,,unreviewed,
-weapon,6,WARSAW_ID_P_WNAME_SG553,SG553,,unreviewed,
+weapon,6,WARSAW_ID_P_WNAME_SG553,SG553,SG553,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,12,WARSAW_ID_P_INAME_C4,C4,,unreviewed,
 weapon,8,WARSAW_ID_P_INAME_RPG7,RPG7,,unreviewed,
-weapon,171,WARSAW_ID_P_WNAME_GALIL21,GALIL21,,unreviewed,
+weapon,171,WARSAW_ID_P_WNAME_GALIL21,GALIL21,ACE 21 CQB,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,116,WARSAW_ID_P_WNAME_M249,M249,,unreviewed,
 weapon,7,WARSAW_ID_P_WNAME_870,870,,unreviewed,
 weapon,43,WARSAW_ID_P_INAME_40MM_LVG,40MM LVG,,unreviewed,
@@ -32,36 +32,36 @@ weapon,138,WARSAW_ID_P_WNAME_TYPE88,TYPE88,,unreviewed,
 weapon,166,WARSAW_ID_P_WNAME_M1014,M1014,,unreviewed,
 weapon,115,WARSAW_ID_P_INAME_MBTLAW,MBTLAW,,unreviewed,
 weapon,49,WARSAW_ID_P_WNAME_SCARHSV,SCARHSV,,unreviewed,
-weapon,87,WARSAW_ID_P_WNAME_GROZA1,GROZA1,,unreviewed,
-weapon,54,WARSAW_ID_P_WNAME_STEYRAUG,STEYRAUG,,unreviewed,
-weapon,156,WARSAW_ID_P_XP2_WNAME_AR160,AR160,,unreviewed,
+weapon,87,WARSAW_ID_P_WNAME_GROZA1,GROZA1,GROZA-1,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,54,WARSAW_ID_P_WNAME_STEYRAUG,STEYRAUG,AUG A3,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,156,WARSAW_ID_P_XP2_WNAME_AR160,AR160,AR160,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,134,WARSAW_ID_P_INAME_XM25,XM25,,unreviewed,
 weapon,128,WARSAW_ID_P_WNAME_P90,P90,,unreviewed,
-weapon,21,WARSAW_ID_P_WNAME_G36C,G36C,,unreviewed,
+weapon,21,WARSAW_ID_P_WNAME_G36C,G36C,G36C,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,135,WARSAW_ID_P_WNAME_SKS,SKS,,unreviewed,
-weapon,70,WARSAW_ID_P_WNAME_AKU12,AKU12,,unreviewed,
+weapon,70,WARSAW_ID_P_WNAME_AKU12,AKU12,AKU-12,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,71,WARSAW_ID_P_WNAME_MK11,MK11,,unreviewed,
 weapon,126,WARSAW_ID_P_WNAME_SVD12,SVD12,,unreviewed,
-weapon,16,WARSAW_ID_P_WNAME_TYPE95B1,TYPE95B1,,unreviewed,
+weapon,16,WARSAW_ID_P_WNAME_TYPE95B1,TYPE95B1,TYPE-95B-1,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,9,WARSAW_ID_P_WNAME_RPK12,RPK12,,unreviewed,
 weapon,50,WARSAW_ID_P_WNAME_PECHENEG,PECHENEG,,unreviewed,
 weapon,167,WARSAW_ID_P_WNAME_PDR,PDR,,unreviewed,
 weapon,159,WARSAW_ID_P_WNAME_MX4,MX4,,unreviewed,
-weapon,105,WARSAW_ID_P_WNAME_GALIL53,GALIL53,,unreviewed,
+weapon,105,WARSAW_ID_P_WNAME_GALIL53,GALIL53,ACE 53 SV,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,78,WARSAW_ID_P_WNAME_QBB95,QBB95,,unreviewed,
 weapon,4,WARSAW_ID_P_WNAME_M98B,M98B,,unreviewed,
-weapon,120,WARSAW_ID_P_WNAME_M4A1,M4A1,,unreviewed,
-weapon,173,WARSAW_ID_P_WNAME_AN94,AN94,,unreviewed,
+weapon,120,WARSAW_ID_P_WNAME_M4A1,M4A1,M4,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,173,WARSAW_ID_P_WNAME_AN94,AN94,AN-94,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,112,WARSAW_ID_P_INAME_IMPACT,IMPACT,,unreviewed,
 weapon,127,WARSAW_ID_P_INAME_SMAW,SMAW,,unreviewed,
-weapon,86,WARSAW_ID_P_XP3_WNAME_BULLDOG,BULLDOG,,unreviewed,
-weapon,168,WARSAW_ID_P_XP1_WNAME_L85A2,L85A2,,unreviewed,
+weapon,86,WARSAW_ID_P_XP3_WNAME_BULLDOG,BULLDOG,BULLDOG,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,168,WARSAW_ID_P_XP1_WNAME_L85A2,L85A2,L85A2,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,29,WARSAW_ID_P_XP1_WNAME_MP7,MP7,,unreviewed,
 weapon,38,WARSAW_ID_P_XP0_WNAME_DAO12,DAO12,,unreviewed,
 weapon,59,WARSAW_ID_P_WNAME_PP2000,PP2000,,unreviewed,
 weapon,35,WARSAW_ID_P_WNAME_CBJMS,CBJMS,,unreviewed,
 weapon,52,WARSAW_ID_P_WNAME_M240,M240,,unreviewed,
-weapon,170,WARSAW_ID_P_WNAME_AK12,AK12,,unreviewed,
+weapon,170,WARSAW_ID_P_WNAME_AK12,AK12,AK-12,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,27,WARSAW_ID_P_WNAME_UMP45,UMP45,,unreviewed,
 weapon,125,WARSAW_ID_P_XP0_WNAME_M60E4,M60E4,,unreviewed,
 weapon,161,WARSAW_ID_P_WNAME_QBU88,QBU88,,unreviewed,
@@ -69,13 +69,13 @@ weapon,104,WARSAW_ID_P_WNAME_HAWK,HAWK,,unreviewed,
 weapon,121,WARSAW_ID_P_INAME_M32MGL,M32MGL,,unreviewed,
 weapon,67,WARSAW_ID_P_WNAME_LSAT,LSAT,,unreviewed,
 weapon,131,WARSAW_ID_P_WNAME_M82A3MID,M82A3MID,,unreviewed,
-weapon,145,WARSAW_ID_P_WNAME_SAR21,SAR21,,unreviewed,
+weapon,145,WARSAW_ID_P_WNAME_SAR21,SAR21,SAR-21,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,34,WARSAW_ID_P_XP1_WNAME_L96A1,L96A1,,unreviewed,
 weapon,55,WARSAW_ID_P_XP0_WNAME_GOL,GOL,,unreviewed,
 weapon,124,WARSAW_ID_P_XP0_WNAME_ASVAL,ASVAL,,unreviewed,
 weapon,148,WARSAW_ID_P_WNAME_RFBTARGET,RFBTARGET,,unreviewed,
-weapon,98,WARSAW_ID_P_WNAME_QBS09,QBS09,,unreviewed,
-weapon,17,WARSAW_ID_P_WNAME_CZ805,CZ805,,unreviewed,
+weapon,98,WARSAW_ID_P_WNAME_QBS09,QBS09,QBS-09,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,17,WARSAW_ID_P_WNAME_CZ805,CZ805,CZ-805,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,58,WARSAW_ID_P_WNAME_UMP9,UMP9,,unreviewed,
 weapon,53,WARSAW_ID_P_WNAME_SRS,SRS,,unreviewed,
 weapon,111,WARSAW_ID_P_WNAME_93R,93R,,unreviewed,
@@ -105,8 +105,8 @@ weapon,88,WARSAW_ID_P_INAME_BAYONETT,BAYONETT,,unreviewed,
 weapon,117,WARSAW_ID_P_INAME_M2,M2,,unreviewed,
 weapon,110,WARSAW_ID_P_WNAME_M1911,M1911,,unreviewed,
 weapon,158,WARSAW_ID_P_WNAME_FYJS,FYJS,,unreviewed,
-weapon,74,WARSAW_ID_P_WNAME_GROZA4,GROZA4,,unreviewed,
-weapon,84,WARSAW_ID_P_WNAME_QBZ951,QBZ951,,unreviewed,
+weapon,74,WARSAW_ID_P_WNAME_GROZA4,GROZA4,GROZA-4,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
+weapon,84,WARSAW_ID_P_WNAME_QBZ951,QBZ951,QBZ-95-1,weapon_candidate_unverified_battlelog,Candidate from BF4 weapon naming convention; Battlelog exact label review pending
 weapon,37,WARSAW_ID_P_WNAME_UTAS,UTAS,,unreviewed,
 weapon,77,WARSAW_ID_P_WNAME_SCOUTELIT,SCOUTELIT,,unreviewed,
 weapon,13,WARSAW_ID_P_INAME_V40,V40,,unreviewed,
