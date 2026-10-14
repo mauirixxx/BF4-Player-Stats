@@ -200,7 +200,7 @@ vehicle,66,WARSAW_ID_P_XP1_VNAME_SUAV,SUAV,SUAV,wiki_candidate_unverified_battle
 vehicle,7,WARSAW_ID_P_VNAME_AAV,AAV,AAV-7A1 AMTRAC,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,29,WARSAW_ID_P_INAME_EOD,EOD,EOD BOT,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,39,WARSAW_ID_P_VNAME_Z9,Z9,Z-9 Haitun,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
-vehicle,81,WARSAW_ID_P_VNAME_COUGAR,COUGAR,MRAP,operator_wiki_candidate_pending_stats,Operator BF4 usage: MRAP; Battlefield Wiki MRAP page identifies Cougar H vehicle; D3 player kill-count cross-check pending
+vehicle,81,WARSAW_ID_P_VNAME_COUGAR,COUGAR,MRAP,battlelog_confirmed,Two independent Battlelog screenshot/D3 comparisons: DeVascon1957 PC 3230=3230; Sorenson44 PC 1844=1844
 vehicle,14,WARSAW_ID_P_VNAME_ZFB05,ZFB05,ZFB-05,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,25,WARSAW_ID_P_VNAME_AC130,AC130,AC-130 Gunship,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 vehicle,35,WARSAW_ID_P_VNAME_LYT2021,LYT2021,LYT2021,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4

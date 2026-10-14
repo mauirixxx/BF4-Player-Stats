@@ -168,3 +168,14 @@ This decision supersedes earlier suggestions to investigate faction-specific UCA
 The Battlefield Wiki MRAP page describes the Cougar H as the vehicle model; the operator confirms players recognize this vehicle as **MRAP**, not COUGAR. Do not change raw catalog ID or aggregation.
 
 D3 COUGAR item 81 candidates: PC `DeVascon1957` 3,230 kills; `Sorenson44` 1,844; `maqser` 1,030. PS4 `Jag_ska_bara` 2,401. Compare the corresponding Battlelog MRAP statistics before marking `battlelog_confirmed`.
+
+### COUGAR → MRAP: independent Battlelog confirmation
+
+| Player | D3 COUGAR kills | Battlelog MRAP kills | Result |
+|---|---:|---:|---|
+| DeVascon1957 (PC) | 3,230 | 3,230 | Exact match |
+| Sorenson44 (PC) | 1,844 | 1,844 | Exact match |
+
+**Vehicle catalog ID 81: `COUGAR` → `MRAP` is Battlelog-confirmed.** Screenshots show the MRAP name and exact matching counts for two different players. This supersedes the earlier candidate-only status.
+
+Additional names visible in Sorenson44 screenshot: `KA-60 KASATKA`, `LYT2021`, `PWC`, `QUAD BIKE`. Treat as screenshot evidence for spelling, without altering their records in this commit.
