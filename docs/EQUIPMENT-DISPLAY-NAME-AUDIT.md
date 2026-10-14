@@ -124,3 +124,12 @@ Reference: https://battlefield.fandom.com/wiki/Category:Gadgets_of_Battlefield_4
 | 82 | 50CALNOSHIELD | .50 CAL (NO SHIELD) | Operator investigating exact label |
 
 Read-only D3 spot check for vehicle item 57: `MeuchteFoese` (PC persona `359554335`) has **3,440** MKV kills; `Jothink` (PS4 persona `1934717859`) has **792**. These counts can be compared with their Battlelog RORSCH MK-1 statistics. Collection timestamps and exact Battlelog UI label must be checked before confirming identity.
+
+### Batch 3 correction — MKV and BOMBER
+
+| Vehicle ID | Key | Current conclusion | Evidence |
+|---:|---|---|---|
+| 57 | MKV | **Unknown — no proposed display name** | Operator rejected RORSCH MK-1 hypothesis; RORSCH MK-1 corresponds to RAILGUN |
+| 16 | BOMBER | **BOMBER — operator confirmed** | Exact in-game kill-feed label; Battlelog stats-screen spelling not separately verified |
+
+**Correction supersedes the earlier Batch 3 follow-up.** Do not use the previously suggested MKV → RORSCH MK-1 mapping. The source-of-truth CSV records the current conclusion.
