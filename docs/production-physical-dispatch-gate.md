@@ -37,3 +37,11 @@ No changes in this document authorize collector resume.
 - Existing `outbound_dispatches` index `ix_outbound_dispatch_background_admitted` is background-scoped. A fleet-wide physical gate must count every production collector lane and egress, not just background.
 - `bf4ps/profile_collector.py` makes the account-resolution request before its `collection_attempt_started` event; therefore event-based accounting is not sufficient.
 - Next: reconcile the Stage 9C ledger semantics and migration constraints with actual production DDL, then implement physical reservations, send markers, redirect policy, and isolated tests. No undrain authorized.
+
+## Production read-only schema verification (operator output, 2026-10-14 UTC)
+- `alembic_version.version_num = 0006_stage9c_soak_round_ledger`.
+- `outbound_dispatches` exists with all 13 columns specified by migration `0005_stage9c_dispatch_ledger`, matching their PostgreSQL types and nullability.
+- Live constraints match the migration: `outbound_dispatches_pkey`, `uq_outbound_dispatch_identity`, and the seven named check constraints for attempt bounds, lane, nonempty keys, phase, phase timestamps, resource, send/ack ordering.
+- This confirms the ledger's **shape**, not its contents, indexes, retention policy, active writers, or migration safety. Those require separate read-only checks before any DDL.
+- Schema compatibility choice: prefer adding a per-physical-call ordinal to the existing ledger with a new uniqueness rule, or an equivalent additive design, but verify historic rows and downstream consumers first. Do not drop `uq_outbound_dispatch_identity` until compatibility is established.
+- The operator's read-only query did not report any dispatch rows or traffic counts; no production activation is authorized.
