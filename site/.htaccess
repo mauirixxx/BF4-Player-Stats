@@ -1,0 +1,6 @@
+# Enable maintenance: touch /etc/bf4ps/maintenance.enabled
+# Disable maintenance: rm -f /etc/bf4ps/maintenance.enabled
+# Only redirect HTML entry points. Keep API and static resources available.
+RewriteEngine On
+RewriteCond /etc/bf4ps/maintenance.enabled -f
+RewriteRule ^(?:index\.html|soldier\.html|temp-stats\.html)?$ /maintenance.html [R=302,L,NE,QSD]
