@@ -18,6 +18,7 @@ from bf4ps.production_hosts import HOSTS, LEASE_SECONDS, REQUEST_INTERVAL_SECOND
 from bf4ps.vehicle_collector import CollectedVehicleJob, FailedVehicleJob, collect_one_vehicle_job
 from bf4ps.weapon_collector import CollectedWeaponJob, FailedWeaponJob, collect_one_weapon_job
 from bf4ps.profile_collector import CollectedProfileJob, FailedProfileJob, collect_one_profile_job
+from bf4ps.physical_dispatch_gate import PhysicalDispatchBudgetExhausted
 
 STOP = False
 HEARTBEAT_SECONDS = 15.0
@@ -124,7 +125,13 @@ def main() -> int:
 
             resource = RESOURCES[resource_index]
             resource_index = (resource_index + 1) % len(RESOURCES)
-            result = collect_one(engine, identity, resource)
+            try:
+                result = collect_one(engine, identity, resource)
+            except PhysicalDispatchBudgetExhausted:
+                # Fail closed: never retry the HTTP request outside the gate.
+                # The claimed lease expires naturally for another cycle.
+                print("PHYSICAL DISPATCH BUDGET EXHAUSTED; stopping collector", flush=True)
+                break
             if result is None:
                 time.sleep(IDLE_SLEEP_SECONDS)
                 continue
