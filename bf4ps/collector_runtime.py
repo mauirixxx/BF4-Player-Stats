@@ -41,7 +41,7 @@ def register_collector(
 ) -> CollectorControl:
     """Register/refresh one stable collector identity without overriding controls.
 
-    Existing ``enabled`` and ``drained`` values are operator-owned and are
+    New collectors start drained (fail-closed). Existing ``enabled`` and ``drained`` values are operator-owned and are
     deliberately preserved on restart.  Identity drift for an existing UUID is
     rejected rather than silently rewriting historical operational identity.
     """
@@ -73,7 +73,7 @@ def register_collector(
                 )
                 VALUES (
                     :collector_uuid, :collector_name, :hostname, :lane, :egress_key,
-                    true, false, :software_version, :now,
+                    true, true, :software_version, :now,
                     :now, 'healthy', NULL, NULL, :now
                 )
                 RETURNING enabled, drained
