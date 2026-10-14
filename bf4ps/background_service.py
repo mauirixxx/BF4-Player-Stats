@@ -11,7 +11,7 @@ from sqlalchemy.engine import Connection
 
 from bf4ps.collection_jobs import ClaimedJob, claim_next_job
 
-BACKGROUND_SLOTS_PER_HOUR = 3000
+BACKGROUND_SLOTS_PER_HOUR = 4800
 ACTIVE_SHARE = 0.75
 BOOTSTRAP_FLOOR = 0.20
 RECOVERY_FLOOR = 0.05
