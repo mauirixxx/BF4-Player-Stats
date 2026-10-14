@@ -61,10 +61,17 @@ def vehicle_mode_sql():
 
 def get(conn,kind,platform,item):
     if item is None:
-        table, key = ('weapon_catalog', 'weapon_id') if kind == 'weapon' else ('vehicle_catalog', 'vehicle_id')
-        return [dict(row) for row in conn.execute(text(
-            f'SELECT {key} AS id, name, category FROM {table} ORDER BY name LIMIT 400'
-        )).mappings()]
+        table,key=('weapon_catalog','weapon_id') if kind=='weapon' else ('vehicle_catalog','vehicle_id')
+        rows=[dict(r) for r in conn.execute(text(f'SELECT {key} AS id,name,category FROM {table} ORDER BY name LIMIT 400')).mappings()]
+        if kind=='vehicle':
+            # Display one catalog entry per audited canonical family; the
+            # ranked-detail query still performs MAX/SUM per soldier.
+            hidden={raw for raw,(canonical,_) in VEHICLE_FAMILIES.items() if raw!=canonical}
+            hidden.add(82)  # audited redundant unshielded .50 CAL
+            # Zero-only placeholder IDs are hidden pending new evidence.
+            hidden.update(ZERO_ONLY_VEHICLE_IDS)
+            rows=[r for r in rows if r['id'] not in hidden]
+        return rows
     stats,cat,key,state=KINDS[kind]
     where_platform='' if platform=='all' else 'AND s.platform=:platform'
     params={'platform':platform}
