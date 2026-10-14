@@ -57,6 +57,11 @@ def authorize_physical_dispatch(
     if lane not in ("background", "interactive"):
         raise ValueError("unsupported lane")
 
+    # A stale repeatable-read snapshot could hide another worker's commits.
+    isolation = conn.get_isolation_level().upper()
+    if isolation != "READ COMMITTED":
+        raise RuntimeError(f"physical dispatch gate requires READ COMMITTED, got {isolation}")
+
     conn.execute(text("SELECT pg_advisory_xact_lock(hashtext(:key))"), {"key": GATE_LOCK_KEY})
     db_now = conn.execute(text("SELECT clock_timestamp()")).scalar_one()
     used = int(conn.execute(
