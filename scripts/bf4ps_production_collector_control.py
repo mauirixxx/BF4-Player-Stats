@@ -43,7 +43,7 @@ def main() -> int:
             # Production resume requires an explicit, separate operator approval flag.
             production_resume = not desired and db == PRODUCTION_DATABASE
             allowed_db = db == TEST_DATABASE or (db == PRODUCTION_DATABASE and (desired or args.approve_production_physical_dispatch))
-            allowed_revision = (EXPECTED_REVISION, STAGE9C_REVISION, STAGE9C_SOAK_REVISION, "0007_physical_dispatch_gate") if desired else (("0007_physical_dispatch_gate",) if production_resume else (EXPECTED_REVISION,))
+            allowed_revision = (EXPECTED_REVISION, STAGE9C_REVISION, STAGE9C_SOAK_REVISION, "0007_physical_dispatch_gate", "0008_runtime_budgets") if desired else (("0008_runtime_budgets",) if production_resume else (EXPECTED_REVISION,))
             if not allowed_db or revision not in allowed_revision or recovery or read_only != "off":
                 raise RuntimeError(
                     f"wrong target db={db!r} revision={revision!r} recovery={recovery} read_only={read_only!r}"
