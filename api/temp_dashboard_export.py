@@ -52,14 +52,14 @@ def export():
                 order by s.soldier_id desc
             """),
             'weapons': rows(c, """
-                select ranked.soldier_id,cat.name,cat.category,ranked.kills,ranked.headshots,ranked.shots_fired,ranked.shots_hit,ranked.time_equipped_seconds
+                select ranked.soldier_id,ranked.weapon_id AS equipment_id,cat.name,cat.category,ranked.kills,ranked.headshots,ranked.shots_fired,ranked.shots_hit,ranked.time_equipped_seconds
                 from (select w.*,row_number() over (partition by soldier_id order by kills desc,weapon_id) as position from soldier_weapon_stats w) ranked
                 join weapon_catalog cat on cat.weapon_id=ranked.weapon_id
                 where ranked.position <= 15
                 order by ranked.soldier_id,ranked.position
             """),
             'vehicles': rows(c, """
-                select ranked.soldier_id,cat.name,cat.category,ranked.kills,ranked.time_in_seconds
+                select ranked.soldier_id,ranked.vehicle_id AS equipment_id,cat.name,cat.category,ranked.kills,ranked.time_in_seconds
                 from (select v.*,row_number() over (partition by soldier_id order by kills desc,vehicle_id) as position from soldier_vehicle_stats v) ranked
                 join vehicle_catalog cat on cat.vehicle_id=ranked.vehicle_id
                 where ranked.position <= 15
