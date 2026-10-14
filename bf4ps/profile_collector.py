@@ -15,6 +15,7 @@ from bf4ps.detailed_collector import CollectorIdentity
 from bf4ps.profile_failure import ProfileFailure, persist_profile_failure
 from bf4ps.profile_persistence import persist_profile_success
 from bf4ps.request_gate import reserve_request_slot
+from bf4ps.physical_dispatch_gate import authorized_http_attempt
 from bf4ps.retry_policy import retry_delay_for_failure
 
 @dataclass(frozen=True)
@@ -77,12 +78,22 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
             WHERE ps.soldier_id=:soldier_id
             ORDER BY ps.last_seen_at DESC LIMIT 1
         """), {"soldier_id": job.soldier_id}).scalar_one_or_none()
+    username_was_resolved = username is None
     resolution_error = None
     if username is None:
         try:
             reserve_and_wait()
-            username = fetch_account_username(str(soldier[2]), persona_id, platform,
-                                              timeout_seconds=timeout_seconds)
+            if enforce_production_budget:
+                with authorized_http_attempt(
+                    engine, job=job, identity=identity, resource="profile",
+                    request_ordinal=1,
+                    request_label=f"profile-resolution:{persona_id}:{platform}",
+                ):
+                    username = fetch_account_username(str(soldier[2]), persona_id, platform,
+                                                      timeout_seconds=timeout_seconds)
+            else:
+                username = fetch_account_username(str(soldier[2]), persona_id, platform,
+                                                  timeout_seconds=timeout_seconds)
         except (AccountResolutionError, HTTPError, URLError, TimeoutError, OSError,
                 UnicodeDecodeError, ValueError) as exc:
             resolution_error = ProfileFetchError(f"account resolution failed: {exc}")
@@ -116,8 +127,17 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
     try:
         if resolution_error is not None:
             raise resolution_error
-        observation = fetch_profile(username, timeout_seconds=timeout_seconds,
-                                    expected_persona_id=persona_id, expected_platform=platform)
+        if enforce_production_budget:
+            with authorized_http_attempt(
+                engine, job=job, identity=identity, resource="profile",
+                request_ordinal=2 if username_was_resolved else 1,
+                request_label=f"profile-page:{persona_id}:{platform}:{username}",
+            ):
+                observation = fetch_profile(username, timeout_seconds=timeout_seconds,
+                                            expected_persona_id=persona_id, expected_platform=platform)
+        else:
+            observation = fetch_profile(username, timeout_seconds=timeout_seconds,
+                                        expected_persona_id=persona_id, expected_platform=platform)
     except ProfileFetchError as exc:
         duration_ms = max(0, int((monotonic()-started)*1000))
         with engine.connect() as conn:
