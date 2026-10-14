@@ -96,7 +96,7 @@ def main() -> int:
         if db_name != "bf4_playerstats":
             raise SystemExit(f"REFUSING: production collector database is {db_name!r}")
         revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-        if revision != "0007_physical_dispatch_gate":
+        if revision != "0008_runtime_budgets":
             raise SystemExit(
                 f"REFUSING: physical dispatch gate migration required; found {revision!r}"
             )
