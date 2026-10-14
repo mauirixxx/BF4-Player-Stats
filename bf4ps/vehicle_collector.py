@@ -281,9 +281,9 @@ def collect_one_vehicle_job(
                 engine, job=job, identity=identity, resource="vehicles",
                 request_ordinal=1, request_label=f"vehicles:{persona_id}:{platform}",
             ):
-            fetched = fetch_vehicle_stats(persona_id, platform, timeout_seconds=timeout_seconds)
+                fetched = fetch_vehicle_stats(persona_id, platform, timeout_seconds=timeout_seconds)
         else:
-        fetched = fetch_vehicle_stats(persona_id, platform, timeout_seconds=timeout_seconds)
+            fetched = fetch_vehicle_stats(persona_id, platform, timeout_seconds=timeout_seconds)
         vehicles = normalize_vehicle_stats(
             fetched.payload,
             expected_persona_id=persona_id,
