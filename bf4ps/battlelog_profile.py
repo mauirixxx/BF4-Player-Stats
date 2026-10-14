@@ -3,6 +3,7 @@
 Profile enrichment is optional. Never infer account ownership from a soldier name.
 """
 from __future__ import annotations
+from bf4ps.single_request_transport import single_request_urlopen
 
 from dataclasses import dataclass
 from html.parser import HTMLParser
@@ -117,7 +118,7 @@ def fetch_profile(username: str, *, timeout_seconds: float = 15.0, expected_pers
         "User-Agent": "BF4PlayerStats/0.1 (+https://bf4playerstats.com)",
     })
     try:
-        with urlopen(request, timeout=timeout_seconds) as response:
+        with single_request_urlopen(request, timeout=timeout_seconds) as response:
             if response.status != 200:
                 raise ProfileFetchError(f"Battlelog profile HTTP {response.status}")
             body = response.read()
