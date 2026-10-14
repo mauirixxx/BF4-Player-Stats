@@ -44,3 +44,48 @@ The CSV always wins if the two documents disagree: correct the audit to reflect 
 
 Next: match wiki categories and subcategories, then confirm exact labels in Battlelog before website deployment.
 
+
+## Batch 2 — BF4 vehicle wiki candidate matches (Battlelog verification pending)
+
+These are Battlefield Wiki **BF4 vehicle-list names**, not yet independently verified against Battlelog. Original keys and catalog IDs are unchanged.
+
+| Vehicle ID | Raw key suffix | Proposed name | Status |
+|---:|---|---|---|
+| 4 | UH1Y | UH-1Y Venom | Wiki candidate |
+| 7 | AAV | AAV-7A1 AMTRAC | Wiki candidate |
+| 8 | 50CAL | .50 Cal | Wiki candidate |
+| 11 | TOW | M220 TOW Launcher | Wiki candidate |
+| 14 | ZFB05 | ZFB-05 | Wiki candidate |
+| 17 | SPM3 | SPM-3 | Wiki candidate |
+| 18 | PAKFA | Su-50 | Wiki candidate |
+| 20 | ZBD09 | ZBD-09 | Wiki candidate |
+| 22 | Q5 | Q-5 Fantan | Wiki candidate |
+| 24 | PWC | PWC | Wiki candidate |
+| 25 | AC130 | AC-130 Gunship | Wiki candidate |
+| 28 | CB90 | RCB-90 | Wiki candidate |
+| 32 | LAVAD | LAV-AD | Wiki candidate |
+| 35 | LYT2021 | LYT2021 | Wiki candidate |
+| 38 | OLDCANNON | Old Cannon | Wiki candidate |
+| 39 | Z9 | Z-9 Haitun | Wiki candidate |
+| 42 | ACV | ACV | Wiki candidate |
+| 43 | QUAD | Quad Bike | Wiki candidate |
+| 44 | 9K22 | 9K22 Tunguska-M | Wiki candidate |
+| 46 | LAV25 | LAV-25 | Wiki candidate |
+| 49 | RIB | RHIB Boat | Wiki candidate |
+| 50 | A10 | A-10 Warthog | Wiki candidate |
+| 51 | DPV | Desert Patrol Vehicle | Wiki candidate |
+| 52 | KA60 | KA-60 Kasatka | Wiki candidate |
+| 53 | PANTSIR | Pantsir-S1 | Wiki candidate |
+| 59 | CENTURION | Centurion C-RAM | Wiki candidate |
+| 60 | LD2000 | LD-2000 AA | Wiki candidate |
+| 61 | VDV | VDV Buggy | Wiki candidate |
+| 64 | KORNET | 9M133 Kornet Launcher | Wiki candidate |
+| 65 | HJ8 | HJ-8 Launcher | Wiki candidate |
+| 72 | DIRTBIKE | Dirt Bike | Wiki candidate |
+| 74 | PGZ95 | Type 95 AA | Wiki candidate |
+| 77 | SKIDLOADER | Skid Loader | Wiki candidate |
+| 78 | BTR90 | BTR-90 | Wiki candidate |
+
+Reference: https://battlefield.fandom.com/wiki/Battlefield_4 (Vehicles of Battlefield 4).
+
+**Note:** Several raw keys differ substantially from wiki names (e.g. `PAKFA` → `Su-50`, `CB90` → `RCB-90`); these remain candidates until Battlelog confirms the exact display wording.
