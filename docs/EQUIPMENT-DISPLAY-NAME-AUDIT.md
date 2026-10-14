@@ -113,3 +113,14 @@ Reference: https://battlefield.fandom.com/wiki/Battlefield_4 (Vehicles of Battle
 Potential ambiguity: COUGAR may have a fuller model name; .50 CAL (NO SHIELD) may share Battlelog label with another variant; BOMBER may be a generic stat grouping; MKV may refer to a DLC pickup. Verify these directly before approving display labels.
 
 Reference: https://battlefield.fandom.com/wiki/Category:Gadgets_of_Battlefield_4 and https://battlefield.fandom.com/wiki/Category:Vehicles_of_Battlefield_4
+
+### Batch 3 follow-up: operator observations and MKV investigation
+
+| Vehicle ID | Raw suffix | Proposed label | Evidence / next check |
+|---:|---|---|---|
+| 16 | BOMBER | BOMBER | Operator directly observed `BOMBER` in the kill feed; stats-screen label still unverified |
+| 57 | MKV | RORSCH MK-1 | **Hypothesis only**, not confirmed; compare Battlelog stats against D3 MKV kills |
+| 81 | COUGAR | COUGAR | Operator investigating exact label |
+| 82 | 50CALNOSHIELD | .50 CAL (NO SHIELD) | Operator investigating exact label |
+
+Read-only D3 spot check for vehicle item 57: `MeuchteFoese` (PC persona `359554335`) has **3,440** MKV kills; `Jothink` (PS4 persona `1934717859`) has **792**. These counts can be compared with their Battlelog RORSCH MK-1 statistics. Collection timestamps and exact Battlelog UI label must be checked before confirming identity.
