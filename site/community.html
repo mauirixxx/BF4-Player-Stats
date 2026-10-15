@@ -20,7 +20,7 @@ h2{margin:28px 0 12px;font-size:19px;color:#d7e3ec;text-align:center}.grid{displ
 <section><div id="playtime"></div></section>
 <section><h2>Combat</h2><div class="grid" id="combat"></div></section>
 <section><h2>Teamwork &amp; objectives</h2><div class="grid" id="teamwork"></div></section>
-<p class="note">Not representative of the BF4 community that has played over the last 13 years. Totals include only indexed soldiers with successfully collected data for the relevant category. Accuracy and K/D are computed from combined totals, not averages of individual ratios. The display checks for new data every 60 seconds.</p>
+<p class="note">Not representative of the BF4 community that has played over the last 13 years. August 19, 2026 at 7:57 PM HST is the earliest surviving BF4 Server Watcher player-alias record; combined playtime includes soldiers’ lifetime gameplay before that date. Totals include only indexed soldiers with successfully collected data for the relevant category. Accuracy and K/D are computed from combined totals, not averages of individual ratios. The display checks for new data every 60 seconds.</p>
 </main>
 <script>
 'use strict';
@@ -39,7 +39,7 @@ function renderPlaytime(seconds,soldierCount){
  const months=Math.floor(remaining/(30*24));remaining%=30*24;
  const days=Math.floor(remaining/24);const leftoverHours=remaining%24;
  const card=document.createElement('div');card.className='metric playtime-card';
- const label=document.createElement('span');label.textContent='COMBINED PLAYTIME ACROSS '+fmt(soldierCount)+' SOLDIERS';
+ const label=document.createElement('span');label.textContent='SINCE AUGUST 19, 2026 @ 7:57 PM HST, THIS IS THE COMBINED PLAYTIME ACROSS '+fmt(soldierCount)+' SOLDIERS';
  const total=document.createElement('strong');total.textContent=fmt(hours)+' hours';
  const breakdown=document.createElement('div');breakdown.className='playtime-breakdown';
  for(const [name,value] of [['Years',years],['Months',months],['Days',days],['Hours',leftoverHours]]){
