@@ -88,7 +88,7 @@ def test_vehicle_persistence_serializes_shared_catalog_and_orders_guids():
     lock_pos = source.index("pg_advisory_xact_lock")
     ownership_pos = source.index("SELECT 1")
     catalog_pos = source.index("INSERT INTO vehicle_catalog")
-    assert lock_pos < ownership_pos < catalog_pos
+    assert ownership_pos < lock_pos < catalog_pos
 
 
 def test_vehicle_persistence_uses_documented_vehicle_state_family():
