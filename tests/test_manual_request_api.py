@@ -1,11 +1,15 @@
 import os
 import sys
 import unittest
+import json
+import threading
+import http.client
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'api'))
-from manual_request_api import parse_soldier_url, submit, main, SlidingWindowLimiter
+from manual_request_api import parse_soldier_url, submit, main, SlidingWindowLimiter, Handler
 
 URL = 'https://battlelog.battlefield.com/bf4/soldier/mauirixxx/stats/236753552/pc/'
 
@@ -50,6 +54,38 @@ class ManualApiTests(unittest.TestCase):
         self.assertTrue(limiter.allow('a', now=100))
         self.assertFalse(limiter.allow('b', now=101))
         self.assertTrue(limiter.allow('b', now=161))
+
+    def test_http_auth_validation_and_rate_limit(self):
+        class DummyEngine:
+            def begin(self):
+                raise AssertionError('unauthorized request must not reach DB')
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        server.engine = DummyEngine()
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with patch.dict(os.environ, {'BF4PS_MANUAL_PRIVATE_TOKEN':'x'*40,
+                                       'BF4PS_MANUAL_ALLOWED_ORIGIN':'https://bf4playerstats.com'}):
+                def post(headers):
+                    client = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=2)
+                    client.request('POST','/manual/request',body='{}',headers=headers)
+                    response = client.getresponse()
+                    result = response.status, dict(response.getheaders()), json.loads(response.read())
+                    client.close()
+                    return result
+                status, _, _ = post({'Content-Type':'application/json','Content-Length':'2'})
+                self.assertEqual(status,403)
+                status, _, _ = post({'X-BF4PS-Private-Token':'x'*40,
+                                    'Origin':'https://evil.example','Content-Type':'application/json'})
+                self.assertEqual(status,403)
+                status, _, _ = post({'X-BF4PS-Private-Token':'x'*40,
+                                    'Origin':'https://bf4playerstats.com',
+                                    'Content-Type':'application/json'})
+                self.assertEqual(status,400)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
 
     def test_no_credentials_no_startup(self):
         with patch.dict(os.environ, {}, clear=True), self.assertRaises(SystemExit):
