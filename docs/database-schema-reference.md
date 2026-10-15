@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current documented head: `0009_manual_requests` (feature branch; **not deployed to production**)
+Current documented head: `0010_manual_api_function` (feature branch; **not deployed to production**). Migration 0010 creates an inert SECURITY INVOKER function; owner activation and login provisioning are separate administrative steps.
 
 ## Mandatory SQL development rule
 
@@ -25,6 +25,7 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0007_physical_dispatch_gate` | `0006_stage9c_soak_round_ledger` | Adds request ordinal and physical-request uniqueness to outbound dispatches; does not activate collection |
 | `0008_runtime_budgets` | `0007_physical_dispatch_gate` | Fleet physical dispatch and background admission ceilings |
 | `0009_manual_requests` | `0008_runtime_budgets` | Inert manual request ledger and cooldown anchors; no website role or public API |
+| `0010_manual_api_function` | `0009_manual_requests` | Adds private `manual_api` schema and `request_existing_soldier(bigint,text,text)` function with PUBLIC EXECUTE revoked; no login, SECURITY DEFINER activation, or HTTP exposure |
 
 ### Important migration consequence: Gun Master
 
