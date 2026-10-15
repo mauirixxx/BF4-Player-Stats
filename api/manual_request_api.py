@@ -71,7 +71,9 @@ def submit(conn, url, kind):
         from urllib.parse import unquote
         import re
         name = unquote(urlsplit(url).path.strip('/').split('/')[2])
-        if not re.fullmatch(r'[A-Za-z0-9_.~-]{1,80}', name):
+        # Battlelog console display names may contain spaces (%20 in URLs).
+        # Keep the allowlist strict; never use the name as SQL or an outbound host.
+        if not re.fullmatch(r'[A-Za-z0-9_.~ -]{1,80}', name) or not name.strip():
             raise ValueError('invalid soldier name')
         row = conn.execute(text("""
             SELECT request_id, state, retry_after_seconds, jobs_created, jobs_promoted

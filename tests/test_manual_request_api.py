@@ -42,6 +42,29 @@ class ManualApiTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             submit(Conn(), URL, 'urgent')
 
+    def test_encoded_spaces_accepted_for_xbox_soldier(self):
+        url = ('https://battlelog.battlefield.com/bf4/soldier/'
+               'II%20F%20o%20o%20e%20Y%20xX/stats/200707824/xboxone/')
+        self.assertEqual(parse_soldier_url(url), (200707824, 'xboxone'))
+        class Conn:
+            def execute(self, query, params):
+                assert 'manual_api.submit_soldier_url' in str(query)
+                assert params == {'persona': 200707824, 'platform': 'xboxone',
+                                  'name': 'II F o o e Y xX', 'kind': 'add'}
+                return SimpleNamespace(mappings=lambda: SimpleNamespace(one=lambda: {
+                    'request_id': 1, 'state': 'accepted', 'retry_after_seconds': 0,
+                    'jobs_created': 4, 'jobs_promoted': 0}))
+        self.assertEqual(submit(Conn(), url, 'add')['state'], 'accepted')
+
+    def test_manual_add_rejects_unsafe_name_characters(self):
+        class Conn:
+            def execute(self, *args):
+                raise AssertionError('invalid name must not reach DB')
+        for name in ('%3Cscript%3E', '%2Fetc', '%0A', '%20%20'):
+            url = f'https://battlelog.battlefield.com/bf4/soldier/{name}/stats/123/pc/'
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                submit(Conn(), url, 'add')
+
     def test_rate_limit_window(self):
         limiter = SlidingWindowLimiter(limit=2, window=60)
         self.assertTrue(limiter.allow('127.0.0.1', now=100))
