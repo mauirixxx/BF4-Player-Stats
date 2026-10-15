@@ -15,6 +15,7 @@ BACKGROUND_SLOTS_PER_HOUR = 4800
 ACTIVE_SHARE = 0.75
 BOOTSTRAP_FLOOR = 0.20
 RECOVERY_FLOOR = 0.05
+MANUAL_MAX_SHARE = 0.10  # ceiling, not a reservation; idle share is borrowed
 
 ACTIVE_SLOTS = int(BACKGROUND_SLOTS_PER_HOUR * ACTIVE_SHARE)
 BOOTSTRAP_SLOTS = int(BACKGROUND_SLOTS_PER_HOUR * BOOTSTRAP_FLOOR)
@@ -141,6 +142,44 @@ def claim_production_background_job(
     if usage.total >= limit:
         return None
 
+    # Manual work cuts ahead of normal queue classes, subject to a bounded
+    # rolling-hour ceiling. Unused manual capacity is never reserved.
+    manual_ceiling = max(1, int(limit * MANUAL_MAX_SHARE))
+    manual_used = int(conn.execute(text("""
+        SELECT
+          (SELECT COUNT(*) FROM collection_events
+           WHERE lane = 'background'
+             AND event_type = 'collection_attempt_started'
+             AND occurred_at >= now() - interval '1 hour'
+             AND metadata->>'priority_class' = 'interactive')
+          +
+          (SELECT COUNT(*) FROM collection_jobs AS j
+           WHERE j.lane = 'background'
+             AND j.priority_class = 'interactive'
+             AND j.status IN ('claimed','running')
+             AND NOT EXISTS (
+               SELECT 1 FROM collection_events AS e
+               WHERE e.job_id = j.job_id
+                 AND e.attempt_number = j.attempt_count
+                 AND e.event_type = 'collection_attempt_started'))
+    """)).scalar_one())
+    if manual_used < manual_ceiling:
+        job = claim_next_job(
+            conn,
+            collector_uuid=collector_uuid,
+            lane="background",
+            resource=resource,
+            lease_seconds=lease_seconds,
+            priority_classes=("interactive",),
+            retry_only=False,
+            allowed_soldier_ids=allowed_soldier_ids,
+            max_total_attempts=max_total_attempts,
+            attempts_after_event_id=attempts_after_event_id,
+            attempt_ceiling_resources=attempt_ceiling_resources,
+        )
+        if job is not None:
+            return job
+
     # Starvation floors take precedence while their reserved share remains
     # unused. If no eligible job exists in a floor, the slot is immediately
     # borrowable by another class.
@@ -216,6 +255,7 @@ def claim_production_background_job(
         conn,
         collector_uuid=collector_uuid,
         lane="background",
+        priority_classes=("active", "recent", "bootstrap"),
         resource=resource,
         lease_seconds=lease_seconds,
         allowed_soldier_ids=allowed_soldier_ids,
