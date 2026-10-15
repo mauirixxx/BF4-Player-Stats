@@ -5,6 +5,7 @@ from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 from sqlalchemy import create_engine, text
+from general_leaderboard import query_page as get_general_page, METRICS as GENERAL_METRICS
 engine=create_engine(os.environ['BF4PS_DATABASE_URL'],pool_pre_ping=True,pool_size=3,max_overflow=2)
 MAINTENANCE_FILE=Path(os.environ.get('BF4PS_SITE_CONFIG','/etc/bf4ps-website/site.env'))
 def maintenance_enabled():
@@ -296,6 +297,27 @@ class Handler(BaseHTTPRequestHandler):
                         if len(term)<2 or len(term)>80: self.send_error(400);return
                         result=[dict(row) for row in c.execute(text("""SELECT DISTINCT n.soldier_id FROM public.soldier_names n WHERE lower(n.name) LIKE :pattern LIMIT 100"""),{'pattern':'%'+term.lower()+'%'}).mappings()]
                 send_json(self,200,{'rows':result});return
+            if u.path=='/general-leaderboard':
+                metric=q.get('metric',['kills'])[0]
+                platform=q.get('platform',['all'])[0]
+                search=q.get('search',[''])[0].strip()
+                try:
+                    page=int(q.get('page',['1'])[0])
+                    page_size=int(q.get('page_size',['50'])[0])
+                    division=int(q.get('division',['0'])[0])
+                except ValueError:
+                    self.send_error(400);return
+                if (metric not in GENERAL_METRICS or platform not in PLATFORMS
+                    or not 1<=page<=100000 or not 1<=page_size<=100
+                    or not 0<=division<=10 or len(search)>100):
+                    self.send_error(400);return
+                with engine.connect() as c:
+                    if c.execute(text('select current_database()')).scalar_one()!='bf4_playerstats':
+                        raise RuntimeError('Unexpected database')
+                    c.execute(text('SET TRANSACTION READ ONLY'))
+                    c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
+                    result=get_general_page(c,metric,platform,page,page_size,search,division)
+                send_json(self,200,result);return
             if u.path!='/leaderboard':self.send_error(404);return
             kind=q.get('kind',[''])[0];platform=q.get('platform',[''])[0];item=q.get('item',[None])[0]
             if kind not in KINDS or platform not in PLATFORMS or (item is not None and (not item.isdecimal() or len(item)>12)):
