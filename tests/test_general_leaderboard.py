@@ -26,6 +26,7 @@ class GeneralLeaderboardTests(unittest.TestCase):
         self.assertEqual(c.calls[0][1]['offset'],50)
         self.assertEqual(c.calls[0][1]['pattern'],'%cherch1%')
         self.assertIn('rank() OVER (ORDER BY value DESC)',c.calls[1][0])
+        self.assertIn('row_number() OVER (ORDER BY value DESC,soldier_id)',c.calls[1][0])
         self.assertIn('EXISTS (SELECT 1 FROM soldier_names',c.calls[1][0])
         self.assertIn('LIMIT :limit OFFSET :offset',c.calls[1][0])
     def test_rejects_untrusted_column_names(self):

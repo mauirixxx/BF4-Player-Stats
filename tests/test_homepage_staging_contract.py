@@ -12,4 +12,4 @@ class StagingHomepageContract(unittest.TestCase):
  def test_soldier_deep_link_uses_server_rank(self):
   html=(Path(__file__).resolve().parents[1]/'site'/'index-paginated-staging.html').read_text()
   self.assertIn('pendingJump&&highlightedPersona',html)
-  self.assertIn('Math.floor((Number(hit.rank)-1)/50)',html)
+  self.assertIn('Math.floor((Number(hit.position)-1)/50)',html)

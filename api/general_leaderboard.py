@@ -26,6 +26,7 @@ def query_page(conn, metric, platform, page=1, page_size=50, search='', division
           AND (:platform='all' OR s.platform=:platform)
       ), ranked AS (
         SELECT *,rank() OVER (ORDER BY value DESC) AS rank,
+               row_number() OVER (ORDER BY value DESC,soldier_id) AS position,
                count(*) OVER () AS population FROM cohort
       ), decorated AS (
         SELECT *,rank*100.0/nullif(population,0) AS top_pct,
@@ -49,7 +50,7 @@ def query_page(conn, metric, platform, page=1, page_size=50, search='', division
     rows=[dict(r) for r in conn.execute(text(sql+'''
        SELECT p.soldier_id,p.current_name,p.persona_id,p.platform,p.value,
               bp.country_code,bp.country_name,bp.battlelog_username,
-              p.rank,p.population,p.top_pct,p.division
+              p.rank,p.position,p.population,p.top_pct,p.division
        FROM (SELECT * FROM filtered ORDER BY value DESC,soldier_id LIMIT :limit OFFSET :offset) p
        LEFT JOIN LATERAL (
          SELECT b.country_code,b.country_name,b.battlelog_username

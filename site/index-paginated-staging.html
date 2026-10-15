@@ -42,9 +42,9 @@ async function renderGeneralLeaderboard(){
     const hit=locate.rows.find(s=>String(s.persona_id)===highlightedPersona);
     pendingJump=false;
     if(hit){
-      // Ties share a rank. Target the approximate rank page; a missing highlight
-      // remains a visible fallback instead of loading the whole population.
-      const targetPage=Math.floor((Number(hit.rank)-1)/50);
+      // Ties share a rank; position uses the stable value/soldier_id ordering
+      // so even large ties jump to the exact page.
+      const targetPage=Math.floor((Number(hit.position)-1)/50);
       if(targetPage!==leaderPage){leaderPage=targetPage;return renderGeneralLeaderboard()}
     }
   }
@@ -102,7 +102,7 @@ async function renderUnifiedEquipment(){
  try{
   const result=await equipmentFetch({kind,platform,item,page:leaderPage+1,page_size:50,search:$('filter').value.trim(),division:$('divisionFilter').value});
   if(seq!==unifiedRequest)return;
-  if(pendingJump&&highlightedPersona&&!$('filter').value){const locate=await equipmentFetch({kind,platform,item,page:1,page_size:1,search:highlightedPersona,division:0});if(seq!==unifiedRequest)return;const hit=locate.rows.find(x=>String(x.persona_id)===highlightedPersona);if(hit){const targetPage=Math.floor((Number(hit.rank)-1)/50);pendingJump=false;if(targetPage!==leaderPage){leaderPage=targetPage;return renderUnifiedEquipment()}}else pendingJump=false}
+  if(pendingJump&&highlightedPersona&&!$('filter').value){const locate=await equipmentFetch({kind,platform,item,page:1,page_size:1,search:highlightedPersona,division:0});if(seq!==unifiedRequest)return;const hit=locate.rows.find(x=>String(x.persona_id)===highlightedPersona);if(hit){const targetPage=Math.floor((Number(hit.position)-1)/50);pendingJump=false;if(targetPage!==leaderPage){leaderPage=targetPage;return renderUnifiedEquipment()}}else pendingJump=false}
   equipmentPage=result;
   $('population').textContent=fmt(result.population)+' eligible · '+platformLabel[platform]+' · '+displayName(unifiedItems.find(x=>String(x.id)===item)?.name);
   $('rankInfo').textContent='Live equipment rankings · global ranks and divisions · audited vehicle families consolidated';
