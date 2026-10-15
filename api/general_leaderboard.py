@@ -1,4 +1,5 @@
 """Read-only paginated general rankings. Never rank only the visible page."""
+from decimal import Decimal
 from sqlalchemy import text
 
 METRICS = frozenset(('kills','total_score','wins','time_played_seconds',
@@ -57,6 +58,10 @@ def query_page(conn, metric, platform, page=1, page_size=50, search='', division
        ) bp ON true
        ORDER BY p.value DESC,p.soldier_id
     '''),params).mappings()]
+    for row in rows:
+        for key,value in row.items():
+            if isinstance(value,Decimal):
+                row[key]=float(value)
     filtered=int(meta['filtered_count'])
     return {'population':population,'filtered_count':filtered,'page':page,
             'page_size':page_size,'total_pages':(filtered+page_size-1)//page_size,
