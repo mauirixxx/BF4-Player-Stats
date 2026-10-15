@@ -12,8 +12,8 @@ class CommunityAggregateTests(unittest.TestCase):
             def execute(self, query):
                 q=str(query)
                 if 'current_database()' in q:return SimpleNamespace(scalar_one=lambda:'bf4_playerstats')
-                if 'count(*) AS count' in q:return [SimpleNamespace(platform='pc',count=1)]
-                return [row]
+                if 'count(*) AS count' in q:return SimpleNamespace(mappings=lambda:[SimpleNamespace(platform='pc',count=1)])
+                return SimpleNamespace(mappings=lambda:[row])
         first=build(Conn());second=build(Conn())
         self.assertEqual(first['platforms']['all'],second['platforms']['all'])
         self.assertEqual(first['platforms']['all']['kills'],100)
