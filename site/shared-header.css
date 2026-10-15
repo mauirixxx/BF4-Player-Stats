@@ -14,3 +14,12 @@ header.top .topnav a{color:#bac4cf;text-decoration:none;font-weight:bold;font-si
 header.top .topnav a:hover,header.top .topnav a:focus-visible{color:var(--orange,#f3a536)}
 @media(max-width:1100px){header.top .wrap{flex-wrap:wrap}header.top .header-add{order:3;max-width:none;flex-basis:100%}header.top .topnav{margin-left:auto}}
 @media(max-width:620px){header.top .wrap{gap:12px}header.top .topnav{white-space:normal;flex-wrap:wrap;margin-left:0;width:100%}header.top .topnav a{font-size:12px}header.top .header-add{min-width:0}}
+
+/* Manual-add acknowledgement: keyboard accessible native modal. */
+.bf4ps-add-confirmation{box-sizing:border-box;max-width:min(420px,calc(100vw - 32px));width:100%;padding:24px;background:#182330;color:#e8eef5;border:1px solid #637b91;border-radius:8px;box-shadow:0 16px 50px #000a}
+.bf4ps-add-confirmation::backdrop{background:rgba(0,0,0,.72)}
+.bf4ps-add-confirmation h2{margin:0 0 12px;font-size:21px;color:#f3a536}
+.bf4ps-add-confirmation p{margin:0 0 22px;font-size:15px;line-height:1.5}
+.bf4ps-add-confirmation form{text-align:right}
+.bf4ps-add-confirmation button{padding:9px 24px;background:#315575;border:1px solid #6d8eaa;border-radius:4px;color:#fff;font-weight:bold;cursor:pointer}
+.bf4ps-add-confirmation button:hover,.bf4ps-add-confirmation button:focus-visible{background:#42769d}
