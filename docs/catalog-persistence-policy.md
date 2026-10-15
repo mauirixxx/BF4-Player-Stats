@@ -12,10 +12,12 @@ when encountered; it is therefore an approximate last-observed timestamp,
 not an exact per-fetch audit trail. The collection events and soldier stat
 `source_fetched_at` remain the authoritative per-fetch timestamps.
 
-The transaction-scoped catalog advisory locks, GUID ordering, queue leases,
-request pacing and production dispatch budgets remain unchanged. Existing
-catalog IDs are loaded before the optional bulk upsert; only stale, changed,
-or missing entries are written. This is intentionally not a schema migration.
+The transaction-scoped catalog advisory locks remain in place for actual
+catalog reconciliation, but ordinary soldier-stat writes no longer acquire
+them. If a catalog change is needed, the worker acquires the lock and rechecks
+existing rows before writing, preventing concurrent catalog races. GUID
+ordering, queue leases, request pacing and production dispatch budgets remain
+unchanged. Only stale, changed, or missing catalog entries are written. This is intentionally not a schema migration.
 
 Production evidence before this optimization: 174 weapon catalog entries with
 ~1.60M dead tuples, and 82 vehicle entries with ~755K dead tuples. Regular
