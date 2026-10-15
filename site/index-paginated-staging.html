@@ -36,6 +36,18 @@ async function renderGeneralLeaderboard(){
  try{
   const result=await BF4PSPaginated.general({metric,platform,page:leaderPage+1,pageSize:50,search:$('filter').value.trim(),division:Number($('divisionFilter').value)});
   if(seq!==generalRequest)return;
+  if(pendingJump&&highlightedPersona&&!$('filter').value&&!Number($('divisionFilter').value)){
+    const locate=await BF4PSPaginated.general({metric,platform,page:1,pageSize:1,search:highlightedPersona,division:0});
+    if(seq!==generalRequest)return;
+    const hit=locate.rows.find(s=>String(s.persona_id)===highlightedPersona);
+    pendingJump=false;
+    if(hit){
+      // Ties share a rank. Target the approximate rank page; a missing highlight
+      // remains a visible fallback instead of loading the whole population.
+      const targetPage=Math.floor((Number(hit.rank)-1)/50);
+      if(targetPage!==leaderPage){leaderPage=targetPage;return renderGeneralLeaderboard()}
+    }
+  }
   generalPage=result;
   $('population').textContent=fmt(result.population)+' eligible soldiers · '+platformLabel[platform];
   $('rankInfo').textContent='Provisional divisions: top 3%, 8%, 15%, 25%, 35%, 50%, 65%, 80%, 90%, 100%. Ties share a rank. Uncollected soldiers are excluded.';
