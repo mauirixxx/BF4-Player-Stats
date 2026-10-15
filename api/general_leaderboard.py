@@ -17,16 +17,10 @@ def query_page(conn, metric, platform, page=1, page_size=50, search='', division
     sql = f'''
       WITH cohort AS (
         SELECT s.soldier_id,s.current_name,s.persona_id,s.platform,
-               d.{metric} AS value, bp.country_code,bp.country_name,
-               bp.battlelog_username
+               d.{metric} AS value
         FROM soldiers s
         JOIN collection_state cs ON cs.soldier_id=s.soldier_id
         JOIN detailed_stats_current d ON d.soldier_id=s.soldier_id
-        LEFT JOIN LATERAL (
-          SELECT b.country_code,b.country_name,b.battlelog_username
-          FROM profile_soldiers ps JOIN battlelog_profiles b ON b.profile_id=ps.profile_id
-          WHERE ps.soldier_id=s.soldier_id ORDER BY ps.last_seen_at DESC LIMIT 1
-        ) bp ON true
         WHERE cs.detailed_state='success' AND d.{metric} IS NOT NULL
           AND (:platform='all' OR s.platform=:platform)
       ), ranked AS (
@@ -52,9 +46,16 @@ def query_page(conn, metric, platform, page=1, page_size=50, search='', division
     if not population:
         population=int(conn.execute(text(sql+'SELECT count(*) FROM cohort'),params).scalar_one())
     rows=[dict(r) for r in conn.execute(text(sql+'''
-       SELECT soldier_id,current_name,persona_id,platform,value,country_code,country_name,
-              battlelog_username,rank,population,top_pct,division
-       FROM filtered ORDER BY value DESC,soldier_id LIMIT :limit OFFSET :offset
+       SELECT p.soldier_id,p.current_name,p.persona_id,p.platform,p.value,
+              bp.country_code,bp.country_name,bp.battlelog_username,
+              p.rank,p.population,p.top_pct,p.division
+       FROM (SELECT * FROM filtered ORDER BY value DESC,soldier_id LIMIT :limit OFFSET :offset) p
+       LEFT JOIN LATERAL (
+         SELECT b.country_code,b.country_name,b.battlelog_username
+         FROM profile_soldiers ps JOIN battlelog_profiles b ON b.profile_id=ps.profile_id
+         WHERE ps.soldier_id=p.soldier_id ORDER BY ps.last_seen_at DESC LIMIT 1
+       ) bp ON true
+       ORDER BY p.value DESC,p.soldier_id
     '''),params).mappings()]
     filtered=int(meta['filtered_count'])
     return {'population':population,'filtered_count':filtered,'page':page,
