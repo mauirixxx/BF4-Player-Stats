@@ -58,13 +58,6 @@ def persist_vehicle_success(
         raise ValueError("http_status must be between 100 and 599")
     _validate_vehicles(vehicles)
 
-    # All collectors reconcile the same global catalog. Preserve the Stage A
-    # concurrency lesson from the first vehicle write: serialize this critical
-    # section and acquire catalog identities in deterministic GUID order.
-    conn.execute(
-        text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:vehicle-catalog-persistence'))")
-    )
-
     ownership = conn.execute(
         text(
             """
@@ -109,6 +102,24 @@ def persist_vehicle_success(
             if needs_refresh(existing.get(item.vehicle_guid), name=item.name,
                              slug=item.slug, category=item.category, observed_at=source_fetched_at)
         ]
+        if catalog_rows:
+            # Only rare catalog reconciliation needs fleet-wide serialization.
+            # Recheck under lock: another worker may have refreshed the GUIDs.
+            conn.execute(text(
+                "SELECT pg_advisory_xact_lock(hashtext('bf4ps:vehicle-catalog-persistence'))"
+            ))
+            existing = {row[0]: row for row in conn.execute(text(
+                "SELECT vehicle_guid, vehicle_id, name, slug, category, last_seen_at "
+                "FROM vehicle_catalog WHERE vehicle_guid = ANY(:guids)"
+            ), {"guids": [item.vehicle_guid for item in ordered_vehicles]})}
+            vehicle_ids.update({guid: int(row[1]) for guid, row in existing.items()})
+            catalog_rows = [
+                {"vehicle_guid": item.vehicle_guid, "name": item.name, "slug": item.slug,
+                 "category": item.category}
+                for item in ordered_vehicles
+                if needs_refresh(existing.get(item.vehicle_guid), name=item.name,
+                                 slug=item.slug, category=item.category, observed_at=source_fetched_at)
+            ]
         if catalog_rows:
             values_sql, params = bulk_values(catalog_rows, ('vehicle_guid', 'name', 'slug', 'category'))
             params["source_fetched_at"] = source_fetched_at
