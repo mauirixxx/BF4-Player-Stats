@@ -25,3 +25,6 @@ header.top .topnav a:hover,header.top .topnav a:focus-visible{color:var(--orange
 .bf4ps-add-confirmation button:hover,.bf4ps-add-confirmation button:focus-visible{background:#42769d}
 
 header.top .topnav-stack{display:flex;flex-direction:column;align-items:flex-end;gap:8px;margin-left:auto}header.top .topnav-stack .topnav{margin-left:0}header.top .topnav-sub a{color:var(--orange,#f3a536);text-decoration:none;font-size:12px;font-weight:bold}header.top .topnav-sub a:hover,header.top .topnav-sub a:focus-visible{text-decoration:underline}@media(max-width:620px){header.top .topnav-stack{align-items:flex-start;margin-left:0;width:100%}}
+
+/* Match community link typography to the existing primary navigation. */
+header.top .topnav-sub a{color:#bac4cf;font-size:14px;font-weight:bold}header.top .topnav-sub a:hover,header.top .topnav-sub a:focus-visible{color:var(--orange,#f3a536);text-decoration:none}@media(max-width:620px){header.top .topnav-sub a{font-size:12px}}
