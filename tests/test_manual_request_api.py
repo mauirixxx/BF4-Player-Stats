@@ -95,6 +95,47 @@ class ManualApiTests(unittest.TestCase):
             server.server_close()
             thread.join(timeout=2)
 
+    def test_http_missing_origin_and_unknown_identity(self):
+        class Row:
+            def mappings(self): return self
+            def one(self):
+                return {'request_id':None,'state':'not_registered',
+                        'retry_after_seconds':0,'jobs_created':0,'jobs_promoted':0}
+        class Connection:
+            def execute(self, query, params): return Row()
+        class Engine:
+            def begin(self):
+                class Context:
+                    def __enter__(self): return Connection()
+                    def __exit__(self, *args): return False
+                return Context()
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        server.engine = Engine()
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with patch.dict(os.environ, {'BF4PS_MANUAL_PRIVATE_TOKEN':'x'*40,
+                'BF4PS_MANUAL_ALLOWED_ORIGIN':'https://bf4playerstats.com'}), \
+                patch('manual_request_api.LIMITER.allow', return_value=True):
+                def post(origin=None, content=None):
+                    client=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=2)
+                    headers={'X-BF4PS-Private-Token':'x'*40,'Content-Type':'application/json'}
+                    if origin is not None: headers['Origin']=origin
+                    client.request('POST','/manual/request',body=content or '{}',headers=headers)
+                    resp=client.getresponse()
+                    result=resp.status,json.loads(resp.read())
+                    client.close()
+                    return result
+                self.assertEqual(post()[0],403)
+                body=json.dumps({'url':URL,'kind':'add'})
+                status,payload=post('https://bf4playerstats.com',body)
+                self.assertEqual(status,404)
+                self.assertEqual(payload['state'],'not_registered')
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
     def test_no_credentials_no_startup(self):
         with patch.dict(os.environ, {}, clear=True), self.assertRaises(SystemExit):
             main()
