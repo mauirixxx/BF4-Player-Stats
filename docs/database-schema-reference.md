@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current documented head: `0007_physical_dispatch_gate`
+Current documented head: `0009_manual_requests` (feature branch; **not deployed to production**)
 
 ## Mandatory SQL development rule
 
@@ -23,6 +23,8 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0005_stage9c_dispatch_ledger` | `0004_stage9c_supervision_runs` | Adds durable outbound dispatch ledger |
 | `0006_stage9c_soak_round_ledger` | `0005_stage9c_dispatch_ledger` | Adds Stage 9C soak run/round/job ledgers; originally designated scratch-only, but production was independently observed at this revision on 2026-10-14 UTC |
 | `0007_physical_dispatch_gate` | `0006_stage9c_soak_round_ledger` | Adds request ordinal and physical-request uniqueness to outbound dispatches; does not activate collection |
+| `0008_runtime_budgets` | `0007_physical_dispatch_gate` | Fleet physical dispatch and background admission ceilings |
+| `0009_manual_requests` | `0008_runtime_budgets` | Inert manual request ledger and cooldown anchors; no website role or public API |
 
 ### Important migration consequence: Gun Master
 
@@ -235,6 +237,26 @@ Lease-shape constraint:
 - `running`: owner/token/claimed/start/expiry required
 
 This ownership shape plus the lease token is part of stale-owner fencing.
+
+## Manual request ledger (feature branch migration 0009; not live)
+
+### `manual_collection_requests`
+
+`request_id` bigint identity PK; `soldier_id` bigint FK to `soldiers` RESTRICT;
+`request_kind` text (`add`, `refresh`); `status` text (`accepted`, `queued`,
+`collecting`, `completed`, `retrying`, `rejected`); `requested_at` timestamptz;
+`completed_at` nullable timestamptz; `status_detail` nullable text.
+Index on (`soldier_id`, `requested_at DESC`) and (`status`, `requested_at`).
+This table is an audit ledger, **not** an executable queue. No application
+permission is granted by this migration.
+
+### `manual_request_cooldowns`
+
+One row per soldier. `soldier_id` bigint PK/FK to `soldiers` CASCADE;
+`last_accepted_at` timestamptz; `last_request_id` bigint FK to the request
+ledger RESTRICT. The future request transaction must atomically serialize
+per-soldier acceptance and enforce a 60-minute cooldown. A successful
+collection does not itself reset this request cooldown.
 
 ## Collection event ledger
 
