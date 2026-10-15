@@ -8,6 +8,7 @@ from typing import Sequence
 from sqlalchemy import text
 
 from bf4ps.bulk_values import bulk_values
+from bf4ps.catalog_refresh import needs_refresh
 from sqlalchemy.engine import Connection
 
 from bf4ps.battlelog_weapons import NormalizedWeaponStat
@@ -93,24 +94,37 @@ def persist_weapon_success(
     # Reconcile the global catalog first. The GUID is the durable Battlelog
     # identity; descriptive fields follow the latest successfully normalized
     # observation while first_seen_at remains immutable.
+    # The catalog is shared by every soldier. Avoid rewriting unchanged rows
+    # for every collection: this previously produced millions of dead tuples
+    # and serialized the fleet behind a global catalog lock. Metadata changes
+    # are immediate; last_seen_at is refreshed at most once per 15 minutes.
     weapon_ids: dict[str, int] = {}
     ordered_weapons = sorted(weapons, key=lambda item: item.weapon_guid)
     if ordered_weapons:
+        existing = {row[0]: row for row in conn.execute(text(
+            "SELECT weapon_guid, weapon_id, name, slug, category, last_seen_at "
+            "FROM weapon_catalog WHERE weapon_guid = ANY(:guids)"
+        ), {"guids": [item.weapon_guid for item in ordered_weapons]})}
+        weapon_ids = {guid: int(row[1]) for guid, row in existing.items()}
         catalog_rows = [
             {"weapon_guid": item.weapon_guid, "name": item.name, "slug": item.slug,
-             "category": item.category} for item in ordered_weapons
+             "category": item.category}
+            for item in ordered_weapons
+            if needs_refresh(existing.get(item.weapon_guid), name=item.name,
+                             slug=item.slug, category=item.category, observed_at=source_fetched_at)
         ]
-        values_sql, params = bulk_values(catalog_rows, (('weapon_guid', 'name', 'slug', 'category')))
-        params["source_fetched_at"] = source_fetched_at
-        rows = conn.execute(text(
-            "INSERT INTO weapon_catalog (weapon_guid, name, slug, category, first_seen_at, last_seen_at) "
-            "VALUES " + values_sql.replace(")", ", :source_fetched_at, :source_fetched_at)") +
-            " ON CONFLICT (weapon_guid) DO UPDATE SET "
-            "name = EXCLUDED.name, slug = EXCLUDED.slug, "
-            "category = EXCLUDED.category, last_seen_at = EXCLUDED.last_seen_at "
-            "RETURNING weapon_guid, weapon_id"
-        ), params)
-        weapon_ids = {row[0]: int(row[1]) for row in rows}
+        if catalog_rows:
+            values_sql, params = bulk_values(catalog_rows, ('weapon_guid', 'name', 'slug', 'category'))
+            params["source_fetched_at"] = source_fetched_at
+            rows = conn.execute(text(
+                "INSERT INTO weapon_catalog (weapon_guid, name, slug, category, first_seen_at, last_seen_at) "
+                "VALUES " + values_sql.replace(")", ", :source_fetched_at, :source_fetched_at)") +
+                " ON CONFLICT (weapon_guid) DO UPDATE SET "
+                "name = EXCLUDED.name, slug = EXCLUDED.slug, "
+                "category = EXCLUDED.category, last_seen_at = EXCLUDED.last_seen_at "
+                "RETURNING weapon_guid, weapon_id"
+            ), params)
+            weapon_ids.update({row[0]: int(row[1]) for row in rows})
 
     conn.execute(
         text("DELETE FROM soldier_weapon_stats WHERE soldier_id = :soldier_id"),
