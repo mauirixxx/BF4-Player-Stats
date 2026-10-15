@@ -63,6 +63,30 @@ def get(conn,kind,platform,item):
     if item is None:
         table,key=('weapon_catalog','weapon_id') if kind=='weapon' else ('vehicle_catalog','vehicle_id')
         rows=[dict(r) for r in conn.execute(text(f'SELECT {key} AS id,name,category FROM {table} ORDER BY name LIMIT 400')).mappings()]
+        if kind == 'weapon':
+            # Fast cross-catalog deduplication: inspect only raw keys appearing
+            # in both catalogs. Avoid a full per-soldier weapon census here;
+            # that query exceeds the 5-second request statement timeout.
+            duplicates = conn.execute(text("""
+                SELECT wc.weapon_id AS id, wc.name
+                FROM weapon_catalog wc JOIN vehicle_catalog vc ON vc.name=wc.name
+            """)).mappings().all()
+            if duplicates:
+                ids = [int(r['id']) for r in duplicates]
+                weapon_positive = {int(r['weapon_id']) for r in conn.execute(text("""
+                    SELECT DISTINCT weapon_id FROM soldier_weapon_stats
+                    WHERE weapon_id = ANY(:ids) AND kills > 0
+                    LIMIT 100
+                """), {'ids': ids}).mappings()}
+                vehicle_positive = {r['name'] for r in conn.execute(text("""
+                    SELECT DISTINCT vc.name
+                    FROM soldier_vehicle_stats vs
+                    JOIN vehicle_catalog vc ON vc.vehicle_id=vs.vehicle_id
+                    WHERE vc.name = ANY(:names) AND vs.kills > 0
+                """), {'names': [r['name'] for r in duplicates]}).mappings()}
+                hidden = {int(r['id']) for r in duplicates
+                          if int(r['id']) not in weapon_positive and r['name'] in vehicle_positive}
+                rows = [r for r in rows if int(r['id']) not in hidden]
         if kind=='vehicle':
             # Display one catalog entry per audited canonical family; the
             # ranked-detail query still performs MAX/SUM per soldier.
