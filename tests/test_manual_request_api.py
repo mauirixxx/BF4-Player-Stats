@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'api'))
-from manual_request_api import parse_soldier_url, submit, main
+from manual_request_api import parse_soldier_url, submit, main, SlidingWindowLimiter
 
 URL = 'https://battlelog.battlefield.com/bf4/soldier/mauirixxx/stats/236753552/pc/'
 
@@ -37,6 +37,19 @@ class ManualApiTests(unittest.TestCase):
         self.assertEqual(submit(Conn(), URL, 'refresh')['jobs_created'], 4)
         with self.assertRaises(ValueError):
             submit(Conn(), URL, 'urgent')
+
+    def test_rate_limit_window(self):
+        limiter = SlidingWindowLimiter(limit=2, window=60)
+        self.assertTrue(limiter.allow('127.0.0.1', now=100))
+        self.assertTrue(limiter.allow('127.0.0.1', now=101))
+        self.assertFalse(limiter.allow('127.0.0.1', now=102))
+        self.assertTrue(limiter.allow('127.0.0.1', now=161))
+
+    def test_limiter_bounded_clients(self):
+        limiter = SlidingWindowLimiter(limit=2, window=60, max_clients=1)
+        self.assertTrue(limiter.allow('a', now=100))
+        self.assertFalse(limiter.allow('b', now=101))
+        self.assertTrue(limiter.allow('b', now=161))
 
     def test_no_credentials_no_startup(self):
         with patch.dict(os.environ, {}, clear=True), self.assertRaises(SystemExit):
