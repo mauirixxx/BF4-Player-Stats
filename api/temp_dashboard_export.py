@@ -6,6 +6,7 @@ from pathlib import Path
 from sqlalchemy import create_engine, text
 
 OUT = Path('/var/www/bf4playerstats.com/temp-stats-data.json')
+SUMMARY_OUT = OUT.with_name('homepage-summary.json')
 engine = create_engine(os.environ['BF4PS_DATABASE_URL'], pool_pre_ping=True)
 
 def rows(conn, sql):
@@ -101,6 +102,18 @@ def export():
     tmp.write_text(json.dumps(payload,default=str,separators=(',',':')))
     os.chmod(tmp,0o644)
     os.replace(tmp,OUT)
+    # Derived from the same completed snapshot: no extra database queries.
+    # Write atomically so readers never see a partially generated response.
+    soldiers = payload['soldiers']
+    detailed = sum(s.get('detailed_state') == 'success' for s in soldiers)
+    full = sum(all(s.get(k) == 'success' for k in
+                   ('detailed_state','weapons_state','vehicles_state','profile_state')) for s in soldiers)
+    compact = {'updated': payload['updated'], 'summary': payload['summary'],
+               'detailed_soldiers': detailed, 'full_soldiers': full}
+    small_tmp = SUMMARY_OUT.with_suffix('.json.tmp')
+    small_tmp.write_text(json.dumps(compact, separators=(',',':')))
+    os.chmod(small_tmp, 0o644)
+    os.replace(small_tmp, SUMMARY_OUT)
 
 if __name__=='__main__':
     while True:
