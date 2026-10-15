@@ -82,6 +82,14 @@ class ManualApiTests(unittest.TestCase):
                                     'Origin':'https://bf4playerstats.com',
                                     'Content-Type':'application/json'})
                 self.assertEqual(status,400)
+                with patch('manual_request_api.LIMITER.allow', return_value=False):
+                    status, headers, payload = post({
+                        'X-BF4PS-Private-Token':'x'*40,
+                        'Origin':'https://bf4playerstats.com',
+                        'Content-Type':'application/json'})
+                    self.assertEqual(status,429)
+                    self.assertEqual(headers['Retry-After'],'60')
+                    self.assertEqual(payload['error'],'rate_limited')
         finally:
             server.shutdown()
             server.server_close()
