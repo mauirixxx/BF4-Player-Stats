@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 from sqlalchemy import create_engine, text
 from general_leaderboard import query_page as get_general_page, METRICS as GENERAL_METRICS
+from global_soldier_search import search_soldiers
 engine=create_engine(os.environ['BF4PS_DATABASE_URL'],pool_pre_ping=True,pool_size=3,max_overflow=2)
 MAINTENANCE_FILE=Path(os.environ.get('BF4PS_SITE_CONFIG','/etc/bf4ps-website/site.env'))
 def maintenance_enabled():
@@ -297,6 +298,15 @@ class Handler(BaseHTTPRequestHandler):
                         if len(term)<2 or len(term)>80: self.send_error(400);return
                         result=[dict(row) for row in c.execute(text("""SELECT DISTINCT n.soldier_id FROM public.soldier_names n WHERE lower(n.name) LIKE :pattern LIMIT 100"""),{'pattern':'%'+term.lower()+'%'}).mappings()]
                 send_json(self,200,{'rows':result});return
+            if u.path=='/global-soldier-search':
+                term=q.get('q',[''])[0].strip()
+                if not 2<=len(term)<=80:
+                    self.send_error(400);return
+                with engine.connect() as c:
+                    c.execute(text('SET TRANSACTION READ ONLY'))
+                    c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
+                    result=search_soldiers(c,term)
+                send_json(self,200,result);return
             if u.path=='/general-leaderboard':
                 metric=q.get('metric',['kills'])[0]
                 platform=q.get('platform',['all'])[0]
