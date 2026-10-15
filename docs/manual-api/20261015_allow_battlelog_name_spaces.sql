@@ -1,0 +1,9 @@
+-- Applied to production bf4_playerstats on 2026-10-15.
+-- Keep manual_api.submit_soldier_url's SECURITY DEFINER, search_path,
+-- ownership and grants unchanged. This patch documents the exact guard change.
+-- Original guard: p_name !~ '^[A-Za-z0-9_.~-]+$'
+-- Updated guard:  p_name !~ '^[A-Za-z0-9_.~ -]+$' OR btrim(p_name) = ''
+-- Validated in a rolled-back transaction with Xbox persona 200707824:
+-- SELECT ... FROM manual_api.submit_soldier_url(200707824,'xboxone',
+--   'II F o o e Y xX','add'); => accepted, 4 jobs; ROLLBACK.
+-- No changes to table schema or collector pacing.
