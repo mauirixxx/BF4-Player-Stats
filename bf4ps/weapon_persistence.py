@@ -57,15 +57,6 @@ def persist_weapon_success(
         raise ValueError("http_status must be between 100 and 599")
     _validate_weapons(weapons)
 
-    # Every successful weapon payload reconciles the same small global catalog.
-    # Serialize that shared critical section across collectors so concurrent
-    # transactions cannot acquire overlapping unique-index/catalog locks in
-    # conflicting orders. The lock is transaction-scoped and releases on
-    # commit/rollback.
-    conn.execute(
-        text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:weapon-catalog-persistence'))")
-    )
-
     ownership = conn.execute(
         text(
             """
@@ -113,6 +104,24 @@ def persist_weapon_success(
             if needs_refresh(existing.get(item.weapon_guid), name=item.name,
                              slug=item.slug, category=item.category, observed_at=source_fetched_at)
         ]
+        if catalog_rows:
+            # Only rare catalog reconciliation needs fleet-wide serialization.
+            # Recheck under lock: another worker may have refreshed the GUIDs.
+            conn.execute(text(
+                "SELECT pg_advisory_xact_lock(hashtext('bf4ps:weapon-catalog-persistence'))"
+            ))
+            existing = {row[0]: row for row in conn.execute(text(
+                "SELECT weapon_guid, weapon_id, name, slug, category, last_seen_at "
+                "FROM weapon_catalog WHERE weapon_guid = ANY(:guids)"
+            ), {"guids": [item.weapon_guid for item in ordered_weapons]})}
+            weapon_ids.update({guid: int(row[1]) for guid, row in existing.items()})
+            catalog_rows = [
+                {"weapon_guid": item.weapon_guid, "name": item.name, "slug": item.slug,
+                 "category": item.category}
+                for item in ordered_weapons
+                if needs_refresh(existing.get(item.weapon_guid), name=item.name,
+                                 slug=item.slug, category=item.category, observed_at=source_fetched_at)
+            ]
         if catalog_rows:
             values_sql, params = bulk_values(catalog_rows, ('weapon_guid', 'name', 'slug', 'category'))
             params["source_fetched_at"] = source_fetched_at
