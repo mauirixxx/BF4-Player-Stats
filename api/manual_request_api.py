@@ -2,12 +2,46 @@
 """Private, opt-in manual request API. Never reuses leaderboard credentials."""
 import json
 import os
+import time
+import threading
+from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit, unquote
 from sqlalchemy import create_engine, text
 
 MAX_BODY = 2048
 ALLOWED_PLATFORMS = frozenset(('pc', 'ps4', 'xboxone'))
+
+
+class SlidingWindowLimiter:
+    """Thread-safe local request limiter. Use proxy-side distributed limits too."""
+    def __init__(self, limit=10, window=60, max_clients=4096):
+        self.limit, self.window, self.max_clients = limit, window, max_clients
+        self._entries = {}
+        self._lock = threading.Lock()
+
+    def allow(self, key, now=None):
+        now = time.monotonic() if now is None else now
+        with self._lock:
+            # Expire old keys to bound memory even with many unique clients.
+            expired = [k for k, q in self._entries.items() if not q or q[-1] <= now - self.window]
+            for k in expired:
+                del self._entries[k]
+            q = self._entries.get(key)
+            if q is None:
+                if len(self._entries) >= self.max_clients:
+                    return False
+                q = self._entries[key] = deque()
+            while q and q[0] <= now - self.window:
+                q.popleft()
+            if len(q) >= self.limit:
+                return False
+            q.append(now)
+            return True
+
+
+LIMITER = SlidingWindowLimiter()
+
 
 
 def parse_soldier_url(raw):
@@ -48,6 +82,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
+        if status == 429:
+            self.send_header('Retry-After', '60')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -63,6 +99,14 @@ class Handler(BaseHTTPRequestHandler):
         import hmac
         if not hmac.compare_digest(self.headers.get('X-BF4PS-Private-Token', ''), expected):
             return self.respond(403, {'error': 'forbidden'})
+        # A private bearer token is never exposed to browser JavaScript.
+        # Require proxy-side origin and real-client-IP validation before release.
+        origin = self.headers.get('Origin')
+        allowed_origin = os.environ.get('BF4PS_MANUAL_ALLOWED_ORIGIN', '')
+        if origin and (not allowed_origin or origin != allowed_origin):
+            return self.respond(403, {'error': 'forbidden_origin'})
+        if not LIMITER.allow(self.client_address[0]):
+            return self.respond(429, {'error': 'rate_limited'})
         length = self.headers.get('Content-Length', '')
         if not length.isascii() or not length.isdecimal() or not 0 < int(length) <= MAX_BODY:
             return self.respond(413, {'error': 'invalid_body_size'})
