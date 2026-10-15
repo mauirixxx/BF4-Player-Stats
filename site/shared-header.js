@@ -9,7 +9,7 @@
     '<div class="header-add-row"><input id="headerBattlelog" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://battlelog.battlefield.com/bf4/soldier/mauirixxx/stats/236753552/pc/" aria-label="Battlelog BF4 soldier stats URL">' +
     '<button id="headerAddStats" type="button" title="Submit a BF4 soldier">Add Stats</button></div>' +
     '<span class="header-add-hint" role="status" aria-live="polite">Paste a Battlelog BF4 soldier stats URL</span></div>' +
-    '<nav class="topnav" aria-label="Main navigation"><a href="/index.html#leaderboards">LEADERBOARDS</a><a href="/equipment.html">EQUIPMENT VIEW</a><a href="/index.html#searchpanel">SOLDIERS</a></nav></div>';
+    '<div class="topnav-stack"><nav class="topnav" aria-label="Main navigation"><a href="/index.html#leaderboards">LEADERBOARDS</a><a href="/equipment.html">EQUIPMENT VIEW</a><a href="/index.html#searchpanel">SOLDIERS</a></nav><nav class="topnav-sub" aria-label="Community navigation"><a href="/community.html">COMMUNITY STATS</a></nav></div></div>';
   const btn=document.getElementById('headerAddStats'), field=document.getElementById('headerBattlelog'), hint=document.querySelector('.header-add-hint');
   // Acknowledge successful submissions without making bulk entry cumbersome.
   const dialog=document.createElement('dialog');

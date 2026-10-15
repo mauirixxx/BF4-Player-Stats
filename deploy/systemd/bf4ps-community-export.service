@@ -1,0 +1,12 @@
+[Unit]
+Description=BF4PS community aggregate snapshot export (read-only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/bf4ps-website
+EnvironmentFile=/root/.config/bf4ps/website-production.env
+ExecStart=/opt/bf4ps-website/.venv/bin/python /opt/bf4ps-website/api/community_export.py
+TimeoutStartSec=40
