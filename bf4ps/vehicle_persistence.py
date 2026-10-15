@@ -9,6 +9,7 @@ from typing import Sequence
 from sqlalchemy import text
 
 from bf4ps.bulk_values import bulk_values
+from bf4ps.catalog_refresh import needs_refresh
 from sqlalchemy.engine import Connection
 
 from bf4ps.battlelog_vehicles import NormalizedVehicleStat
@@ -89,24 +90,37 @@ def persist_vehicle_success(
     if ownership is None:
         raise RuntimeError("vehicle success rejected: job lease is no longer owned")
 
+    # The catalog is shared by every soldier. Avoid rewriting unchanged rows
+    # for every collection: this previously produced millions of dead tuples
+    # and serialized the fleet behind a global catalog lock. Metadata changes
+    # are immediate; last_seen_at is refreshed at most once per 15 minutes.
     vehicle_ids: dict[str, int] = {}
     ordered_vehicles = sorted(vehicles, key=lambda item: item.vehicle_guid)
     if ordered_vehicles:
+        existing = {row[0]: row for row in conn.execute(text(
+            "SELECT vehicle_guid, vehicle_id, name, slug, category, last_seen_at "
+            "FROM vehicle_catalog WHERE vehicle_guid = ANY(:guids)"
+        ), {"guids": [item.vehicle_guid for item in ordered_vehicles]})}
+        vehicle_ids = {guid: int(row[1]) for guid, row in existing.items()}
         catalog_rows = [
             {"vehicle_guid": item.vehicle_guid, "name": item.name, "slug": item.slug,
-             "category": item.category} for item in ordered_vehicles
+             "category": item.category}
+            for item in ordered_vehicles
+            if needs_refresh(existing.get(item.vehicle_guid), name=item.name,
+                             slug=item.slug, category=item.category, observed_at=source_fetched_at)
         ]
-        values_sql, params = bulk_values(catalog_rows, (('vehicle_guid', 'name', 'slug', 'category')))
-        params["source_fetched_at"] = source_fetched_at
-        rows = conn.execute(text(
-            "INSERT INTO vehicle_catalog (vehicle_guid, name, slug, category, first_seen_at, last_seen_at) "
-            "VALUES " + values_sql.replace(")", ", :source_fetched_at, :source_fetched_at)") +
-            " ON CONFLICT (vehicle_guid) DO UPDATE SET "
-            "name = EXCLUDED.name, slug = EXCLUDED.slug, "
-            "category = EXCLUDED.category, last_seen_at = EXCLUDED.last_seen_at "
-            "RETURNING vehicle_guid, vehicle_id"
-        ), params)
-        vehicle_ids = {row[0]: int(row[1]) for row in rows}
+        if catalog_rows:
+            values_sql, params = bulk_values(catalog_rows, ('vehicle_guid', 'name', 'slug', 'category'))
+            params["source_fetched_at"] = source_fetched_at
+            rows = conn.execute(text(
+                "INSERT INTO vehicle_catalog (vehicle_guid, name, slug, category, first_seen_at, last_seen_at) "
+                "VALUES " + values_sql.replace(")", ", :source_fetched_at, :source_fetched_at)") +
+                " ON CONFLICT (vehicle_guid) DO UPDATE SET "
+                "name = EXCLUDED.name, slug = EXCLUDED.slug, "
+                "category = EXCLUDED.category, last_seen_at = EXCLUDED.last_seen_at "
+                "RETURNING vehicle_guid, vehicle_id"
+            ), params)
+            vehicle_ids.update({row[0]: int(row[1]) for row in rows})
 
     conn.execute(
         text("DELETE FROM soldier_vehicle_stats WHERE soldier_id = :soldier_id"),
