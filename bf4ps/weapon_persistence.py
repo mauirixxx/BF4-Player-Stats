@@ -6,6 +6,8 @@ from datetime import datetime
 from typing import Sequence
 
 from sqlalchemy import text
+
+from bf4ps.bulk_values import bulk_values
 from sqlalchemy.engine import Connection
 
 from bf4ps.battlelog_weapons import NormalizedWeaponStat
@@ -93,66 +95,41 @@ def persist_weapon_success(
     # observation while first_seen_at remains immutable.
     weapon_ids: dict[str, int] = {}
     ordered_weapons = sorted(weapons, key=lambda item: item.weapon_guid)
-    for weapon in ordered_weapons:
-        row = conn.execute(
-            text(
-                """
-                INSERT INTO weapon_catalog
-                    (weapon_guid, name, slug, category, first_seen_at, last_seen_at)
-                VALUES
-                    (:weapon_guid, :name, :slug, :category,
-                     :source_fetched_at, :source_fetched_at)
-                ON CONFLICT (weapon_guid) DO UPDATE
-                SET name = EXCLUDED.name,
-                    slug = EXCLUDED.slug,
-                    category = EXCLUDED.category,
-                    last_seen_at = EXCLUDED.last_seen_at
-                RETURNING weapon_id
-                """
-            ),
-            {
-                "weapon_guid": weapon.weapon_guid,
-                "name": weapon.name,
-                "slug": weapon.slug,
-                "category": weapon.category,
-                "source_fetched_at": source_fetched_at,
-            },
-        ).one()
-        weapon_ids[weapon.weapon_guid] = int(row[0])
+    if ordered_weapons:
+        catalog_rows = [
+            {"weapon_guid": item.weapon_guid, "name": item.name, "slug": item.slug,
+             "category": item.category} for item in ordered_weapons
+        ]
+        values_sql, params = bulk_values(catalog_rows, (('weapon_guid', 'name', 'slug', 'category')))
+        params["source_fetched_at"] = source_fetched_at
+        rows = conn.execute(text(
+            "INSERT INTO weapon_catalog (weapon_guid, name, slug, category, first_seen_at, last_seen_at) "
+            "VALUES " + values_sql.replace(")", ", :source_fetched_at, :source_fetched_at)") +
+            " ON CONFLICT (weapon_guid) DO UPDATE SET "
+            "name = EXCLUDED.name, slug = EXCLUDED.slug, "
+            "category = EXCLUDED.category, last_seen_at = EXCLUDED.last_seen_at "
+            "RETURNING weapon_guid, weapon_id"
+        ), params)
+        weapon_ids = {row[0]: int(row[1]) for row in rows}
 
-    # The endpoint is authoritative for the soldier's current retained weapon
-    # set. Replacement also removes rows for weapons that disappear from a later
-    # successful payload.
     conn.execute(
         text("DELETE FROM soldier_weapon_stats WHERE soldier_id = :soldier_id"),
         {"soldier_id": job.soldier_id},
     )
 
-    for weapon in weapons:
-        conn.execute(
-            text(
-                """
-                INSERT INTO soldier_weapon_stats
-                    (soldier_id, weapon_id, kills, headshots, shots_fired,
-                     shots_hit, time_equipped_seconds, source_fetched_at,
-                     updated_at)
-                VALUES
-                    (:soldier_id, :weapon_id, :kills, :headshots, :shots_fired,
-                     :shots_hit, :time_equipped_seconds, :source_fetched_at,
-                     now())
-                """
-            ),
-            {
-                "soldier_id": job.soldier_id,
-                "weapon_id": weapon_ids[weapon.weapon_guid],
-                "kills": weapon.kills,
-                "headshots": weapon.headshots,
-                "shots_fired": weapon.shots_fired,
-                "shots_hit": weapon.shots_hit,
-                "time_equipped_seconds": weapon.time_equipped_seconds,
-                "source_fetched_at": source_fetched_at,
-            },
-        )
+    if weapons:
+        stat_rows = [
+            {"soldier_id": job.soldier_id, "weapon_id": weapon_ids[item.weapon_guid],
+             "kills": item.kills, "headshots": item.headshots,
+             "shots_fired": item.shots_fired, "shots_hit": item.shots_hit,
+             "time_equipped_seconds": item.time_equipped_seconds,
+             "source_fetched_at": source_fetched_at} for item in weapons
+        ]
+        values_sql, params = bulk_values(stat_rows, (('soldier_id', 'weapon_id', 'kills', 'headshots', 'shots_fired', 'shots_hit', 'time_equipped_seconds', 'source_fetched_at')))
+        conn.execute(text(
+            "INSERT INTO soldier_weapon_stats (soldier_id, weapon_id, kills, headshots, shots_fired, shots_hit, time_equipped_seconds, source_fetched_at, updated_at) VALUES "
+            + values_sql.replace(")", ", now())")
+        ), params)
 
     conn.execute(
         text(
