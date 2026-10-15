@@ -1,0 +1,16 @@
+/* Common header across leaderboards, soldier dossiers, and equipment. */
+header.top .wrap{max-width:1440px;box-sizing:border-box;margin:0 auto;display:flex;align-items:center;gap:20px;padding:12px 28px}
+header.top .brand{white-space:nowrap;font-size:23px;font-weight:900;letter-spacing:1.4px;color:#f1f3f5;text-decoration:none}
+header.top .brand b{color:var(--orange,#f3a536)}
+header.top .header-add{flex:1;min-width:240px;max-width:610px;margin:auto;display:flex;flex-direction:column;gap:3px}
+header.top .header-add label{color:var(--orange,#f3a536);font-size:11px;line-height:1.25}
+header.top .header-add-row{display:flex;gap:6px}
+header.top .header-add input{min-width:0;flex:1;padding:7px 9px;background:#111923;color:#edf2f7;border:1px solid #586b7e;border-radius:3px;font-size:12px}
+header.top .header-add input::placeholder{color:#7e91a5;opacity:1}
+header.top .header-add button{white-space:nowrap;padding:7px 12px;background:#315575;color:#e3eaf1;border:1px solid #526c82;border-radius:3px;font-weight:bold;opacity:.65;cursor:not-allowed}
+header.top .header-add-hint{color:#8fa2b4;font-size:10px}
+header.top .topnav{display:flex;align-items:center;gap:16px;margin-left:auto;white-space:nowrap}
+header.top .topnav a{color:#bac4cf;text-decoration:none;font-weight:bold;font-size:14px}
+header.top .topnav a:hover,header.top .topnav a:focus-visible{color:var(--orange,#f3a536)}
+@media(max-width:1100px){header.top .wrap{flex-wrap:wrap}header.top .header-add{order:3;max-width:none;flex-basis:100%}header.top .topnav{margin-left:auto}}
+@media(max-width:620px){header.top .wrap{gap:12px}header.top .topnav{white-space:normal;flex-wrap:wrap;margin-left:0;width:100%}header.top .topnav a{font-size:12px}header.top .header-add{min-width:0}}
