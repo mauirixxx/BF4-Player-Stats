@@ -28,3 +28,6 @@ header.top .topnav-stack{display:flex;flex-direction:column;align-items:flex-end
 
 /* Match community link typography to the existing primary navigation. */
 header.top .topnav-sub a{color:#bac4cf;font-size:14px;font-weight:bold}header.top .topnav-sub a:hover,header.top .topnav-sub a:focus-visible{color:var(--orange,#f3a536);text-decoration:none}@media(max-width:620px){header.top .topnav-sub a{font-size:12px}}
+
+/* Align Community Stats with the first primary navigation link. */
+header.top .topnav-stack{align-items:flex-start}
