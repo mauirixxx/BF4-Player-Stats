@@ -10,7 +10,8 @@ from sqlalchemy import create_engine, text
 OUT = Path(os.environ.get('BF4PS_COMMUNITY_OUTPUT', '/var/www/bf4playerstats.com/community-stats.json'))
 METRICS = ('kills','deaths','wins','losses','shots_fired','shots_hit','headshots',
            'revives','repairs','heals','resupplies','kill_assists','time_played_seconds',
-           'total_score','vehicles_destroyed','flags_captured','flags_defended')
+           'total_score','vehicles_destroyed','flags_captured','flags_defended',
+           'dogtags_taken','avenger_kills','savior_kills','nemesis_kills')
 SQL = """
 SELECT s.platform, count(*) AS detailed_soldiers,
 """ + ",\n".join(f"coalesce(sum(d.{field}),0)::text AS {field}" for field in METRICS) + """
