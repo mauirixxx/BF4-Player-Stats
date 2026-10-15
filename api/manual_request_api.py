@@ -103,12 +103,12 @@ class Handler(BaseHTTPRequestHandler):
         # Require proxy-side origin and real-client-IP validation before release.
         origin = self.headers.get('Origin')
         allowed_origin = os.environ.get('BF4PS_MANUAL_ALLOWED_ORIGIN', '')
-        if origin and (not allowed_origin or origin != allowed_origin):
+        if not allowed_origin or origin != allowed_origin:
             return self.respond(403, {'error': 'forbidden_origin'})
         if not LIMITER.allow(self.client_address[0]):
             return self.respond(429, {'error': 'rate_limited'})
         length = self.headers.get('Content-Length', '')
-        if not length.isascii() or not length.isdecimal() or not 0 < int(length) <= MAX_BODY:
+        if not length.isascii() or not length.isdecimal() or len(length) > 4 or not 0 < int(length) <= MAX_BODY:
             return self.respond(413, {'error': 'invalid_body_size'})
         if self.headers.get('Content-Type', '').split(';', 1)[0].strip().lower() != 'application/json':
             return self.respond(415, {'error': 'unsupported_media_type'})
@@ -123,7 +123,10 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             self.log_error('manual request backend failure')
             return self.respond(503, {'error': 'temporarily_unavailable'})
-        return self.respond(200 if result['state'] in ('cooldown', 'up_to_date') else 202, result)
+        return self.respond(
+            202 if result['state'] == 'accepted' else
+            200 if result['state'] in ('cooldown', 'up_to_date') else
+            404 if result['state'] == 'not_registered' else 503, result)
 
     def do_GET(self):
         return self.respond(404, {'error': 'not_found'})
