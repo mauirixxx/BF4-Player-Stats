@@ -8,7 +8,7 @@ main{max-width:1300px;margin:36px auto;padding:0 24px}h1{font-size:34px;margin:8
 .tabs{display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin:25px 0}.tabs button{background:#1b2938;border:1px solid #435c73;color:#dbe6ef;border-radius:4px;padding:11px 20px;cursor:pointer;font-weight:bold}.tabs button[aria-pressed=true]{background:#f3a536;color:#111923;border-color:#f3a536}
 h2{margin:28px 0 12px;font-size:19px;color:#d7e3ec;text-align:center}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:14px}
 .metric{background:#18232e;border:1px solid #344657;padding:19px;border-radius:5px;min-height:112px}.metric span{display:block;color:#9fb4c7;font-size:12px;text-transform:uppercase;letter-spacing:.7px}.metric strong{display:block;font-size:27px;margin-top:11px;color:#f3a536;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-.note{font-size:13px;margin:25px 0 50px}#updated{color:#9fb4c7;font-size:13px;text-align:center}
+.playtime-card{margin-top:14px;text-align:center}.playtime-card strong{font-size:34px}.playtime-breakdown{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:18px}.playtime-unit{min-width:110px;background:#101a24;border:1px solid #344657;border-radius:5px;padding:13px 18px}.playtime-unit b{display:block;color:#edf2f7;font-size:22px;font-variant-numeric:tabular-nums}.playtime-unit small{display:block;color:#9fb4c7;margin-top:5px;text-transform:uppercase;font-size:11px;letter-spacing:.8px}.note{font-size:13px;margin:25px 0 50px}#updated{color:#9fb4c7;font-size:13px;text-align:center}
 </style></head><body>
 <header id="bf4ps-site-header"></header><script src="/shared-header.js"></script>
 <main><div class="eyebrow">BATTLEFIELD 4 · PLAYER STATS</div><h1>Community Statistics</h1>
@@ -17,6 +17,7 @@ h2{margin:28px 0 12px;font-size:19px;color:#d7e3ec;text-align:center}.grid{displ
 <button data-platform="all" aria-pressed="true">ALL</button><button data-platform="pc" aria-pressed="false">PC</button><button data-platform="ps4" aria-pressed="false">PLAYSTATION</button><button data-platform="xboxone" aria-pressed="false">XBOX</button></div>
 <p id="updated" role="status">Loading community totals…</p>
 <section><h2>Community overview</h2><div class="grid" id="overview"></div></section>
+<section><div id="playtime"></div></section>
 <section><h2>Combat</h2><div class="grid" id="combat"></div></section>
 <section><h2>Teamwork &amp; objectives</h2><div class="grid" id="teamwork"></div></section>
 <p class="note">Not representative of the BF4 community that has played over the last 13 years. Totals include only indexed soldiers with successfully collected data for the relevant category. Accuracy and K/D are computed from combined totals, not averages of individual ratios. The display checks for new data every 60 seconds.</p>
@@ -25,11 +26,34 @@ h2{margin:28px 0 12px;font-size:19px;color:#d7e3ec;text-align:center}.grid{displ
 'use strict';
 let platform='all',snapshot=null;
 const groups={
- overview:[['indexed_soldiers','Soldiers indexed'],['detailed_soldiers','Detailed stats available'],['time_played_seconds','Combined playtime','time'],['total_score','Total score'],['wins','Wins'],['losses','Losses']],
+ overview:[['indexed_soldiers','Soldiers indexed'],['detailed_soldiers','Detailed stats available'],['total_score','Total score'],['wins','Wins'],['losses','Losses']],
  combat:[['kills','Kills'],['deaths','Deaths'],['kd','Combined K/D','ratio'],['shots_fired','Shots fired'],['shots_hit','Shots hit'],['accuracy','Combined accuracy','percent'],['headshots','Headshots'],['kill_assists','Kill assists']],
  teamwork:[['revives','Revives'],['heals','Heals'],['resupplies','Resupplies'],['repairs','Repairs'],['vehicles_destroyed','Vehicles destroyed'],['flags_captured','Flags captured'],['flags_defended','Flags defended']]
 };
 const fmt=n=>Number(n||0).toLocaleString('en-US');
+function renderPlaytime(seconds){
+ // Display conventional calendar-sized units: 365 days/year and 30 days/month.
+ const hours=Math.floor(Number(seconds||0)/3600);
+ let remaining=hours;
+ const years=Math.floor(remaining/(365*24));remaining%=365*24;
+ const months=Math.floor(remaining/(30*24));remaining%=30*24;
+ const days=Math.floor(remaining/24);const leftoverHours=remaining%24;
+ const card=document.createElement('div');card.className='metric playtime-card';
+ const label=document.createElement('span');label.textContent='COMBINED PLAYTIME';
+ const total=document.createElement('strong');total.textContent=fmt(hours)+' hours';
+ const breakdown=document.createElement('div');breakdown.className='playtime-breakdown';
+ for(const [name,value] of [['Years',years],['Months',months],['Days',days],['Hours',leftoverHours]]){
+  const unit=document.createElement('div');unit.className='playtime-unit';
+  const number=document.createElement('b');number.textContent=fmt(value);
+  const caption=document.createElement('small');caption.textContent=name;
+  unit.append(number,caption);breakdown.append(unit);
+ }
+ const footnote=document.createElement('p');footnote.style.cssText='font-size:12px;color:#9fb4c7;margin:16px 0 0';
+ footnote.textContent='Approximate conversion: 365 days per year, 30 days per month.';
+ card.append(label,total,breakdown,footnote);
+ document.getElementById('playtime').replaceChildren(card);
+}
+
 function render(){
  if(!snapshot)return;
  const p=snapshot.platforms[platform];if(!p)return;
@@ -46,6 +70,7 @@ function render(){
    card.append(title,number);el.append(card);
   }
  }
+ renderPlaytime(p.time_played_seconds);
  document.getElementById('updated').textContent='Snapshot updated: '+new Date(snapshot.generated_at).toLocaleString()+' · Display refreshes every 60 seconds';
 }
 async function refresh(){try{const response=await fetch('/community-stats.json',{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);snapshot=await response.json();render()}catch(e){document.getElementById('updated').textContent='Could not load the latest snapshot: '+e.message}}
