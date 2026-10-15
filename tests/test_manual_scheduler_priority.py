@@ -44,3 +44,33 @@ def test_share_is_a_ceiling_not_reserved_capacity():
     source=Path('bf4ps/background_service.py').read_text()
     assert "metadata->>'priority_class' = 'interactive'" in source
     assert 'manual_used < manual_ceiling' in source
+
+
+def test_manual_work_does_not_block_normal_work_when_absent():
+    calls=[]
+    normal=object()
+    def claim(*args,**kwargs):
+        classes=kwargs.get('priority_classes')
+        calls.append(classes)
+        return None if classes == ('interactive',) else normal
+    with patch('bf4ps.background_service._usage',return_value=BackgroundServiceUsage(0,0,0,0)),patch('bf4ps.background_service.claim_next_job',side_effect=claim):
+        result=claim_production_background_job(Conn(),collector_uuid=uuid4(),resource='weapons')
+    assert result is normal
+    assert calls[0] == ('interactive',)
+    assert calls[1] == ('bootstrap',)
+
+
+def test_budget_exhaustion_blocks_manual_and_background():
+    with patch('bf4ps.background_service._usage',return_value=BackgroundServiceUsage(4800,0,0,0)),patch('bf4ps.background_service.claim_next_job') as claim:
+        assert claim_production_background_job(Conn(),collector_uuid=uuid4(),resource='weapons') is None
+    claim.assert_not_called()
+
+
+def test_manual_share_tracks_dynamic_budget():
+    calls=[]
+    def claim(*args,**kwargs):
+        calls.append(kwargs.get('priority_classes'))
+        return None
+    with patch('bf4ps.background_service._usage',return_value=BackgroundServiceUsage(0,0,0,0)),patch('bf4ps.background_service.claim_next_job',side_effect=claim):
+        claim_production_background_job(Conn(used=100,limit=1000),collector_uuid=uuid4(),resource='weapons')
+    assert ('interactive',) not in calls
