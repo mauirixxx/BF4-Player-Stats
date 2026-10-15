@@ -7,7 +7,7 @@ header.top .header-add label{color:var(--orange,#f3a536);font-size:11px;line-hei
 header.top .header-add-row{display:flex;gap:6px}
 header.top .header-add input{min-width:0;flex:1;padding:7px 9px;background:#111923;color:#edf2f7;border:1px solid #586b7e;border-radius:3px;font-size:12px}
 header.top .header-add input::placeholder{color:#7e91a5;opacity:1}
-header.top .header-add button{white-space:nowrap;padding:7px 12px;background:#315575;color:#e3eaf1;border:1px solid #526c82;border-radius:3px;font-weight:bold;opacity:.65;cursor:not-allowed}
+header.top .header-add button{white-space:nowrap;padding:7px 12px;background:#315575;color:#e3eaf1;border:1px solid #526c82;border-radius:3px;font-weight:bold;opacity:1;cursor:pointer}header.top .header-add button:hover:not(:disabled){background:#42769d;border-color:#83a6c3}header.top .header-add button:disabled{opacity:.55;cursor:wait}
 header.top .header-add-hint{color:#8fa2b4;font-size:10px}
 header.top .topnav{display:flex;align-items:center;gap:16px;margin-left:auto;white-space:nowrap}
 header.top .topnav a{color:#bac4cf;text-decoration:none;font-weight:bold;font-size:14px}

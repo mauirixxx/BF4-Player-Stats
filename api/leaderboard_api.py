@@ -283,6 +283,19 @@ class Handler(BaseHTTPRequestHandler):
                     if c.execute(text('select current_database()')).scalar_one()!='bf4_playerstats':
                         raise RuntimeError('Only D3 scratch database permitted')
                 send_json(self,200,{'status':'ok'});return
+            if u.path in ('/aliases','/alias-search'):
+                with engine.connect() as c:
+                    c.execute(text('SET TRANSACTION READ ONLY'))
+                    c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
+                    if u.path=='/aliases':
+                        raw=q.get('soldier_id',[''])[0]
+                        if not raw.isdecimal() or len(raw)>18: self.send_error(400);return
+                        result=[dict(row) for row in c.execute(text("""SELECT name,first_seen_at::text AS first_seen_at,last_seen_at::text AS last_seen_at FROM public.soldier_names WHERE soldier_id=:id ORDER BY last_seen_at DESC,name LIMIT 200"""),{'id':int(raw)}).mappings()]
+                    else:
+                        term=q.get('q',[''])[0].strip()
+                        if len(term)<2 or len(term)>80: self.send_error(400);return
+                        result=[dict(row) for row in c.execute(text("""SELECT DISTINCT n.soldier_id FROM public.soldier_names n WHERE lower(n.name) LIKE :pattern LIMIT 100"""),{'pattern':'%'+term.lower()+'%'}).mappings()]
+                send_json(self,200,{'rows':result});return
             if u.path!='/leaderboard':self.send_error(404);return
             kind=q.get('kind',[''])[0];platform=q.get('platform',[''])[0];item=q.get('item',[None])[0]
             if kind not in KINDS or platform not in PLATFORMS or (item is not None and (not item.isdecimal() or len(item)>12)):

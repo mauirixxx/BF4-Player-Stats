@@ -1,0 +1,27 @@
+[Unit]
+Description=BF4PS private manual request API (disabled until security gates pass)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/bf4ps-website
+EnvironmentFile=/etc/bf4ps-website/manual-api.env
+ExecStart=/opt/bf4ps-website/.venv/bin/python /opt/bf4ps-website/api/manual_request_api.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
