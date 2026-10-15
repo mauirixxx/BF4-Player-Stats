@@ -1,10 +1,14 @@
 """Validate Battlelog soldier HTML before admitting a manually submitted URL.
 
-Pure parsing only. Network requests must use the fleet's existing dispatch gate.
+Network requests require a caller-supplied, preauthorized dispatch permit.
+The caller must account for the physical HTTP attempt in the fleet budget.
 """
 from html.parser import HTMLParser
 from urllib.parse import urlsplit, unquote
+from urllib.request import Request
 import re
+
+from bf4ps.single_request_transport import single_request_urlopen
 
 from bf4ps.manual_battlelog_url import parse_battlelog_soldier_url
 from bf4ps.manual_verified_ingestion import VerifiedSoldier
@@ -46,3 +50,29 @@ def verify_soldier_html(url: str, html: str) -> VerifiedSoldier:
     if not name or len(name) > 255:
         raise SoldierVerificationError("Invalid soldier name in Battlelog response")
     return VerifiedSoldier(identity.persona_id, identity.platform, name)
+
+
+def fetch_verified_soldier(url: str, *, authorized_dispatch,
+                           timeout_seconds: float = 15.0) -> VerifiedSoldier:
+    """Fetch exactly one soldier page only after a trusted dispatch authorization.
+
+    The caller must reserve pacing AND physical dispatch budget first. This
+    low-level helper deliberately cannot issue an unaccounted request by default.
+    """
+    parse_battlelog_soldier_url(url)
+    if not callable(authorized_dispatch):
+        raise TypeError('authorized_dispatch must be a dispatch context factory')
+    request = Request(url, headers={'Accept': 'text/html',
+        'User-Agent': 'BF4PlayerStats/0.1 (+https://bf4playerstats.com)'})
+    with authorized_dispatch():
+        with single_request_urlopen(request, timeout=timeout_seconds) as response:
+            if response.status != 200:
+                raise SoldierVerificationError(f'Battlelog HTTP {response.status}')
+            body = response.read(2_000_001)
+    if len(body) > 2_000_000:
+        raise SoldierVerificationError('Battlelog page too large')
+    try:
+        html = body.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise SoldierVerificationError('Invalid Battlelog page encoding') from exc
+    return verify_soldier_html(url, html)
