@@ -32,7 +32,7 @@
       const script=document.createElement('script');
       script.src='/equipment-artwork.js';
       script.onload=resolve;
-      script.onerror=()=>reject(Error('Default artwork catalog unavailable'));
+      script.onerror=()=>reject(Error('Current artwork catalog unavailable'));
       document.head.append(script);
     });
     // The original catalog uses a top-level const, accessible by name in this script.
@@ -40,9 +40,9 @@
     defaults=equipmentArtwork;
   }
   const source = (item, role) => {
-    const custom=overrides[item.key]?.[role]?.local;
+    const custom=Boolean(overrides[item.key]?.[role]?.local);
     const original=defaults[item.key]?.[role]?.local;
-    return {url:custom || original || '', custom:Boolean(custom)};
+    return {url:original || '', custom};
   };
   async function show() {
     const item=identity();
@@ -59,8 +59,8 @@
       restore.disabled=true;
       if(!item) continue;
       const current=source(item,role);
-      if(current.url) img.src=current.url;
-      info.textContent=current.custom?'Custom override active':current.url?'Default artwork':'No default artwork';
+      if(current.url) img.src=current.url+'?v='+Date.now();
+      info.textContent=current.custom?'Updated artwork':current.url?'Default artwork':'No default artwork';
       restore.disabled=!current.custom || busy;
       try {
         const result=await fetchJSON('artwork/history?'+params(item,role));
