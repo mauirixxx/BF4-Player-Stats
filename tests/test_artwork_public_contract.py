@@ -6,14 +6,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PublicArtworkContract(unittest.TestCase):
-    def test_override_manifest_loaded_before_initial_catalog(self):
+    def test_canonical_artwork_paths(self):
         source = (ROOT / 'site/equipment.html').read_text()
-        self.assertIn("fetch('/assets/equipment-overrides/manifest.json'", source)
-        self.assertIn('loadArtworkOverrides().then(()=>loadCatalog())', source)
+        self.assertNotIn('equipment-overrides', source)
+        self.assertIn('loadCatalog()', source)
 
     def test_original_artwork_fallback(self):
         source = (ROOT / 'site/equipment.html').read_text()
-        self.assertIn("artworkOverrides[key]?.[role]||equipmentArtwork[key]?.[role]||null", source)
+        self.assertIn("equipmentArtwork[kind+'-'+item.name]?.[role]||null", source)
 
     def test_admin_artwork_controls_present(self):
         source = (ROOT / 'admin/console.html').read_text()
