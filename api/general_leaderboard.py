@@ -22,7 +22,7 @@ def query_page(conn, metric, platform, page=1, page_size=50, search='', division
         FROM soldiers s
         JOIN collection_state cs ON cs.soldier_id=s.soldier_id
         JOIN detailed_stats_current d ON d.soldier_id=s.soldier_id
-        WHERE cs.detailed_state='success' AND d.{metric} IS NOT NULL
+        WHERE cs.detailed_state='success' AND d.{metric} IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)
           AND (:platform='all' OR s.platform=:platform)
       ), ranked AS (
         SELECT *,rank() OVER (ORDER BY value DESC) AS rank,

@@ -17,6 +17,7 @@ SELECT s.platform, count(*) AS detailed_soldiers,
 """ + ",\n".join(f"coalesce(sum(d.{field}),0)::text AS {field}" for field in METRICS) + """
 FROM public.detailed_stats_current d
 JOIN public.soldiers s ON s.soldier_id=d.soldier_id
+WHERE NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)
 GROUP BY s.platform
 """
 
@@ -24,7 +25,7 @@ def build(connection):
     if connection.execute(text('select current_database()')).scalar_one() != 'bf4_playerstats':
         raise RuntimeError('Unexpected database')
     counts = {r.platform: int(r.count) for r in connection.execute(text(
-        'SELECT platform,count(*) AS count FROM public.soldiers GROUP BY platform')).mappings()}
+        'SELECT platform,count(*) AS count FROM public.soldiers s WHERE NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) GROUP BY platform')).mappings()}
     values = {}
     for r in connection.execute(text(SQL)).mappings():
         values[r['platform']] = {key:int(r[key]) for key in ('detailed_soldiers',*METRICS)}

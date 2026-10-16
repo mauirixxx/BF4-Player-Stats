@@ -13,10 +13,10 @@ LEFT JOIN LATERAL (
  FROM profile_soldiers ps JOIN battlelog_profiles b ON b.profile_id=ps.profile_id
  WHERE ps.soldier_id=s.soldier_id ORDER BY ps.last_seen_at DESC LIMIT 1
 ) bp ON true
-WHERE lower(s.current_name) LIKE :pattern ESCAPE '\\'
+WHERE NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) AND (lower(s.current_name) LIKE :pattern ESCAPE '\\'
    OR s.persona_id::text LIKE :pattern ESCAPE '\\'
    OR EXISTS (SELECT 1 FROM soldier_names n WHERE n.soldier_id=s.soldier_id
-              AND lower(n.name) LIKE :pattern ESCAPE '\\')
+              AND lower(n.name) LIKE :pattern ESCAPE '\\'))
 ORDER BY (lower(s.current_name)=:exact) DESC,
          (s.persona_id::text=:exact) DESC,
          s.soldier_id

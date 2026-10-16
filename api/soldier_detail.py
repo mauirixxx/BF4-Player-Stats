@@ -17,7 +17,7 @@ SOLDIER_SQL=text("""select s.soldier_id, s.current_name, s.persona_id, s.platfor
                     join battlelog_profiles bp on bp.profile_id=ps.profile_id
                     where ps.soldier_id=s.soldier_id order by ps.last_seen_at desc limit 1
                 ) bp on true
-                where s.soldier_id=:soldier_id
+                where s.soldier_id=:soldier_id AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)
                 """)
 WEAPON_SQL=text("""
 SELECT w.soldier_id,w.weapon_id AS equipment_id,c.name,c.category,w.kills,

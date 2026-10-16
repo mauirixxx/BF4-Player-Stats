@@ -114,7 +114,7 @@ def get(conn,kind,platform,item):
             FROM soldier_vehicle_stats t
             JOIN soldiers s ON s.soldier_id=t.soldier_id
             JOIN collection_state cs ON cs.soldier_id=s.soldier_id
-            WHERE cs.vehicles_state='success' {where_platform}
+            WHERE cs.vehicles_state='success' AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) {where_platform}
             GROUP BY s.soldier_id,t.vehicle_id
           ), per_soldier AS (
             SELECT raw.soldier_id,
@@ -148,7 +148,7 @@ def get(conn,kind,platform,item):
             SELECT s.soldier_id,s.current_name,s.persona_id,s.platform,
                    p.kills,p.source_fetched_at
             FROM consolidated p JOIN soldiers s ON s.soldier_id=p.soldier_id
-            WHERE p.item_id=:item
+            WHERE p.item_id=:item AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)
             ORDER BY p.kills DESC,s.soldier_id
         """),params).mappings()]
         return {'population':len(result),'rows':result}
@@ -159,7 +159,7 @@ def get(conn,kind,platform,item):
             SELECT s.soldier_id,{canonical} AS item_id,max(t.kills) AS kills
             FROM {stats} t JOIN soldiers s ON s.soldier_id=t.soldier_id
             JOIN collection_state cs ON cs.soldier_id=s.soldier_id
-            WHERE cs.{state}='success' {where_platform}
+            WHERE cs.{state}='success' AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) {where_platform}
             GROUP BY s.soldier_id,{canonical}
           )
           SELECT c.{key} AS id,c.name,c.category,count(*) AS collected_soldiers,
@@ -182,7 +182,7 @@ def get(conn,kind,platform,item):
                     JOIN collection_state cs ON cs.soldier_id = s.soldier_id
                     WHERE cs.vehicles_state = 'success'
                       AND (:platform = 'all' OR s.platform = :platform)
-                      AND vc.name = ANY(:names)
+                      AND vc.name = ANY(:names) AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)
                     GROUP BY vc.name
                 """), {'platform': platform, 'names': sorted(zero_names)}).mappings()
                 active_names = {r['name'] for r in counterpart if int(r['kills']) > 0}
@@ -193,7 +193,7 @@ def get(conn,kind,platform,item):
     params['item']=item
     base=f"""FROM {stats} t JOIN soldiers s ON s.soldier_id=t.soldier_id
        JOIN collection_state cs ON cs.soldier_id=s.soldier_id
-       WHERE {canonical}=:item AND cs.{state}='success' {where_platform}"""
+       WHERE {canonical}=:item AND cs.{state}='success' AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) {where_platform}"""
     population=conn.execute(text(f'SELECT count(DISTINCT s.soldier_id) {base}'),params).scalar_one()
     rows=[dict(r) for r in conn.execute(text(f"""
        SELECT s.soldier_id,s.current_name,s.persona_id,s.platform,max(t.kills) AS kills,
@@ -218,7 +218,7 @@ def get_page(conn, kind, platform, item, page, page_size, search, division):
                    max(t.source_fetched_at) AS source_fetched_at
             FROM soldier_vehicle_stats t JOIN soldiers s ON s.soldier_id=t.soldier_id
             JOIN collection_state cs ON cs.soldier_id=s.soldier_id
-            WHERE cs.vehicles_state='success' {platform_clause}
+            WHERE cs.vehicles_state='success' AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) {platform_clause}
             GROUP BY s.soldier_id,t.vehicle_id
         ), variants AS (
             SELECT raw.soldier_id,{family} AS item_id,{mode} AS mode,
@@ -231,7 +231,7 @@ def get_page(conn, kind, platform, item, page, page_size, search, division):
         ), cohort AS (
             SELECT s.soldier_id,s.current_name,s.persona_id,s.platform,
                    c.kills,c.source_fetched_at FROM consolidated c
-            JOIN soldiers s ON s.soldier_id=c.soldier_id WHERE c.item_id=:item
+            JOIN soldiers s ON s.soldier_id=c.soldier_id WHERE c.item_id=:item AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)
         )'''
     else:
         source=f'''WITH cohort AS (
@@ -239,7 +239,7 @@ def get_page(conn, kind, platform, item, page, page_size, search, division):
                    max(t.kills) AS kills,max(t.source_fetched_at) AS source_fetched_at
             FROM soldier_weapon_stats t JOIN soldiers s ON s.soldier_id=t.soldier_id
             JOIN collection_state cs ON cs.soldier_id=s.soldier_id
-            WHERE t.weapon_id=:item AND cs.weapons_state='success' {platform_clause}
+            WHERE t.weapon_id=:item AND cs.weapons_state='success' AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) {platform_clause}
             GROUP BY s.soldier_id,s.current_name,s.persona_id,s.platform
         )'''
     ranked=source+''', ranked AS (
@@ -293,11 +293,11 @@ class Handler(BaseHTTPRequestHandler):
                     if u.path=='/aliases':
                         raw=q.get('soldier_id',[''])[0]
                         if not raw.isdecimal() or len(raw)>18: self.send_error(400);return
-                        result=[dict(row) for row in c.execute(text("""SELECT name,first_seen_at::text AS first_seen_at,last_seen_at::text AS last_seen_at FROM public.soldier_names WHERE soldier_id=:id ORDER BY last_seen_at DESC,name LIMIT 200"""),{'id':int(raw)}).mappings()]
+                        result=[dict(row) for row in c.execute(text("""SELECT n.name,n.first_seen_at::text AS first_seen_at,n.last_seen_at::text AS last_seen_at FROM public.soldier_names n JOIN public.soldiers s ON s.soldier_id=n.soldier_id WHERE n.soldier_id=:id AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) ORDER BY n.last_seen_at DESC,n.name LIMIT 200"""),{'id':int(raw)}).mappings()]
                     else:
                         term=q.get('q',[''])[0].strip()
                         if len(term)<2 or len(term)>80: self.send_error(400);return
-                        result=[dict(row) for row in c.execute(text("""SELECT DISTINCT n.soldier_id FROM public.soldier_names n WHERE lower(n.name) LIKE :pattern LIMIT 100"""),{'pattern':'%'+term.lower()+'%'}).mappings()]
+                        result=[dict(row) for row in c.execute(text("""SELECT DISTINCT n.soldier_id FROM public.soldier_names n JOIN public.soldiers s ON s.soldier_id=n.soldier_id WHERE NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) AND lower(n.name) LIKE :pattern LIMIT 100"""),{'pattern':'%'+term.lower()+'%'}).mappings()]
                 send_json(self,200,{'rows':result});return
             if u.path=='/global-soldier-search':
                 term=q.get('q',[''])[0].strip()

@@ -31,10 +31,10 @@ def export():
             'database': db,
             'summary': dict(c.execute(text("""
                 select
-                  (select count(*) from soldiers) soldiers,
-                  (select count(*) from soldier_weapon_stats) weapons,
-                  (select count(*) from soldier_vehicle_stats) vehicles,
-                  (select count(*) from profile_soldiers) profiles,
+                  (select count(*) from soldiers s WHERE NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)) soldiers,
+                  (select count(*) from soldier_weapon_stats w JOIN soldiers s ON s.soldier_id=w.soldier_id WHERE NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)) weapons,
+                  (select count(*) from soldier_vehicle_stats v JOIN soldiers s ON s.soldier_id=v.soldier_id WHERE NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)) vehicles,
+                  (select count(*) from profile_soldiers ps JOIN soldiers s ON s.soldier_id=ps.soldier_id WHERE NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)) profiles,
                   (select count(*) from collection_jobs where status='pending') pending,
                   (select count(*) from collection_jobs where status in ('running','claimed')) running,
                   (select count(*) from collection_events where event_type='collection_success') successes,
@@ -84,22 +84,22 @@ def export():
                     join battlelog_profiles bp on bp.profile_id=ps.profile_id
                     where ps.soldier_id=s.soldier_id order by ps.last_seen_at desc limit 1
                 ) bp on true
-                where cs.detailed_state='success' or cs.weapons_state='success'
-                   or cs.vehicles_state='success' or cs.profile_state='success'
+                where NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) AND (cs.detailed_state='success' or cs.weapons_state='success'
+                   or cs.vehicles_state='success' or cs.profile_state='success')
                 order by s.soldier_id desc
             """),
             'weapons': rows(c, """
                 select ranked.soldier_id,ranked.weapon_id AS equipment_id,cat.name,cat.category,ranked.kills,ranked.headshots,ranked.shots_fired,ranked.shots_hit,ranked.time_equipped_seconds
                 from (select w.*,row_number() over (partition by soldier_id order by kills desc,weapon_id) as position from soldier_weapon_stats w) ranked
                 join weapon_catalog cat on cat.weapon_id=ranked.weapon_id
-                where ranked.position <= 15
+                where ranked.position <= 15 AND EXISTS (SELECT 1 FROM soldiers s WHERE s.soldier_id=ranked.soldier_id AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active))
                 order by ranked.soldier_id,ranked.position
             """),
             'vehicles': rows(c, """
                 select ranked.soldier_id,ranked.vehicle_id AS equipment_id,cat.name,cat.category,ranked.kills,ranked.time_in_seconds
                 from (select v.*,row_number() over (partition by soldier_id order by kills desc,vehicle_id) as position from soldier_vehicle_stats v) ranked
                 join vehicle_catalog cat on cat.vehicle_id=ranked.vehicle_id
-                where ranked.position <= 15
+                where ranked.position <= 15 AND EXISTS (SELECT 1 FROM soldiers s WHERE s.soldier_id=ranked.soldier_id AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active))
                 order by ranked.soldier_id,ranked.position
             """),
             'recent': rows(c, """
