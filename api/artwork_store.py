@@ -115,7 +115,7 @@ class ArtworkStore:
         if not local.startswith(prefix):
             raise ValueError('No original image for this role')
         filename = local[len(prefix):]
-        if not re.fullmatch(r'[A-Za-z0-9_-]+\\.webp', filename):
+        if not re.fullmatch(r'[A-Za-z0-9_-]+\.webp', filename):
             raise ValueError('Invalid original artwork filename')
         return identity, self.public_root / filename
 
@@ -193,7 +193,7 @@ class ArtworkStore:
                 return {'changed': False}
             latest = history[-1]
             backup_name = latest.get('backup', '')
-            if not re.fullmatch(r'[A-Za-z0-9_-]+\\.webp', backup_name):
+            if not re.fullmatch(r'[A-Za-z0-9_-]+\.webp', backup_name):
                 raise ValueError('Invalid backup reference')
             backup_path = self.public_root / 'backups' / backup_name
             if not backup_path.is_file() or backup_path.is_symlink():
