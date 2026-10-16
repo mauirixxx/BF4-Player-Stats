@@ -130,10 +130,10 @@ function artworkFilter(){
 }
 async function artworkLoad(){
  const [response,defaults]=await Promise.all([request('artwork/catalog'),fetch('/equipment-artwork.js',{cache:'no-store'}).then(r=>r.text())]);
- artworkCatalog=response.keys;artworkOverrides=response.overrides;
+ const previous=artworkSelected();artworkCatalog=response.keys;artworkOverrides=response.overrides;
  const match=defaults.match(/const equipmentArtwork=(\{.*\});?\s*$/s);
  if(!match)throw Error('Default equipment artwork map unavailable');
- artworkDefaults=JSON.parse(match[1]);artworkFilter();
+ artworkDefaults=JSON.parse(match[1]);artworkFilter();if(previous&&artworkCatalog.includes(previous)){$('artworkEquipment').value=previous;artworkRender()}
 }
 function artworkRender(){
  const key=artworkSelected();
