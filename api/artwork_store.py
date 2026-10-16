@@ -230,7 +230,7 @@ class ArtworkStore:
             raise ValueError('Invalid actor')
         with _LOCK:
             history = self.history(kind, raw_key, role)
-            if not history:
+            if not history or history[-1]['action'] == 'restore':
                 return {'changed': False}
             # Restore the original pre-edit image, not the previous undo step.
             latest = next((entry for entry in history if entry['action'] == 'publish'), None)
