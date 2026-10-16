@@ -191,7 +191,10 @@ class ArtworkStore:
             history = self.history(kind, raw_key, role)
             if not history:
                 return {'changed': False}
-            latest = history[-1]
+            # Restore the original pre-edit image, not the previous undo step.
+            latest = next((entry for entry in history if entry['action'] == 'publish'), None)
+            if latest is None:
+                return {'changed': False}
             backup_name = latest.get('backup', '')
             if not re.fullmatch(r'[A-Za-z0-9_-]+\.webp', backup_name):
                 raise ValueError('Invalid backup reference')
