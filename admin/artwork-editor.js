@@ -9,7 +9,7 @@ if(valid){back.searchParams.set('kind',kind);back.searchParams.set('platform',pl
 $('back').href=back.pathname+back.search;$('cancel').href=$('back').href;
 const status=(msg,bad=false)=>{$('status').textContent=msg;$('status').className=bad?'error':'ok';};
 if(!valid){status('Invalid equipment selection',true);return;}
-let csrf='',historyState={};const previewUrls={};
+let csrf='',historyState={},addedArt={};const previewUrls={};
 const api=async(path,options={})=>{
   const r=await fetch('/bf4ps-admin-api/'+path,{credentials:'same-origin',cache:'no-store',...options,
     headers:{Accept:'application/json',...(csrf?{'X-CSRF-Token':csrf}:{}),...(options.headers||{})}});
@@ -18,7 +18,7 @@ const api=async(path,options={})=>{
 const params=role=>new URLSearchParams({kind,raw_key,role});
 const defaultArt=equipmentArtwork[key]||{};
 function paint(role){
-  const source=defaultArt[role]?.local;
+  const source=addedArt[role]?.local||defaultArt[role]?.local;
   const img=$(role+'Image');img.removeAttribute('src');if(source)img.src=source+'?v='+Date.now();
   $(role+'Info').textContent=historyState[role]?'Updated artwork':source?'Current artwork':'No default image available';
   $(role+'Restore').disabled=!historyState[role];
@@ -26,6 +26,7 @@ function paint(role){
 async function refresh(){
   const data=await api('artwork/catalog');
   if(!data.keys.includes(key))throw Error('Equipment is not in the approved artwork catalog');
+  addedArt=data.overrides?.[key]||{};
   for(const role of ['fancy','hud']){const history=await api('artwork/history?'+params(role));historyState[role]=history.rows?.at(-1)?.action==='publish';paint(role);}
 }
 for(const role of ['fancy','hud']){
@@ -36,7 +37,7 @@ for(const role of ['fancy','hud']){
     previewUrls[role]=URL.createObjectURL(file);$(role+'Image').src=previewUrls[role];$(role+'Info').textContent='Local preview (not published)';
   });
   $(role+'Restore').addEventListener('click',async()=>{
-    if(!confirm('Restore default '+role+' image for '+raw_key+'?'))return;
+    if(!confirm('Restore original or remove newly added '+role+' image for '+raw_key+'?'))return;
     try{status('Restoring '+role+'…');await api('artwork/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,raw_key,role})});await refresh();status('Default restored');}
     catch(e){status(e.message,true);}
   });
