@@ -25,7 +25,7 @@ class ShortcutContract(unittest.TestCase):
     def test_equipment_refreshes_after_return(self):
         source=(ROOT/'site/equipment.html').read_text()
         self.assertIn('window.addEventListener("pageshow"',source)
-        self.assertIn('loadArtworkOverrides().then(',source)
+        self.assertIn('cacheBustArtwork',source)
 
     def test_editor_uses_authenticated_api_and_independent_roles(self):
         script=(ROOT/'admin/artwork-editor.js').read_text()
