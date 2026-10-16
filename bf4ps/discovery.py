@@ -124,7 +124,7 @@ def import_aliases(
     *,
     materialize_production_jobs: bool = False,
     materialization_cutover_at: datetime | None = None,
-) -> int:
+) -> int | None:
     if not aliases:
         raise ValueError("At least one BF4SW alias is required")
     identity = {(alias.platform, alias.persona_id) for alias in aliases}
@@ -134,6 +134,18 @@ def import_aliases(
     platform = PLATFORM_MAP.get(source_platform)
     if platform is None:
         raise ValueError(f"Unsupported BF4SW platform {source_platform!r}")
+
+    # Fail closed before any soldier, alias, source, or scheduling writes.
+    # The destination registry is authoritative; aliases/names are not.
+    excluded = destination.execute(
+        text("""SELECT EXISTS (
+            SELECT 1 FROM public.player_exclusions
+            WHERE platform=:platform AND persona_id=:persona_id AND active
+        )"""),
+        {"platform": platform, "persona_id": persona_id},
+    ).scalar_one()
+    if excluded:
+        return None
 
     earliest_seen = min(alias.first_seen for alias in aliases)
     latest_seen = max(alias.last_seen for alias in aliases)
