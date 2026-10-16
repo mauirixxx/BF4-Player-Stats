@@ -244,7 +244,7 @@ class ArtworkStore:
                 asset.unlink(missing_ok=True)
                 data = b''
             else:
-                if not re.fullmatch(r'[A-Za-z0-9_-]+\\.webp', backup_name):
+                if not re.fullmatch(r'[A-Za-z0-9_-]+\.webp', backup_name):
                     raise ValueError('Invalid backup reference')
                 backup_path = self.private_root / 'backups' / backup_name
                 if not backup_path.is_file() or backup_path.is_symlink():
