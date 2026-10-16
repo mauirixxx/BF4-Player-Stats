@@ -7,6 +7,7 @@ from urllib.parse import urlparse, parse_qs
 from sqlalchemy import create_engine, text
 from general_leaderboard import query_page as get_general_page, METRICS as GENERAL_METRICS
 from global_soldier_search import search_soldiers
+from soldier_detail import get_soldier_detail
 engine=create_engine(os.environ['BF4PS_DATABASE_URL'],pool_pre_ping=True,pool_size=3,max_overflow=2)
 MAINTENANCE_FILE=Path(os.environ.get('BF4PS_SITE_CONFIG','/etc/bf4ps-website/site.env'))
 def maintenance_enabled():
@@ -306,6 +307,17 @@ class Handler(BaseHTTPRequestHandler):
                     c.execute(text('SET TRANSACTION READ ONLY'))
                     c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
                     result=search_soldiers(c,term)
+                send_json(self,200,result);return
+            if u.path=='/soldier-detail':
+                raw=q.get('id',[''])[0]
+                if not raw.isdecimal() or len(raw)>19 or int(raw)<1 or int(raw)>9223372036854775807:
+                    self.send_error(400);return
+                with engine.connect() as c:
+                    c.execute(text('SET TRANSACTION READ ONLY'))
+                    c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
+                    result=get_soldier_detail(c,int(raw))
+                if result is None:
+                    send_json(self,404,{'error':'Soldier not found'});return
                 send_json(self,200,result);return
             if u.path=='/general-leaderboard':
                 metric=q.get('metric',['kills'])[0]
