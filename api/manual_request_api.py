@@ -75,11 +75,33 @@ def submit(conn, url, kind):
         # Keep the allowlist strict; never use the name as SQL or an outbound host.
         if not re.fullmatch(r'[A-Za-z0-9_.~ -]{1,80}', name) or not name.strip():
             raise ValueError('invalid soldier name')
+        # Fail closed at the private HTTP boundary; database functions must enforce
+        # the same identity check for callers that bypass this service.
+        blocked = conn.execute(text('''
+        SELECT EXISTS (
+          SELECT 1 FROM public.player_exclusions
+          WHERE persona_id=:persona AND platform=:platform AND active
+        )
+        '''), {'persona': persona, 'platform': platform}).scalar_one()
+        if blocked:
+            return {'request_id': None, 'state': 'excluded',
+                    'retry_after_seconds': 0, 'jobs_created': 0, 'jobs_promoted': 0}
         row = conn.execute(text("""
             SELECT request_id, state, retry_after_seconds, jobs_created, jobs_promoted
             FROM manual_api.submit_soldier_url(:persona,:platform,:name,:kind)
         """), {'persona': persona, 'platform': platform, 'name': name, 'kind': kind}).mappings().one()
         return dict(row)
+    # Fail closed at the private HTTP boundary; database functions must enforce
+    # the same identity check for callers that bypass this service.
+    blocked = conn.execute(text('''
+        SELECT EXISTS (
+          SELECT 1 FROM public.player_exclusions
+          WHERE persona_id=:persona AND platform=:platform AND active
+        )
+    '''), {'persona': persona, 'platform': platform}).scalar_one()
+    if blocked:
+        return {'request_id': None, 'state': 'excluded',
+                'retry_after_seconds': 0, 'jobs_created': 0, 'jobs_promoted': 0}
     row = conn.execute(text("""
         SELECT request_id, state, retry_after_seconds, jobs_created, jobs_promoted
         FROM manual_api.request_existing_soldier(:persona,:platform,:kind)
@@ -139,7 +161,7 @@ class Handler(BaseHTTPRequestHandler):
         return self.respond(
             202 if result['state'] in ('accepted', 'verification_pending') else
             200 if result['state'] in ('cooldown', 'up_to_date') else
-            404 if result['state'] == 'not_registered' else 503, result)
+            404 if result['state'] in ('not_registered', 'excluded') else 503, result)
 
     def do_GET(self):
         return self.respond(404, {'error': 'not_found'})

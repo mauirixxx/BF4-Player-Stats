@@ -33,6 +33,8 @@ class ManualApiTests(unittest.TestCase):
     def test_only_approved_sql_function(self):
         class Conn:
             def execute(self, query, params):
+                if 'player_exclusions' in str(query):
+                    return SimpleNamespace(scalar_one=lambda:False)
                 assert 'manual_api.request_existing_soldier' in str(query)
                 assert params == {'persona':236753552,'platform':'pc','kind':'refresh'}
                 return SimpleNamespace(mappings=lambda: SimpleNamespace(one=lambda: {
@@ -48,6 +50,8 @@ class ManualApiTests(unittest.TestCase):
         self.assertEqual(parse_soldier_url(url), (200707824, 'xboxone'))
         class Conn:
             def execute(self, query, params):
+                if 'player_exclusions' in str(query):
+                    return SimpleNamespace(scalar_one=lambda:False)
                 assert 'manual_api.submit_soldier_url' in str(query)
                 assert params == {'persona': 200707824, 'platform': 'xboxone',
                                   'name': 'II F o o e Y xX', 'kind': 'add'}
@@ -64,6 +68,15 @@ class ManualApiTests(unittest.TestCase):
             url = f'https://battlelog.battlefield.com/bf4/soldier/{name}/stats/123/pc/'
             with self.subTest(name=name), self.assertRaises(ValueError):
                 submit(Conn(), url, 'add')
+
+    def test_excluded_identity_never_reaches_mutating_function(self):
+        class Conn:
+            def execute(self, query, params):
+                assert 'player_exclusions' in str(query)
+                return SimpleNamespace(scalar_one=lambda: True)
+        for kind in ('add','refresh'):
+            with self.subTest(kind=kind):
+                self.assertEqual(submit(Conn(),URL,kind)['state'],'excluded')
 
     def test_rate_limit_window(self):
         limiter = SlidingWindowLimiter(limit=2, window=60)
@@ -126,6 +139,8 @@ class ManualApiTests(unittest.TestCase):
                         'retry_after_seconds':0,'jobs_created':4,'jobs_promoted':0}
         class Connection:
             def execute(self, query, params):
+                if 'player_exclusions' in str(query):
+                    return SimpleNamespace(scalar_one=lambda:False)
                 assert 'manual_api.submit_soldier_url' in str(query)
                 assert params['name']=='mauirixxx'
                 return Row()
