@@ -22,10 +22,12 @@ from urllib.parse import urlparse, parse_qs
 
 from sqlalchemy import create_engine, text
 from admin_moderation_service import get_exclusion, set_exclusion, validate_identity
+from artwork_store import ArtworkStore, allowed_keys, MAX_INPUT_BYTES
 
 SESSION_SECONDS = 3600
 MAX_BODY = 4096
 engine = None
+artwork_store = None
 _login_failures = deque()
 _login_lock = Lock()
 
@@ -201,7 +203,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        if parsed.path not in ('/session', '/search', '/exclusions', '/audit'):
+        if parsed.path not in ('/session', '/search', '/exclusions', '/audit', '/artwork/catalog', '/artwork/history'):
             return self.reply(404, {'error': 'Not found'})
         session = self.require_session()
         if session is None:
@@ -210,6 +212,14 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == '/session':
             return self.reply(200, {'user': session['u'], 'csrf': csrf_for(session, effective_session_secret(cfg))})
         args = parse_qs(parsed.query)
+        if parsed.path == '/artwork/catalog':
+            return self.reply(200, {'keys': sorted(artwork_store.catalog), 'overrides': artwork_store.manifest()})
+        if parsed.path == '/artwork/history':
+            try:
+                rows = artwork_store.history(args.get('kind', [''])[0], args.get('raw_key', [''])[0], args.get('role', [''])[0])
+                return self.reply(200, {'rows': rows})
+            except ValueError as exc:
+                return self.reply(400, {'error': str(exc)})
         with engine.connect() as conn:
             if parsed.path == '/search':
                 term = args.get('q', [''])[0].strip()
@@ -241,16 +251,24 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
-        if path not in ('/login', '/logout', '/exclude', '/restore', '/change-password'):
+        if path not in ('/login', '/logout', '/exclude', '/restore', '/change-password', '/artwork/publish', '/artwork/restore'):
             return self.reply(404, {'error': 'Not found'})
         cfg = config()
         if self.headers.get('Origin') != cfg['BF4PS_ADMIN_ORIGIN']:
             return self.reply(403, {'error': 'Origin verification failed'})
         if path != '/login' and self.require_session(csrf=True) is None:
             return
+        if path == '/artwork/publish':
+            return self.artwork_publish(cfg)
         body = self.parse_body()
         if body is None:
             return
+        if path == '/artwork/restore':
+            try:
+                result = artwork_store.restore(body.get('kind'), body.get('raw_key'), body.get('role'), cfg['BF4PS_ADMIN_USER'])
+                return self.reply(200, result)
+            except ValueError as exc:
+                return self.reply(400, {'error': str(exc)})
         if path == '/login':
             if not login_allowed():
                 return self.reply(429, {'error': 'Too many failed login attempts; try again later'})
@@ -289,14 +307,43 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, KeyError):
             return self.reply(400, {'error': 'Invalid moderation request'})
 
+    def artwork_publish(self, cfg):
+        """Binary image upload. Identity is supplied via query parameters."""
+        parsed = urlparse(self.path)
+        args = parse_qs(parsed.query)
+        try:
+            length = int(self.headers.get('Content-Length', '-1'))
+            if self.headers.get('Content-Type', '').split(';')[0] not in ('image/png', 'image/jpeg', 'image/webp'):
+                raise ValueError('Unsupported image content type')
+            if not 0 < length <= MAX_INPUT_BYTES:
+                raise ValueError('Image upload exceeds size limit')
+            kind = args.get('kind', [''])[0]
+            raw_key = args.get('raw_key', [''])[0]
+            role = args.get('role', [''])[0]
+            from artwork_store import verify_catalog
+            verify_catalog(kind, raw_key, role, artwork_store.catalog)
+            image = self.rfile.read(length)
+            if len(image) != length:
+                raise ValueError('Incomplete image upload')
+            result = artwork_store.publish(kind, raw_key, role, image, cfg['BF4PS_ADMIN_USER'])
+            return self.reply(200, result)
+        except (ValueError, TypeError) as exc:
+            return self.reply(400, {'error': str(exc)})
+
     def log_message(self, fmt, *args):
         # Do not log request bodies or cookie values.
         super().log_message(fmt, *args)
 
 
 def main():
-    global engine
+    global engine, artwork_store
     cfg = config()
+    catalog_path = os.environ.get('BF4PS_ARTWORK_CATALOG', '')
+    private_path = os.environ.get('BF4PS_ARTWORK_PRIVATE', '')
+    public_path = os.environ.get('BF4PS_ARTWORK_PUBLIC', '')
+    if not all((catalog_path, private_path, public_path)):
+        raise RuntimeError('Artwork directories must be configured before starting admin API')
+    artwork_store = ArtworkStore(private_path, public_path, allowed_keys(catalog_path))
     engine = create_engine(cfg['BF4PS_DATABASE_URL'], pool_pre_ping=True, pool_size=2, max_overflow=0)
     # A loopback-only service; public access requires separately reviewed proxy authentication.
     server = ThreadingHTTPServer(('127.0.0.1', 8767), Handler)
