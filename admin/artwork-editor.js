@@ -46,6 +46,7 @@ $('publish').addEventListener('click',async()=>{
   if(!files.length){status('Select at least one replacement image',true);return;}
   if(!confirm('Publish '+files.join(' and ')+' artwork for '+raw_key+'?'))return;
   $('publish').disabled=true;
+  for(const role of ['fancy','hud'])$(role+'Restore').disabled=true;
   try{
     for(const role of files){
       status('Publishing '+role+'…');
@@ -54,7 +55,7 @@ $('publish').addEventListener('click',async()=>{
     }
     status('Published successfully. Returning to equipment…');
     location.assign(back.pathname+back.search);
-  }catch(e){status('Publication stopped: '+e.message+'. Any earlier successful image may already be live.',true);$('publish').disabled=false;}
+  }catch(e){status('Publication stopped: '+e.message+'. Any earlier successful image may already be live.',true);$('publish').disabled=false;await refresh().catch(()=>{});}
 });
 try{
   const session=await api('session');csrf=session.csrf;

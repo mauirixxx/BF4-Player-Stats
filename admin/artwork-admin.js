@@ -5,7 +5,7 @@
     el('artworkStatus').textContent = msg;
     el('artworkStatus').className = error ? 'error' : 'ok';
   };
-  let catalog = [], overrides = {}, defaults = {};
+  let catalog = [], overrides = {}, defaults = {}, loading = false;
   let busy = false;
   const roles = ['fancy', 'hud'];
   const title = role => role === 'fancy' ? 'Fancy' : 'Hud';
@@ -77,7 +77,8 @@
     }
   }
   async function load() {
-    if(!csrf) return;
+    if(!csrf || loading) return;
+    loading=true;
     try {
       status('Loading artwork catalog…');
       const data=await fetchJSON('artwork/catalog');
@@ -87,6 +88,7 @@
       filter();
       status(catalog.length+' equipment entries available');
     } catch(err) {status(err.message,true);}
+    finally {loading=false;}
   }
   function filter() {
     const q=el('artworkSearch').value.trim().toLowerCase();
@@ -94,7 +96,7 @@
     select.replaceChildren();
     const empty=document.createElement('option');
     empty.value=''; empty.textContent='Select equipment'; select.append(empty);
-    const matches=catalog.filter(key=>key.toLowerCase().includes(q)).slice(0,250);
+    const matches=catalog.filter(key=>key.toLowerCase().includes(q));
     for(const key of matches) {
       const option=document.createElement('option');
       option.value=key; option.textContent=key.replace(/^(weapon|vehicle)-WARSAW_ID_/,'$1 · ').replaceAll('_',' ');
@@ -150,7 +152,7 @@
   }
   // Artwork is loaded only after the existing admin session is established.
   const observer=new MutationObserver(()=>{
-    if(!el('app').classList.contains('hidden') && csrf && !catalog.length) void load();
+    if(!el('app').classList.contains('hidden') && csrf && !catalog.length && !loading) void load();
     if(el('app').classList.contains('hidden')) catalog=[];
   });
   observer.observe(el('app'),{attributes:true,attributeFilter:['class']});
