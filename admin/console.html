@@ -46,6 +46,24 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 </div>
 <section class="card"><div class="row" style="justify-content:space-between"><h2>Active exclusions</h2><button class="outline" id="reload">Refresh</button></div>
 <div class="scroll"><table><thead><tr><th>Platform</th><th>Persona ID</th><th>Reason</th><th>Updated</th></tr></thead><tbody id="exclusions"></tbody></table></div></section>
+<section class="card" id="artworkPanel">
+<h2>Equipment artwork · Fancy + HUD</h2>
+<p>Replace either image independently. Originals are preserved; restoring removes only the override.</p>
+<label for="artworkSearch">Find weapon or vehicle by raw equipment key</label>
+<input id="artworkSearch" placeholder="M416, AH1Z, WARSAW_ID…" maxlength="100">
+<label for="artworkEquipment">Equipment</label><select id="artworkEquipment"><option value="">Loading equipment…</option></select>
+<div class="grid">
+<section class="card"><h2>Fancy artwork</h2><img id="fancyPreview" alt="Fancy image preview" style="max-width:100%;max-height:180px;object-fit:contain">
+<p id="fancyState">No selection</p><input type="file" id="fancyFile" accept="image/png,image/jpeg,image/webp">
+<div class="row" style="margin-top:12px"><button type="button" id="fancyPublish">Publish fancy</button><button type="button" id="fancyRestore" class="outline">Restore original</button></div></section>
+<section class="card"><h2>HUD silhouette</h2><img id="hudPreview" alt="HUD image preview" style="max-width:100%;max-height:180px;object-fit:contain">
+<p id="hudState">No selection</p><input type="file" id="hudFile" accept="image/png,image/jpeg,image/webp">
+<div class="row" style="margin-top:12px"><button type="button" id="hudPublish">Publish HUD</button><button type="button" id="hudRestore" class="outline">Restore original</button></div></section>
+</div>
+<div class="row"><button type="button" class="outline" id="artworkRefresh">Refresh artwork catalog</button></div>
+<div id="artworkMessage" role="status" aria-live="polite"></div>
+<h2>Artwork history</h2><div class="scroll"><table><thead><tr><th>Time</th><th>Role</th><th>Action</th><th>Actor</th><th>Version</th></tr></thead><tbody id="artworkHistory"></tbody></table></div>
+</section>
 <section class="card"><h2>Recent audit events</h2><div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Identity</th><th>Operator</th><th>Reason</th></tr></thead><tbody id="audit"></tbody></table></div></section>
 </div></main>
 <script>
@@ -63,7 +81,7 @@ async function request(path,options={}){
   return body;
 }
 async function initialize(){
-  try{const session=await request('session');csrf=session.csrf;$('loginBox').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');await reload()}
+  try{const session=await request('session');csrf=session.csrf;$('loginBox').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');await reload();await artworkLoad().catch(e=>artworkNotice(e.message,true))}
   catch(e){$('loginBox').classList.remove('hidden');$('app').classList.add('hidden');$('logout').classList.add('hidden');csrf=''}
 }
 $('loginForm').addEventListener('submit',async event=>{
@@ -96,5 +114,73 @@ async function moderate(active){
 $('exclude').onclick=()=>moderate(true);$('restore').onclick=()=>moderate(false);
 function fill(id,rows,keys){const el=$(id);el.replaceChildren();for(const r of rows){const tr=document.createElement('tr');for(const k of keys)td(tr,r[k]);el.append(tr)}}
 async function reload(){try{const [a,b]=await Promise.all([request('exclusions'),request('audit')]);fill('exclusions',a.rows,['platform','persona_id','reason_code','updated_at']);fill('audit',b.rows,['occurred_at','action','persona_id','actor','reason_code'])}catch(e){message(e.message,true)}}
+
+let artworkCatalog=[],artworkOverrides={},artworkDefaults={},artworkBlobURLs={fancy:null,hud:null};
+function artworkSelected(){return $('artworkEquipment').value}
+function artworkIdentity(){const selected=artworkSelected();if(!selected)throw Error('Select equipment first');const cut=selected.indexOf('-');return {kind:selected.slice(0,cut),raw_key:selected.slice(cut+1)}}
+function artworkNotice(text,bad=false){$('artworkMessage').textContent=text;$('artworkMessage').className=bad?'error':'ok'}
+function artworkFilter(){
+ const term=$('artworkSearch').value.trim().toLowerCase(),previous=artworkSelected(),list=$('artworkEquipment');
+ list.replaceChildren();const empty=document.createElement('option');empty.value='';empty.textContent='Select equipment';list.append(empty);
+ for(const key of artworkCatalog.filter(key=>key.toLowerCase().includes(term)).slice(0,150)){
+  const option=document.createElement('option');option.value=key;option.textContent=key.replace(/^weapon-|^vehicle-/,'').replace(/^WARSAW_ID_/,'');list.append(option);
+ }
+ if([...list.options].some(x=>x.value===previous))list.value=previous;
+ artworkRender();
+}
+async function artworkLoad(){
+ const [response,defaults]=await Promise.all([request('artwork/catalog'),fetch('/equipment-artwork.js',{cache:'no-store'}).then(r=>r.text())]);
+ artworkCatalog=response.keys;artworkOverrides=response.overrides;
+ const match=defaults.match(/const equipmentArtwork=(\{.*\});?\s*$/s);
+ if(!match)throw Error('Default equipment artwork map unavailable');
+ artworkDefaults=JSON.parse(match[1]);artworkFilter();
+}
+function artworkRender(){
+ const key=artworkSelected();
+ for(const role of ['fancy','hud']){
+  const override=artworkOverrides[key]?.[role]?.local,original=artworkDefaults[key]?.[role]?.local;
+  const img=$(role+'Preview');img.src=artworkBlobURLs[role]||override||original||'';img.style.display=img.src?'block':'none';
+  $(role+'State').textContent=override?'Custom image published':original?'Original image':'No default image';
+  $(role+'Publish').disabled=!key;$(role+'Restore').disabled=!key||!override;
+ }
+ if(key)artworkHistory().catch(e=>artworkNotice(e.message,true));else $('artworkHistory').replaceChildren();
+}
+async function artworkHistory(){
+ const identity=artworkIdentity(),body=await Promise.all(['fancy','hud'].map(role=>request('artwork/history?'+new URLSearchParams({...identity,role}))));
+ const rows=body.flatMap(x=>x.rows).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+ const table=$('artworkHistory');table.replaceChildren();
+ for(const r of rows.slice(0,40)){const tr=document.createElement('tr');for(const value of [r.at,r.role,r.action,r.actor,r.version||'—'])td(tr,value);table.append(tr)}
+}
+async function artworkPublish(role){
+ const file=$(role+'File').files[0];if(!file)throw Error('Choose an image first');
+ if(file.size>4*1024*1024)throw Error('Image exceeds 4 MiB');
+ const identity=artworkIdentity();
+ if(!confirm('Publish new '+role+' artwork for '+identity.raw_key+'?'))return;
+ const button=$(role+'Publish');button.disabled=true;
+ try{
+  const response=await fetch(api+'artwork/publish?'+new URLSearchParams({...identity,role}),{
+   method:'POST',credentials:'same-origin',cache:'no-store',
+   headers:{'Content-Type':file.type,'X-CSRF-Token':csrf,'Accept':'application/json'},body:file
+  });
+  const data=await response.json();if(!response.ok)throw Error(data.error||'Upload failed');
+  $(role+'File').value='';artworkClearPreview(role);await artworkLoad();$('artworkEquipment').value=identity.kind+'-'+identity.raw_key;artworkRender();
+  artworkNotice(role+' image published');
+ }finally{button.disabled=false}
+}
+async function artworkRestore(role){
+ const identity=artworkIdentity();if(!confirm('Restore original '+role+' artwork for '+identity.raw_key+'?'))return;
+ await request('artwork/restore',{method:'POST',body:JSON.stringify({...identity,role})});
+ await artworkLoad();$('artworkEquipment').value=identity.kind+'-'+identity.raw_key;artworkRender();artworkNotice(role+' original restored');
+}
+function artworkClearPreview(role){if(artworkBlobURLs[role])URL.revokeObjectURL(artworkBlobURLs[role]);artworkBlobURLs[role]=null}
+for(const role of ['fancy','hud']){
+ $(role+'File').addEventListener('change',()=>{artworkClearPreview(role);const file=$(role+'File').files[0];if(file)artworkBlobURLs[role]=URL.createObjectURL(file);artworkRender()});
+ $(role+'Publish').addEventListener('click',()=>artworkPublish(role).catch(e=>artworkNotice(e.message,true)));
+ $(role+'Restore').addEventListener('click',()=>artworkRestore(role).catch(e=>artworkNotice(e.message,true)));
+}
+$('artworkSearch').addEventListener('input',artworkFilter);
+$('artworkEquipment').addEventListener('change',()=>{for(const role of ['fancy','hud']){artworkClearPreview(role);$(role+'File').value=''}artworkRender()});
+$('artworkRefresh').addEventListener('click',()=>artworkLoad().catch(e=>artworkNotice(e.message,true)));
+
 $('reload').onclick=reload;initialize();
 </script></body></html>
