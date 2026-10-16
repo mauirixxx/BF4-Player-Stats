@@ -41,7 +41,7 @@
   }
   const source = (item, role) => {
     const custom=Boolean(overrides[item.key]?.[role]?.local);
-    const original=defaults[item.key]?.[role]?.local;
+    const original=overrides[item.key]?.[role]?.local||defaults[item.key]?.[role]?.local;
     return {url:original || '', custom};
   };
   async function show() {
