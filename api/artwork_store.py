@@ -33,7 +33,7 @@ def validate_identity(kind, raw_key, role):
     return kind + '-' + raw_key
 
 
-def allowed_keys(artwork_js):
+def allowed_keys(artwork_js, labels_js=None):
     """Read the shipped equipment-artwork catalog without executing JavaScript."""
     source = Path(artwork_js).read_text(encoding='utf-8')
     prefix = 'const equipmentArtwork='
@@ -44,6 +44,14 @@ def allowed_keys(artwork_js):
         raise ValueError('Artwork catalog not found')
     raw = source[pos + len(prefix):].strip().removesuffix(';')
     data = json.loads(raw)
+    if labels_js:
+        labels_source = Path(labels_js).read_text(encoding='utf-8')
+        label_marker = 'const equipmentLabels='
+        label_pos = labels_source.find(label_marker)
+        if label_pos < 0:
+            raise ValueError('Equipment labels catalog not found')
+        labels = json.loads(labels_source[label_pos + len(label_marker):].strip().removesuffix(';'))
+        data.update({kind + '-' + key: {} for key in labels for kind in (('vehicle',) if '_VNAME_' in key else ('weapon',)) if kind + '-' + key not in data})
     return frozenset(data)
 
 
@@ -91,6 +99,17 @@ def _atomic_json(path, payload):
         temporary.unlink(missing_ok=True)
 
 
+def _atomic_public_json(path, payload):
+    temporary = path.with_name('.' + path.name + '.' + secrets.token_hex(8) + '.tmp')
+    try:
+        with open(temporary, 'x', encoding='utf-8') as stream:
+            json.dump(payload, stream, separators=(',', ':'), sort_keys=True)
+        os.chmod(temporary, 0o644)
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 class ArtworkStore:
     """Publish in-place after timestamped backup; never accept client paths."""
 
@@ -112,16 +131,35 @@ class ArtworkStore:
         data = json.loads(source[start + len(marker):].strip().removesuffix(';'))
         local = data.get(identity, {}).get(role, {}).get('local', '')
         prefix = '/assets/equipment/'
+        if not local:
+            filename = kind + '-' + sha256(raw_key.encode()).hexdigest()[:20] + '-' + role + '.webp'
+            return identity, self.public_root / filename
         if not local.startswith(prefix):
-            raise ValueError('No original image for this role')
+            raise ValueError('Invalid artwork URL')
         filename = local[len(prefix):]
         if not re.fullmatch(r'[A-Za-z0-9_-]+\.webp', filename):
             raise ValueError('Invalid original artwork filename')
         return identity, self.public_root / filename
 
     def manifest(self):
-        # Kept for compatibility with the existing admin API; originals remain at their URLs.
-        return {}
+        # Only newly introduced images require a public catalog overlay.
+        history_path = self.private_root / 'history.json'
+        if not history_path.exists():
+            return {}
+        history = json.loads(history_path.read_text(encoding='utf-8'))
+        result = {}
+        for entry in history:
+            identity, role = entry['identity'], entry['role']
+            kind, raw_key = identity.split('-', 1)
+            _, asset = self._paths(kind, raw_key, role)
+            if entry['action'] == 'restore' and entry.get('sha256') == sha256(b'').hexdigest():
+                result.get(identity, {}).pop(role, None)
+            elif entry['action'] == 'publish' and entry.get('backup') is None:
+                result.setdefault(identity, {})[role] = {'local': '/assets/equipment/' + asset.name}
+        return {key: value for key, value in result.items() if value}
+
+    def _write_public_manifest(self):
+        _atomic_public_json(self.public_root / 'artwork-added.json', self.manifest())
 
     def history(self, kind, raw_key, role):
         identity = verify_catalog(kind, raw_key, role, self.catalog)
@@ -132,8 +170,10 @@ class ArtworkStore:
         return [item for item in entries if item['identity'] == identity and item['role'] == role]
 
     def _backup(self, asset):
-        if not asset.is_file() or asset.is_symlink():
-            raise ValueError('Original artwork is missing or unsafe')
+        if asset.is_symlink():
+            raise ValueError('Original artwork is unsafe')
+        if not asset.is_file():
+            return None
         backup_dir = self.private_root / 'backups'
         backup_dir.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S-%f')
@@ -165,7 +205,7 @@ class ArtworkStore:
         history_path = self.private_root / 'history.json'
         history = json.loads(history_path.read_text()) if history_path.exists() else []
         history.append({'identity': identity, 'role': role, 'action': action,
-                        'actor': actor, 'backup': backup.name,
+                        'actor': actor, 'backup': backup.name if backup else None,
                         'sha256': sha256(data).hexdigest(),
                         'at': datetime.now(timezone.utc).isoformat()})
         _atomic_json(history_path, history)
@@ -180,6 +220,7 @@ class ArtworkStore:
             backup = self._backup(asset)
             self._replace(asset, converted)
             self._record(identity, role, actor, 'publish', backup, converted)
+            self._write_public_manifest()
         return {'url': '/assets/equipment/' + asset.name,
                 'version': sha256(converted).hexdigest()[:16]}
 
