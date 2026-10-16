@@ -26,3 +26,9 @@ Functions: `public.bf4ps_reject_excluded_soldier`, `public.bf4ps_reject_excluded
 Restarted `bf4ps-leaderboard-api.service` and `bf4ps-temp-dashboard.service` with exclusion-aware SQL readers. Rebuilt community export via `bf4ps-community-export.service`. Verified origin `/bf4ps-api/global-soldier-search?q=DayWasRuined` -> HTTP 200 `{"rows":[]}`, soldier detail -> 404, and refreshed `temp-stats-data.json` contained zero occurrences of `DayWasRuined`.
 
 **Outstanding:** comprehensive audit of all public exports, equipment catalog cross-source checks, external caches, and explicit collector pre-HTTP suppression. Historical database records retained for audit; no purge performed.
+
+## Fleet-wide physical dispatch guard (same day)
+
+Installed eighth trigger `bf4ps_exclusion_outbound_dispatch` (`BEFORE INSERT ON public.outbound_dispatches`), calling SECURITY DEFINER `public.bf4ps_reject_excluded_dispatch()`. It resolves the outbound job to `(platform,persona_id)` and rejects active exclusions with SQLSTATE `23514`. This protects the database-backed physical request authorization path shared by the eight existing collectors without rebuilding their images.
+
+Validated with a rolled-back transaction: temporarily excluded a different identity with a pending job, attempted an outbound dispatch, received expected `check_violation`, rolled back, and confirmed temporary exclusion absent. Existing outbound dispatch rows were not modified. **This is an authorization-time guard, not a guarantee against requests already authorized before exclusion activation.** Collector code still needs claim-time skip, graceful exclusion handling, and immediate pre-network recheck; discovery still needs a registry filter. No collector containers were restarted.
