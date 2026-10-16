@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BF4PS · Admin Moderation</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1420;--card:#182435;--line:#34475b;--fg:#f0f5fb;--muted:#aebed1;--gold:#f3c860}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,Segoe UI,sans-serif}
+main{max-width:1050px;margin:30px auto;padding:0 20px 70px}h1{font-size:clamp(28px,4vw,40px);margin:0}h2{font-size:19px;margin:0 0 14px}
+p{color:var(--muted);margin:6px 0 16px}.brand{color:var(--gold);letter-spacing:.13em;font-weight:800;font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:22px;margin:20px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.grid>.card{margin:0}
+label{display:block;margin:12px 0 5px;color:var(--muted);font-size:13px}
+input,textarea,select{width:100%;padding:11px;background:#0e1826;color:var(--fg);border:1px solid #4c6075;border-radius:7px;font:inherit}
+button{background:var(--gold);color:#1b1c21;border:0;border-radius:7px;padding:10px 17px;font-weight:750;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}.outline{background:transparent;color:var(--fg);border:1px solid #7589a0}
+.danger{background:#b24c4c;color:white}.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left}
+th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{color:#ff9a9a}
+.ok{color:#80d5a9}.hidden{display:none!important}.identity{font-size:20px;font-weight:800}
+@media(max-width:740px){.grid{grid-template-columns:1fr}}
+</style></head><body><main>
+<div class="brand">BF4 PLAYER STATS / OPERATIONS</div>
+<div class="row" style="justify-content:space-between"><h1>Moderation Console</h1><button class="outline hidden" id="logout">Sign out</button></div>
+<p>Private identity moderation. Actions are audited and reversible; permanent purging is not enabled.</p>
+<div id="message" role="status" aria-live="polite"></div>
+<section class="card" id="loginBox"><h2>Administrator sign in</h2>
+<form id="loginForm"><label for="password">Administrator password</label><input type="password" id="password" autocomplete="current-password" required>
+<p>Sessions expire after one hour. All changes require CSRF verification.</p><button type="submit">Sign in</button></form></section>
+<div id="app" class="hidden">
+<div class="grid">
+<section class="card"><h2>Find soldier</h2><form id="searchForm">
+<label for="query">Name or exact persona ID</label><input id="query" minlength="2" maxlength="80" required>
+<div style="margin-top:12px"><button type="submit">Search private database</button></div></form>
+<div class="scroll"><table><thead><tr><th>Soldier</th><th>Platform</th><th>Persona ID</th><th>Status</th><th></th></tr></thead><tbody id="results"></tbody></table></div></section>
+<section class="card"><h2>Selected identity</h2><div id="selected" class="muted">Choose a soldier from search results.</div>
+<form id="moderationForm" class="hidden"><label for="reason">Reason code</label>
+<select id="reason"><option value="data_integrity_anomaly">Data integrity anomaly</option><option value="operator_review">Operator review</option><option value="duplicate_identity">Duplicate identity</option><option value="other">Other</option></select>
+<label for="note">Private moderation note (optional)</label><textarea id="note" maxlength="2000" rows="3"></textarea>
+<div class="row" style="margin-top:14px"><button type="button" id="exclude" class="danger">Exclude player</button>
+<button type="button" id="restore" class="outline">Restore player</button></div>
+<p>Changes are written to the exclusion registry and audit log. Public exports require a separate refresh.</p></form></section>
+</div>
+<section class="card"><div class="row" style="justify-content:space-between"><h2>Active exclusions</h2><button class="outline" id="reload">Refresh</button></div>
+<div class="scroll"><table><thead><tr><th>Platform</th><th>Persona ID</th><th>Reason</th><th>Updated</th></tr></thead><tbody id="exclusions"></tbody></table></div></section>
+<section class="card"><h2>Recent audit events</h2><div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Identity</th><th>Operator</th><th>Reason</th></tr></thead><tbody id="audit"></tbody></table></div></section>
+</div></main>
+<script>
+'use strict';
+const api='/bf4ps-admin-api/';
+let csrf='', chosen=null;
+const $=id=>document.getElementById(id);
+function message(text,bad=false){$('message').textContent=text;$('message').className=bad?'error':'ok'}
+function td(tr,text){const c=document.createElement('td');c.textContent=String(text??'');tr.append(c);return c}
+async function request(path,options={}){
+  const headers={'Accept':'application/json',...(options.body?{'Content-Type':'application/json'}:{}),...(csrf?{'X-CSRF-Token':csrf}:{})};
+  const response=await fetch(api+path,{credentials:'same-origin',cache:'no-store',headers,...options});
+  const body=await response.json();
+  if(!response.ok)throw Error(body.error||'Request failed');
+  return body;
+}
+async function initialize(){
+  try{const session=await request('session');csrf=session.csrf;$('loginBox').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');await reload()}
+  catch(e){$('loginBox').classList.remove('hidden');$('app').classList.add('hidden');$('logout').classList.add('hidden');csrf=''}
+}
+$('loginForm').addEventListener('submit',async event=>{
+  event.preventDefault();try{await request('login',{method:'POST',body:JSON.stringify({password:$('password').value})});$('password').value='';await initialize();message('Signed in')}
+  catch(e){message(e.message,true)}
+});
+$('logout').addEventListener('click',async()=>{try{await request('logout',{method:'POST',body:'{}'})}catch(e){}csrf='';chosen=null;await initialize();message('Signed out')});
+$('searchForm').addEventListener('submit',async event=>{
+  event.preventDefault();try{const body=await request('search?q='+encodeURIComponent($('query').value));$('results').replaceChildren();
+    for(const r of body.rows){const tr=document.createElement('tr');td(tr,r.current_name);td(tr,r.platform);td(tr,r.persona_id);td(tr,r.excluded?'Excluded':'Visible');
+      const cell=document.createElement('td'),btn=document.createElement('button');btn.className='outline';btn.textContent='Select';btn.onclick=()=>select(r);cell.append(btn);tr.append(cell);$('results').append(tr)}
+    message(body.rows.length+' matching identities')}
+  catch(e){message(e.message,true)}
+});
+function select(r){chosen=r;$('selected').textContent=r.current_name+' · '+r.platform+' · '+r.persona_id+' · '+(r.excluded?'EXCLUDED':'VISIBLE');$('moderationForm').classList.remove('hidden');
+$('exclude').disabled=Boolean(r.excluded);$('restore').disabled=!r.excluded;$('reason').value=r.reason_code||'data_integrity_anomaly';$('note').value=''}
+async function moderate(active){
+  if(!chosen)return;const label=active?'exclude':'restore';
+  if(!confirm('Confirm '+label+' for '+chosen.current_name+' ('+chosen.platform+'/'+chosen.persona_id+')?'))return;
+  try{const payload={platform:chosen.platform,persona_id:chosen.persona_id,reason_code:$('reason').value,private_note:$('note').value||null};
+    const result=await request(active?'exclude':'restore',{method:'POST',body:JSON.stringify(payload)});
+    chosen.excluded=active;select(chosen);message(result.changed?'Moderation action recorded':'No change necessary');await reload()}
+  catch(e){message(e.message,true)}
+}
+$('exclude').onclick=()=>moderate(true);$('restore').onclick=()=>moderate(false);
+function fill(id,rows,keys){const el=$(id);el.replaceChildren();for(const r of rows){const tr=document.createElement('tr');for(const k of keys)td(tr,r[k]);el.append(tr)}}
+async function reload(){try{const [a,b]=await Promise.all([request('exclusions'),request('audit')]);fill('exclusions',a.rows,['platform','persona_id','reason_code','updated_at']);fill('audit',b.rows,['occurred_at','action','persona_id','actor','reason_code'])}catch(e){message(e.message,true)}}
+$('reload').onclick=reload;initialize();
+</script></body></html>
