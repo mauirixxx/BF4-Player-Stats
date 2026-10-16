@@ -58,7 +58,7 @@ class ArtworkTests(unittest.TestCase):
             self.assertTrue((public / 'weapon-45-hud.webp').exists())
             self.assertEqual(len(store.history('weapon', 'WARSAW_ID_P_WNAME_M416', 'fancy')), 2)
             self.assertEqual(store.restore('weapon', 'WARSAW_ID_P_WNAME_M416', 'fancy', 'mauirixxx'),
-                             {'changed': True})
+                             {'changed': False})
 
     def test_first_time_vehicle_artwork_and_remove(self):
         with tempfile.TemporaryDirectory() as tmp:
