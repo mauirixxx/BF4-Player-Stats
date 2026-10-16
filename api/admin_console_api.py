@@ -12,6 +12,8 @@ import json
 import os
 import secrets
 import time
+from collections import deque
+from threading import Lock
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from http import cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -23,6 +25,24 @@ from admin_moderation_service import get_exclusion, set_exclusion, validate_iden
 SESSION_SECONDS = 3600
 MAX_BODY = 4096
 engine = None
+_login_failures = deque()
+_login_lock = Lock()
+
+
+def login_allowed(now=None):
+    """Conservative process-wide lockout: 10 failed attempts per 15 minutes."""
+    now = time.monotonic() if now is None else now
+    with _login_lock:
+        while _login_failures and now - _login_failures[0] >= 900:
+            _login_failures.popleft()
+        return len(_login_failures) < 10
+
+
+def record_login_failure(now=None):
+    now = time.monotonic() if now is None else now
+    with _login_lock:
+        _login_failures.append(now)
+
 
 
 def config():
@@ -191,8 +211,11 @@ class Handler(BaseHTTPRequestHandler):
         if body is None:
             return
         if path == '/login':
+            if not login_allowed():
+                return self.reply(429, {'error': 'Too many failed login attempts; try again later'})
             password = body.get('password', '')
             if not isinstance(password, str) or len(password) > 512 or not check_password(password, cfg['BF4PS_ADMIN_PASSWORD_PBKDF2']):
+                record_login_failure()
                 time.sleep(0.3)
                 return self.reply(401, {'error': 'Invalid credentials'})
             token = sign_session(cfg['BF4PS_ADMIN_USER'], cfg['BF4PS_ADMIN_SESSION_SECRET'])
