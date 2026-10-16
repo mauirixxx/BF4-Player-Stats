@@ -223,6 +223,12 @@ def claim_next_job(
                 FROM collection_jobs
                 WHERE resource = :resource
                   AND lane = :lane
+                  AND NOT EXISTS (
+                      SELECT 1 FROM soldiers AS s
+                      JOIN public.player_exclusions AS e
+                        ON e.platform=s.platform AND e.persona_id=s.persona_id AND e.active
+                      WHERE s.soldier_id=collection_jobs.soldier_id
+                  )
                   {cohort_clause}
                   {priority_clause}
                   {retry_clause}

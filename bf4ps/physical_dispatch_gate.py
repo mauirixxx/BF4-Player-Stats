@@ -172,6 +172,17 @@ def authorized_http_attempt(
         ).one_or_none()
         if owned is None:
             raise RuntimeError("physical HTTP authorization rejected: lease not owned")
+        excluded = conn.execute(text("""
+            SELECT EXISTS (
+                SELECT 1 FROM collection_jobs AS j
+                JOIN soldiers AS s ON s.soldier_id=j.soldier_id
+                JOIN public.player_exclusions AS e
+                  ON e.platform=s.platform AND e.persona_id=s.persona_id AND e.active
+                WHERE j.job_id=:job_id
+            )
+        """), {"job_id": job.job_id}).scalar_one()
+        if excluded:
+            raise RuntimeError("physical HTTP authorization rejected: excluded soldier")
         permit = authorize_physical_dispatch(
             conn, job_id=job.job_id, attempt_number=job.attempt_count,
             request_ordinal=request_ordinal, resource=resource,
