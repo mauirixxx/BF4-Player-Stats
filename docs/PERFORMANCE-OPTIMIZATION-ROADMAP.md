@@ -1,20 +1,22 @@
 # BF4 Player Stats — Performance and feature roadmap
 
-Status: **Active audit / design-first.** Baseline measured 2026-10-15. This document is the working checklist; update it as milestones pass. Consult the authoritative database schema and verify against production before writing SQL.
+Status: **Homepage performance milestone deployed 2026-10-15; remaining database work is observation-driven, not a release blocker.** Baseline measured 2026-10-15. This document is the working checklist; update it as milestones pass. Consult the authoritative database schema and verify against production before writing SQL.
 
 ## 1. Database and homepage performance — PRIORITY
 
 - [x] Identify initial-load bottleneck: homepage downloads `/temp-stats-data.json` (~158,737,575 bytes / 151.4 MiB), including ~200k soldier rows, on initial load **and every 60 seconds** with a cache-busting query string. Measured on tcou: ~3.92 seconds for the transfer (server-side test), excluding client JSON parsing and rendering. `index.html` ~38.5 KB / 0.25 sec; API health ~0.09 sec.
 - [x] Record initial database snapshot: `bf4_playerstats` ~2,832 MB, weapon stats ~4.24M rows, vehicle stats ~2.02M, soldiers ~206k estimated by pg_stat_user_tables; these estimates differ from exact website counts. No changes made during baseline audit.
 - [ ] Instrument and benchmark browser initial render (network transfer, JSON.parse, DOM/render CPU, memory), API p50/p95, query time, and payload sizes. Test uncached and repeated visits from a remote browser.
-- [ ] Design a compact homepage summary endpoint and bounded server-side general leaderboard pages (default 50), retaining all metrics, stable ties, division cutoffs, platform filtering, deep links, and existing user-facing behavior.
-- [ ] Move global search and alias-aware lookup fully server-side; preserve persona ID lookup and name aliases. Validate pagination/search correctness with ties and division boundaries.
-- [ ] Implement cacheable/snapshot-backed summary and 60-second lightweight refresh, eliminating the huge recurring download. Consider compression only as a stopgap; do not rely on compression as the architectural fix.
+- [x] Design a compact homepage summary endpoint and bounded server-side general leaderboard pages (default 50), retaining all metrics, stable ties, division cutoffs, platform filtering, deep links, and existing user-facing behavior.
+- [x] Move global search and alias-aware lookup fully server-side; preserve persona ID lookup and name aliases. Validate pagination/search correctness with ties and division boundaries.
+- [x] Implement cacheable/snapshot-backed summary and 60-second lightweight refresh, eliminating the huge recurring download. Consider compression only as a stopgap; do not rely on compression as the architectural fix.
 - [ ] Audit equipment leaderboard endpoint, caching and pagination against current deployed implementation; update the older `LEADERBOARD-PAGINATION-CACHE-SELECTION-DESIGN.md` assumptions (D3-only proposal is outdated).
 - [ ] Review EXPLAIN (ANALYZE, BUFFERS) safely for slow queries; inspect index usage, query plans, statistics, and table/index/TOAST sizes. Never run unbounded expensive production EXPLAIN without a statement timeout.
 - [ ] Review PostgreSQL autovacuum and write churn (collection_jobs ~144k estimated dead tuples); investigate unusually large soldiers/soldier_names/catalog storage and profile_soldiers sequential scans. Verify real cause before altering indexes/settings.
 - [ ] Review connection pooling, max_connections=300, HA failover and collector impact. Prefer read-only changes; no blind tuning or restarts.
-- [ ] Build automated regression/performance tests, feature-flag rollout, rollback instructions and before/after benchmarks. Confirm collectors remain unaffected.
+- [x] Build automated regression/performance tests, feature-flag rollout, rollback instructions and before/after benchmarks. Confirm collectors remain unaffected.
+
+See [production cutover and verification](HOMEPAGE-PAGINATION-PRODUCTION-CUTOVER.md) for measured results, deployed endpoints, test coverage, rollback, and deferred database tuning. Remaining unchecked performance audits are optional, to be prioritized from real observed latency or operational issues.
 
 ## 2. Collection reliability and data quality
 
