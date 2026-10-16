@@ -244,6 +244,7 @@ def get_page(conn, kind, platform, item, page, page_size, search, division):
         )'''
     ranked=source+''', ranked AS (
         SELECT cohort.*,rank() OVER (ORDER BY kills DESC) AS rank,
+               row_number() OVER (ORDER BY kills DESC,soldier_id) AS position,
                count(*) OVER () AS population FROM cohort
     ), filtered AS (
         SELECT *,rank * 100.0 / nullif(population,0) AS top_pct,
@@ -268,7 +269,7 @@ def get_page(conn, kind, platform, item, page, page_size, search, division):
         population=int(conn.execute(text(source+' SELECT count(*) FROM cohort'),params).scalar_one())
     result=[dict(r) for r in conn.execute(text(ranked+f'''
         SELECT soldier_id,current_name,persona_id,platform,kills,source_fetched_at,
-               rank,top_pct,division FROM filtered {filter_clause}
+               rank,position,top_pct,division FROM filtered {filter_clause}
         ORDER BY kills DESC,soldier_id LIMIT :limit OFFSET :offset
     '''),params).mappings()]
     return {'population':population,'filtered_count':int(meta['filtered_count']),
