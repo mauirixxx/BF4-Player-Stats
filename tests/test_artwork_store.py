@@ -60,6 +60,35 @@ class ArtworkTests(unittest.TestCase):
             self.assertEqual(store.restore('weapon', 'WARSAW_ID_P_WNAME_M416', 'fancy', 'mauirixxx'),
                              {'changed': True})
 
+    def test_first_time_vehicle_artwork_and_remove(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            public = root / 'public'
+            public.mkdir()
+            key = 'WARSAW_ID_P_XP2_INAME_AAMINE'
+            identity = 'vehicle-' + key
+            catalog_file = root / 'equipment-artwork.js'
+            catalog_file.write_text('/* test */\nconst equipmentArtwork={};')
+            labels_file = root / 'equipment-names.js'
+            labels_file.write_text('/* test */\nconst equipmentLabels=' + json.dumps({key: 'AA Mine'}) + ';')
+            # The known equipment label is approved, even without a pre-existing image.
+            # An INAME label is classified as weapon by the default catalog parser.
+            catalog = allowed_keys(catalog_file, labels_file)
+            self.assertIn('weapon-' + key, catalog)
+            vehicle_key = 'WARSAW_ID_P_XP2_VNAME_TESTVEHICLE'
+            labels_file.write_text('/* test */\nconst equipmentLabels=' + json.dumps({vehicle_key: 'Test vehicle'}) + ';')
+            catalog = allowed_keys(catalog_file, labels_file)
+            self.assertIn('vehicle-' + vehicle_key, catalog)
+            store = ArtworkStore(root / 'private', public, catalog, catalog_file)
+            published = store.publish('vehicle', vehicle_key, 'fancy', sample_image(), 'admin')
+            self.assertTrue((public / published['url'].split('/')[-1]).is_file())
+            self.assertEqual(store.manifest()['vehicle-' + vehicle_key]['fancy']['local'], published['url'])
+            self.assertEqual(json.loads((public / 'artwork-added.json').read_text()), store.manifest())
+            self.assertEqual(store.restore('vehicle', vehicle_key, 'fancy', 'admin'), {'changed': True})
+            self.assertFalse((public / published['url'].split('/')[-1]).exists())
+            self.assertEqual(store.manifest(), {})
+            self.assertEqual(store.restore('vehicle', vehicle_key, 'fancy', 'admin'), {'changed': False})
+
     def test_unknown_key(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = ArtworkStore(Path(tmp) / 'p', Path(tmp) / 'w', set())
