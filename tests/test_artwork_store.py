@@ -40,19 +40,25 @@ class ArtworkTests(unittest.TestCase):
     def test_publish_restore_independently(self):
         with tempfile.TemporaryDirectory() as tmp:
             identity = 'weapon-WARSAW_ID_P_WNAME_M416'
-            store = ArtworkStore(Path(tmp) / 'private', Path(tmp) / 'public', {identity})
+            public = Path(tmp) / 'public'
+            public.mkdir()
+            (public / 'weapon-45-fancy.webp').write_bytes(sample_image())
+            (public / 'weapon-45-hud.webp').write_bytes(sample_image())
+            catalog_file = Path(tmp) / 'equipment-artwork.js'
+            catalog_file.write_text('/* test */\nconst equipmentArtwork=' + json.dumps({identity: {'fancy': {'local': '/assets/equipment/weapon-45-fancy.webp'}, 'hud': {'local': '/assets/equipment/weapon-45-hud.webp'}}}) + ';')
+            store = ArtworkStore(Path(tmp) / 'private', public, {identity}, catalog_file)
             fancy = store.publish('weapon', 'WARSAW_ID_P_WNAME_M416', 'fancy', sample_image(), 'mauirixxx')
             hud = store.publish('weapon', 'WARSAW_ID_P_WNAME_M416', 'hud', sample_image(), 'mauirixxx')
             self.assertNotEqual(fancy['url'], hud['url'])
             self.assertEqual(len(store.history('weapon', 'WARSAW_ID_P_WNAME_M416', 'fancy')), 1)
-            self.assertEqual(len(store.manifest()[identity]), 2)
+            self.assertEqual(len(list((Path(tmp) / 'private' / 'backups').glob('*.webp'))), 2)
             self.assertEqual(store.restore('weapon', 'WARSAW_ID_P_WNAME_M416', 'fancy', 'mauirixxx'),
                              {'changed': True})
-            self.assertNotIn('fancy', store.manifest()[identity])
-            self.assertIn('hud', store.manifest()[identity])
+            self.assertTrue((public / 'weapon-45-fancy.webp').exists())
+            self.assertTrue((public / 'weapon-45-hud.webp').exists())
             self.assertEqual(len(store.history('weapon', 'WARSAW_ID_P_WNAME_M416', 'fancy')), 2)
             self.assertEqual(store.restore('weapon', 'WARSAW_ID_P_WNAME_M416', 'fancy', 'mauirixxx'),
-                             {'changed': False})
+                             {'changed': True})
 
     def test_unknown_key(self):
         with tempfile.TemporaryDirectory() as tmp:
