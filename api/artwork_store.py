@@ -134,7 +134,7 @@ class ArtworkStore:
     def _backup(self, asset):
         if not asset.is_file() or asset.is_symlink():
             raise ValueError('Original artwork is missing or unsafe')
-        backup_dir = self.public_root / 'backups'
+        backup_dir = self.private_root / 'backups'
         backup_dir.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S-%f')
         backup = backup_dir / (asset.stem + '-' + stamp + asset.suffix)
@@ -195,7 +195,7 @@ class ArtworkStore:
             backup_name = latest.get('backup', '')
             if not re.fullmatch(r'[A-Za-z0-9_-]+\.webp', backup_name):
                 raise ValueError('Invalid backup reference')
-            backup_path = self.public_root / 'backups' / backup_name
+            backup_path = self.private_root / 'backups' / backup_name
             if not backup_path.is_file() or backup_path.is_symlink():
                 raise ValueError('Backup is missing')
             data = backup_path.read_bytes()
