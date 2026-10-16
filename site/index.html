@@ -14,10 +14,12 @@ a.brand-home{color:inherit;text-decoration:none}a.brand-home:hover,a.brand-home:
 <div class="controls"><select id="metric"><option value="kills">TOTAL KILLS</option><option value="total_score">TOTAL SCORE</option><option value="wins">WINS</option><option value="time_played_seconds">TIME PLAYED</option><option value="conquest_score">CONQUEST SCORE</option><option value="rush_score">RUSH SCORE</option><option value="team_deathmatch_score">TEAM DEATHMATCH SCORE</option><option value="domination_score">DOMINATION SCORE</option><option value="obliteration_score">OBLITERATION SCORE</option><option value="defuse_score">DEFUSE SCORE</option><option value="capture_the_flag_score">CAPTURE THE FLAG SCORE</option><option value="air_superiority_score">AIR SUPERIORITY SCORE</option><option value="carrier_assault_score">CARRIER ASSAULT SCORE</option><option value="chain_link_score">CHAIN LINK SCORE</option><option value="weapon">WEAPONS</option><option value="vehicle">VEHICLES</option></select><select id="leaderEquipment" style="display:none"><option value="">Choose equipment…</option></select><input id="filter" placeholder="Find soldier / persona ID on this platform"><select id="divisionFilter"><option value="">ALL DIVISIONS</option></select></div>
 <p class="muted" id="rankInfo"></p><div class="scroll"><table><thead><tr><th>Rank</th><th>Soldier</th><th>Division</th><th>Value</th><th>Top %</th><th>Platform</th></tr></thead><tbody id="leaderRows"><tr><td colspan="6">Loading…</td></tr></tbody></table></div><div class="muted" id="rowCount" style="margin-top:14px"></div><div class="controls" style="margin-top:12px"><button class="close" id="prevPage">← PREVIOUS</button><button class="close" id="nextPage">NEXT →</button></div></section>
 <div class="footer">BF4 Player Stats · Community project, not affiliated with <a href="https://www.ea.com/" target="_blank" rel="noopener noreferrer">EA</a> or <a href="https://www.dice.se/" target="_blank" rel="noopener noreferrer">DICE</a>. Leaderboard divisions are an experimental interpretation of historic <a href="https://battlelog.battlefield.com/bf4/" target="_blank" rel="noopener noreferrer">Battlelog</a> rankings. <span id="loadError"></span></div></main>
-<script>
+<script src="homepage-paginated.js"></script><script>
 'use strict';
 const $=id=>document.getElementById(id),fmt=n=>n==null?'—':Number(n).toLocaleString(),safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 let data=null,platform='all',ranked=[],rankLookup=new Map(),leaderPage=0;
+let generalRequest=0,generalPage=null,searchRequest=0,searchRows=[];
+let generalDebounce=null,searchDebounce=null;
 const deepLink=new URLSearchParams(location.search);const deepMetric=deepLink.get('metric');const deepPlatform=deepLink.get('platform');const deepSoldier=deepLink.get('soldier');const deepItem=deepLink.get('item');if([...document.querySelectorAll('#metric option')].some(o=>o.value===deepMetric))$('metric').value=deepMetric;if(['pc','ps4','xboxone','all'].includes(deepPlatform)){platform=deepPlatform;document.querySelectorAll('[data-platform]').forEach(b=>b.classList.toggle('active',b.dataset.platform===platform))}const highlightedPersona=deepSoldier&&/^\d{1,20}$/.test(deepSoldier)?deepSoldier:null;let pendingJump=Boolean(highlightedPersona);
 const cuts=[3,8,15,25,35,50,65,80,90,100];
 const platformLabel={pc:'PC',ps4:'PlayStation',xboxone:'Xbox',all:'All platforms'};
@@ -27,18 +29,70 @@ const equipmentLabels={"WARSAW_ID_P_WNAME_AEK971":"AEK-971","WARSAW_ID_P_XP1_WNA
 function displayName(name){return equipmentLabels[name]||String(name||'UNKNOWN').replace(/^WARSAW_ID_(?:P_)?(?:XP\d+_)?(?:MP_)?(?:WNAME|VNAME|INAME)_/,'').replace(/_/g,' ')}
 function battlelogUrl(s){if(!s||!['pc','ps4','xboxone'].includes(s.platform)||!/^\d+$/.test(String(s.persona_id)))return null;return 'https://battlelog.battlefield.com/bf4/soldier/'+encodeURIComponent(s.current_name)+'/stats/'+encodeURIComponent(String(s.persona_id))+'/'+s.platform+'/'}
 function openSoldier(id){if(!Number.isSafeInteger(id)||id<=0)return;window.location.href='soldier.html?id='+encodeURIComponent(id)}
-function rank(){if(!data)return;const key=$('metric').value;ranked=data.soldiers.filter(s=>(platform==='all'||s.platform===platform)&&s.detailed_state==='success'&&s[key]!=null).sort((a,b)=>Number(b[key])-Number(a[key])||a.soldier_id-b.soldier_id);rankLookup=new Map();let prev=null,r=0;ranked.forEach((s,i)=>{const val=Number(s[key]);if(val!==prev){r=i+1;prev=val}rankLookup.set(s.soldier_id,{rank:r,division:division(r,ranked.length),pct:100*r/ranked.length})});if(pendingJump&&!$('filter').value){const idx=ranked.findIndex(x=>String(x.persona_id)===highlightedPersona);if(idx>=0){leaderPage=Math.floor(idx/50);pendingJump=false}}$('population').textContent=fmt(ranked.length)+' eligible soldiers · '+platformLabel[platform];$('rankInfo').textContent='Provisional divisions: top 3%, 8%, 15%, 25%, 35%, 50%, 65%, 80%, 90%, 100%. Ties share a rank. Uncollected soldiers are excluded.';renderRanks()}
+function rank(){return renderGeneralLeaderboard()}
+async function renderGeneralLeaderboard(){
+ const seq=++generalRequest,metric=$('metric').value;
+ if(metric==='weapon'||metric==='vehicle')return;
+ $('leaderRows').innerHTML='<tr><td colspan="6">Loading leaderboard…</td></tr>';
+ try{
+  const result=await BF4PSPaginated.general({metric,platform,page:leaderPage+1,pageSize:50,search:$('filter').value.trim(),division:Number($('divisionFilter').value)});
+  if(seq!==generalRequest)return;
+  if(pendingJump&&highlightedPersona&&!$('filter').value&&!Number($('divisionFilter').value)){
+    const locate=await BF4PSPaginated.general({metric,platform,page:1,pageSize:1,search:highlightedPersona,division:0});
+    if(seq!==generalRequest)return;
+    const hit=locate.rows.find(s=>String(s.persona_id)===highlightedPersona);
+    pendingJump=false;
+    if(hit){
+      // Ties share a rank; position uses the stable value/soldier_id ordering
+      // so even large ties jump to the exact page.
+      const targetPage=Math.floor((Number(hit.position)-1)/50);
+      if(targetPage!==leaderPage){leaderPage=targetPage;return renderGeneralLeaderboard()}
+    }
+  }
+  generalPage=result;
+  $('population').textContent=fmt(result.population)+' eligible soldiers · '+platformLabel[platform];
+  $('rankInfo').textContent='Provisional divisions: top 3%, 8%, 15%, 25%, 35%, 50%, 65%, 80%, 90%, 100%. Ties share a rank. Uncollected soldiers are excluded.';
+  $('leaderRows').innerHTML=result.rows.map(s=>'<tr'+(String(s.persona_id)===highlightedPersona?' class="leader-highlight"':'')+'><td class="rank">#'+fmt(s.rank)+'</td><td><button class="soldier" data-soldier="'+s.soldier_id+'">'+soldierFlag(s)+safe(s.current_name)+'</button></td><td>'+badge(s.division)+'</td><td>'+(metric==='time_played_seconds'?formatPlaytime(s.value):fmt(s.value))+'</td><td>'+Number(s.top_pct).toFixed(2)+'%</td><td>'+platformLabel[s.platform]+'</td></tr>').join('')||'<tr><td colspan="6">No matching soldiers</td></tr>';
+  const start=result.filtered_count?leaderPage*50+1:0;
+  $('rowCount').textContent='Showing '+fmt(start)+'–'+fmt(Math.min((leaderPage+1)*50,result.filtered_count))+' of '+fmt(result.filtered_count)+' matching ranked soldiers';
+  $('prevPage').disabled=leaderPage===0;
+  $('nextPage').disabled=leaderPage+1>=result.total_pages;
+  $('loadError').textContent='';
+ }catch(e){if(seq===generalRequest){$('leaderRows').innerHTML='<tr><td colspan="6">Unable to load rankings. Please retry.</td></tr>';$('loadError').textContent=String(e)}}
+}
 function formatPlaytime(seconds){const total=Math.max(0,Math.floor(Number(seconds)||0));const hours=total/3600;const days=Math.floor(total/86400);const years=Math.floor(days/365);const months=Math.floor((days%365)/30);const remainingDays=(days%365)%30;const remainingHours=Math.floor((total%86400)/3600);const parts=[];if(years)parts.push(years+' '+(years===1?'year':'years'));if(months)parts.push(months+' '+(months===1?'month':'months'));if(remainingDays||!parts.length)parts.push(remainingDays+' '+(remainingDays===1?'day':'days'));parts.push(remainingHours+' '+(remainingHours===1?'hour':'hours'));return '<div class="playtime-hours">'+hours.toLocaleString(undefined,{maximumFractionDigits:1})+' hours</div><div class="playtime-calendar">'+parts.join(', ')+'</div>'}
 function soldierFlag(s){const c=String(s.country_code||'').trim().toLowerCase();const valid=/^[a-z]{2}$/.test(c);if(!valid)return '<span class="soldier-flag soldier-flag-empty" aria-hidden="true"></span>';const url='/assets/flags/'+c+'.svg';return '<img class="soldier-flag" src="'+url+'" alt="'+safe(s.country_name||c.toUpperCase())+'" onerror="this.onerror=null;this.style.visibility=&quot;hidden&quot;">'}
-function renderRanks(){const q=$('filter').value.trim().toLowerCase(),d=Number($('divisionFilter').value);const filtered=ranked.filter(s=>(!q||s.current_name.toLowerCase().includes(q)||String(s.persona_id).includes(q))&&(!d||rankLookup.get(s.soldier_id).division===d));$('leaderRows').innerHTML=filtered.slice(leaderPage*50,(leaderPage+1)*50).map(s=>{const r=rankLookup.get(s.soldier_id);return '<tr'+(String(s.persona_id)===highlightedPersona?' class="leader-highlight"':'')+'><td class="rank">#'+fmt(r.rank)+'</td><td><button class="soldier" data-soldier="'+s.soldier_id+'">'+soldierFlag(s)+safe(s.current_name)+'</button></td><td>'+badge(r.division)+'</td><td>'+($('metric').value==='time_played_seconds'?formatPlaytime(s.time_played_seconds):fmt((['weapon','vehicle'].includes($('metric').value)?s.kills:s[$('metric').value])))+'</td><td>'+r.pct.toFixed(2)+'%</td><td>'+platformLabel[s.platform]+'</td></tr>'}).join('')||'<tr><td colspan="6">No matching soldiers</td></tr>';$('rowCount').textContent='Showing '+fmt(Math.min(leaderPage*50+1,filtered.length))+'–'+fmt(Math.min((leaderPage+1)*50,filtered.length))+' of '+fmt(filtered.length)+' matching ranked soldiers'}
-let aliasSearchIds=new Set(),aliasSearchQuery='';let aliasSearchSequence=0;
-async function updateAliasSearch(){const q=$('globalSearch').value.trim().toLowerCase();const seq=++aliasSearchSequence;aliasSearchQuery=q;aliasSearchIds=new Set();renderSearch();if(q.length<2)return;try{const r=await fetch('/bf4ps-api/alias-search?q='+encodeURIComponent(q),{cache:'no-store'});if(!r.ok)return;const v=await r.json();if(seq!==aliasSearchSequence)return;aliasSearchIds=new Set((v.rows||[]).map(x=>Number(x.soldier_id)));renderSearch();}catch(e){console.warn('Alias search unavailable',e);}}
-function renderSearch(){if(!data)return;const q=$('globalSearch').value.trim().toLowerCase();const matches=q?data.soldiers.filter(s=>s.current_name.toLowerCase().includes(q)||String(s.persona_id).includes(q)||aliasSearchIds.has(Number(s.soldier_id))).slice(0,100):[];$('searchRows').innerHTML=matches.map(s=>'<tr><td><button class="soldier" data-soldier="'+s.soldier_id+'">'+soldierFlag(s)+safe(s.current_name)+'</button></td><td>'+platformLabel[s.platform]+'</td><td>'+safe(s.battlelog_username||'—')+'</td><td>'+fmt(s.rank)+'</td><td>'+fmt(s.kills)+'</td><td>'+(s.detailed_state==='success'?'Collected':'Pending')+'</td></tr>').join('')||'<tr><td colspan="6">'+(q?'No matching soldiers':'Type to search across all platforms')+'</td></tr>'}
+function renderRanks(){return renderGeneralLeaderboard()}
+async function updateAliasSearch(){
+ const q=$('globalSearch').value.trim(),seq=++searchRequest;
+ searchRows=[];renderSearch();if(q.length<2)return;
+ try{const result=await BF4PSPaginated.search(q);if(seq!==searchRequest)return;searchRows=result.rows;renderSearch()}
+ catch(e){if(seq===searchRequest){$('searchRows').innerHTML='<tr><td colspan="6">Search temporarily unavailable</td></tr>'}}
+}
+function renderSearch(){
+ const q=$('globalSearch').value.trim();
+ $('searchRows').innerHTML=searchRows.map(s=>'<tr><td><button class="soldier" data-soldier="'+s.soldier_id+'">'+soldierFlag(s)+safe(s.current_name)+'</button></td><td>'+platformLabel[s.platform]+'</td><td>'+safe(s.battlelog_username||'—')+'</td><td>'+fmt(s.rank)+'</td><td>'+fmt(s.kills)+'</td><td>'+(s.detailed_state==='success'?'Collected':'Pending')+'</td></tr>').join('')||'<tr><td colspan="6">'+(q.length>=2?'No matching soldiers':'Type at least two characters to search all platforms')+'</td></tr>';
+}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-soldier]');if(b)openSoldier(Number(b.dataset.soldier))});
-$('platformTabs').addEventListener('click',e=>{const b=e.target.closest('[data-platform]');if(!b)return;platform=b.dataset.platform;leaderPage=0;document.querySelectorAll('[data-platform]').forEach(x=>x.classList.toggle('active',x===b));if(['weapon','vehicle'].includes($('metric').value))loadUnifiedEquipment();else rank()});
-$('metric').onchange=()=>{leaderPage=0;const equipment=['weapon','vehicle'].includes($('metric').value);$('leaderEquipment').style.display=equipment?'':'none';if(equipment)loadUnifiedEquipment();else rank()};$('filter').oninput=()=>{leaderPage=0;if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()};$('divisionFilter').onchange=()=>{leaderPage=0;if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()};$('globalSearch').oninput=updateAliasSearch;$('globalSearch').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.isComposing)return;const first=$('searchRows').querySelector('button[data-soldier]');if(!first)return;e.preventDefault();openSoldier(Number(first.dataset.soldier))});$('clearSearch').onclick=()=>{$('globalSearch').value='';renderSearch()};$('prevPage').onclick=()=>{leaderPage=Math.max(0,leaderPage-1);if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()};$('nextPage').onclick=()=>{if(equipmentPage&&['weapon','vehicle'].includes($('metric').value)&&leaderPage+1>=equipmentPage.total_pages)return;leaderPage++;if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()};
+$('platformTabs').addEventListener('click',e=>{const b=e.target.closest('[data-platform]');if(!b)return;generalRequest++;unifiedRequest++;platform=b.dataset.platform;leaderPage=0;document.querySelectorAll('[data-platform]').forEach(x=>x.classList.toggle('active',x===b));if(['weapon','vehicle'].includes($('metric').value))loadUnifiedEquipment();else rank()});
+$('metric').onchange=()=>{leaderPage=0;generalRequest++;unifiedRequest++;const equipment=['weapon','vehicle'].includes($('metric').value);$('leaderEquipment').style.display=equipment?'':'none';if(equipment)loadUnifiedEquipment();else rank()};$('filter').oninput=()=>{leaderPage=0;clearTimeout(generalDebounce);generalDebounce=setTimeout(()=>{if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()},250)};$('divisionFilter').onchange=()=>{leaderPage=0;if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()};$('globalSearch').oninput=()=>{clearTimeout(searchDebounce);searchDebounce=setTimeout(updateAliasSearch,250)};$('globalSearch').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.isComposing)return;const first=$('searchRows').querySelector('button[data-soldier]');if(!first)return;e.preventDefault();openSoldier(Number(first.dataset.soldier))});$('clearSearch').onclick=()=>{clearTimeout(searchDebounce);$('globalSearch').value='';updateAliasSearch()};$('prevPage').onclick=()=>{leaderPage=Math.max(0,leaderPage-1);if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()};$('nextPage').onclick=()=>{if(equipmentPage&&['weapon','vehicle'].includes($('metric').value)&&leaderPage+1>=equipmentPage.total_pages)return;if(!['weapon','vehicle'].includes($('metric').value)&&generalPage&&leaderPage+1>=generalPage.total_pages)return;leaderPage++;if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()};
 for(let i=1;i<=10;i++)$('divisionFilter').insertAdjacentHTML('beforeend','<option value="'+i+'">DIVISION '+i+'</option>');
-async function load(){try{const r=await fetch('temp-stats-data.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);data=await r.json();$('soldierCount').textContent=fmt(data.summary.soldiers);const detailedCount=data.soldiers.filter(s=>s.detailed_state==='success').length;$('eligibleCount').textContent=fmt(detailedCount);$('eligiblePct').textContent=data.summary.soldiers?(100*detailedCount/data.summary.soldiers).toFixed(2)+'% of indexed':'0.00% of indexed';$('fullCount').textContent=fmt(data.soldiers.filter(s=>['detailed_state','weapons_state','vehicles_state','profile_state'].every(k=>s[k]==='success')).length);$('fullPct').textContent=detailedCount?(100*data.soldiers.filter(s=>['detailed_state','weapons_state','vehicles_state','profile_state'].every(k=>s[k]==='success')).length/detailedCount).toFixed(1)+'% of soldiers with detailed stats':'0.0% of soldiers with detailed stats';$('weaponCount').textContent=fmt(data.summary.weapons);$('vehicleCount').textContent=fmt(data.summary.vehicles);$('last').innerHTML='<span class="status">● LIVE PRODUCTION DATA</span>';if(['weapon','vehicle'].includes($('metric').value))loadUnifiedEquipment();else rank();renderSearch();$('loadError').textContent=''}catch(e){$('last').textContent='Data temporarily unavailable';$('loadError').textContent=String(e);bf4psAvailable=false;showServiceUnavailable()}}
+async function load(){
+ try{
+  const summary=await BF4PSPaginated.summary();
+  data=summary;
+  $('soldierCount').textContent=fmt(summary.summary.soldiers);
+  $('eligibleCount').textContent=fmt(summary.detailed_soldiers);
+  $('eligiblePct').textContent=summary.summary.soldiers?(100*summary.detailed_soldiers/summary.summary.soldiers).toFixed(2)+'% of indexed':'0.00% of indexed';
+  $('fullCount').textContent=fmt(summary.full_soldiers);
+  $('fullPct').textContent=summary.detailed_soldiers?(100*summary.full_soldiers/summary.detailed_soldiers).toFixed(1)+'% of soldiers with detailed stats':'0.0% of soldiers with detailed stats';
+  $('weaponCount').textContent=fmt(summary.summary.weapons);
+  $('vehicleCount').textContent=fmt(summary.summary.vehicles);
+  $('last').innerHTML='<span class="status">● LIVE PRODUCTION DATA</span>';
+  if(['weapon','vehicle'].includes($('metric').value))loadUnifiedEquipment();else rank();
+  $('loadError').textContent='';
+ }catch(e){$('last').textContent='Data temporarily unavailable';$('loadError').textContent=String(e);bf4psAvailable=false;showServiceUnavailable()}
+}
 
 let unifiedRequest=0,unifiedItems=[],equipmentPage=null;
 const rememberedEquipment={weapon:deepMetric==='weapon'?deepItem:null,vehicle:deepMetric==='vehicle'?deepItem:null};
@@ -49,7 +103,7 @@ async function renderUnifiedEquipment(){
  try{
   const result=await equipmentFetch({kind,platform,item,page:leaderPage+1,page_size:50,search:$('filter').value.trim(),division:$('divisionFilter').value});
   if(seq!==unifiedRequest)return;
-  if(pendingJump&&highlightedPersona&&!$('filter').value){const locate=await equipmentFetch({kind,platform,item,page:1,page_size:1,search:highlightedPersona,division:0});if(seq!==unifiedRequest)return;const hit=locate.rows.find(x=>String(x.persona_id)===highlightedPersona);if(hit){const targetPage=Math.floor((Number(hit.rank)-1)/50);pendingJump=false;if(targetPage!==leaderPage){leaderPage=targetPage;return renderUnifiedEquipment()}}else pendingJump=false}
+  if(pendingJump&&highlightedPersona&&!$('filter').value){const locate=await equipmentFetch({kind,platform,item,page:1,page_size:1,search:highlightedPersona,division:0});if(seq!==unifiedRequest)return;const hit=locate.rows.find(x=>String(x.persona_id)===highlightedPersona);if(hit){const targetPage=Math.floor((Number(hit.position)-1)/50);pendingJump=false;if(targetPage!==leaderPage){leaderPage=targetPage;return renderUnifiedEquipment()}}else pendingJump=false}
   equipmentPage=result;
   $('population').textContent=fmt(result.population)+' eligible · '+platformLabel[platform]+' · '+displayName(unifiedItems.find(x=>String(x.id)===item)?.name);
   $('rankInfo').textContent='Live equipment rankings · global ranks and divisions · audited vehicle families consolidated';
