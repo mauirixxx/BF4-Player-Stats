@@ -75,6 +75,7 @@ class ArtworkTests(unittest.TestCase):
             # An INAME label is classified as weapon by the default catalog parser.
             catalog = allowed_keys(catalog_file, labels_file)
             self.assertIn('weapon-' + key, catalog)
+            self.assertIn('vehicle-' + key, catalog)
             vehicle_key = 'WARSAW_ID_P_XP2_VNAME_TESTVEHICLE'
             labels_file.write_text('/* test */\nconst equipmentLabels=' + json.dumps({vehicle_key: 'Test vehicle'}) + ';')
             catalog = allowed_keys(catalog_file, labels_file)
