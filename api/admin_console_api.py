@@ -343,7 +343,7 @@ def main():
     public_path = os.environ.get('BF4PS_ARTWORK_PUBLIC', '')
     if not all((catalog_path, private_path, public_path)):
         raise RuntimeError('Artwork directories must be configured before starting admin API')
-    artwork_store = ArtworkStore(private_path, public_path, allowed_keys(catalog_path))
+    artwork_store = ArtworkStore(private_path, public_path, allowed_keys(catalog_path), catalog_path)
     engine = create_engine(cfg['BF4PS_DATABASE_URL'], pool_pre_ping=True, pool_size=2, max_overflow=0)
     # A loopback-only service; public access requires separately reviewed proxy authentication.
     server = ThreadingHTTPServer(('127.0.0.1', 8767), Handler)
