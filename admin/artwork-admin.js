@@ -61,10 +61,12 @@
       const current=source(item,role);
       if(current.url) img.src=current.url+'?v='+Date.now();
       info.textContent=current.custom?'Updated artwork':current.url?'Default artwork':'No default artwork';
-      restore.disabled=!current.custom || busy;
+      restore.disabled=true;
       try {
         const result=await fetchJSON('artwork/history?'+params(item,role));
         if(el('artworkItem').value!==item.key) return;
+        restore.disabled=busy || result.rows?.at(-1)?.action!=='publish';
+        info.textContent=restore.disabled?'Current artwork':'Updated artwork';
         const heading=document.createElement('p');
         heading.textContent='History: '+result.rows.length+' event(s)';
         history.append(heading);
