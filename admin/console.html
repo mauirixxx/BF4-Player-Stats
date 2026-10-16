@@ -23,9 +23,14 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 <p>Private identity moderation. Actions are audited and reversible; permanent purging is not enabled.</p>
 <div id="message" role="status" aria-live="polite"></div>
 <section class="card" id="loginBox"><h2>Administrator sign in</h2>
-<form id="loginForm"><label for="password">Administrator password</label><input type="password" id="password" autocomplete="current-password" required>
+<form id="loginForm"><label for="username">Username</label><input id="username" autocomplete="username" value="mauirixxx" required><label for="password">Administrator password</label><input type="password" id="password" autocomplete="current-password" required>
 <p>Sessions expire after one hour. All changes require CSRF verification.</p><button type="submit">Sign in</button></form></section>
 <div id="app" class="hidden">
+<section class="card"><h2>Account settings · Change password</h2><form id="changePasswordForm">
+<label for="currentPassword">Current password</label><input type="password" id="currentPassword" autocomplete="current-password" required>
+<label for="newPassword">New password (16–128 characters)</label><input type="password" id="newPassword" autocomplete="new-password" minlength="16" maxlength="128" required>
+<label for="confirmPassword">Confirm new password</label><input type="password" id="confirmPassword" autocomplete="new-password" minlength="16" maxlength="128" required>
+<div style="margin-top:12px"><button type="submit">Change password and sign out</button></div></form></section>
 <div class="grid">
 <section class="card"><h2>Find soldier</h2><form id="searchForm">
 <label for="query">Name or exact persona ID</label><input id="query" minlength="2" maxlength="80" required>
@@ -62,7 +67,12 @@ async function initialize(){
   catch(e){$('loginBox').classList.remove('hidden');$('app').classList.add('hidden');$('logout').classList.add('hidden');csrf=''}
 }
 $('loginForm').addEventListener('submit',async event=>{
-  event.preventDefault();try{await request('login',{method:'POST',body:JSON.stringify({password:$('password').value})});$('password').value='';await initialize();message('Signed in')}
+  event.preventDefault();try{await request('login',{method:'POST',body:JSON.stringify({username:$('username').value,password:$('password').value})});$('password').value='';await initialize();message('Signed in')}
+  catch(e){message(e.message,true)}
+});
+$('changePasswordForm').addEventListener('submit',async event=>{
+  event.preventDefault();if($('newPassword').value!==$('confirmPassword').value){message('Passwords do not match',true);return}
+  try{await request('change-password',{method:'POST',body:JSON.stringify({current_password:$('currentPassword').value,new_password:$('newPassword').value})});$('changePasswordForm').reset();csrf='';await initialize();message('Password changed. Please sign in again.')}
   catch(e){message(e.message,true)}
 });
 $('logout').addEventListener('click',async()=>{try{await request('logout',{method:'POST',body:'{}'})}catch(e){}csrf='';chosen=null;await initialize();message('Signed out')});
