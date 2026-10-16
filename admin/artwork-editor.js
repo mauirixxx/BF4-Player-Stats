@@ -18,9 +18,9 @@ const api=async(path,options={})=>{
 const params=role=>new URLSearchParams({kind,raw_key,role});
 const defaultArt=equipmentArtwork[key]||{};
 function paint(role){
-  const source=overrides[key]?.[role]?.local||defaultArt[role]?.local;
-  const img=$(role+'Image');img.removeAttribute('src');if(source)img.src=source;
-  $(role+'Info').textContent=overrides[key]?.[role]?'Custom image active':source?'Default image active':'No default image available';
+  const source=defaultArt[role]?.local;
+  const img=$(role+'Image');img.removeAttribute('src');if(source)img.src=source+'?v='+Date.now();
+  $(role+'Info').textContent=overrides[key]?.[role]?'Updated artwork':source?'Current artwork':'No default image available';
   $(role+'Restore').disabled=!overrides[key]?.[role];
 }
 async function refresh(){
