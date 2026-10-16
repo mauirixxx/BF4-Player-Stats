@@ -51,7 +51,7 @@ def allowed_keys(artwork_js, labels_js=None):
         if label_pos < 0:
             raise ValueError('Equipment labels catalog not found')
         labels = json.loads(labels_source[label_pos + len(label_marker):].strip().removesuffix(';'))
-        data.update({kind + '-' + key: {} for key in labels for kind in (('vehicle',) if '_VNAME_' in key else ('weapon',)) if kind + '-' + key not in data})
+        data.update({kind + '-' + key: {} for key in labels for kind in (('vehicle',) if '_VNAME_' in key else ('weapon', 'vehicle') if '_INAME_' in key else ('weapon',)) if kind + '-' + key not in data})
     return frozenset(data)
 
 
