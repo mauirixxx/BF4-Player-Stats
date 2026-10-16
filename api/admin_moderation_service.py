@@ -41,7 +41,7 @@ def set_exclusion(conn, *, platform, persona_id, active, actor, reason_code, pri
     params = dict(platform=platform, persona_id=persona_id, active=active,
                   actor=actor, reason_code=reason_code, private_note=private_note)
     # Serialize moderation for one identity, even if the row doesn't yet exist.
-    conn.execute(text('SELECT pg_advisory_xact_lock(hashtext(:platform), :persona_id % 2147483647)'), params)
+    conn.execute(text('SELECT pg_advisory_xact_lock(hashtext(:platform), (:persona_id % 2147483647)::integer)'), params)
     previous = get_exclusion(conn, platform=platform, persona_id=persona_id)
     if previous is None and not active:
         raise ValueError('identity has no exclusion to restore')
