@@ -44,6 +44,7 @@ for(const role of ['fancy','hud']){
 $('publish').addEventListener('click',async()=>{
   const files=['fancy','hud'].filter(role=>$(role+'File').files.length);
   if(!files.length){status('Select at least one replacement image',true);return;}
+  if(files.some(role=>{const f=$(role+'File').files[0];return !['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>4*1024*1024;})){status('Invalid replacement image',true);return;}
   if(!confirm('Publish '+files.join(' and ')+' artwork for '+raw_key+'?'))return;
   $('publish').disabled=true;
   for(const role of ['fancy','hud'])$(role+'Restore').disabled=true;
