@@ -92,22 +92,36 @@ def _atomic_json(path, payload):
 
 
 class ArtworkStore:
-    def __init__(self, private_root, public_root, catalog):
+    """Publish in-place after timestamped backup; never accept client paths."""
+
+    def __init__(self, private_root, public_root, catalog, artwork_catalog=None):
         self.private_root = Path(private_root)
         self.public_root = Path(public_root)
         self.catalog = frozenset(catalog)
+        self.artwork_catalog = Path(artwork_catalog) if artwork_catalog else None
 
-    def _manifest_path(self):
-        return self.public_root / 'manifest.json'
+    def _paths(self, kind, raw_key, role):
+        identity = verify_catalog(kind, raw_key, role, self.catalog)
+        if self.artwork_catalog is None:
+            raise RuntimeError('Artwork catalog path required')
+        source = self.artwork_catalog.read_text(encoding='utf-8')
+        marker = 'const equipmentArtwork='
+        start = source.find(marker)
+        if start < 0:
+            raise ValueError('Invalid artwork catalog')
+        data = json.loads(source[start + len(marker):].strip().removesuffix(';'))
+        local = data.get(identity, {}).get(role, {}).get('local', '')
+        prefix = '/assets/equipment/'
+        if not local.startswith(prefix):
+            raise ValueError('No original image for this role')
+        filename = local[len(prefix):]
+        if not re.fullmatch(r'[A-Za-z0-9_-]+\\.webp', filename):
+            raise ValueError('Invalid original artwork filename')
+        return identity, self.public_root / filename
 
     def manifest(self):
-        path = self._manifest_path()
-        if not path.exists():
-            return {}
-        data = json.loads(path.read_text(encoding='utf-8'))
-        if not isinstance(data, dict):
-            raise ValueError('Invalid artwork manifest')
-        return data
+        # Kept for compatibility with the existing admin API; originals remain at their URLs.
+        return {}
 
     def history(self, kind, raw_key, role):
         identity = verify_catalog(kind, raw_key, role, self.catalog)
@@ -117,55 +131,75 @@ class ArtworkStore:
         entries = json.loads(path.read_text(encoding='utf-8'))
         return [item for item in entries if item['identity'] == identity and item['role'] == role]
 
-    def publish(self, kind, raw_key, role, raw, actor):
-        identity = verify_catalog(kind, raw_key, role, self.catalog)
-        if not isinstance(actor, str) or not actor or len(actor) > 128:
-            raise ValueError('Invalid actor')
-        converted, (width, height) = transcode_image(raw)
-        version = secrets.token_hex(16)
-        filename = version + '.webp'
-        with _LOCK:
-            self.public_root.mkdir(parents=True, exist_ok=True)
-            self.private_root.mkdir(parents=True, exist_ok=True)
-            asset = self.public_root / filename
-            with open(asset, 'xb') as stream:
-                stream.write(converted)
+    def _backup(self, asset):
+        if not asset.is_file() or asset.is_symlink():
+            raise ValueError('Original artwork is missing or unsafe')
+        backup_dir = self.public_root / 'backups'
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S-%f')
+        backup = backup_dir / (asset.stem + '-' + stamp + asset.suffix)
+        with open(asset, 'rb') as source, open(backup, 'xb') as target:
+            while True:
+                chunk = source.read(1024 * 1024)
+                if not chunk:
+                    break
+                target.write(chunk)
+            target.flush()
+            os.fsync(target.fileno())
+        os.chmod(backup, 0o600)
+        return backup
+
+    def _replace(self, asset, data):
+        temporary = asset.with_name('.' + asset.name + '.' + secrets.token_hex(8) + '.tmp')
+        try:
+            with open(temporary, 'xb') as stream:
+                stream.write(data)
                 stream.flush()
                 os.fsync(stream.fileno())
-            os.chmod(asset, 0o644)
-            manifest = self.manifest()
-            entry = dict(manifest.get(identity, {}))
-            url = '/assets/equipment-overrides/' + filename
-            entry[role] = {'local': url}
-            manifest[identity] = entry
-            history_path = self.private_root / 'history.json'
-            history = json.loads(history_path.read_text()) if history_path.exists() else []
-            history.append({'identity': identity, 'role': role, 'action': 'publish',
-                            'actor': actor, 'version': version, 'sha256': sha256(converted).hexdigest(),
-                            'width': width, 'height': height,
-                            'at': datetime.now(timezone.utc).isoformat()})
-            _atomic_json(history_path, history)
-            _atomic_json(self._manifest_path(), manifest)
-            return {'url': url, 'version': version}
+            os.chmod(temporary, 0o644)
+            os.replace(temporary, asset)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+    def _record(self, identity, role, actor, action, backup, data):
+        history_path = self.private_root / 'history.json'
+        history = json.loads(history_path.read_text()) if history_path.exists() else []
+        history.append({'identity': identity, 'role': role, 'action': action,
+                        'actor': actor, 'backup': backup.name,
+                        'sha256': sha256(data).hexdigest(),
+                        'at': datetime.now(timezone.utc).isoformat()})
+        _atomic_json(history_path, history)
+
+    def publish(self, kind, raw_key, role, raw, actor):
+        identity, asset = self._paths(kind, raw_key, role)
+        if not isinstance(actor, str) or not actor or len(actor) > 128:
+            raise ValueError('Invalid actor')
+        converted, dimensions = transcode_image(raw)
+        with _LOCK:
+            self.private_root.mkdir(parents=True, exist_ok=True)
+            backup = self._backup(asset)
+            self._replace(asset, converted)
+            self._record(identity, role, actor, 'publish', backup, converted)
+        return {'url': '/assets/equipment/' + asset.name,
+                'version': sha256(converted).hexdigest()[:16]}
 
     def restore(self, kind, raw_key, role, actor):
-        identity = verify_catalog(kind, raw_key, role, self.catalog)
+        identity, asset = self._paths(kind, raw_key, role)
         if not isinstance(actor, str) or not actor or len(actor) > 128:
             raise ValueError('Invalid actor')
         with _LOCK:
-            manifest = self.manifest()
-            entry = dict(manifest.get(identity, {}))
-            if role not in entry:
+            history = self.history(kind, raw_key, role)
+            if not history:
                 return {'changed': False}
-            entry.pop(role)
-            if entry:
-                manifest[identity] = entry
-            else:
-                manifest.pop(identity, None)
-            history_path = self.private_root / 'history.json'
-            history = json.loads(history_path.read_text()) if history_path.exists() else []
-            history.append({'identity': identity, 'role': role, 'action': 'restore',
-                            'actor': actor, 'at': datetime.now(timezone.utc).isoformat()})
-            _atomic_json(history_path, history)
-            _atomic_json(self._manifest_path(), manifest)
-            return {'changed': True}
+            latest = history[-1]
+            backup_name = latest.get('backup', '')
+            if not re.fullmatch(r'[A-Za-z0-9_-]+\\.webp', backup_name):
+                raise ValueError('Invalid backup reference')
+            backup_path = self.public_root / 'backups' / backup_name
+            if not backup_path.is_file() or backup_path.is_symlink():
+                raise ValueError('Backup is missing')
+            data = backup_path.read_bytes()
+            current_backup = self._backup(asset)
+            self._replace(asset, data)
+            self._record(identity, role, actor, 'restore', current_backup, data)
+        return {'changed': True}
