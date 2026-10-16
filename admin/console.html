@@ -16,7 +16,7 @@ button:disabled{opacity:.5;cursor:not-allowed}.outline{background:transparent;co
 table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left}
 th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{color:#ff9a9a}
 .ok{color:#80d5a9}.hidden{display:none!important}.identity{font-size:20px;font-weight:800}
-@media(max-width:740px){.grid{grid-template-columns:1fr}}
+.art-previews{display:grid;grid-template-columns:1fr 1fr;gap:16px}.art-preview{min-width:0;background:#0e1826;border:1px solid var(--line);border-radius:9px;padding:12px}.art-preview img{width:100%;height:150px;object-fit:contain}.art-preview button{margin-top:8px}.art-preview .muted{overflow-wrap:anywhere}@media(max-width:740px){.grid{grid-template-columns:1fr}}
 </style></head><body><main>
 <div class="brand">BF4 PLAYER STATS / OPERATIONS</div>
 <div class="row" style="justify-content:space-between"><h1>Moderation Console</h1><button class="outline hidden" id="logout">Sign out</button></div>
@@ -46,6 +46,16 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 </div>
 <section class="card"><div class="row" style="justify-content:space-between"><h2>Active exclusions</h2><button class="outline" id="reload">Refresh</button></div>
 <div class="scroll"><table><thead><tr><th>Platform</th><th>Persona ID</th><th>Reason</th><th>Updated</th></tr></thead><tbody id="exclusions"></tbody></table></div></section>
+<section class="card" id="artworkPanel"><h2>Equipment artwork</h2>
+<p>Authenticated artwork replacement. Fancy renders and HUD silhouettes are managed independently. Uploads require explicit confirmation; restoring a default never deletes earlier versions.</p>
+<div class="row"><label for="artworkSearch">Find equipment <input id="artworkSearch" placeholder="Search weapon or vehicle key" autocomplete="off"></label>
+<label for="artworkItem">Equipment <select id="artworkItem"><option value="">Load catalog first</option></select></label>
+<button type="button" class="outline" id="artworkReload">Refresh catalog</button></div>
+<p id="artworkStatus" role="status" aria-live="polite"></p>
+<div class="art-previews">
+<div class="art-preview"><h3>Fancy artwork</h3><img id="artworkFancy" alt="Fancy artwork preview"><p class="muted" id="artworkFancySource"></p><input id="artworkFancyFile" type="file" accept="image/png,image/jpeg,image/webp"><div class="row"><button type="button" id="artworkFancyPublish">Publish fancy</button><button type="button" class="outline" id="artworkFancyRestore">Restore default</button></div><div id="artworkFancyHistory" class="muted"></div></div>
+<div class="art-preview"><h3>HUD silhouette</h3><img id="artworkHud" alt="HUD artwork preview"><p class="muted" id="artworkHudSource"></p><input id="artworkHudFile" type="file" accept="image/png,image/jpeg,image/webp"><div class="row"><button type="button" id="artworkHudPublish">Publish HUD</button><button type="button" class="outline" id="artworkHudRestore">Restore default</button></div><div id="artworkHudHistory" class="muted"></div></div>
+</div></section>
 <section class="card"><h2>Recent audit events</h2><div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Identity</th><th>Operator</th><th>Reason</th></tr></thead><tbody id="audit"></tbody></table></div></section>
 </div></main>
 <script>
@@ -97,4 +107,4 @@ $('exclude').onclick=()=>moderate(true);$('restore').onclick=()=>moderate(false)
 function fill(id,rows,keys){const el=$(id);el.replaceChildren();for(const r of rows){const tr=document.createElement('tr');for(const k of keys)td(tr,r[k]);el.append(tr)}}
 async function reload(){try{const [a,b]=await Promise.all([request('exclusions'),request('audit')]);fill('exclusions',a.rows,['platform','persona_id','reason_code','updated_at']);fill('audit',b.rows,['occurred_at','action','persona_id','actor','reason_code'])}catch(e){message(e.message,true)}}
 $('reload').onclick=reload;initialize();
-</script></body></html>
+</script><script src="artwork-admin.js"></script></body></html>
