@@ -20,7 +20,7 @@ def maintenance_enabled():
     return False
 
 def send_json(handler,status,payload):
-    body=json.dumps(payload).encode()
+    body=json.dumps(payload,default=str).encode()
     handler.send_response(status)
     handler.send_header('Content-Type','application/json')
     handler.send_header('Cache-Control','no-store')
