@@ -10,7 +10,7 @@
 
 This is a **read-only live catalog snapshot** from PostgreSQL on the BF4PS website database connection. It documents actual public tables, columns, constraints and indexes, not a speculative migration plan. Source-of-truth for intended schema evolution remains the collector Alembic migrations; reconcile differences before writing schema-dependent code.
 
-The new weapon ranking index was being built concurrently at the time of this inventory. Its presence in `pg_indexes` does **not** imply the build completed: check `pg_index.indisvalid` and `indisready` below.
+The original inventory captured the weapon ranking index while its concurrent build was still in progress (`indisvalid=False`). **Post-build verification on 2026-10-17 confirmed `indisvalid=True`, `indisready=True`, and `indislive=True`**. The index occupies approximately 479 MB. The table below reflects the verified final state.
 
 ## Indexes
 
@@ -161,7 +161,7 @@ The new weapon ranking index was being built concurrently at the time of this in
 
 | Index | Valid | Ready | Definition |
 |---|---|---|---|
-| `ix_soldier_weapon_stats_weapon_kills` | False | True | `CREATE INDEX ix_soldier_weapon_stats_weapon_kills ON public.soldier_weapon_stats USING btree (weapon_id, kills DESC, soldier_id)` |
+| `ix_soldier_weapon_stats_weapon_kills` | True | True | `CREATE INDEX ix_soldier_weapon_stats_weapon_kills ON public.soldier_weapon_stats USING btree (weapon_id, kills DESC, soldier_id)` |
 | `soldier_weapon_stats_pkey` | True | True | `CREATE UNIQUE INDEX soldier_weapon_stats_pkey ON public.soldier_weapon_stats USING btree (soldier_id, weapon_id)` |
 
 ### `soldiers`
@@ -827,7 +827,9 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_soldier_weapon_stats_weapon_kills
 ON public.soldier_weapon_stats (weapon_id, kills DESC, soldier_id);
 ```
 
-The website read-only database account cannot create this index. A concurrently created index must be verified **valid** after completion; an invalid index is not ready for query optimization. No Alembic migration is claimed to have been applied for this manual index.
+The website read-only database account cannot create this index. The operator completed the build successfully on `mak-db-02`; subsequent independent inspection through the website database connection verified the index is valid, ready, and live. No Alembic migration is claimed to have been applied for this manual index.
+
+A simple top-10-by-kills query now plans an **Index Only Scan** using this index. Full cold API calls still measured **1.04–3.21 seconds** across four uncached weapon IDs (9, 11, 13, 17), so further SQL-level optimization remains necessary.
 
 **Post-build verification:**
 
