@@ -19,3 +19,21 @@ def test_missing_or_conflicting_links_fail_closed():
         resolve_account_username("<html><body>Not found</body></html>")
     with pytest.raises(AccountResolutionError):
         resolve_account_username('<a class="profile-link" data-track="soldier.profile" href="/bf4/user/a/"></a><a class="profile-link" data-track="soldier.profile" href="/bf4/user/b/"></a>')
+
+
+def test_passive_platoon_observation_preserves_username():
+    from bf4ps.account_resolution import parse_soldier_page
+    html = '''<h1 class="soldier-info-name"><span>[HOLY]</span><span>mauirixxx</span></h1>
+    <a class="profile-link" data-track="soldier.profile" href="/bf4/user/mauirixxx/">Profile</a>
+    <span class="club-link">Platoon: <a href="/bf4/platoons/view/4452867151931601735/">UCAV Church</a></span>'''
+    observation = parse_soldier_page(html)
+    assert observation.username == 'mauirixxx'
+    assert observation.displayed_tag == '[HOLY]'
+    assert observation.linked_platoon_id == 4452867151931601735
+
+
+def test_conflicting_platoon_links_are_not_inferred():
+    from bf4ps.account_resolution import parse_soldier_page
+    html = '''<a class="profile-link" data-track="soldier.profile" href="/bf4/user/test/">Profile</a>
+    <a href="/bf4/platoons/view/123/">one</a><a href="/bf4/platoons/view/456/">two</a>'''
+    assert parse_soldier_page(html).linked_platoon_id is None

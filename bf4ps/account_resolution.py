@@ -5,6 +5,8 @@ Network callers must account for each soldier-page request in the shared rate ga
 """
 from bf4ps.single_request_transport import single_request_urlopen
 from html.parser import HTMLParser
+from dataclasses import dataclass
+import re
 from urllib.parse import quote, unquote, urlsplit
 from urllib.request import Request, urlopen
 
@@ -13,20 +15,56 @@ class AccountResolutionError(ValueError):
     """Soldier page does not establish exactly one account relationship."""
 
 
+@dataclass(frozen=True)
+class SoldierPageObservation:
+    username: str
+    linked_platoon_id: int | None
+    displayed_tag: str | None
+
+
 class _AccountLinkParser(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.links = []
+        self.platoons = []
+        self.displayed_tag = None
+        self._in_name = False
+        self._in_tag = False
+        self._name_depth = 0
 
     def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        classes = (attrs.get("class") or "").split()
+        if tag == "h1" and "soldier-info-name" in classes:
+            self._in_name = True
+            self._name_depth = 1
+        elif self._in_name and tag == "span":
+            self._name_depth += 1
+            if self.displayed_tag is None:
+                self._in_tag = True
         if tag != "a":
             return
-        attrs = dict(attrs)
+        match = re.fullmatch(r"/bf4/platoons/view/([1-9][0-9]{0,18})/", attrs.get("href") or "")
+        if match:
+            self.platoons.append(int(match.group(1)))
         if attrs.get("data-track") != "soldier.profile":
             return
         if "profile-link" not in (attrs.get("class") or "").split():
             return
         self.links.append(attrs.get("href") or "")
+
+    def handle_endtag(self, tag):
+        if self._in_name and tag in ("span", "h1"):
+            if tag == "span":
+                self._in_tag = False
+            self._name_depth -= 1
+            if self._name_depth == 0:
+                self._in_name = False
+
+    def handle_data(self, data):
+        value = data.strip()
+        if self._in_tag and self.displayed_tag is None and value.startswith("[") and value.endswith("]"):
+            self.displayed_tag = value
 
 
 def soldier_url(name: str, persona_id: int, platform: str) -> str:
@@ -38,7 +76,7 @@ def soldier_url(name: str, persona_id: int, platform: str) -> str:
             f"{quote(name.strip(), safe='')}/stats/{int(persona_id)}/{platform}/")
 
 
-def resolve_account_username(html: str) -> str:
+def parse_soldier_page(html: str) -> SoldierPageObservation:
     parser = _AccountLinkParser()
     parser.feed(html)
     usernames = set()
@@ -55,10 +93,15 @@ def resolve_account_username(html: str) -> str:
         usernames.add(username)
     if len(usernames) != 1:
         raise AccountResolutionError(f"expected one account link; found {len(usernames)}")
-    return usernames.pop()
+    ids = set(parser.platoons)
+    return SoldierPageObservation(usernames.pop(), next(iter(ids)) if len(ids) == 1 else None, parser.displayed_tag)
 
 
-def fetch_account_username(name: str, persona_id: int, platform: str, *, timeout_seconds: float = 30.0) -> str:
+def resolve_account_username(html: str) -> str:
+    return parse_soldier_page(html).username
+
+
+def fetch_account_observation(name: str, persona_id: int, platform: str, *, timeout_seconds: float = 30.0) -> SoldierPageObservation:
     """Fetch soldier HTML and extract its account link; caller must reserve a request slot."""
     request = Request(soldier_url(name, persona_id, platform), headers={
         "Accept": "text/html",
@@ -68,4 +111,8 @@ def fetch_account_username(name: str, persona_id: int, platform: str, *, timeout
         if response.status != 200:
             raise AccountResolutionError(f"soldier page HTTP {response.status}")
         body = response.read()
-    return resolve_account_username(body.decode("utf-8"))
+    return parse_soldier_page(body.decode("utf-8"))
+
+
+def fetch_account_username(name: str, persona_id: int, platform: str, *, timeout_seconds: float = 30.0) -> str:
+    return fetch_account_observation(name, persona_id, platform, timeout_seconds=timeout_seconds).username

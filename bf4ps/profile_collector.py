@@ -7,7 +7,7 @@ from typing import Sequence
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from bf4ps.battlelog_profile import ProfileFetchError, fetch_profile
-from bf4ps.account_resolution import fetch_account_username, AccountResolutionError
+from bf4ps.account_resolution import fetch_account_observation, AccountResolutionError
 from urllib.error import HTTPError, URLError
 from bf4ps.collection_jobs import claim_next_job, mark_job_running
 from bf4ps.background_service import claim_production_background_job
@@ -80,6 +80,7 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
         """), {"soldier_id": job.soldier_id}).scalar_one_or_none()
     username_was_resolved = username is None
     resolution_error = None
+    account_observation = None
     if username is None:
         try:
             reserve_and_wait()
@@ -89,14 +90,34 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
                     request_ordinal=1,
                     request_label=f"profile-resolution:{persona_id}:{platform}",
                 ):
-                    username = fetch_account_username(str(soldier[2]), persona_id, platform,
+                    account_observation = fetch_account_observation(str(soldier[2]), persona_id, platform,
                                                       timeout_seconds=timeout_seconds)
             else:
-                username = fetch_account_username(str(soldier[2]), persona_id, platform,
+                account_observation = fetch_account_observation(str(soldier[2]), persona_id, platform,
                                                   timeout_seconds=timeout_seconds)
+            username = account_observation.username
         except (AccountResolutionError, HTTPError, URLError, TimeoutError, OSError,
                 UnicodeDecodeError, ValueError) as exc:
             resolution_error = ProfileFetchError(f"account resolution failed: {exc}")
+    # Passive observation only: no extra Battlelog requests, and never break
+    # statistics collection if optional platoon persistence is unavailable.
+    if account_observation is not None:
+        try:
+            with engine.begin() as conn:
+                conn.execute(text("""
+                    INSERT INTO platoon_soldier_discovery
+                      (soldier_id,status,attempts,next_attempt_at,last_checked_at,linked_platoon_id,displayed_tag)
+                    VALUES (:soldier_id,'complete',0,now(),now(),:linked_platoon_id,:displayed_tag)
+                    ON CONFLICT (soldier_id) DO UPDATE SET
+                      status='complete',last_checked_at=excluded.last_checked_at,
+                      linked_platoon_id=excluded.linked_platoon_id,
+                      displayed_tag=excluded.displayed_tag,last_error=NULL
+                """), dict(soldier_id=job.soldier_id,
+                           linked_platoon_id=account_observation.linked_platoon_id,
+                           displayed_tag=account_observation.displayed_tag))
+        except Exception:
+            # Optional enrichment must never fail an otherwise valid profile job.
+            pass
     if resolution_error is None:
         reserve_and_wait()
     with engine.begin() as conn:
