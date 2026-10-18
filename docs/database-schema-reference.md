@@ -18,7 +18,7 @@ The linked live catalog is the complete 2026-10-17 read-only inventory of all 24
 
 ## Migration-source reconciliation — outstanding
 
-The live audit records revision `0012_manual_verify_api`, but the complete migration files `0005` through `0012` were **not present in the inspected website or archived Stage 9C checkouts**. Consequently this documentation does **not** claim to verify the full migration lineage or intended migration semantics. Locate the active collector source checkout and validate its Alembic graph before changing schema-dependent code. Do not synthesize missing migration definitions from live database structure.
+The live audit records revision `0012_manual_verify_api`. On 2026-10-18 the original `0011` and `0012` migration sources were recovered from mak-01 and pushed in commit `fc12cf6` on `recovery/alembic-0011-0012-20261018`. That branch contains files `0001`–`0012`; revision/down_revision declarations have been inspected. **A clean scratch-database migration rehearsal is still required** before declaring the chain fully validated. See [the recovery tracker](recovery/ALEMBIC-0011-0012-RECOVERY.md).
 
 ## Update procedure for every migration
 
