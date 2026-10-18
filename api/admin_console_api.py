@@ -255,13 +255,14 @@ class Handler(BaseHTTPRequestHandler):
                     data = conn.execute(text("""
                         SELECT current_database() AS database_name,
                                pg_database_size(current_database()) AS size_bytes,
+                               (SELECT version_num FROM public.alembic_version LIMIT 1) AS alembic_version,
                                d.xact_commit + d.xact_rollback AS transactions,
                                d.numbackends AS connections,
                                d.stats_reset AS stats_reset,
                                extract(epoch from clock_timestamp()) AS sampled_at
                         FROM pg_stat_database d WHERE d.datname = current_database()
                     """)).mappings().one()
-                return self.reply(200, {**dict(data), 'alembic_version': 'Access restricted', 'sampled_at': float(data['sampled_at']), 'stats_reset': str(data['stats_reset']) if data['stats_reset'] else None})
+                return self.reply(200, {**dict(data), 'sampled_at': float(data['sampled_at']), 'stats_reset': str(data['stats_reset']) if data['stats_reset'] else None})
             except Exception as exc:
                 import logging
                 logging.exception('Database health metrics failed')
