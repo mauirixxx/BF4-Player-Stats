@@ -21,11 +21,12 @@ def main():
  with (BASE/'.queue.lock').open('w') as lock:
   try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
   except BlockingIOError:return 0
-  raw=query("SELECT platoon_id FROM platoon_requests WHERE status IN ('pending','failed') AND next_attempt_at<=now() AND attempts<8 ORDER BY next_attempt_at,requested_at LIMIT 1")
+  raw=query("SELECT platoon_id FROM (SELECT platoon_id,0 AS priority,next_attempt_at AS due FROM platoon_requests WHERE status IN ('pending','failed') AND next_attempt_at<=now() AND attempts<8 UNION ALL SELECT p.platoon_id,1 AS priority,COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now()) AS due FROM platoons p WHERE COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now())<=now() AND NOT EXISTS(SELECT 1 FROM platoon_requests r WHERE r.platoon_id=p.platoon_id AND r.status IN ('pending','failed','running'))) AS due ORDER BY priority,due LIMIT 1")
   if not raw:
    print('No queued platoons due');return 0
-  pid=int(raw.splitlines()[0]);print('Processing',pid,flush=True)
-  query(f"UPDATE platoon_requests SET status='running',attempts=attempts+1,last_attempt_at=now() WHERE platoon_id={pid}")
+  pid=int(raw.splitlines()[0]);is_new=query(f'SELECT 1 FROM platoon_requests WHERE platoon_id={pid} AND status IN (\'pending\',\'failed\')')=='1';print('Processing',pid,flush=True)
+  if is_new:query(f"UPDATE platoon_requests SET status='running',attempts=attempts+1,last_attempt_at=now() WHERE platoon_id={pid}")
+  else:query(f"UPDATE platoons SET next_refresh_at=now()+interval '1 hour' WHERE platoon_id={pid}")
   try:
    with tempfile.TemporaryDirectory(prefix='.queue-',dir=BASE) as tmp:
     html=Path(tmp)/'members.html';roster=Path(tmp)/'roster.json'
@@ -40,11 +41,13 @@ def main():
     if int(doc['platoon']['platoon_id'])!=pid or not doc['validation']['complete']:raise ValueError('Roster validation failed')
     subprocess.run([sys.executable,str(SCRIPTS/'import_platoon_rosters.py'),str(roster)],check=True,timeout=120)
     os.replace(html,BASE/f'{pid}-members.html');os.replace(roster,BASE/f'{pid}-roster.json')
-   query(f"UPDATE platoon_requests SET status='complete',last_error=NULL WHERE platoon_id={pid}")
+   if is_new:query(f"UPDATE platoon_requests SET status='complete',last_error=NULL WHERE platoon_id={pid}")
+   query(f"UPDATE platoons SET next_refresh_at=now()+interval '1 day' WHERE platoon_id={pid}")
    print('Completed',pid);return 0
   except Exception as exc:
    message=str(exc).replace("'","''")[:300]
-   query(f"UPDATE platoon_requests SET status='failed',last_error='{message}',next_attempt_at=now()+interval '1 hour'*LEAST(24,power(2,LEAST(attempts,5))::integer) WHERE platoon_id={pid}")
+   if is_new:query(f"UPDATE platoon_requests SET status='failed',last_error='{message}',next_attempt_at=now()+interval '1 hour'*LEAST(24,power(2,LEAST(attempts,5))::integer) WHERE platoon_id={pid}")
+   else:query(f"UPDATE platoons SET next_refresh_at=now()+interval '2 hours',last_error='{message}' WHERE platoon_id={pid}")
    print('Failed; retry scheduled:',str(exc),file=sys.stderr);return 1
 
 if __name__=='__main__':sys.exit(main())
