@@ -35,3 +35,29 @@ CREATE TABLE platoon_requests (
 ```
 
 Grants: `bf4ps_platoon_collector` SELECT/INSERT/UPDATE, `bf4ps_stage9c_d2` SELECT/INSERT on `platoon_requests`. Existing website role has SELECT on the four platoon roster tables. No grants to existing soldier statistics mutation tables were added.
+
+## Soldier-page platoon discovery (2026-10-18)
+
+- `platoon_soldier_discovery` tracks per-soldier status, retries, observed displayed tag, and the official linked platoon ID independently. Existing soldier statistics scheduling is untouched.
+- `scripts/discover_soldier_platoons.py` seeds only supported PC/PS4/Xbox One soldiers currently evidenced in confirmed platoon rosters; no mass backfill of the broader soldier database.
+- On mak-05, `bf4ps-platoon-discovery.timer` invokes `bf4ps-platoon-discovery.service` every 15 minutes, one soldier per run, using a filesystem lock and bounded retries. It fetches only the fixed Battlelog HTTPS host, parses official numeric `/bf4/platoons/view/<id>/` links, and deduplicates via `platoon_requests` and `platoons`.
+- Displayed `[TAG]` and linked platoon ID are stored as distinct observations. A tag alone is never treated as evidence of a platoon ID or membership.
+- First live tests: `mauirixxx` showed tag `[HOLY]` but linked UCAV Church (`4452867151931601735`); `IMIr_Grinch` yielded new ID `4705241243200910871`, queued for roster collection.
+- This initial worker does not yet periodically recheck completed soldiers for changes in active platoons. That can be added later with a slow TTL.
+- Monitor: `journalctl -u bf4ps-platoon-discovery.service -n 40 --no-pager` and `SELECT status,count(*) FROM platoon_soldier_discovery GROUP BY status;`.
+
+Schema:
+```sql
+CREATE TABLE platoon_soldier_discovery (
+ soldier_id bigint PRIMARY KEY REFERENCES soldiers(soldier_id),
+ status text NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','running','complete','failed')),
+ attempts integer NOT NULL DEFAULT 0,
+ next_attempt_at timestamptz NOT NULL DEFAULT now(),
+ last_checked_at timestamptz,
+ linked_platoon_id bigint,
+ displayed_tag text,
+ last_error text,
+ created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_platoon_soldier_discovery_due ON platoon_soldier_discovery(next_attempt_at) WHERE status IN ('pending','failed');
+```
