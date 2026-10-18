@@ -17,8 +17,8 @@ WITH candidates AS (
        AND btrim(p.persona_name) <> ''
  ORDER BY p.persona_id,p.battlelog_platform_code,p.last_seen_at DESC,p.platoon_id
 ), inserted AS (
- INSERT INTO soldiers(soldier_id,persona_id,platform,current_name,first_seen_at,last_seen_at)
- SELECT nextval('soldiers_soldier_id_seq'),c.persona_id,c.platform,c.name,now(),now()
+ INSERT INTO soldiers(persona_id,platform,current_name,first_seen_at,last_seen_at)
+ SELECT c.persona_id,c.platform,c.name,now(),now()
  FROM candidates c
  ON CONFLICT (persona_id,platform) DO NOTHING
  RETURNING soldier_id
@@ -26,8 +26,8 @@ WITH candidates AS (
 INSERT INTO _platoon_new_soldiers SELECT soldier_id FROM inserted;
 INSERT INTO collection_state(soldier_id)
 SELECT soldier_id FROM _platoon_new_soldiers ON CONFLICT (soldier_id) DO NOTHING;
-INSERT INTO collection_jobs(job_id,soldier_id,resource,lane,priority_class,reason,status,priority_value,eligible_at)
-SELECT nextval('collection_jobs_job_id_seq'),s.soldier_id,r.resource,'background','bootstrap','platoon-roster-bootstrap','pending',0,now()
+INSERT INTO collection_jobs(soldier_id,resource,lane,priority_class,reason,status,priority_value,eligible_at)
+SELECT s.soldier_id,r.resource,'background','bootstrap','platoon-roster-bootstrap','pending',0,now()
 FROM _platoon_new_soldiers s CROSS JOIN (VALUES ('detailed'),('profile'),('weapons'),('vehicles')) r(resource)
 ON CONFLICT (soldier_id,resource) DO NOTHING;
 SELECT count(*) AS new_soldiers FROM _platoon_new_soldiers;
