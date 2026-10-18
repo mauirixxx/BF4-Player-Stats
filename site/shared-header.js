@@ -15,8 +15,24 @@
     const area=mount.querySelector('.header-add');
     area.innerHTML='<label for="headerPlatoon">Have an official Battlelog platoon? Add your platoon!</label>'+
       '<div class="header-add-row"><input id="headerPlatoon" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://battlelog.battlefield.com/bf4/platoons/members/754443074295858477/" aria-label="Official Battlelog platoon URL">'+
-      '<button id="headerAddPlatoon" type="button" disabled title="Platoon imports are coming soon">Add Platoon</button></div>'+
-      '<span class="header-add-hint" role="status">Platoon imports coming soon — this is a preview, not an active submission.</span>';
+      '<button id="headerAddPlatoon" type="button" title="Queue an official Battlelog platoon">Add Platoon</button></div>'+
+      '<span class="header-add-hint" role="status">Paste an official Battlelog platoon URL to queue collection.</span>';
+    const button=document.getElementById('headerAddPlatoon'),input=document.getElementById('headerPlatoon'),hint=area.querySelector('.header-add-hint');
+    button.addEventListener('click',async()=>{
+      if(!input.value.trim()){hint.textContent='Paste an official Battlelog platoon URL first';return}
+      button.disabled=true;hint.textContent='Submitting platoon…';
+      try{
+        const token=await fetch('/platoon-gateway.php',{credentials:'same-origin',cache:'no-store'});
+        if(!token.ok)throw Error('Unable to get security token');
+        const {csrf}=await token.json();
+        const response=await fetch('/platoon-gateway.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-BF4PS-CSRF':csrf},body:JSON.stringify({url:input.value.trim()})});
+        const result=await response.json();
+        if(!response.ok)throw Error(result.error||'Submission failed');
+        hint.textContent=({queued:'Platoon queued for collection!',already_queued:'This platoon is already queued.',already_collected:'This platoon is already in our database.'})[result.state]||result.state;
+        if(result.state==='already_collected')location.href='/platoons.html?id='+encodeURIComponent(result.platoon_id);
+        if(result.state==='queued')input.value='';
+      }catch(err){hint.textContent=err.message||'Submission failed'}finally{button.disabled=false}
+    });
     return;
   }
   const btn=document.getElementById('headerAddStats'), field=document.getElementById('headerBattlelog'), hint=document.querySelector('.header-add-hint');
