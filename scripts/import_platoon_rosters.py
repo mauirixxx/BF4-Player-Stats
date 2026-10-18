@@ -90,7 +90,7 @@ def main():
         statements.append('COMMIT;')
         sqlpath = Path(tmp) / 'import.sql'
         sqlpath.write_text('\n'.join(statements) + '\n')
-        env = dict(os.environ, PGPASSFILE=str(pgpass), PGCONNECT_TIMEOUT='8')
+        env = dict(os.environ, PGPASSFILE=str(pgpass), PGCONNECT_TIMEOUT='8', PGSSLMODE='require')
         command = ['psql', '-X', '-w', '-v', 'ON_ERROR_STOP=1', '-h', args.host, '-U', args.user, '-d', args.database, '-f', str(sqlpath)]
         result = subprocess.run(command, env=env, capture_output=True, text=True)
         if result.returncode:
