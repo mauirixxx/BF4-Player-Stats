@@ -23,7 +23,7 @@ def main():
     state = args.state_dir
     state.mkdir(parents=True, exist_ok=True)
     script_dir = Path(__file__).resolve().parent
-    with tempfile.TemporaryDirectory(prefix='bf4ps-refresh-') as temp:
+    with tempfile.TemporaryDirectory(prefix='.bf4ps-refresh-', dir=state) as temp:
         staged = []
         for i, (name, pid) in enumerate(IDS.items()):
             if i:
