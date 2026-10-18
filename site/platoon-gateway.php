@@ -15,11 +15,27 @@ if((int)($_SERVER['CONTENT_LENGTH']??0)>1024)respond(413,['error'=>'too_large'])
 $body=file_get_contents('php://input',false,null,0,1025);$data=json_decode($body,true);
 if(!is_array($data)||array_keys($data)!==['url']||!is_string($data['url'])||strlen($data['url'])>500)respond(400,['error'=>'invalid_request']);
 $ip=$_SERVER['REMOTE_ADDR']??'';if(!filter_var($ip,FILTER_VALIDATE_IP))respond(403,['error'=>'client_ip']);
+$trusted=['192.168.10.0/24','192.168.200.0/25','192.168.5.0/24','192.168.21.0/24'];
+function cidr(string $ip,string $range): bool {
+  [$net,$bits]=explode('/',$range);
+  $a=inet_pton($ip);$b=inet_pton($net);
+  if ($a===false||$b===false||strlen($a)!==strlen($b)) return false;
+  $n=(int)$bits;
+  for ($i=0;$i<strlen($a);$i++) {
+    $mask=$n>=8?255:($n<=0?0:(255<<(8-$n))&255);
+    if ((ord($a[$i])&$mask)!==(ord($b[$i])&$mask)) return false;
+    $n-=8;
+  }
+  return true;
+}
+$exempt=false;foreach ($trusted as $net) if (cidr($ip,$net)) {$exempt=true;break;}
+if (!$exempt) {
 $dir='/var/lib/bf4ps-platoon-submissions';if(!is_dir($dir)||!is_writable($dir))respond(503,['error'=>'limiter_unavailable']);
 $file=$dir.'/'.hash('sha256',$ip).'.json';$handle=fopen($file,'c+');if(!$handle||!flock($handle,LOCK_EX))respond(503,['error'=>'limiter_unavailable']);
 $times=json_decode(stream_get_contents($handle),true);if(!is_array($times))$times=[];$now=time();$times=array_values(array_filter($times,fn($t)=>is_int($t)&&$t>$now-3600));
 if(count($times)>=5){flock($handle,LOCK_UN);fclose($handle);header('Retry-After: 3600');respond(429,['error'=>'rate_limited']);}
 $times[]=$now;ftruncate($handle,0);rewind($handle);fwrite($handle,json_encode($times));fflush($handle);flock($handle,LOCK_UN);fclose($handle);
+}
 session_write_close();
 $ch=curl_init('http://127.0.0.1:8792/submit');curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>json_encode($data),CURLOPT_HTTPHEADER=>['Content-Type: application/json'],CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>10,CURLOPT_CONNECTTIMEOUT=>2]);$result=curl_exec($ch);$code=curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);
 if(!is_string($result)||$code<100||$code>599)respond(503,['error'=>'backend_unavailable']);http_response_code($code);echo $result;

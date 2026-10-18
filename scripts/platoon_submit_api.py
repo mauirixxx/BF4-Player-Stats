@@ -9,11 +9,30 @@ engine=create_engine(os.environ['BF4PS_DATABASE_URL'],pool_pre_ping=True)
 PATH=re.compile(r'^/bf4/platoons/(?:members|view)/([1-9][0-9]{0,18})/?$')
 class Handler(BaseHTTPRequestHandler):
  def do_POST(self):
-  if self.path!='/submit' or self.headers.get('Content-Type')!='application/json':self.send_error(404);return
+  if self.path not in ('/submit','/refresh-soldier') or self.headers.get('Content-Type')!='application/json':self.send_error(404);return
   try:
    size=int(self.headers.get('Content-Length','0'))
    if size<1 or size>1024:raise ValueError('Invalid size')
-   data=json.loads(self.rfile.read(size));url=data['url'];parts=urlsplit(url)
+   data=json.loads(self.rfile.read(size))
+   if self.path=='/refresh-soldier':
+    if not isinstance(data,dict) or set(data)!={'soldier_id'} or not isinstance(data['soldier_id'],int) or isinstance(data['soldier_id'],bool) or data['soldier_id']<=0:raise ValueError('Invalid soldier ID')
+    sid=data['soldier_id']
+    with engine.begin() as c:
+     c.execute(text("SET LOCAL statement_timeout='5000ms'"))
+     # Serialize requests per soldier, including simultaneous submissions.
+     c.execute(text('SELECT pg_advisory_xact_lock(81405,:sid)'),{'sid':sid})
+     soldier=c.execute(text('SELECT soldier_id FROM soldiers WHERE soldier_id=:sid'),{'sid':sid}).first()
+     if not soldier:self.reply(404,{'error':'soldier_not_found'});return
+     state=c.execute(text('SELECT status,last_checked_at,next_attempt_at FROM platoon_soldier_discovery WHERE soldier_id=:sid FOR UPDATE'),{'sid':sid}).mappings().first()
+     if state and state['status']=='running':status='already_running'
+     elif state and state['status']=='pending' and state['next_attempt_at'] is not None and state['next_attempt_at'].year<2000:status='already_queued'
+     else:
+      c.execute(text("""INSERT INTO platoon_soldier_discovery(soldier_id,status,attempts,next_attempt_at,last_error)
+       VALUES (:sid,'pending',0,TIMESTAMPTZ '1970-01-01',NULL)
+       ON CONFLICT(soldier_id) DO UPDATE SET status='pending',attempts=0,next_attempt_at=TIMESTAMPTZ '1970-01-01',last_error=NULL"""),{'sid':sid})
+      status='queued'
+    self.reply(200,{'state':status,'soldier_id':sid});return
+   url=data['url'];parts=urlsplit(url)
    if not isinstance(url,str) or len(url)>500 or parts.scheme!='https' or parts.netloc!='battlelog.battlefield.com' or parts.query or parts.fragment or parts.username or parts.password:raise ValueError('Use an official HTTPS Battlelog platoon URL')
    match=PATH.fullmatch(parts.path)
    if not match:raise ValueError('Unsupported platoon URL')
