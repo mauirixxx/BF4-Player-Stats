@@ -31,21 +31,55 @@ def send_json(handler,status,payload):
     handler.end_headers()
     handler.wfile.write(body)
 
-# Bounded, short-lived read cache for public equipment requests.
-# Short TTLs keep moderation exclusions and newly collected stats fresh.
+# Shared process-local cache for public equipment requests. Single-flight
+# ensures only one DB load per key while other request threads wait.
 _equipment_cache={}
+_equipment_inflight={}
 _equipment_cache_lock=threading.Lock()
+_equipment_cache_stats={'hits':0,'misses':0,'waits':0,'loads':0,'errors':0}
 def cached_equipment(key, ttl, load):
-    now=time.monotonic()
     with _equipment_cache_lock:
         hit=_equipment_cache.get(key)
-        if hit and hit[0]>now:return hit[1]
-    result=load()
-    with _equipment_cache_lock:
-        if len(_equipment_cache)>300:
-            _equipment_cache.clear()
-        _equipment_cache[key]=(time.monotonic()+ttl,result)
-    return result
+        if hit and hit[0]>time.monotonic():
+            _equipment_cache_stats['hits']+=1
+            return hit[1]
+        flight=_equipment_inflight.get(key)
+        if flight is None:
+            flight=threading.Event()
+            _equipment_inflight[key]=flight
+            leader=True
+            _equipment_cache_stats['misses']+=1
+        else:
+            leader=False
+            _equipment_cache_stats['waits']+=1
+    if not leader:
+        flight.wait()
+        with _equipment_cache_lock:
+            hit=_equipment_cache.get(key)
+            if hit and hit[0]>time.monotonic():
+                _equipment_cache_stats['hits']+=1
+                return hit[1]
+        # A failed or expired load must be retried, not cached as an error.
+        return cached_equipment(key,ttl,load)
+    try:
+        result=load()
+        with _equipment_cache_lock:
+            if len(_equipment_cache)>=300:
+                expired=[k for k,(expires,_) in _equipment_cache.items() if expires<=time.monotonic()]
+                for k in expired: _equipment_cache.pop(k,None)
+                if len(_equipment_cache)>=300:
+                    _equipment_cache.pop(next(iter(_equipment_cache)))
+            _equipment_cache[key]=(time.monotonic()+ttl,result)
+            _equipment_cache_stats['loads']+=1
+        return result
+    except BaseException:
+        with _equipment_cache_lock:
+            _equipment_cache_stats['errors']+=1
+        raise
+    finally:
+        with _equipment_cache_lock:
+            _equipment_inflight.pop(key,None)
+            flight.set()
 
 PLATFORMS={'pc','ps4','xboxone','all'}
 KINDS={'weapon':('soldier_weapon_stats','weapon_catalog','weapon_id','weapons_state'),
@@ -131,7 +165,7 @@ def get(conn,kind,platform,item):
             FROM soldier_vehicle_stats t
             JOIN soldiers s ON s.soldier_id=t.soldier_id
             JOIN collection_state cs ON cs.soldier_id=s.soldier_id
-            WHERE cs.vehicles_state='success' AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) {where_platform}
+            WHERE t.vehicle_id = ANY(:raw_ids) AND cs.vehicles_state='success' AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) {where_platform}
             GROUP BY s.soldier_id,t.vehicle_id
           ), per_soldier AS (
             SELECT raw.soldier_id,
@@ -220,7 +254,39 @@ def get(conn,kind,platform,item):
        ORDER BY kills DESC,s.soldier_id
     """),params).mappings()]
     return {'population':population,'rows':rows}
+def fast_weapon_kills_top10(conn, platform, item):
+    # Indexed kills Top 10; population counted separately, no full-cohort window sort.
+
+    # Only use for unfiltered page 1. Full ranking/search stays on get_page.
+    params={'item':item,'platform':platform}
+    eligible="""FROM soldier_weapon_stats t
+      JOIN soldiers s ON s.soldier_id=t.soldier_id
+      JOIN collection_state cs ON cs.soldier_id=s.soldier_id
+      WHERE t.weapon_id=:item AND cs.weapons_state='success'
+        AND (:platform='all' OR s.platform=:platform)
+        AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe
+          WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)"""
+    population=int(conn.execute(text('SELECT count(DISTINCT s.soldier_id) '+eligible),params).scalar_one())
+    rows=[dict(r) for r in conn.execute(text("""SELECT s.soldier_id,s.current_name,s.persona_id,s.platform,
+        t.kills,t.source_fetched_at,
+        CASE WHEN t.time_equipped_seconds>=60 THEN
+          t.kills::numeric*60/t.time_equipped_seconds END AS kpm,
+        CASE WHEN t.shots_fired>=100 AND t.shots_hit<=t.shots_fired THEN
+          t.shots_hit::numeric*100/t.shots_fired END AS accuracy
+        """+eligible+""" ORDER BY t.kills DESC,t.soldier_id LIMIT 10"""),params).mappings()]
+    previous=None;rank=0
+    for pos,row in enumerate(rows,1):
+        if row['kills']!=previous:rank=pos
+        previous=row['kills'];row['rank']=rank;row['position']=pos
+        row['top_pct']=rank*100.0/population if population else 0
+        pct=row['top_pct']
+        row['division']=next((i for i,cutoff in enumerate((3,8,15,25,35,50,65,80,90),1) if pct<=cutoff),10)
+    return {'population':population,'filtered_count':population,'page':1,'page_size':10,
+            'total_pages':(population+9)//10,'rows':rows}
+
 def get_page(conn, kind, platform, item, page, page_size, search, division, sort_metric="kills"):
+    if kind=='weapon' and sort_metric=='kills' and page==1 and page_size==10 and not search and division==0:
+        return fast_weapon_kills_top10(conn,platform,item)
     # Rank over full cohort; return one bounded page.
     stats, cat, key, state = KINDS[kind]
     params = {'platform':platform, 'item':item, 'search':'%'+search.lower()+'%',
@@ -228,6 +294,10 @@ def get_page(conn, kind, platform, item, page, page_size, search, division, sort
     platform_clause = '' if platform == 'all' else 'AND s.platform=:platform'
     if kind == 'vehicle':
         params['item'] = VEHICLE_FAMILIES.get(item,(item,None))[0]
+        # Push the canonical-family restriction into the raw indexed scan.
+        # Previously every vehicle record was aggregated for each Top 10 request.
+        raw_ids=sorted({raw for raw,(canonical,_) in VEHICLE_FAMILIES.items() if canonical==params['item']} | {params['item']})
+        params['raw_ids']=raw_ids
         family = vehicle_family_sql().replace('t.vehicle_id','raw.vehicle_id')
         mode = vehicle_mode_sql().replace('t.vehicle_id','raw.vehicle_id')
         source=f'''WITH raw_per_soldier AS (
@@ -235,7 +305,7 @@ def get_page(conn, kind, platform, item, page, page_size, search, division, sort
                    max(t.source_fetched_at) AS source_fetched_at
             FROM soldier_vehicle_stats t JOIN soldiers s ON s.soldier_id=t.soldier_id
             JOIN collection_state cs ON cs.soldier_id=s.soldier_id
-            WHERE cs.vehicles_state='success' AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) {platform_clause}
+            WHERE t.vehicle_id = ANY(:raw_ids) AND cs.vehicles_state='success' AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) {platform_clause}
             GROUP BY s.soldier_id,t.vehicle_id
         ), variants AS (
             SELECT raw.soldier_id,{family} AS item_id,{mode} AS mode,
@@ -379,7 +449,11 @@ class Handler(BaseHTTPRequestHandler):
                         raise RuntimeError('Unexpected database')
                     c.execute(text('SET TRANSACTION READ ONLY'))
                     c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
-                    result=get_general_page(c,metric,platform,page,page_size,search,division)
+                    if not search and division==0 and page==1 and page_size==50:
+                        result=cached_equipment(('general',metric,platform,page,page_size),300,
+                            lambda: get_general_page(c,metric,platform,page,page_size,search,division))
+                    else:
+                        result=get_general_page(c,metric,platform,page,page_size,search,division)
                 send_json(self,200,result);return
             if u.path!='/leaderboard':self.send_error(404);return
             kind=q.get('kind',[''])[0];platform=q.get('platform',[''])[0];item=q.get('item',[None])[0]
@@ -401,11 +475,12 @@ class Handler(BaseHTTPRequestHandler):
                     raise RuntimeError('Only D3 scratch database permitted')
                 c.execute(text('SET TRANSACTION READ ONLY'))
                 c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
+                c.execute(text("SET LOCAL statement_timeout = '12000ms'"))
                 cache_key=(kind,platform,item,page,page_size,search,division,paging,sort_metric)
-                # Never cache searches (user-specific queries). Public top tens
-                # expire after 8s; catalog after 30s.
-                if not search and (item is None or (paging and page==1 and page_size==10 and division==0)):
-                    ttl=30 if item is None else 8
+                # Public unfiltered first-page equipment Top 10 / Top 50: 300s.
+                # Catalog: 60s. Searches, divisions, later pages: uncached.
+                if not search and (item is None or (paging and page==1 and page_size in (10,50) and division==0)):
+                    ttl=60 if item is None else 300
                     result=cached_equipment(cache_key,ttl,
                         lambda: (get_page(c,kind,platform,int(item),page,page_size,search,division,sort_metric)
                             if paging else get(c,kind,platform,None)))
