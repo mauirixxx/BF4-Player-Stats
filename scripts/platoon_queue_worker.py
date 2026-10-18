@@ -21,6 +21,12 @@ def main():
  with (BASE/'.queue.lock').open('w') as lock:
   try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
   except BlockingIOError:return 0
+  # Fan-in from the eight statistics collectors; only official linked IDs.
+  query("""INSERT INTO platoon_requests(platoon_id)
+    SELECT DISTINCT d.linked_platoon_id FROM platoon_soldier_discovery d
+    WHERE d.status='complete' AND d.linked_platoon_id IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM platoons p WHERE p.platoon_id=d.linked_platoon_id)
+    ON CONFLICT DO NOTHING""")
   raw=query("SELECT platoon_id FROM (SELECT platoon_id,0 AS priority,next_attempt_at AS due FROM platoon_requests WHERE status IN ('pending','failed') AND next_attempt_at<=now() AND attempts<8 UNION ALL SELECT p.platoon_id,1 AS priority,COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now()) AS due FROM platoons p WHERE COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now())<=now() AND NOT EXISTS(SELECT 1 FROM platoon_requests r WHERE r.platoon_id=p.platoon_id AND r.status IN ('pending','failed','running'))) AS due ORDER BY priority,due LIMIT 1")
   if not raw:
    print('No queued platoons due');return 0
