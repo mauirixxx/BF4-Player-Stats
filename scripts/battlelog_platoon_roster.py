@@ -88,7 +88,7 @@ def parse(source):
     members = [(role, m) for role in ("founders", "leaders", "members")
                for m in club.get(role, [])]
     ids = [str(m["userId"]) for _, m in members]
-    if len(ids) != len(set(ids)) or set(ids) != set(boxes) or set(ids) != set(cards.cards):
+    if len(ids) != len(set(ids)) or not set(boxes).issubset(set(ids)) or set(ids) != set(cards.cards):
         raise ValueError("Roster, personaBoxes and HTML card account IDs do not reconcile")
     if len(ids) != int(club["memberCount"]):
         raise ValueError("Official member count does not match full roster")
@@ -101,7 +101,9 @@ def parse(source):
         if name == "None":
             name = None
         personas = []
-        for p in boxes[uid]:
+        if uid not in boxes and card["personas"]:
+            raise ValueError("Missing personaBoxes for account with HTML persona evidence: " + uid)
+        for p in boxes.get(uid, []):
             if p["game"] != GAME_BF4:
                 continue
             code = int(p["platform"])
