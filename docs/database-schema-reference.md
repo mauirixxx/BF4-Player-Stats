@@ -6,7 +6,11 @@
 
 ## Mandatory schema-first development rule
 
-Before writing or modifying SQL, database persistence, query optimizations, migration scripts or operational queries, read **both** this reference and the applicable current Alembic migration source. Verify the target database revision and relevant live catalog objects. Never infer columns, keys, index definitions or constraints from an older document.
+**Query-only work (including website performance optimizations):** read this reference and the dated live catalog, verify the target database revision, and inspect relevant live table/index definitions before changing SQL. The live catalog may serve as the verified structural reference when migration files are unavailable; do not assume it proves intended migration semantics.
+
+**Schema-changing work (DDL, Alembic, or persistence contract changes):** additionally obtain and review the complete applicable Alembic migration chain. If the migration sources cannot be verified, do not make schema changes.
+
+Never infer columns, keys, index definitions or constraints from an older document.
 
 ## Current production schema
 
