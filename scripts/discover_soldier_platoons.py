@@ -69,6 +69,7 @@ def main():
                 if response.status!=200 or urlsplit(response.url).hostname!='battlelog.battlefield.com':raise ValueError('unexpected response')
                 content=response.read(1_000_001)
             if len(content)>1_000_000:raise ValueError('oversized soldier page')
+            print('HTTP soldier bytes',len(content),'status',response.status,flush=True)
             source=content.decode('utf-8','replace')
             if 'soldier-info-name' not in source:raise ValueError('missing soldier header')
             parser=SoldierHeader();parser.feed(source)

@@ -41,6 +41,7 @@ def main():
      if response.status!=200:raise ValueError('Unexpected HTTP status')
      content=response.read(2_000_001)
      if len(content)>2_000_000:raise ValueError('Oversized response')
+    print('HTTP platoon bytes',len(content),'status',response.status,flush=True)
     html.write_bytes(content)
     subprocess.run([sys.executable,str(SCRIPTS/'battlelog_platoon_roster.py'),str(html),'--output',str(roster)],check=True,timeout=30)
     doc=json.loads(roster.read_text())
