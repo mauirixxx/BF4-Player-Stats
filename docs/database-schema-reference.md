@@ -377,3 +377,12 @@ Every schema-changing Alembic migration must update this document in the **same 
 4. SQL/persistence code is checked against the resulting schema.
 
 The next planned improvement is a schema-introspection validation utility that compares selected critical invariants in this reference against a live BF4PS database. The utility should validate rather than generate authoritative schema: Alembic remains the executable source of truth.
+## Proposed 0013 indexed leaderboard read models — feature branch only
+
+The production database remains at observed revision `0012_manual_verify_api`. Migration `0013_indexed_equipment_rankings` is **not deployed** and must be rehearsed on isolated PostgreSQL before promotion. The original section above is historical and not an assertion that production is at `0009`.
+
+`weapon_leaderboard_metrics`: composite primary key (`soldier_id`, `weapon_id`), `kills bigint NOT NULL`, `kpm numeric NULL`, `accuracy numeric NULL`, `source_fetched_at timestamptz NOT NULL`. Both IDs reference their source tables with `ON DELETE CASCADE`. Ordered indexes `(weapon_id, kills DESC NULLS LAST, soldier_id)`, `(weapon_id, kpm DESC NULLS LAST, soldier_id)`, `(weapon_id, accuracy DESC NULLS LAST, soldier_id)`.
+
+`vehicle_leaderboard_metrics`: composite primary key (`soldier_id`, `vehicle_id`), `kills bigint NOT NULL`, `kpm numeric NULL`, `source_fetched_at timestamptz NOT NULL`. `vehicle_id` is the **canonical family ID**, not necessarily a raw source vehicle ID. Ordered indexes `(vehicle_id, kills DESC NULLS LAST, soldier_id)` and `(vehicle_id, kpm DESC NULLS LAST, soldier_id)`.
+
+The migration is intentionally inert: no automatic backfill, no triggers, no API cutover. Metric population, family mapping parity, live collector transaction integration, exclusions, tie ranks, population and percentile correctness are separate mandatory gates. Do not query these empty tables in production until backfill and ongoing maintenance are verified. The schema remains under review and may change before deployment.
