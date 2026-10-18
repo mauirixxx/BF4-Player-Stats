@@ -179,6 +179,13 @@ def persist_weapon_success(
         {"soldier_id": job.soldier_id, "source_fetched_at": source_fetched_at},
     )
 
+    # Feature-gated derived metrics; same transaction as raw rows and state.
+    # Keep OFF until migration 0013 and full parity are verified.
+    import os
+    if os.environ.get("BF4PS_RANKING_DERIVED_WRITES") == "1":
+        from bf4ps.ranking_backfill import refresh_soldier_metrics
+        refresh_soldier_metrics(conn, job.soldier_id, "weapons")
+
     conn.execute(
         text(
             """

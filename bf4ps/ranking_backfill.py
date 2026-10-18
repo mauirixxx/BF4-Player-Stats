@@ -20,10 +20,20 @@ def vehicle_family_sql():
 def vehicle_mode_sql():
     return 'CASE v.vehicle_id ' + ' '.join(f"WHEN {k} THEN '{mode}'" for k,(_,mode) in sorted(FAMILIES.items())) + " ELSE 'max' END"
 
-def process_window(conn, start, stop):
+def refresh_soldier_metrics(conn, soldier_id, resource):
+    """Refresh only the collected resource within its existing transaction."""
+    if resource not in ('weapons', 'vehicles'):
+        raise ValueError('unsupported resource')
+    process_window(conn, soldier_id, soldier_id + 1, resource=resource)
+
+
+def process_window(conn, start, stop, resource=None):
+    if resource not in (None, "weapons", "vehicles"):
+        raise ValueError("unsupported resource")
     params={'start':start,'stop':stop}
-    conn.execute(text('DELETE FROM weapon_leaderboard_metrics WHERE soldier_id >= :start AND soldier_id < :stop'),params)
-    conn.execute(text('''INSERT INTO weapon_leaderboard_metrics(soldier_id,weapon_id,kills,kpm,accuracy,source_fetched_at)
+    if resource in (None, 'weapons'):
+        conn.execute(text('DELETE FROM weapon_leaderboard_metrics WHERE soldier_id >= :start AND soldier_id < :stop'),params)
+        conn.execute(text('''INSERT INTO weapon_leaderboard_metrics(soldier_id,weapon_id,kills,kpm,accuracy,source_fetched_at)
         SELECT w.soldier_id,w.weapon_id,MAX(w.kills),
         CASE WHEN MAX(w.time_equipped_seconds)>=60 THEN MAX(w.kills)::numeric*60/MAX(w.time_equipped_seconds) END,
         CASE WHEN MAX(w.shots_fired)>=100 AND MAX(w.shots_hit)<=MAX(w.shots_fired)
@@ -32,8 +42,9 @@ def process_window(conn, start, stop):
         FROM soldier_weapon_stats w JOIN collection_state cs ON cs.soldier_id=w.soldier_id
         WHERE w.soldier_id>=:start AND w.soldier_id<:stop AND cs.weapons_state='success'
         GROUP BY w.soldier_id,w.weapon_id'''),params)
-    conn.execute(text('DELETE FROM vehicle_leaderboard_metrics WHERE soldier_id >= :start AND soldier_id < :stop'),params)
-    conn.execute(text(f'''INSERT INTO vehicle_leaderboard_metrics(soldier_id,vehicle_id,kills,kpm,source_fetched_at)
+    if resource in (None, 'vehicles'):
+        conn.execute(text('DELETE FROM vehicle_leaderboard_metrics WHERE soldier_id >= :start AND soldier_id < :stop'),params)
+        conn.execute(text(f'''INSERT INTO vehicle_leaderboard_metrics(soldier_id,vehicle_id,kills,kpm,source_fetched_at)
         WITH raw AS (
             SELECT v.soldier_id,{vehicle_family_sql()} AS family_id,{vehicle_mode_sql()} AS mode,
                    MAX(v.kills) AS kills,MAX(v.time_in_seconds) AS seconds,MAX(v.source_fetched_at) AS fetched
