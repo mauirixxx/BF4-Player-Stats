@@ -30,6 +30,8 @@ class _AccountLinkParser(HTMLParser):
         self.displayed_tag = None
         self._in_name = False
         self._in_tag = False
+        self._in_club = False
+        self._club_depth = 0
         self._name_depth = 0
 
     def handle_starttag(self, tag, attrs):
@@ -42,10 +44,15 @@ class _AccountLinkParser(HTMLParser):
             self._name_depth += 1
             if self.displayed_tag is None:
                 self._in_tag = True
+        if tag == "span" and "club-link" in classes:
+            self._in_club = True
+            self._club_depth = 1
+        elif self._in_club and tag == "span":
+            self._club_depth += 1
         if tag != "a":
             return
         match = re.fullmatch(r"/bf4/platoons/view/([1-9][0-9]{0,18})/", attrs.get("href") or "")
-        if match:
+        if match and self._in_club:
             self.platoons.append(int(match.group(1)))
         if attrs.get("data-track") != "soldier.profile":
             return
@@ -54,6 +61,10 @@ class _AccountLinkParser(HTMLParser):
         self.links.append(attrs.get("href") or "")
 
     def handle_endtag(self, tag):
+        if tag == "span" and self._in_club:
+            self._club_depth -= 1
+            if self._club_depth == 0:
+                self._in_club = False
         if self._in_name and tag in ("span", "h1"):
             if tag == "span":
                 self._in_tag = False

@@ -104,7 +104,9 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
             resolution_error = ProfileFetchError(f"account resolution failed: {exc}")
     # Passive observation only: no extra Battlelog requests, and never break
     # statistics collection if optional platoon persistence is unavailable.
-    if account_observation is not None:
+    # A missing/ambiguous club link is not evidence that an earlier confirmed
+    # link disappeared. Leave queued and in-flight inspections untouched.
+    if account_observation is not None and account_observation.linked_platoon_id is not None:
         try:
             with engine.begin() as conn:
                 conn.execute(text("""
@@ -115,6 +117,7 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
                       status='complete',last_checked_at=excluded.last_checked_at,
                       linked_platoon_id=excluded.linked_platoon_id,
                       displayed_tag=excluded.displayed_tag,last_error=NULL
+                    WHERE platoon_soldier_discovery.status <> 'running'
                 """), dict(soldier_id=job.soldier_id,
                            linked_platoon_id=account_observation.linked_platoon_id,
                            displayed_tag=account_observation.displayed_tag))
