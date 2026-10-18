@@ -1,5 +1,6 @@
 """One leased Battlelog profile job; optional enrichment."""
 from dataclasses import dataclass
+import logging
 import os
 from datetime import datetime, timezone
 from time import monotonic, sleep
@@ -17,6 +18,8 @@ from bf4ps.profile_persistence import persist_profile_success
 from bf4ps.request_gate import reserve_request_slot
 from bf4ps.physical_dispatch_gate import authorized_http_attempt
 from bf4ps.retry_policy import retry_delay_for_failure
+
+_LOG = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class CollectedProfileJob:
@@ -115,9 +118,9 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
                 """), dict(soldier_id=job.soldier_id,
                            linked_platoon_id=account_observation.linked_platoon_id,
                            displayed_tag=account_observation.displayed_tag))
-        except Exception:
+        except Exception as exc:
             # Optional enrichment must never fail an otherwise valid profile job.
-            pass
+            _LOG.warning("optional platoon observation failed for soldier_id=%s: %s", job.soldier_id, type(exc).__name__)
     if resolution_error is None:
         reserve_and_wait()
     with engine.begin() as conn:
