@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BF4PS · Admin Moderation</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1420;--card:#182435;--line:#34475b;--fg:#f0f5fb;--muted:#aebed1;--gold:#f3c860}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,Segoe UI,sans-serif}
+main{max-width:1050px;margin:30px auto;padding:0 20px 70px}h1{font-size:clamp(28px,4vw,40px);margin:0}h2{font-size:19px;margin:0 0 14px}
+p{color:var(--muted);margin:6px 0 16px}.brand{color:var(--gold);letter-spacing:.13em;font-weight:800;font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:22px;margin:20px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.grid>.card{margin:0}
+label{display:block;margin:12px 0 5px;color:var(--muted);font-size:13px}
+input,textarea,select{width:100%;padding:11px;background:#0e1826;color:var(--fg);border:1px solid #4c6075;border-radius:7px;font:inherit}
+button{background:var(--gold);color:#1b1c21;border:0;border-radius:7px;padding:10px 17px;font-weight:750;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}.outline{background:transparent;color:var(--fg);border:1px solid #7589a0}
+.danger{background:#b24c4c;color:white}.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left}
+th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{color:#ff9a9a}
+.ok{color:#80d5a9}.hidden{display:none!important}.identity{font-size:20px;font-weight:800}
+.account-db-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}.account-db-grid>.card{margin:0}.db-metric{padding:8px 0;border-bottom:1px solid var(--line)}.db-metric strong{display:block;color:var(--fg);font-size:20px}.db-metric small{color:var(--muted)}
+@media(max-width:740px){.grid,.account-db-grid{grid-template-columns:1fr}}
+.admin-quick-nav{display:flex;flex-wrap:wrap;gap:18px;margin:0 0 22px;padding-bottom:12px;border-bottom:1px solid var(--line)}.admin-quick-nav a{color:var(--gold);font-size:13px;font-weight:700;text-decoration:none}.admin-quick-nav a:hover{text-decoration:underline} .queue-dialog{width:min(850px,95vw);max-height:82vh;overflow:auto;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:13px;padding:22px}.queue-dialog::backdrop{background:rgba(0,0,0,.75)}.queue-dialog .scroll{max-height:55vh;overflow:auto}.queue-dialog a{color:var(--gold)}
+</style></head><body><main>
+<nav class="admin-quick-nav" aria-label="Site navigation"><a href="/index.html#leaderboards">Leaderboards</a><a href="/equipment.html">Equipment View</a><a href="/community.html">Community Stats</a></nav>
+<div class="brand">BF4 PLAYER STATS / OPERATIONS</div>
+<div class="row" style="justify-content:space-between"><h1>Moderation Console</h1><button class="outline hidden" id="logout">Sign out</button></div>
+<p>Private identity moderation. Actions are audited and reversible; permanent purging is not enabled.</p>
+<div id="message" role="status" aria-live="polite"></div>
+<section class="card" id="loginBox"><h2>Administrator sign in</h2>
+<form id="loginForm"><label for="username">Username</label><input id="username" autocomplete="username" value="mauirixxx" required><label for="password">Administrator password</label><input type="password" id="password" autocomplete="current-password" required>
+<p>Sessions expire after one hour. All changes require CSRF verification.</p><button type="submit">Sign in</button></form></section>
+<div id="app" class="hidden">
+<section class="card"><div class="row" style="justify-content:space-between"><h2>Collection Overview</h2><button class="outline" id="overviewRefresh" type="button">Refresh overview</button></div>
+<p>Lightweight player and platoon collection summary. Snapshot values, not live Battlelog requests.</p><div class="row"><button type="button" class="outline" id="showPlayerQueue">Next 10 player jobs</button><button type="button" class="outline" id="showPlatoonQueue">Next 10 platoons</button></div>
+<div class="grid"><div><h2>Players</h2><div id="overviewPlayers" class="muted">Loading…</div></div><div><h2>Platoons</h2><div id="overviewPlatoons" class="muted">Loading…</div></div></div><p class="muted" id="overviewUpdated"></p></section>
+<div class="account-db-grid"><section class="card"><h2>Account settings · Change password</h2><form id="changePasswordForm">
+<label for="currentPassword">Current password</label><input type="password" id="currentPassword" autocomplete="current-password" required>
+<label for="newPassword">New password (16–128 characters)</label><input type="password" id="newPassword" autocomplete="new-password" minlength="16" maxlength="128" required>
+<label for="confirmPassword">Confirm new password</label><input type="password" id="confirmPassword" autocomplete="new-password" minlength="16" maxlength="128" required>
+<div style="margin-top:12px"><button type="submit">Change password and sign out</button></div></form></section><section class="card"><div class="row" style="justify-content:space-between"><h2>Database health</h2><button type="button" class="outline" id="refreshDatabase">Refresh</button></div><div class="db-metric"><small>Database size</small><strong id="dbSize">Loading…</strong></div><div class="db-metric"><small>Transactions per second (since last refresh)</small><strong id="dbTps">Sampling…</strong></div><div class="db-metric"><small>Current connections</small><strong id="dbConnections">—</strong></div><div class="db-metric"><small>Alembic revision</small><strong id="dbAlembic" style="font-size:15px;overflow-wrap:anywhere">—</strong></div><p id="dbSampleTime" class="muted"></p></section></div>
+<div class="grid">
+<section class="card"><h2>Find soldier</h2><form id="searchForm">
+<label for="query">Name or exact persona ID</label><input id="query" minlength="2" maxlength="80" required>
+<div style="margin-top:12px"><button type="submit">Search private database</button></div></form>
+<div class="scroll"><table><thead><tr><th>Soldier</th><th>Platform</th><th>Persona ID</th><th>Status</th><th></th></tr></thead><tbody id="results"></tbody></table></div></section>
+<section class="card"><h2>Selected identity</h2><div id="selected" class="muted">Choose a soldier from search results.</div>
+<form id="moderationForm" class="hidden"><label for="reason">Reason code</label>
+<select id="reason"><option value="data_integrity_anomaly">Data integrity anomaly</option><option value="operator_review">Operator review</option><option value="duplicate_identity">Duplicate identity</option><option value="other">Other</option></select>
+<label for="note">Private moderation note (optional)</label><textarea id="note" maxlength="2000" rows="3"></textarea>
+<div class="row" style="margin-top:14px"><button type="button" id="exclude" class="danger">Exclude player</button>
+<button type="button" id="restore" class="outline">Restore player</button></div>
+<p>Changes are written to the exclusion registry and audit log. Public exports require a separate refresh.</p></form></section>
+</div>
+<section class="card"><div class="row" style="justify-content:space-between"><h2>Active exclusions</h2><button class="outline" id="reload">Refresh</button></div>
+<div class="scroll"><table><thead><tr><th>Platform</th><th>Persona ID</th><th>Reason</th><th>Updated</th></tr></thead><tbody id="exclusions"></tbody></table></div></section>
+
+<section class="card"><h2>Recent audit events</h2><div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Identity</th><th>Operator</th><th>Reason</th></tr></thead><tbody id="audit"></tbody></table></div></section>
+</div></main>
+<dialog id="queueDialog" class="queue-dialog" aria-labelledby="queueTitle"><div class="row" style="justify-content:space-between"><h2 id="queueTitle">Queue</h2><button type="button" class="outline" id="closeQueue">Close</button></div><p id="queueDescription"></p><div class="scroll"><table><thead id="queueHead"></thead><tbody id="queueBody"></tbody></table></div><p id="queueUpdated" class="muted" role="status"></p></dialog>
+<script>
+'use strict';
+const api='/bf4ps-admin-api/';
+let csrf='', chosen=null;
+const $=id=>document.getElementById(id);
+function message(text,bad=false){$('message').textContent=text;$('message').className=bad?'error':'ok'}
+function td(tr,text){const c=document.createElement('td');c.textContent=String(text??'');tr.append(c);return c}
+async function request(path,options={}){
+  const headers={'Accept':'application/json',...(options.body?{'Content-Type':'application/json'}:{}),...(csrf?{'X-CSRF-Token':csrf}:{})};
+  const response=await fetch(api+path,{credentials:'same-origin',cache:'no-store',headers,...options});
+  const contentType=response.headers.get('content-type')||'';
+  if(!contentType.includes('application/json'))throw Error('Server returned HTTP '+response.status+' instead of JSON');
+  const body=await response.json();
+  if(!response.ok)throw Error(body.error||'Request failed (HTTP '+response.status+')');
+  return body;
+}
+const fmt=n=>Number(n||0).toLocaleString('en-US');
+const pct=(a,b)=>b?(100*a/b).toFixed(2)+'%':'—';
+async function loadOverview(){
+ const btn=$('overviewRefresh');btn.disabled=true;
+ try{const data=await request('overview');const p=data.players;const s=p.summary;const q=data.platoons;
+ $('overviewPlayers').textContent=`${fmt(s.soldiers)} indexed · ${fmt(p.detailed_soldiers)} detailed (${pct(p.detailed_soldiers,s.soldiers)}) · ${fmt(p.full_soldiers)} full (${pct(p.full_soldiers,p.detailed_soldiers)} of detailed) · ${fmt(s.weapons)} weapon records · ${fmt(s.vehicles)} vehicle records`;
+ $('overviewPlatoons').textContent=`${fmt(q.count)} discovered platoons · ${fmt(q.visible_roster_accounts)} supported roster entries · ${fmt(q.unique_supported_soldiers)} unique supported soldiers · ${fmt(q.unique_tracked_soldiers)} soldiers with combat statistics in platoon rosters`;
+ $('overviewUpdated').textContent=`Player snapshot: ${new Date(p.updated).toLocaleString()} · Platoon snapshot: ${new Date(q.updated*1000).toLocaleString()}`;
+ }catch(e){$('overviewUpdated').textContent='Overview unavailable: '+e.message}finally{btn.disabled=false}
+}
+$('overviewRefresh').addEventListener('click',loadOverview);
+let lastDatabaseSample=null;
+async function loadDatabase(){
+ const button=$('refreshDatabase');button.disabled=true;
+ try{
+  const d=await request('database-info');
+  $('dbSize').textContent=(Number(d.size_bytes)/1073741824).toFixed(2)+' GiB';
+  $('dbConnections').textContent=fmt(d.connections);
+  $('dbAlembic').textContent=d.alembic_version||'Unknown';
+  const prior=lastDatabaseSample;
+  const elapsed=prior?Number(d.sampled_at)-Number(prior.sampled_at):0;
+  const sameReset=prior&&d.stats_reset===prior.stats_reset;
+  $('dbTps').textContent=sameReset&&elapsed>0&&Number(d.transactions)>=Number(prior.transactions)
+   ?((Number(d.transactions)-Number(prior.transactions))/elapsed).toFixed(1)+' TPS':'Sampling…';
+  lastDatabaseSample=d;
+  $('dbSampleTime').textContent='Measured '+new Date(Number(d.sampled_at)*1000).toLocaleString()+' · PostgreSQL transactions, not individual SQL statements';
+ }catch(e){$('dbSampleTime').textContent='Database metrics unavailable: '+e.message}
+ finally{button.disabled=false}
+}
+$('refreshDatabase').addEventListener('click',loadDatabase);
+
+let queueTimer=null,queueKind=null,queueBusy=false;
+function closeQueue(){if(queueTimer!==null){clearInterval(queueTimer);queueTimer=null}queueKind=null;if($('queueDialog').open)$('queueDialog').close()}
+function queueRow(values){const tr=document.createElement('tr');for(const v of values)td(tr,v);return tr}
+async function refreshQueue(){if(!queueKind||queueBusy||document.hidden)return;queueBusy=true;const kind=queueKind;
+ try{const data=await request('queue/'+kind);if(kind!==queueKind)return;
+ const tbody=$('queueBody');const frag=document.createDocumentFragment();
+ for(const r of data.rows){if(kind==='players')frag.append(queueRow([r.current_name+' ('+r.platform+')',r.resource,r.status,r.priority_class,new Date(r.status==='running'?(r.started_at||r.eligible_at):r.eligible_at).toLocaleString()]));
+ else frag.append(queueRow([r.name+(r.tag?' ['+r.tag+']':''),r.platoon_id,r.status,new Date(r.next_refresh_at).toLocaleString()]));}
+ if(!data.rows.length)frag.append(queueRow([kind==='players'?'No pending jobs':'No scheduled platoons']));tbody.replaceChildren(frag);
+ $('queueUpdated').textContent='Last checked: '+new Date().toLocaleTimeString()+' · Updates every 10 seconds while open';
+ }catch(e){$('queueUpdated').textContent='Unable to update queue: '+e.message}finally{queueBusy=false}}
+function showQueue(kind){closeQueue();queueKind=kind;$('queueTitle').textContent=kind==='players'?'Next 10 player collection jobs':'Platoons: active and next due';
+ $('queueDescription').textContent=kind==='players'?'Running jobs first, then eligible jobs in approximate worker priority order. Multiple collectors run concurrently.':'Currently processing platoon first (if recorded), then due requests and refreshes in worker priority order. Future scheduled work is excluded.';
+ $('queueHead').replaceChildren(queueRow(kind==='players'?['Soldier','Resource','Status','Priority','Started / Eligible']:['Platoon','ID','Status','Due since']));$('queueBody').replaceChildren();$('queueUpdated').textContent='Loading…';$('queueDialog').showModal();refreshQueue();queueTimer=setInterval(refreshQueue,10000)}
+$('showPlayerQueue').addEventListener('click',()=>showQueue('players'));
+$('showPlatoonQueue').addEventListener('click',()=>showQueue('platoons'));
+$('closeQueue').addEventListener('click',closeQueue);
+$('queueDialog').addEventListener('close',closeQueue);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&queueKind)refreshQueue()});
+async function initialize(){
+  try{const session=await request('session');csrf=session.csrf;$('loginBox').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');await reload();await Promise.all([loadOverview(),loadDatabase()])}
+  catch(e){$('loginBox').classList.remove('hidden');$('app').classList.add('hidden');$('logout').classList.add('hidden');csrf=''}
+}
+$('loginForm').addEventListener('submit',async event=>{
+  event.preventDefault();try{await request('login',{method:'POST',body:JSON.stringify({username:$('username').value,password:$('password').value})});$('password').value='';await initialize();message('Signed in')}
+  catch(e){message(e.message,true)}
+});
+$('changePasswordForm').addEventListener('submit',async event=>{
+  event.preventDefault();if($('newPassword').value!==$('confirmPassword').value){message('Passwords do not match',true);return}
+  try{await request('change-password',{method:'POST',body:JSON.stringify({current_password:$('currentPassword').value,new_password:$('newPassword').value})});$('changePasswordForm').reset();csrf='';await initialize();message('Password changed. Please sign in again.')}
+  catch(e){message(e.message,true)}
+});
+$('logout').addEventListener('click',async()=>{closeQueue();try{await request('logout',{method:'POST',body:'{}'})}catch(e){}csrf='';chosen=null;await initialize();message('Signed out')});
+$('searchForm').addEventListener('submit',async event=>{
+  event.preventDefault();try{const body=await request('search?q='+encodeURIComponent($('query').value));$('results').replaceChildren();
+    for(const r of body.rows){const tr=document.createElement('tr');td(tr,r.current_name);td(tr,r.platform);td(tr,r.persona_id);td(tr,r.excluded?'Excluded':'Visible');
+      const cell=document.createElement('td'),btn=document.createElement('button');btn.className='outline';btn.textContent='Select';btn.onclick=()=>select(r);cell.append(btn);tr.append(cell);$('results').append(tr)}
+    message(body.rows.length+' matching identities')}
+  catch(e){message(e.message,true)}
+});
+function select(r){chosen=r;$('selected').textContent=r.current_name+' · '+r.platform+' · '+r.persona_id+' · '+(r.excluded?'EXCLUDED':'VISIBLE');$('moderationForm').classList.remove('hidden');
+$('exclude').disabled=Boolean(r.excluded);$('restore').disabled=!r.excluded;$('reason').value=r.reason_code||'data_integrity_anomaly';$('note').value=''}
+async function moderate(active){
+  if(!chosen)return;const label=active?'exclude':'restore';
+  if(!confirm('Confirm '+label+' for '+chosen.current_name+' ('+chosen.platform+'/'+chosen.persona_id+')?'))return;
+  try{const payload={platform:chosen.platform,persona_id:chosen.persona_id,reason_code:$('reason').value,private_note:$('note').value||null};
+    const result=await request(active?'exclude':'restore',{method:'POST',body:JSON.stringify(payload)});
+    chosen.excluded=active;select(chosen);message(result.changed?'Moderation action recorded':'No change necessary');await reload()}
+  catch(e){message(e.message,true)}
+}
+$('exclude').onclick=()=>moderate(true);$('restore').onclick=()=>moderate(false);
+function fill(id,rows,keys){const el=$(id);el.replaceChildren();for(const r of rows){const tr=document.createElement('tr');for(const k of keys)td(tr,r[k]);el.append(tr)}}
+async function reload(){try{const [a,b]=await Promise.all([request('exclusions'),request('audit')]);fill('exclusions',a.rows,['platform','persona_id','reason_code','updated_at']);fill('audit',b.rows,['occurred_at','action','persona_id','actor','reason_code'])}catch(e){message(e.message,true)}}
+$('reload').onclick=reload;initialize();
+</script></body></html>
