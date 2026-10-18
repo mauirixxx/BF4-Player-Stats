@@ -40,6 +40,7 @@ def main():
     doc=json.loads(roster.read_text())
     if int(doc['platoon']['platoon_id'])!=pid or not doc['validation']['complete']:raise ValueError('Roster validation failed')
     subprocess.run([sys.executable,str(SCRIPTS/'import_platoon_rosters.py'),str(roster)],check=True,timeout=120)
+    subprocess.run([sys.executable,str(SCRIPTS/'admit_platoon_soldiers.py')],check=True,timeout=90)
     os.replace(html,BASE/f'{pid}-members.html');os.replace(roster,BASE/f'{pid}-roster.json')
    if is_new:query(f"UPDATE platoon_requests SET status='complete',last_error=NULL WHERE platoon_id={pid}")
    query(f"UPDATE platoons SET next_refresh_at=now()+interval '1 day' WHERE platoon_id={pid}")
