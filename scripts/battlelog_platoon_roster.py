@@ -127,7 +127,8 @@ def parse(source):
         raise ValueError("HTML/JSON platform evidence mismatch: " + repr(platform_conflicts[:5]))
     return {"platoon": {"platoon_id": str(club["id"]), "name": club["name"],
                          "tag": club["tag"], "official_member_count": int(club["memberCount"]),
-                         "created_at": datetime.fromtimestamp(club["created"], timezone.utc).isoformat()},
+                         "created_at": datetime.fromtimestamp(club["created"], timezone.utc).isoformat(),
+                         "emblem_path": club.get("emblemPath")},
             "accounts": result, "validation": {
                 "account_count": len(result),
                 "role_counts": dict(Counter(x["role"] for x in result)),
