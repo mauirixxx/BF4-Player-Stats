@@ -81,9 +81,21 @@ For millions of soldiers, prefer bounded platoon-member joins and optional incre
 
 Before bulk import, distinguish identity-only rows from full statistics collection; forecast rows, index sizes, storage and replication WAL for each stage; admission pacing and backlog ETA; queue fairness and API freshness; HA replica lag; partitions or summary tables only if measured workload warrants. Do not couple a platoon schema migration to a mass soldier import.
 
-## 9. Outstanding decisions for operator
+## 9. Operator decision and verified overview data (2026-10-18)
+
+**Decided:** Membership belongs to the individual **soldier persona**, keyed by `(platform, persona_id)`, not the Battlelog account. The official roster remains the sole membership authority. Account-level evidence can help resolve personas but does not by itself prove that every persona on the account is a member. This supersedes the earlier undecided account-versus-persona question.
+
+**Simplify the MVP:** Start with `platoons` and `platoon_memberships` as the two essential tables; include source evidence, sync timestamps, and status fields on these rows. Separate account/roster-evidence and sync-history tables are **optional** if a read-only parser spike shows they are necessary for safe resolution and failure recovery. No need to store platoon IDs as an array on the soldier row; query the join table for the dossier.
+
+**Official overview observed:** `https://battlelog.battlefield.com/bf4/platoons/view/754443074295858477/` returned HTTP 200, 431,495 bytes. Team Wired: tag Wire; created 2014-08-18; website `http://team-wired.net/`; member count 200; rank 50; score 13,751,416; skill 865; K/D 4.230; time 5184h 50m; presentation HTML available. Score tooltip: BF4 13,608,607 + Hardline 142,809. Skill tooltip: BF4 1000, Hardline 730. K/D tooltip: BF4 4.27, Hardline 2.8. Time tooltip: BF4 5095h 27m, Hardline 89h 23m. **Official aggregate figures mix games** and represent Battlelog platoon progression/member contribution, not necessarily a sum of each member's lifetime BF4 statistics. Preserve official figures and provenance separately from BF4PS-calculated BF4-only totals. Do not sum skill/KD values across games.
+
+**Collector proposal:** one dedicated platoon worker with its own egress IP, bounded polling, parser/version checks, verification timestamps, and controlled retries. It collects overview and official roster snapshots; does **not** compute or fetch individual soldier statistics. Keep requests inside a separately documented Battlelog traffic budget and do not increase overall traffic without explicit operator approval. Website serves stored data; no synchronous Battlelog calls on page loads.
+
+**Pending validation:** parse roster account-to-persona associations, verify all 200 entries and BF4 platform membership, define complete-snapshot semantics, and determine whether the official aggregates update for inactive platoons. No schema changes or production import until those checks are done.
+
+## 10. Outstanding decisions for operator
 
 1. Who may add a platoon: authenticated admin only, or rate-limited public submission?
-2. When Battlelog lists an account with multiple BF4 platform personas, should every listed BF4 persona count toward the platoon, or only personas explicitly shown as platoon-associated? Default: **evidence-first, do not assume**.
+2. **Resolved identity policy:** individual soldier persona, not account. Verify official per-persona membership evidence before inclusion; never infer all account personas are members.
 3. Former members: retain historical memberships with dates and exclude them from current aggregates by default?
 4. Which collective stat cards matter most for initial launch? Default: roster/collected coverage, kills/deaths/KD, score, playtime.
