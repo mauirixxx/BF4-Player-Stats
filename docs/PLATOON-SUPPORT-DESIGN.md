@@ -99,3 +99,15 @@ Before bulk import, distinguish identity-only rows from full statistics collecti
 2. **Resolved identity policy:** individual soldier persona, not account. Verify official per-persona membership evidence before inclusion; never infer all account personas are members.
 3. Former members: retain historical memberships with dates and exclude them from current aggregates by default?
 4. Which collective stat cards matter most for initial launch? Default: roster/collected coverage, kills/deaths/KD, score, playtime.
+
+## 11. Verified identity mapping and read-only parser (2026-10-18)
+
+Battlelog `club.founders`, `club.leaders`, and `club.members` are account-level roster evidence. Team Wired contains 4 founders, 1 leader, 195 members, totaling 200 unique account IDs; the `personaBoxes` keys and HTML member-card IDs match all 200. Two embedded account usernames are null (rendered as `None` in cards); do not interpret historical soldier names as current account names or assert accounts were deleted.
+
+Official Battlelog numeric platform codes cross-checked against HTML icons: `1=PC`, `2=Xbox 360`, `4=PS3`, `32=PS4`, `64=Xbox One`. `game=2048` denotes BF4; Hardline `8192` must not be imported as BF4. The Team Wired snapshot contains 550 BF4 platform records but only 394 distinct persona IDs. Exactly 146 persona IDs repeat across Xbox 360/Xbox One and 10 across PS3/PS4; no persona ID crosses account or platform family. Treat these as platform-specific source evidence, not 156 extra statistical identities.
+
+**Authoritative separation:** The roster proves **account** membership. The linked BF4 personas are **associated soldier identities**, not individually verified platoon membership. Do not silently promote every persona to a confirmed `platoon_memberships` row. Preserve all associations with account ID, platform code, persona ID and name, and provenance. Any future per-soldier membership confirmation requires an explicit evidence rule. This clarifies, rather than reverses, the soldier-persona statistics identity decision in section 9.
+
+Read-only parser: `scripts/battlelog_platoon_roster.py <saved-members.html> --output <roster.json>`. It performs no HTTP requests and no database writes; it rejects incomplete or mismatched account rosters, unknown platform codes, and HTML/JSON platform conflicts. Its `validation.complete` flag means **internally reconciled snapshot**, not independently guaranteed full server-side pagination. The JSON output is diagnostic evidence, not a production membership import. Run focused tests with `python3 -m unittest discover -s tests -p test_battlelog_platoon_roster.py`.
+
+**Next gate:** verify collector-side platform identity keys and whether per-soldier platoon membership can be independently established. Design additive schema/migration only after that; never write inferred memberships as confirmed.
