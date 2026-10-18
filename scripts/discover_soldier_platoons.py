@@ -12,17 +12,23 @@ from platoon_queue_worker import query, BASE
 
 class SoldierHeader(html.parser.HTMLParser):
     def __init__(self):
-        super().__init__(); self.club_ids=[]; self.tag=None; self.in_name=False; self.name_depth=0; self.in_tag=False
+        super().__init__(); self.club_ids=[]; self.tag=None; self.in_name=False; self.name_depth=0; self.in_tag=False; self.in_club=False; self.club_depth=0
     def handle_starttag(self, tag, attrs):
         a=dict(attrs); classes=set(a.get('class','').split())
         if tag=='h1' and 'soldier-info-name' in classes: self.in_name=True; self.name_depth=1
         elif self.in_name and tag in ('span','h1'):
             self.name_depth+=1
             if tag=='span' and self.tag is None:self.in_tag=True
-        if tag=='a' and 'club-link' not in classes:
+        if tag=='span' and 'club-link' in classes:
+            self.in_club=True;self.club_depth=1
+        elif self.in_club and tag=='span':self.club_depth+=1
+        if tag=='a' and self.in_club:
             href=a.get('href','');m=re.fullmatch(r'/bf4/platoons/view/([1-9][0-9]{0,18})/',href)
             if m:self.club_ids.append(int(m.group(1)))
     def handle_endtag(self,tag):
+        if tag=='span' and self.in_club:
+            self.club_depth-=1
+            if self.club_depth==0:self.in_club=False
         if self.in_name and tag in ('span','h1'):
             if tag=='span':self.in_tag=False
             self.name_depth-=1
