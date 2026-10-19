@@ -31,6 +31,15 @@ def process_window(conn, start, stop, resource=None):
     if resource not in (None, "weapons", "vehicles"):
         raise ValueError("unsupported resource")
     params={'start':start,'stop':stop}
+    # Acquire per-soldier transaction locks in deterministic ID order. This
+    # coordinates window backfills with both live resource success handlers.
+    # Lock soldiers (not only existing derived rows): a first collection must
+    # not race a backfill that observes no previous metrics.
+    for (locked_soldier_id,) in conn.execute(text(
+        "SELECT soldier_id FROM soldiers WHERE soldier_id >= :start AND soldier_id < :stop ORDER BY soldier_id"
+    ), params):
+        conn.execute(text("SELECT pg_advisory_xact_lock(hashtextextended('bf4ps:ranking:' || CAST(:sid AS text), 0))"),
+                     {"sid": locked_soldier_id})
     if resource in (None, 'weapons'):
         conn.execute(text('DELETE FROM weapon_leaderboard_metrics WHERE soldier_id >= :start AND soldier_id < :stop'),params)
         conn.execute(text('''INSERT INTO weapon_leaderboard_metrics(soldier_id,weapon_id,kills,kpm,accuracy,source_fetched_at)

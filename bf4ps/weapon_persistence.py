@@ -82,6 +82,11 @@ def persist_weapon_success(
     if ownership is None:
         raise RuntimeError("weapon success rejected: job lease is no longer owned")
 
+    # Serialize cross-resource writes and concurrent backfill for this soldier.
+    # Keep this after lease ownership validation and before any raw mutations.
+    conn.execute(text("SELECT pg_advisory_xact_lock(hashtextextended('bf4ps:ranking:' || CAST(:soldier_id AS text), 0))"),
+                 {"soldier_id": job.soldier_id})
+
     # Reconcile the global catalog first. The GUID is the durable Battlelog
     # identity; descriptive fields follow the latest successfully normalized
     # observation while first_seen_at remains immutable.

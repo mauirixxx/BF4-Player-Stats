@@ -83,6 +83,11 @@ def persist_vehicle_success(
     if ownership is None:
         raise RuntimeError("vehicle success rejected: job lease is no longer owned")
 
+    # Serialize cross-resource writes and concurrent backfill for this soldier.
+    # Keep this after lease ownership validation and before any raw mutations.
+    conn.execute(text("SELECT pg_advisory_xact_lock(hashtextextended('bf4ps:ranking:' || CAST(:soldier_id AS text), 0))"),
+                 {"soldier_id": job.soldier_id})
+
     # The catalog is shared by every soldier. Avoid rewriting unchanged rows
     # for every collection: this previously produced millions of dead tuples
     # and serialized the fleet behind a global catalog lock. Metadata changes

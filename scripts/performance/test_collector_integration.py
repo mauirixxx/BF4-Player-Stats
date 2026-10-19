@@ -62,7 +62,6 @@ def contend(i):
   try:
    c.execute(text("SET LOCAL lock_timeout='10000ms'"))
    barrier.wait(timeout=10)
-   c.execute(text('SELECT soldier_id FROM soldiers WHERE soldier_id=:s FOR UPDATE'),{'s':soldier.soldier_id})
    refresh_soldier_metrics(c,soldier.soldier_id,'weapons')
    refresh_soldier_metrics(c,soldier.soldier_id,'vehicles')
    return i
@@ -70,5 +69,5 @@ def contend(i):
 with ThreadPoolExecutor(max_workers=2) as pool:
  results=list(pool.map(contend,[1,2]))
 assert results==[1,2]
-print('PASS: two simultaneous same-soldier transactions serialize successfully under row lock',flush=True)
+print('PASS: two simultaneous same-soldier transactions serialize successfully under shared advisory lock',flush=True)
 print('PASS: collector integration and same-soldier concurrency suite',flush=True)
