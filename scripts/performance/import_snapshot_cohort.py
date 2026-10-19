@@ -48,7 +48,8 @@ with source.connect() as s, target.begin() as t:
   q=text(f'SELECT {",".join(columns)} FROM {table} {where}')
   count=0
   cursor=s.execution_options(stream_results=True).execute(q,{'ids':ids})
-  ins=text(f'INSERT INTO {table} ({",".join(columns)}) VALUES ({",".join(":"+c for c in columns)})')
+  identity=' OVERRIDING SYSTEM VALUE' if table in ('soldiers','weapon_catalog','vehicle_catalog') else ''
+  ins=text(f'INSERT INTO {table} ({",".join(columns)}){identity} VALUES ({",".join(":"+c for c in columns)})')
   while rows:=cursor.mappings().fetchmany(1000):
    t.execute(ins,[dict(r) for r in rows]); count+=len(rows)
   print('copied',table,count,flush=True)
