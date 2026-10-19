@@ -16,7 +16,7 @@ class Conn:
     def __init__(self,rows,population):self.rows=rows;self.population=population;self.queries=[]
     def execute(self,query,params):
         sql=str(query);self.queries.append((sql,params))
-        return Result(self.population if sql.startswith('SELECT count(*)') else self.rows)
+        return Result(self.population if 'equipment_population' in sql else self.rows)
 
 class TestFastPath(unittest.TestCase):
     def test_flag_off_by_default(self):
@@ -31,7 +31,9 @@ class TestFastPath(unittest.TestCase):
         self.assertEqual([r['rank'] for r in output['rows']],[1,1,3])
         self.assertEqual([r['division'] for r in output['rows']],[1,1,1])
         self.assertEqual(output['population'],100)
-        self.assertIn('player_exclusions',c.queries[0][0])
+        self.assertIn('equipment_population',c.queries[0][0])
+        self.assertNotIn('leaderboard_metrics',c.queries[0][0])
+        self.assertIn('player_exclusions',c.queries[1][0])
         self.assertIn('LIMIT 10',c.queries[1][0])
         self.assertIn('m.kills DESC NULLS LAST,m.soldier_id',c.queries[1][0])
     def test_vehicle_kpm_and_null_ties(self):
