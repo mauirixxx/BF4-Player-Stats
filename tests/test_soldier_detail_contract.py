@@ -11,9 +11,10 @@ class SoldierDetailContract(unittest.TestCase):
         self.assertIn('detail.weapons',source)
         self.assertIn('detail.vehicles',source)
 
-    def test_production_still_uses_legacy_until_cutover(self):
+    def test_production_soldier_uses_bounded_detail_endpoint(self):
         source=(ROOT/'site/soldier.html').read_text()
-        self.assertIn('/temp-stats-data.json',source)
+        self.assertIn('/bf4ps-api/soldier-detail?id=',source)
+        self.assertNotIn('/temp-stats-data.json',source)
 
     def test_detail_queries_bounded(self):
         source=(ROOT/'api/soldier_detail.py').read_text()
