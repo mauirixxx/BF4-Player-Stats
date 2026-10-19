@@ -4,7 +4,9 @@ The caller must independently enforce admin authentication, authorization,
 CSRF, idempotency, and rate limits before invoking these functions. Call each
 mutation inside a database transaction. No public web route imports this.
 """
+import os
 from sqlalchemy import text
+from admin_population_delta import affected_soldiers,lock_soldiers,snapshot,apply
 
 PLATFORMS = frozenset(('pc', 'ps4', 'xboxone'))
 REASONS = frozenset(('data_integrity_anomaly', 'operator_review', 'duplicate_identity', 'other'))
@@ -42,11 +44,16 @@ def set_exclusion(conn, *, platform, persona_id, active, actor, reason_code, pri
                   actor=actor, reason_code=reason_code, private_note=private_note)
     # Serialize moderation for one identity, even if the row doesn't yet exist.
     conn.execute(text('SELECT pg_advisory_xact_lock(hashtext(:platform), (:persona_id % 2147483647)::integer)'), params)
+    maintain = os.environ.get("BF4PS_EQUIPMENT_POPULATION_WRITES") == "1"
+    ids = affected_soldiers(conn, platform, persona_id) if maintain else []
+    if maintain:
+        lock_soldiers(conn, ids)
     previous = get_exclusion(conn, platform=platform, persona_id=persona_id)
     if previous is None and not active:
         raise ValueError('identity has no exclusion to restore')
     if previous is not None and bool(previous['active']) == active:
         return {'changed': False, 'active': active}
+    before = {k: snapshot(conn,k,ids) for k in ("weapon","vehicle")} if maintain else {}
     conn.execute(text('''
         INSERT INTO public.player_exclusions
             (platform,persona_id,reason_code,private_note,created_by,active)
@@ -60,4 +67,7 @@ def set_exclusion(conn, *, platform, persona_id, active, actor, reason_code, pri
             (platform,persona_id,action,actor,reason_code,private_note)
         VALUES (:platform,:persona_id,:action,:actor,:reason_code,:private_note)
     '''), {**params, 'action': 'exclude' if active else 'restore'})
+    if maintain:
+        for kind, old in before.items():
+            apply(conn,kind,old,snapshot(conn,kind,ids))
     return {'changed': True, 'active': active}
