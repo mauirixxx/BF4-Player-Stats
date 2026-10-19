@@ -30,6 +30,20 @@ with e.begin() as c:
  first=snapshot()
  assert first[0]==[(1,5,10,Decimal('5'),Decimal('50')),(1,6,3,Decimal('3'),None),(2,5,10,Decimal('10'),Decimal('50')),(3,5,5,None,None)],first[0]
  assert first[1]==[(1,1,20,Decimal('6')),(1,2,12,Decimal('4')),(2,1,15,Decimal('15')),(2,2,12,Decimal('6')),(3,1,1,None)],first[1]
+ # A weapon collection must not disturb vehicle metrics, and vice versa.
+ from bf4ps.ranking_backfill import refresh_soldier_metrics
+ c.execute(text('DELETE FROM vehicle_leaderboard_metrics WHERE soldier_id=1'))
+ refresh_soldier_metrics(c,1,'weapons')
+ assert c.execute(text('SELECT count(*) FROM vehicle_leaderboard_metrics WHERE soldier_id=1')).scalar_one()==0
+ refresh_soldier_metrics(c,1,'vehicles')
+ assert snapshot()==first
+ # Simulate a failed collector transaction using a SAVEPOINT: no partial derived rows survive.
+ nested=c.begin_nested()
+ c.execute(text('UPDATE soldier_weapon_stats SET kills=999 WHERE soldier_id=1 AND weapon_id=5'))
+ refresh_soldier_metrics(c,1,'weapons')
+ assert c.execute(text('SELECT kills FROM weapon_leaderboard_metrics WHERE soldier_id=1 AND weapon_id=5')).scalar_one()==999
+ nested.rollback()
+ assert snapshot()==first,'rollback failed to restore derived state'
  process_window(c,0,2);process_window(c,2,4)
  assert snapshot()==first,'restart/idempotence mismatch'
  c.execute(text("UPDATE collection_state SET weapons_state='temporary_failure' WHERE soldier_id=2"))
