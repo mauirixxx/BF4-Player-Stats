@@ -36,3 +36,12 @@ Status: **HOLD — isolated rehearsal only; NO production migration or activatio
 - Population metadata still computed by separate cohort count; must measure at full scale.
 
 Production untouched by this rehearsal. Scratch changes only: website-compatible exclusion table in isolated 10K DB. No website service restart or production flags changed.
+
+## Additional isolated rehearsal — post-backfill verification
+
+- Four committed 250-ID windows [1,1001) completed in 10.71 s with clean exit; resumable at 1001. Post-run counts verified unchanged: 953,680 derived weapon and 363,542 derived vehicle rows. Disk still reported 11 GB available (64% used).
+- Scratch WAL LSN observed before batch `0/3C22FEC0` and after `0/44D1B390`: `pg_wal_lsn_diff` 145,667,280 bytes (~139 MiB). **This is an interval-wide WAL delta, not an isolated backfill-only attribution**. No replica exists on this standalone scratch container; replication lag not measured.
+- Re-ran scratch lock-collision suite: rival lock acquisition refused, transaction rollback released lock, backfill timeout preserved baseline, opposite-resource refreshes completed, retry backfill succeeded. All PASS.
+- Re-ran full real weapon and vehicle persistence-handler scratch tests including stale lease rejection, collection events/finalization and same-soldier serialization: PASS.
+- Re-ran 96 concurrent refresh transactions across 8 workers, rolled back, plus exclusion parity: PASS (4.00 s).
+- These concurrency suites **do not prove** a sustained committed collector-versus-backfill race on a full-size staging copy; preserve that release gate.
