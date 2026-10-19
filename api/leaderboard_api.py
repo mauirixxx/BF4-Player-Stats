@@ -309,6 +309,27 @@ class Handler(BaseHTTPRequestHandler):
                     c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
                     result=search_soldiers(c,term)
                 send_json(self,200,result);return
+            if u.path=='/linked-profiles':
+                raw=q.get('soldier_id',[''])[0]
+                if not raw.isdecimal() or len(raw)>19 or not 0<int(raw)<=9223372036854775807:
+                    self.send_error(400);return
+                with engine.connect() as c:
+                    c.execute(text('SET TRANSACTION READ ONLY'))
+                    c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
+                    result=[dict(row) for row in c.execute(text("""
+                        SELECT DISTINCT other.soldier_id,other.current_name,other.platform
+                        FROM public.profile_soldiers source
+                        JOIN public.soldiers origin ON origin.soldier_id=source.soldier_id
+                        JOIN public.profile_soldiers related ON related.profile_id=source.profile_id
+                        JOIN public.soldiers other ON other.soldier_id=related.soldier_id
+                        WHERE source.soldier_id=:id AND other.soldier_id<>:id
+                          AND NOT EXISTS (SELECT 1 FROM public.player_exclusions e
+                            WHERE e.platform=origin.platform AND e.persona_id=origin.persona_id AND e.active)
+                          AND NOT EXISTS (SELECT 1 FROM public.player_exclusions e
+                            WHERE e.platform=other.platform AND e.persona_id=other.persona_id AND e.active)
+                        ORDER BY other.platform,other.current_name,other.soldier_id LIMIT 30
+                    """),{'id':int(raw)}).mappings()]
+                send_json(self,200,{'rows':result});return
             if u.path=='/soldier-detail':
                 raw=q.get('id',[''])[0]
                 if not raw.isdecimal() or len(raw)>19 or int(raw)<1 or int(raw)>9223372036854775807:
