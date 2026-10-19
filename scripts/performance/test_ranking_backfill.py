@@ -16,11 +16,11 @@ with e.begin() as c:
   c.execute(text("INSERT INTO collection_state(soldier_id,weapons_state,vehicles_state) VALUES (:id,'success','success')"),{'id':id})
  for id in [5,6]:
   c.execute(text("INSERT INTO weapon_catalog(weapon_id,weapon_guid,name,first_seen_at,last_seen_at) OVERRIDING SYSTEM VALUE VALUES (:id,:guid,:guid,now(),now())"),{'id':id,'guid':f'w{id}'})
- for id in [1,2,30,73]:
+ for id in [1,2,30,73,62]:
   c.execute(text("INSERT INTO vehicle_catalog(vehicle_id,vehicle_guid,name,first_seen_at,last_seen_at) OVERRIDING SYSTEM VALUE VALUES (:id,:guid,:guid,now(),now())"),{'id':id,'guid':f'v{id}'})
  for soldier,weapon,kills,secs,fired,hit in [(1,5,10,120,200,100),(2,5,10,60,100,50),(3,5,5,30,90,50),(1,6,3,60,100,101)]:
   c.execute(text("INSERT INTO soldier_weapon_stats(soldier_id,weapon_id,kills,headshots,shots_fired,shots_hit,time_equipped_seconds,source_fetched_at) VALUES (:s,:w,:k,0,:f,:h,:t,now())"),{'s':soldier,'w':weapon,'k':kills,'f':fired,'h':hit,'t':secs})
- for soldier,vehicle,kills,secs in [(1,1,10,100),(1,73,20,200),(1,2,5,60),(1,30,7,120),(2,1,15,60),(2,2,6,60),(2,30,6,60),(3,1,1,20)]:
+ for soldier,vehicle,kills,secs in [(1,1,10,100),(1,73,20,200),(1,2,5,60),(1,30,7,120),(2,1,15,60),(2,2,6,60),(2,30,6,60),(3,1,1,20),(3,62,7,60)]:
   c.execute(text("INSERT INTO soldier_vehicle_stats(soldier_id,vehicle_id,kills,time_in_seconds,source_fetched_at) VALUES (:s,:v,:k,:t,now())"),{'s':soldier,'v':vehicle,'k':kills,'t':secs})
  process_window(c,0,2)
  process_window(c,2,4)
@@ -29,7 +29,7 @@ with e.begin() as c:
           [tuple(r) for r in c.execute(text('SELECT soldier_id,vehicle_id,kills,kpm FROM vehicle_leaderboard_metrics ORDER BY soldier_id,vehicle_id'))])
  first=snapshot()
  assert first[0]==[(1,5,10,Decimal('5'),Decimal('50')),(1,6,3,Decimal('3'),None),(2,5,10,Decimal('10'),Decimal('50')),(3,5,5,None,None)],first[0]
- assert first[1]==[(1,1,20,Decimal('6')),(1,2,12,Decimal('4')),(2,1,15,Decimal('15')),(2,2,12,Decimal('6')),(3,1,1,None)],first[1]
+ assert first[1]==[(1,1,20,Decimal('6')),(1,2,12,Decimal('4')),(2,1,15,Decimal('15')),(2,2,12,Decimal('6')),(3,1,1,None),(3,62,7,Decimal('7'))],first[1]
  # A weapon collection must not disturb vehicle metrics, and vice versa.
  from bf4ps.ranking_backfill import refresh_soldier_metrics
  c.execute(text('DELETE FROM vehicle_leaderboard_metrics WHERE soldier_id=1'))

@@ -50,7 +50,6 @@ def process_window(conn, start, stop, resource=None):
                    MAX(v.kills) AS kills,MAX(v.time_in_seconds) AS seconds,MAX(v.source_fetched_at) AS fetched
             FROM soldier_vehicle_stats v JOIN collection_state cs ON cs.soldier_id=v.soldier_id
             WHERE v.soldier_id>=:start AND v.soldier_id<:stop AND cs.vehicles_state='success'
-              AND v.vehicle_id NOT IN {ZERO_ONLY}
             GROUP BY v.soldier_id,v.vehicle_id),
         family AS (SELECT soldier_id,family_id,
                   CASE WHEN MAX(mode)='sum' THEN SUM(kills) ELSE MAX(kills) END kills,
