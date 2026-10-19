@@ -26,7 +26,13 @@ def query_top10(conn,kind,platform,item,metric):
        WHERE m.{key}=:item AND (:platform='all' OR s.platform=:platform)
          AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe
            WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)'''
-    population=int(conn.execute(text('SELECT count(*) '+eligibility),params).scalar_one())
+    # Population metadata is maintained transactionally by collectors and moderation.
+    # Never count the full eligible cohort on the Top 10 request path.
+    population=int(conn.execute(text('''
+        SELECT COALESCE(SUM(population),0) FROM equipment_population
+        WHERE kind=:kind AND item_id=:item
+          AND (:platform='all' OR platform=:platform)
+    '''),{**params,'kind':kind}).scalar_one())
     fields='m.kills,m.kpm,m.accuracy' if kind=='weapon' else 'm.kills,m.kpm,NULL::numeric AS accuracy'
     rows=[dict(r) for r in conn.execute(text(f'''SELECT s.soldier_id,s.current_name,s.persona_id,s.platform,
         {fields},m.source_fetched_at
