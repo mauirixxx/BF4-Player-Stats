@@ -12,7 +12,7 @@ from bf4ps.ranking_backfill import process_window
 p=argparse.ArgumentParser()
 p.add_argument('--soldiers',type=int,default=1000)
 a=p.parse_args()
-if not 1<=a.soldiers<=5000: p.error('cohort size must be 1..5000')
+if not 1<=a.soldiers<=10000: p.error('cohort size must be 1..10000')
 source_url=os.environ['BF4PS_DATABASE_URL']
 scratch_url=os.environ['BF4PS_RANKING_SCRATCH_URL']
 src=make_url(source_url); dst=make_url(scratch_url)
@@ -54,7 +54,8 @@ with source.connect() as s, target.begin() as t:
    t.execute(ins,[dict(r) for r in rows]); count+=len(rows)
   print('copied',table,count,flush=True)
  for start in range(0,len(ids),200):
-  for soldier_id in ids[start:start+200]:
-   process_window(t,soldier_id,soldier_id+1)
+  batch=ids[start:start+200]
+  process_window(t,batch[0],batch[-1]+1)
+  print("indexed soldiers",min(start+len(batch),len(ids)),"of",len(ids),flush=True)
  print('derived rows:',[(name,t.execute(text(f'SELECT COUNT(*) FROM {name}')).scalar_one()) for name in ('weapon_leaderboard_metrics','vehicle_leaderboard_metrics')],flush=True)
  print('PASS: bounded consistent cohort copied and indexed in scratch',flush=True)
