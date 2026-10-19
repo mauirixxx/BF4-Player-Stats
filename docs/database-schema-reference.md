@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current documented head: `0009_manual_requests` (feature branch; **not deployed to production**)
+Current feature-branch Alembic head: `0013_indexed_equipment_rankings` (**not deployed to production**). Last verified production revision: `0012_manual_verify_api` (2026-10-18).
 
 ## Mandatory SQL development rule
 
@@ -25,6 +25,10 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0007_physical_dispatch_gate` | `0006_stage9c_soak_round_ledger` | Adds request ordinal and physical-request uniqueness to outbound dispatches; does not activate collection |
 | `0008_runtime_budgets` | `0007_physical_dispatch_gate` | Fleet physical dispatch and background admission ceilings |
 | `0009_manual_requests` | `0008_runtime_budgets` | Inert manual request ledger and cooldown anchors; no website role or public API |
+| `0010_manual_api_function` | `0009_manual_requests` | Restricted manual-request SQL API |
+| `0011_manual_verification` | `0010_manual_api_function` | Pending Battlelog soldier verification |
+| `0012_manual_verify_api` | `0011_manual_verification` | Restricted verification request SQL API |
+| `0013_indexed_equipment_rankings` | `0012_manual_verify_api` | Inert indexed weapon and vehicle leaderboard read models; scratch only |
 
 ### Important migration consequence: Gun Master
 
