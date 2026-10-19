@@ -19,9 +19,8 @@ with engine.connect() as c:
    old=f"WITH raw AS (SELECT t.soldier_id,t.vehicle_id,MAX(t.kills) kills,MAX(t.time_in_seconds) seconds {base} AND t.vehicle_id=ANY(:ids) GROUP BY t.soldier_id,t.vehicle_id), variants AS (SELECT soldier_id,{fam.replace('t.vehicle_id','vehicle_id')} family,{mode.replace('t.vehicle_id','vehicle_id')} mode,kills,seconds FROM raw), grouped AS (SELECT soldier_id,CASE WHEN MAX(mode)='sum' THEN SUM(kills) ELSE MAX(kills) END kills,CASE WHEN MAX(mode)='sum' THEN SUM(seconds) ELSE MAX(seconds) END seconds FROM variants WHERE family=:item GROUP BY soldier_id) SELECT soldier_id,kills,CASE WHEN seconds>=60 THEN kills::numeric*60/seconds END kpm FROM grouped"
    new=f"WITH raw AS (SELECT t.soldier_id,{fam} family,{mode} mode,MAX(t.kills) kills,MAX(t.time_in_seconds) seconds {base} GROUP BY t.soldier_id,t.vehicle_id), grouped AS (SELECT soldier_id,CASE WHEN MAX(mode)='sum' THEN SUM(kills) ELSE MAX(kills) END kills,CASE WHEN MAX(mode)='sum' THEN SUM(seconds) ELSE MAX(seconds) END seconds FROM raw WHERE family=:item GROUP BY soldier_id) SELECT soldier_id,kills,CASE WHEN seconds>=60 THEN kills::numeric*60/seconds END kpm FROM grouped"
    args={'item':item,'ids':ids,'platform':platform}
-   for metric in ('kills','kpm'):
-    query=f"WITH legacy AS ({old}), proposed AS ({new}) SELECT (SELECT COUNT(*) FROM legacy) old_count,(SELECT COUNT(*) FROM proposed) new_count,(SELECT COUNT(*) FROM ((SELECT * FROM legacy EXCEPT ALL SELECT * FROM proposed) UNION ALL (SELECT * FROM proposed EXCEPT ALL SELECT * FROM legacy)) mismatch) mismatches"
-    result=c.execute(text(query),args).one()
-    assert result.old_count==result.new_count and result.mismatches==0,(item,platform,metric,result)
-    print('PASS vehicle',item,platform,metric,'population',result.old_count,flush=True)
+   query=f"WITH legacy AS ({old}), proposed AS ({new}) SELECT (SELECT COUNT(*) FROM legacy) old_count,(SELECT COUNT(*) FROM proposed) new_count,(SELECT COUNT(*) FROM ((SELECT * FROM legacy EXCEPT ALL SELECT * FROM proposed) UNION ALL (SELECT * FROM proposed EXCEPT ALL SELECT * FROM legacy)) mismatch) mismatches"
+   result=c.execute(text(query),args).one()
+   assert result.old_count==result.new_count and result.mismatches==0,(item,platform,result)
+   print('PASS vehicle',item,platform,'kills+kpm','population',result.old_count,flush=True)
  c.rollback()
