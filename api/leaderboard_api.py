@@ -409,34 +409,66 @@ def indexed_equipment_search(conn, kind, platform, item, search, sort_metric):
     '''''
     candidate_rows = conn.execute(text(candidate_sql),params).mappings().all()
     count = len(candidate_rows)
-    if count > 2:
-        return None  # Broad searches retain the existing full-cohort path.
+    if count > 50:
+        return None  # Very broad searches retain the existing full-cohort path.
     candidates = sorted(candidate_rows,
       key=lambda r: (r[metric] is None, -(r[metric] or 0), r['soldier_id']))[:50]
     population = int(conn.execute(text('''SELECT coalesce(sum(population),0)
       FROM equipment_population WHERE kind=:kind AND item_id=:item
       AND (:platform='all' OR platform=:platform)'''),params).scalar_one())
-    rows=[]
-    for candidate in candidates:
-        row=dict(candidate)
-        value=row[metric]
-        # rank() treats NULL as a single final tie group. position uses soldier_id.
-        # Score comparisons use the same NULLS LAST ordering as the leaderboard.
-        score_where = f'(m.{metric} > :score)' if value is not None else f'(m.{metric} IS NOT NULL)'
-        position_where = (f'({score_where} OR (m.{metric} = :score AND m.soldier_id < :sid))'
-                          if value is not None else f'({score_where} OR (m.{metric} IS NULL AND m.soldier_id < :sid))')
-        common = f'''FROM {table} m JOIN soldiers s ON s.soldier_id=m.soldier_id
+    if count <= 2:
+        rows=[]
+        for candidate in candidates:
+            row=dict(candidate)
+            value=row[metric]
+            # rank() treats NULL as a single final tie group. position uses soldier_id.
+            # Score comparisons use the same NULLS LAST ordering as the leaderboard.
+            score_where = f'(m.{metric} > :score)' if value is not None else f'(m.{metric} IS NOT NULL)'
+            position_where = (f'({score_where} OR (m.{metric} = :score AND m.soldier_id < :sid))'
+                              if value is not None else f'({score_where} OR (m.{metric} IS NULL AND m.soldier_id < :sid))')
+            common = f'''FROM {table} m JOIN soldiers s ON s.soldier_id=m.soldier_id
+              WHERE m.{key}=:item AND (:platform='all' OR s.platform=:platform)
+              AND NOT EXISTS (SELECT 1 FROM player_exclusions e
+                WHERE e.platform=s.platform AND e.persona_id=s.persona_id AND e.active)'''
+            extra={**params,'score':value,'sid':row['soldier_id']}
+            rank_ahead=int(conn.execute(text(f'SELECT count(*) {common} AND {score_where}'),extra).scalar_one())
+            position_ahead=int(conn.execute(text(f'SELECT count(*) {common} AND {position_where}'),extra).scalar_one())
+            row['rank']=rank_ahead+1
+            row['position']=position_ahead+1
+            row['top_pct']=row['rank']*100.0/population if population else None
+            row['division']=next((i for i,c in enumerate((3,8,15,25,35,50,65,80,90),1) if row['top_pct'] is not None and row['top_pct']<=c),10)
+            rows.append(row)
+    else:
+        # Rank all matched candidates in a single scan of the eligible cohort.
+        # This avoids two full-cohort COUNT queries for every search hit.
+        score_ahead = f'(c.{metric} > h.{metric})' if metric else 'FALSE'
+        position_ahead = f'''(c.{metric} > h.{metric} OR
+          (c.{metric} = h.{metric} AND c.soldier_id < h.soldier_id) OR
+          (h.{metric} IS NULL AND (c.{metric} IS NOT NULL OR
+            (c.{metric} IS NULL AND c.soldier_id < h.soldier_id))))'''
+        sql=f'''WITH hits AS MATERIALIZED (
+          SELECT m.soldier_id,m.{metric} FROM {table} m
+          WHERE m.{key}=:item AND m.soldier_id=ANY(:hit_ids)
+        ), cohort AS MATERIALIZED (
+          SELECT m.soldier_id,m.{metric} FROM {table} m
+          JOIN soldiers s ON s.soldier_id=m.soldier_id
           WHERE m.{key}=:item AND (:platform='all' OR s.platform=:platform)
-          AND NOT EXISTS (SELECT 1 FROM player_exclusions e
-            WHERE e.platform=s.platform AND e.persona_id=s.persona_id AND e.active)'''
-        extra={**params,'score':value,'sid':row['soldier_id']}
-        rank_ahead=int(conn.execute(text(f'SELECT count(*) {common} AND {score_where}'),extra).scalar_one())
-        position_ahead=int(conn.execute(text(f'SELECT count(*) {common} AND {position_where}'),extra).scalar_one())
-        row['rank']=rank_ahead+1
-        row['position']=position_ahead+1
-        row['top_pct']=row['rank']*100.0/population if population else None
-        row['division']=next((i for i,c in enumerate((3,8,15,25,35,50,65,80,90),1) if row['top_pct'] is not None and row['top_pct']<=c),10)
-        rows.append(row)
+            AND NOT EXISTS (SELECT 1 FROM player_exclusions e
+              WHERE e.platform=s.platform AND e.persona_id=s.persona_id AND e.active)
+        ) SELECT h.soldier_id,
+          1+count(*) FILTER (WHERE {score_ahead} OR (h.{metric} IS NULL AND c.{metric} IS NOT NULL)) AS rank,
+          1+count(*) FILTER (WHERE {position_ahead}) AS position
+        FROM hits h CROSS JOIN cohort c GROUP BY h.soldier_id,h.{metric}'''
+        hit_ids=[r['soldier_id'] for r in candidates]
+        ranks={r['soldier_id']:r for r in conn.execute(text(sql),{**params,'hit_ids':hit_ids}).mappings()}
+        rows=[]
+        for candidate in candidates:
+            row=dict(candidate)
+            row['rank']=int(ranks[row['soldier_id']]['rank'])
+            row['position']=int(ranks[row['soldier_id']]['position'])
+            row['top_pct']=row['rank']*100.0/population if population else None
+            row['division']=next((i for i,c in enumerate((3,8,15,25,35,50,65,80,90),1) if row['top_pct'] is not None and row['top_pct']<=c),10)
+            rows.append(row)
     return {'population':population,'filtered_count':int(count),'page':1,'page_size':50,
             'total_pages':(int(count)+49)//50,'rows':rows}
 
