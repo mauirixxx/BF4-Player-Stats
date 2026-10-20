@@ -717,7 +717,7 @@ class Handler(BaseHTTPRequestHandler):
                 cache_key=(kind,platform,item,page,page_size,search,division,paging,sort_metric)
                 # Public unfiltered first-page equipment Top 10 / Top 50: 300s.
                 # Catalog: 60s. Searches, divisions, later pages: uncached.
-                if not search and (item is None or (paging and page==1 and page_size in (10,50) and division==0)):
+                if os.environ.get('BF4PS_PRECOMPUTED_RANK_READS') != '1' and not search and (item is None or (paging and page==1 and page_size in (10,50) and division==0)):
                     ttl=60 if item is None else 300
                     result=cached_equipment(cache_key,ttl,
                         lambda: (get_page(c,kind,platform,int(item),page,page_size,search,division,sort_metric)
