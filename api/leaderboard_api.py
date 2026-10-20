@@ -473,6 +473,15 @@ def indexed_equipment_search(conn, kind, platform, item, search, sort_metric):
             'total_pages':(int(count)+49)//50,'rows':rows}
 
 def get_page(conn, kind, platform, item, page, page_size, search, division, sort_metric="kills"):
+    # Default OFF. Rank generations are not deployed to the production DB.
+    # The adapter is imported only when explicitly enabled on a migrated
+    # staging database. Any missing/stale generation uses the legacy path.
+    if os.environ.get('BF4PS_PRECOMPUTED_RANK_READS') == '1':
+        from rank_read_path import get_precomputed_page
+        fast = get_precomputed_page(conn, kind, platform, item, page, page_size,
+                                    search, division, sort_metric)
+        if fast is not None:
+            return fast
     if page == 1 and page_size == 50 and search and division == 0:
         fast = indexed_equipment_search(conn, kind, platform, item, search, sort_metric)
         if fast is not None:
