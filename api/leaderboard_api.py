@@ -477,11 +477,20 @@ def get_page(conn, kind, platform, item, page, page_size, search, division, sort
     # The adapter is imported only when explicitly enabled on a migrated
     # staging database. Any missing/stale generation uses the legacy path.
     if os.environ.get('BF4PS_PRECOMPUTED_RANK_READS') == '1':
-        from rank_read_path import get_precomputed_page
-        fast = get_precomputed_page(conn, kind, platform, item, page, page_size,
-                                    search, division, sort_metric)
-        if fast is not None:
-            return fast
+        # Fail closed to the established query path until migration 0016
+        # and the separate adapter have both been installed.
+        revision = conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
+        if revision == '0016_rank_scope_versions':
+            try:
+                from rank_read_path import get_precomputed_page
+            except ModuleNotFoundError as exc:
+                if exc.name != 'rank_read_path':
+                    raise
+            else:
+                fast = get_precomputed_page(conn, kind, platform, item, page,
+                                            page_size, search, division, sort_metric)
+                if fast is not None:
+                    return fast
     if page == 1 and page_size == 50 and search and division == 0:
         fast = indexed_equipment_search(conn, kind, platform, item, search, sort_metric)
         if fast is not None:
@@ -697,6 +706,9 @@ class Handler(BaseHTTPRequestHandler):
             if not 1<=page<=100000 or not 1<=page_size<=100 or not 0<=division<=10 or len(search)>100:
                 self.send_error(400);return
             with engine.connect() as c:
+                if os.environ.get('BF4PS_PRECOMPUTED_RANK_READS') == '1':
+                    # The version check and row read must share one MVCC snapshot.
+                    c = c.execution_options(isolation_level='REPEATABLE READ')
                 if c.execute(text('select current_database()')).scalar_one()!='bf4_playerstats':
                     raise RuntimeError('Only D3 scratch database permitted')
                 c.execute(text('SET TRANSACTION READ ONLY'))
