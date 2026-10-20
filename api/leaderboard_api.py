@@ -382,8 +382,6 @@ def indexed_equipment_search(conn, kind, platform, item, search, sort_metric):
     if kind == 'vehicle':
         canonical = VEHICLE_FAMILIES.get(item, (item, None))[0]
         ids = {raw for raw, (family, _) in VEHICLE_FAMILIES.items() if family == canonical} | {canonical}
-        if len(ids) != 1:
-            return None
         item = canonical
     table = 'weapon_leaderboard_metrics' if kind == 'weapon' else 'vehicle_leaderboard_metrics'
     key = 'weapon_id' if kind == 'weapon' else 'vehicle_id'
@@ -411,8 +409,10 @@ def indexed_equipment_search(conn, kind, platform, item, search, sort_metric):
     '''''
     candidate_rows = conn.execute(text(candidate_sql),params).mappings().all()
     count = len(candidate_rows)
+    if count > 2:
+        return None  # Broad searches retain the existing full-cohort path.
     candidates = sorted(candidate_rows,
-      key=lambda r: (r[metric] is None, -(r[metric] or 0), r['soldier_id']))[:10]
+      key=lambda r: (r[metric] is None, -(r[metric] or 0), r['soldier_id']))[:50]
     population = int(conn.execute(text('''SELECT coalesce(sum(population),0)
       FROM equipment_population WHERE kind=:kind AND item_id=:item
       AND (:platform='all' OR platform=:platform)'''),params).scalar_one())
@@ -437,11 +437,11 @@ def indexed_equipment_search(conn, kind, platform, item, search, sort_metric):
         row['top_pct']=row['rank']*100.0/population if population else None
         row['division']=next((i for i,c in enumerate((3,8,15,25,35,50,65,80,90),1) if row['top_pct'] is not None and row['top_pct']<=c),10)
         rows.append(row)
-    return {'population':population,'filtered_count':int(count),'page':1,'page_size':10,
-            'total_pages':(int(count)+9)//10,'rows':rows}
+    return {'population':population,'filtered_count':int(count),'page':1,'page_size':50,
+            'total_pages':(int(count)+49)//50,'rows':rows}
 
 def get_page(conn, kind, platform, item, page, page_size, search, division, sort_metric="kills"):
-    if page == 1 and page_size == 10 and search and division == 0:
+    if page == 1 and page_size == 50 and search and division == 0:
         fast = indexed_equipment_search(conn, kind, platform, item, search, sort_metric)
         if fast is not None:
             return fast
