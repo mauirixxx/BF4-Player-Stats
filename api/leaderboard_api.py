@@ -335,6 +335,48 @@ def indexed_equipment_top10(conn, kind, platform, item, sort_metric, page_size=1
     return {'population': population, 'filtered_count': population, 'page': 1,
             'page_size': page_size, 'total_pages': (population + page_size - 1)//page_size, 'rows': rows}
 
+def indexed_equipment_page(conn, kind, platform, item, page, page_size, sort_metric):
+    # Bounded indexed OFFSET page; global tie rank is recovered from the first
+    # score's cohort count rather than sorting the entire cohort with rank().
+    if kind == 'vehicle':
+        item = VEHICLE_FAMILIES.get(item, (item, None))[0]
+    table = 'weapon_leaderboard_metrics' if kind == 'weapon' else 'vehicle_leaderboard_metrics'
+    key = 'weapon_id' if kind == 'weapon' else 'vehicle_id'
+    metric = {'kills':'kills','kpm':'kpm','accuracy':'accuracy'}[sort_metric]
+    accuracy = 'm.accuracy' if kind == 'weapon' else 'NULL::numeric'
+    params = {'item':item,'platform':platform,'kind':kind,
+              'limit':page_size,'offset':(page-1)*page_size}
+    population = int(conn.execute(text('''SELECT coalesce(sum(population),0)
+        FROM equipment_population WHERE kind=:kind AND item_id=:item
+        AND (:platform='all' OR platform=:platform)'''),params).scalar_one())
+    common = f'''FROM {table} m JOIN soldiers s ON s.soldier_id=m.soldier_id
+        WHERE m.{key}=:item AND (:platform='all' OR s.platform=:platform)
+        AND NOT EXISTS (SELECT 1 FROM player_exclusions pe
+          WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)'''
+    rows=[dict(r) for r in conn.execute(text(f'''SELECT s.soldier_id,s.current_name,
+        s.persona_id,s.platform,m.kills,m.kpm,{accuracy} AS accuracy,m.source_fetched_at
+        {common} ORDER BY m.{metric} DESC NULLS LAST,m.soldier_id
+        LIMIT :limit OFFSET :offset'''),params).mappings()]
+    if rows:
+        first=rows[0][sort_metric]
+        ahead = ('m.'+metric+' > :first_score') if first is not None else ('m.'+metric+' IS NOT NULL')
+        first_rank=int(conn.execute(text(f'SELECT count(*) {common} AND {ahead}'),
+            {**params,'first_score':first}).scalar_one())+1
+        rank=first_rank
+        last=first
+        for i,row in enumerate(rows):
+            if i and row[sort_metric]!=last:
+                rank=params['offset']+i+1
+            last=row[sort_metric]
+            row['rank']=rank
+            row['position']=params['offset']+i+1
+            row['top_pct']=rank*100.0/population
+            row['division']=next((j for j,cutoff in enumerate((3,8,15,25,35,50,65,80,90),1)
+                                   if row['top_pct']<=cutoff),10)
+    return {'population':population,'filtered_count':population,'page':page,
+            'page_size':page_size,'total_pages':(population+page_size-1)//page_size,
+            'rows':rows}
+
 def indexed_equipment_search(conn, kind, platform, item, search, sort_metric):
     # Canonical multi-ID vehicle families still use the legacy aggregation.
     if kind == 'vehicle':
@@ -407,6 +449,8 @@ def get_page(conn, kind, platform, item, page, page_size, search, division, sort
         fast = indexed_equipment_top10(conn, kind, platform, item, sort_metric, page_size)
         if fast is not None:
             return fast
+    if page > 1 and not search and division == 0:
+        return indexed_equipment_page(conn, kind, platform, item, page, page_size, sort_metric)
     # Rank over full cohort; return one bounded page.
     stats, cat, key, state = KINDS[kind]
     params = {'platform':platform, 'item':item, 'search':'%'+search.lower()+'%',

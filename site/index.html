@@ -66,6 +66,7 @@ function renderRanks(){return renderGeneralLeaderboard()}
 async function updateAliasSearch(){
  const q=$('globalSearch').value.trim(),seq=++searchRequest;
  searchRows=[];renderSearch();if(q.length<2)return;
+ $('searchRows').innerHTML='<tr><td colspan="6" role="status"><span class="hamster-wheel" aria-hidden="true"><span class="hamster-runner">🐹</span></span>Searching soldiers…</td></tr>';
  try{const result=await BF4PSPaginated.search(q);if(seq!==searchRequest)return;searchRows=result.rows;renderSearch()}
  catch(e){if(seq===searchRequest){$('searchRows').innerHTML='<tr><td colspan="6">Search temporarily unavailable</td></tr>'}}
 }
@@ -100,6 +101,7 @@ async function loadUnifiedEquipment(){const seq=++unifiedRequest,kind=$('metric'
 async function renderUnifiedEquipment(){
  const kind=$('metric').value,item=$('leaderEquipment').value,seq=++unifiedRequest;
  if(!item)return;
+ $('leaderRows').innerHTML='<tr><td colspan="6" role="status"><span class="hamster-wheel" aria-hidden="true"><span class="hamster-runner">🐹</span></span>Loading rankings…</td></tr>';
  try{
   const result=await equipmentFetch({kind,platform,item,page:leaderPage+1,page_size:50,search:$('filter').value.trim(),division:$('divisionFilter').value});
   if(seq!==unifiedRequest)return;
