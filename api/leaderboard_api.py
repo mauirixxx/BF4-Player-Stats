@@ -286,15 +286,12 @@ def fast_weapon_kills_top10(conn, platform, item):
 
 def indexed_equipment_top10(conn, kind, platform, item, sort_metric, page_size=10):
     # Bounded Top 10 from transactionally maintained derived metrics.
-    # Canonical vehicle families with multiple raw IDs retain the legacy
-    # consolidation path until their aggregate ranking is materialized.
+    # Revision 0013 read models already store canonical vehicle-family metrics
+    # with the audited SUM/MAX consolidation applied by the writer. Revision
+    # 0014 population metadata uses the same canonical IDs. Read these models
+    # directly instead of re-aggregating the raw vehicle cohort per request.
     if kind == 'vehicle':
-        canonical = VEHICLE_FAMILIES.get(item, (item, None))[0]
-        raw_ids = {raw for raw, (family, _) in VEHICLE_FAMILIES.items() if family == canonical}
-        raw_ids.add(canonical)
-        if len(raw_ids) != 1:
-            return None
-        item = canonical
+        item = VEHICLE_FAMILIES.get(item, (item, None))[0]
     table = 'weapon_leaderboard_metrics' if kind == 'weapon' else 'vehicle_leaderboard_metrics'
     column = 'weapon_id' if kind == 'weapon' else 'vehicle_id'
     if sort_metric == 'accuracy' and kind == 'vehicle':
