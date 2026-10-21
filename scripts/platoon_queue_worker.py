@@ -10,7 +10,7 @@ def query(sql):
  with tempfile.TemporaryDirectory(prefix='bf4ps-queue-') as tmp:
   pg=Path(tmp)/'pgpass';pg.write_text('db.bf4statusbot.com:5432:bf4_playerstats:bf4ps_platoon_collector:'+password+'\n');pg.chmod(0o600)
   env=dict(os.environ,PGPASSFILE=str(pg),PGSSLMODE='require',PGCONNECT_TIMEOUT='8')
-  p=subprocess.run(['psql','-X','-w','-At','-v','ON_ERROR_STOP=1','-h','db.bf4statusbot.com','-U','bf4ps_platoon_collector','-d','bf4_playerstats','-c',sql],capture_output=True,text=True,env=env,timeout=30)
+  p=subprocess.run(['psql','-X','-q','-w','-At','-v','ON_ERROR_STOP=1','-h','db.bf4statusbot.com','-U','bf4ps_platoon_collector','-d','bf4_playerstats','-c',sql],capture_output=True,text=True,env=env,timeout=30)
   if p.returncode:raise RuntimeError('Database operation failed: '+p.stderr[-250:])
   return p.stdout.strip()
 
@@ -27,12 +27,32 @@ def main():
     WHERE d.status='complete' AND d.linked_platoon_id IS NOT NULL
       AND NOT EXISTS (SELECT 1 FROM platoons p WHERE p.platoon_id=d.linked_platoon_id)
     ON CONFLICT DO NOTHING""")
-  raw=query("SELECT platoon_id FROM (SELECT platoon_id,0 AS priority,next_attempt_at AS due FROM platoon_requests WHERE status IN ('pending','failed') AND next_attempt_at<=now() AND attempts<8 UNION ALL SELECT p.platoon_id,1 AS priority,COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now()) AS due FROM platoons p WHERE COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now())<=now() AND NOT EXISTS(SELECT 1 FROM platoon_requests r WHERE r.platoon_id=p.platoon_id AND r.status IN ('pending','failed','running'))) AS due ORDER BY priority,due LIMIT 1")
+  # Each claim is one atomic PostgreSQL UPDATE; SKIP LOCKED prevents duplicate
+  # selection across hosts. A 15-minute lease exceeds the 210-second scheduler
+  # deadline and allows abandoned jobs to recover without manual intervention.
+  raw=query("""WITH candidate AS (
+    SELECT platoon_id FROM platoon_requests
+    WHERE ((status IN ('pending','failed') AND next_attempt_at<=now() AND attempts<8)
+       OR (status='running' AND last_attempt_at<now()-interval '15 minutes'))
+    ORDER BY next_attempt_at,platoon_id LIMIT 1 FOR UPDATE SKIP LOCKED
+  ) UPDATE platoon_requests r SET status='running',attempts=r.attempts+1,
+    last_attempt_at=now(),next_attempt_at=now()+interval '15 minutes'
+    FROM candidate c WHERE r.platoon_id=c.platoon_id
+    RETURNING r.platoon_id""")
+  is_new=bool(raw)
+  if not raw:
+   raw=query("""WITH candidate AS (
+     SELECT p.platoon_id FROM platoons p
+     WHERE COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now())<=now()
+       AND NOT EXISTS (SELECT 1 FROM platoon_requests r WHERE r.platoon_id=p.platoon_id
+                       AND r.status IN ('pending','failed','running'))
+     ORDER BY COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now()),p.platoon_id
+     LIMIT 1 FOR UPDATE OF p SKIP LOCKED
+   ) UPDATE platoons p SET next_refresh_at=now()+interval '15 minutes'
+     FROM candidate c WHERE p.platoon_id=c.platoon_id RETURNING p.platoon_id""")
   if not raw:
    print('No queued platoons due');return 0
-  pid=int(raw.splitlines()[0]);is_new=query(f'SELECT 1 FROM platoon_requests WHERE platoon_id={pid} AND status IN (\'pending\',\'failed\')')=='1';print('Processing',pid,flush=True)
-  if is_new:query(f"UPDATE platoon_requests SET status='running',attempts=attempts+1,last_attempt_at=now() WHERE platoon_id={pid}")
-  else:query(f"UPDATE platoons SET next_refresh_at=now()+interval '1 hour' WHERE platoon_id={pid}")
+  pid=int(raw.splitlines()[0]);print('Claimed',pid,'new',is_new,flush=True)
   try:
    with tempfile.TemporaryDirectory(prefix='.queue-',dir=BASE) as tmp:
     html=Path(tmp)/'members.html';roster=Path(tmp)/'roster.json'
@@ -47,7 +67,11 @@ def main():
     doc=json.loads(roster.read_text())
     if int(doc['platoon']['platoon_id'])!=pid or not doc['validation']['complete']:raise ValueError('Roster validation failed')
     subprocess.run([sys.executable,str(SCRIPTS/'import_platoon_rosters.py'),str(roster)],check=True,timeout=120)
-    subprocess.run([sys.executable,str(SCRIPTS/'admit_platoon_soldiers.py')],check=True,timeout=90)
+    # Soldier bootstrap is ancillary; an excluded identity must never invalidate
+    # an otherwise successfully imported, verified platoon roster.
+    admission=subprocess.run([sys.executable,str(SCRIPTS/'admit_platoon_soldiers.py')],check=False,timeout=90)
+    if admission.returncode:
+     print('WARNING soldier bootstrap failed; roster remains valid, exclusion guard enforced',flush=True)
     os.replace(html,BASE/f'{pid}-members.html');os.replace(roster,BASE/f'{pid}-roster.json')
    if is_new:query(f"UPDATE platoon_requests SET status='complete',last_error=NULL WHERE platoon_id={pid}")
    query(f"UPDATE platoons SET next_refresh_at=now()+interval '1 day' WHERE platoon_id={pid}")
