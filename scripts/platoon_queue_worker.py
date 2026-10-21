@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Process at most one due platoon per run; retry failed work with backoff."""
-import os,sys,json,time,tempfile,subprocess,urllib.request
+import os,sys,json,time,tempfile,subprocess,urllib.request,uuid,socket
 from pathlib import Path
 
 BASE=Path('/var/lib/bf4ps-platoon'); SCRIPTS=Path(__file__).resolve().parent
@@ -27,35 +27,58 @@ def main():
     WHERE d.status='complete' AND d.linked_platoon_id IS NOT NULL
       AND NOT EXISTS (SELECT 1 FROM platoons p WHERE p.platoon_id=d.linked_platoon_id)
     ON CONFLICT DO NOTHING""")
-  # Each claim is one atomic PostgreSQL UPDATE; SKIP LOCKED prevents duplicate
-  # selection across hosts. A 15-minute lease exceeds the 210-second scheduler
-  # deadline and allows abandoned jobs to recover without manual intervention.
-  raw=query("""WITH candidate AS (
-    SELECT platoon_id FROM platoon_requests
-    WHERE ((status IN ('pending','failed') AND next_attempt_at<=now() AND attempts<8)
-       OR (status='running' AND last_attempt_at<now()-interval '15 minutes'))
-    ORDER BY next_attempt_at,platoon_id LIMIT 1 FOR UPDATE SKIP LOCKED
-  ) UPDATE platoon_requests r SET status='running',attempts=r.attempts+1,
-    last_attempt_at=now(),next_attempt_at=now()+interval '15 minutes'
-    FROM candidate c WHERE r.platoon_id=c.platoon_id
-    RETURNING r.platoon_id, r.last_attempt_at""")
+  # Claim and queue transition are ONE SQL statement/transaction.
+  # Request and refresh contend on the same platoon_work_leases PK.
+  token=str(uuid.uuid4())
+  worker=socket.gethostname().replace("'","")
+  raw=query(f"""WITH candidate AS (
+    SELECT r.platoon_id FROM platoon_requests r
+    WHERE ((r.status IN ('pending','failed') AND r.next_attempt_at<=now() AND r.attempts<8)
+       OR (r.status='running' AND r.last_attempt_at<now()-interval '15 minutes'))
+    ORDER BY r.next_attempt_at,r.platoon_id LIMIT 1 FOR UPDATE OF r SKIP LOCKED
+  ), acquired AS (
+    INSERT INTO platoon_work_leases(platoon_id,claim_token,claimed_by,lease_until,work_kind)
+    SELECT platoon_id,'{token}'::uuid,'{worker}',now()+interval '15 minutes','request' FROM candidate
+    ON CONFLICT(platoon_id) DO UPDATE SET
+      claim_token=EXCLUDED.claim_token,claimed_by=EXCLUDED.claimed_by,
+      lease_until=EXCLUDED.lease_until,claimed_at=now(),work_kind=EXCLUDED.work_kind
+    WHERE platoon_work_leases.lease_until<now()
+    RETURNING platoon_id,claim_token
+  ), claimed AS (
+    UPDATE platoon_requests r SET status='running',attempts=r.attempts+1,
+      last_attempt_at=now(),next_attempt_at=now()+interval '15 minutes'
+    FROM acquired a WHERE r.platoon_id=a.platoon_id
+    RETURNING r.platoon_id,a.claim_token
+  ) SELECT platoon_id,claim_token FROM claimed""")
   is_new=bool(raw)
   if not raw:
-   raw=query("""WITH candidate AS (
+   token=str(uuid.uuid4())
+   raw=query(f"""WITH candidate AS (
      SELECT p.platoon_id FROM platoons p
      WHERE COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now())<=now()
        AND NOT EXISTS (SELECT 1 FROM platoon_requests r WHERE r.platoon_id=p.platoon_id
                        AND r.status IN ('pending','failed','running'))
      ORDER BY COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now()),p.platoon_id
      LIMIT 1 FOR UPDATE OF p SKIP LOCKED
-   ) UPDATE platoons p SET next_refresh_at=now()+interval '15 minutes'
-     FROM candidate c WHERE p.platoon_id=c.platoon_id RETURNING p.platoon_id,p.next_refresh_at""")
+   ), acquired AS (
+     INSERT INTO platoon_work_leases(platoon_id,claim_token,claimed_by,lease_until,work_kind)
+     SELECT platoon_id,'{token}'::uuid,'{worker}',now()+interval '15 minutes','refresh' FROM candidate
+     ON CONFLICT(platoon_id) DO UPDATE SET
+       claim_token=EXCLUDED.claim_token,claimed_by=EXCLUDED.claimed_by,
+       lease_until=EXCLUDED.lease_until,claimed_at=now(),work_kind=EXCLUDED.work_kind
+     WHERE platoon_work_leases.lease_until<now()
+     RETURNING platoon_id,claim_token
+   ), claimed AS (
+     UPDATE platoons p SET next_refresh_at=now()+interval '15 minutes'
+     FROM acquired a WHERE p.platoon_id=a.platoon_id
+     RETURNING p.platoon_id,a.claim_token
+   ) SELECT platoon_id,claim_token FROM claimed""")
   if not raw:
    print('No queued platoons due');return 0
-  pid_text,lease_stamp=raw.splitlines()[0].split('|',1)
+  pid_text,claim_token=raw.splitlines()[0].split('|',1)
   pid=int(pid_text)
-  fence=(f"last_attempt_at='{lease_stamp}'::timestamptz" if is_new else f"next_refresh_at='{lease_stamp}'::timestamptz")
-  print('Claimed',pid,'new',is_new,'lease',lease_stamp,flush=True)
+  fence=f"platoon_id={pid} AND claim_token='{claim_token}'::uuid AND lease_until>clock_timestamp()"
+  print('Claimed',pid,'new',is_new,'token',claim_token,flush=True)
   try:
    with tempfile.TemporaryDirectory(prefix='.queue-',dir=BASE) as tmp:
     html=Path(tmp)/'members.html';roster=Path(tmp)/'roster.json'
@@ -69,21 +92,38 @@ def main():
     subprocess.run([sys.executable,str(SCRIPTS/'battlelog_platoon_roster.py'),str(html),'--output',str(roster)],check=True,timeout=30)
     doc=json.loads(roster.read_text())
     if int(doc['platoon']['platoon_id'])!=pid or not doc['validation']['complete']:raise ValueError('Roster validation failed')
-    subprocess.run([sys.executable,str(SCRIPTS/'import_platoon_rosters.py'),str(roster),'--claim-kind','request' if is_new else 'refresh','--claim-timestamp',lease_stamp],check=True,timeout=120)
+    subprocess.run([sys.executable,str(SCRIPTS/'import_platoon_rosters.py'),str(roster),'--claim-token',claim_token],check=True,timeout=120)
     # Soldier bootstrap is ancillary; an excluded identity must never invalidate
     # an otherwise successfully imported, verified platoon roster.
     admission=subprocess.run([sys.executable,str(SCRIPTS/'admit_platoon_soldiers.py')],check=False,timeout=90)
     if admission.returncode:
      print('WARNING soldier bootstrap failed; roster remains valid, exclusion guard enforced',flush=True)
     os.replace(html,BASE/f'{pid}-members.html');os.replace(roster,BASE/f'{pid}-roster.json')
-   if is_new:query(f"UPDATE platoon_requests SET status='complete',last_error=NULL WHERE platoon_id={pid} AND {fence}")
-   if is_new:query(f"UPDATE platoons SET next_refresh_at=now()+interval '1 day' WHERE platoon_id={pid}")
-   else:query(f"UPDATE platoons SET next_refresh_at=now()+interval '1 day' WHERE platoon_id={pid} AND {fence}")
+   # Guard + queue finalization + release in one transaction.
+   finish=(f"UPDATE platoon_requests SET status='complete',last_error=NULL WHERE platoon_id={pid} AND status='running';"
+           if is_new else "")
+   query(f"""BEGIN;
+     DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM platoon_work_leases WHERE {fence} FOR UPDATE)
+       THEN RAISE EXCEPTION 'stale platoon claim'; END IF; END $$;
+     {finish}
+     UPDATE platoons SET next_refresh_at=now()+interval '1 day' WHERE platoon_id={pid};
+     DELETE FROM platoon_work_leases WHERE platoon_id={pid} AND claim_token='{claim_token}'::uuid;
+     COMMIT;""")
    print('Completed',pid);return 0
   except Exception as exc:
    message=str(exc).replace("'","''")[:300]
-   if is_new:query(f"UPDATE platoon_requests SET status='failed',last_error='{message}',next_attempt_at=now()+interval '1 hour'*LEAST(24,power(2,LEAST(attempts,5))::integer) WHERE platoon_id={pid} AND {fence}")
-   else:query(f"UPDATE platoons SET next_refresh_at=now()+interval '2 hours',last_error='{message}' WHERE platoon_id={pid} AND {fence}")
-   print('Failed; retry scheduled:',str(exc),file=sys.stderr);return 1
+   retry=(f"UPDATE platoon_requests SET status='failed',last_error='{message}',next_attempt_at=now()+interval '1 hour'*LEAST(24,power(2,LEAST(attempts,5))::integer) WHERE platoon_id={pid} AND status='running';"
+          if is_new else f"UPDATE platoons SET next_refresh_at=now()+interval '2 hours',last_error='{message}' WHERE platoon_id={pid};")
+   try:
+    query(f"""BEGIN;
+      DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM platoon_work_leases WHERE {fence} FOR UPDATE)
+        THEN RAISE EXCEPTION 'stale platoon claim'; END IF; END $$;
+      {retry}
+      DELETE FROM platoon_work_leases WHERE platoon_id={pid} AND claim_token='{claim_token}'::uuid;
+      COMMIT;""")
+   except Exception as stale:
+    print('Lease no longer owned; not scheduling retry:',stale,file=sys.stderr)
+   print('Failed; retry scheduled if still owner:',str(exc),file=sys.stderr);return 1
+
 
 if __name__=='__main__':sys.exit(main())
