@@ -1,22 +1,21 @@
 # Distributed equipment ranking workers — design v0.1 (2026-10-21)
 
-Status: DESIGN ONLY; not deployed. This document is the implementation reference. Verify `database-schema.md`, `operational-schema.md`, and live PostgreSQL catalog before writing migrations or database access code.
+Status (2026-10-21): IMPLEMENTED AND STAGED; scratch PostgreSQL 0018 migrated and validated on rnt-01, production still at 0017 with legacy hourly timer enabled. Distributed worker service units staged but disabled on mak-01 and rnt-01. This document is the implementation reference. Verify `database-schema.md`, `operational-schema.md`, and live PostgreSQL catalog before writing migrations or database access code.
 
 ## Goals
-- Support any number of registered nodes, with no node count or fixed hostname assumptions.
-- Support any number of registered nodes; initial centrally enforced concurrent build capacity is 1, with a later controlled benchmark at 2 after replication health is confirmed.
+- Support any number of registered nodes with no fixed hostname assumptions; initial centrally enforced concurrent build capacity is 1, with a later controlled benchmark at 2 after replication health is confirmed.
 - Build all populated equipment scopes (kind, item, platform, metric), including weapon/gadgets and vehicles, across ALL/PC/PS4/Xbox One; refresh popular and stale scopes without starving unpopular ones.
 - Preserve published immutable generations, website read guards, live fallback, exclusion policy, and existing rate/traffic budgets.
 - Safe under node loss, transaction retries, lease expiry, competing claims, and primary DB failover.
 
 ## Existing implementation (verified on mak-01)
-`player-collector/hourly_runner.py` holds PostgreSQL advisory lock (640041,170017) across entire batch. It currently selects top ten vehicles and top ten weapons, ALL-platform only; skips published generations younger than 3300s; limits to 50 jobs/1740s by default. `build_rank_hourly.py` computes immutable rows and swaps the publication pointer in a separate transaction. The observed run completed 45 builds in 489.1s, with zero failures. The existing runner MUST remain the production path until explicit cutover.
+The legacy `hourly_runner.py` holds PostgreSQL advisory lock (640041,170017) across its batch. On 2026-10-21 the production staged runner selects top ten weapons (kills/KPM/accuracy), top ten vehicles (kills/KPM), plus UCAV vehicle_id=10, across ALL/PC/PS4/Xbox One. It skips generations younger than 3300s and limits to 200 jobs/1740s. A measured hourly run completed 47 jobs in 503.4s without failures. The legacy runner MUST remain production until the explicit drain/migrate/cutover sequence below.
 
-## Coordination schema (proposed, not yet migrated)
-1. `equipment_rank_jobs`: unique (kind,item_id,platform,metric); fields include next_due_at, priority, last_success_at, last_error, attempts, state, claimed_by, lease_expires_at, claim_token UUID, claim_epoch bigint, updated_at, and desired_scope_version.
-2. `equipment_rank_workers`: worker_id UUID primary key, hostname/site (informational only), heartbeat_at, started_at, enabled, version; no hardcoded fleet list.
-3. `equipment_rank_capacity`: single policy row with max_active_builds, lease_seconds, heartbeat_seconds, max_attempts, retry/backoff settings. Capacity is configuration, not a fixed schema limit.
-4. `equipment_rank_claims` (or equivalent immutable claim history) for audit, durations and failure classification. Confirm compatibility with existing rank generation and scope version tables before migration.
+## Coordination schema (implemented in Alembic 0018; scratch only as of 2026-10-21)
+1. `equipment_rank_jobs`: primary key (kind,item_id,platform,metric); next_due_at, last_success_at, last_error, attempts, claimed_by, lease_expires_at, claim_token UUID, claim_epoch bigint, updated_at. No separate priority/state/desired_scope_version columns in 0018.
+2. `equipment_rank_workers`: worker_id UUID primary key, hostname/site, heartbeat_at, started_at. No fixed fleet list.
+3. `equipment_rank_capacity`: singleton id=1, max_active_builds=1 and lease_seconds=180 by default. Capacity-row `FOR UPDATE` serializes admission; active lease count is checked under that lock.
+4. Claim history is not implemented as a separate table. Successful generation publications remain recorded in immutable generation tables.
 
 ## Admission and claiming
 - In one short transaction: select eligible due jobs with `FOR UPDATE SKIP LOCKED`; reserve one of the configured global slots atomically; assign owner, new token and monotonic epoch, set lease expiration; commit before expensive SQL.
@@ -28,6 +27,8 @@ Status: DESIGN ONLY; not deployed. This document is the implementation reference
 - Preserve exact-once publication semantics per scope/epoch, not exactly-once computation; duplicated compute after failures is acceptable but bounded.
 
 ## Scheduler
+- Current code orders due jobs: scopes overdue by at least 24h (oldest first), then ALL-platform jobs, UCAV vehicle_id=10, descending equipment population, and due timestamp. This is a population-based proxy, not an exact top-ten kills policy; validate realistic queue ordering before production cutover.
+- Worker refresh intervals: `BF4PS_RANK_REFRESH_ALL_SECONDS` and `BF4PS_RANK_REFRESH_PLATFORM_SECONDS`, default 3600, accepted range 300–10800 seconds. Retries use bounded exponential backoff.
 - Discover scope population from canonical catalog and existing `equipment_rank_scope_versions` and `equipment_population`; no hardcoded item IDs.
 - Persist due timestamps. First-time missing scopes outrank routine refresh, but use bounded aging/fairness to prevent permanent starvation.
 - Per-scope freshness target is configurable by popularity and demand; first backfill and steady-state are different policies.
@@ -43,7 +44,12 @@ Status: DESIGN ONLY; not deployed. This document is the implementation reference
 6. Scale nodes freely thereafter; capacity remains an independent runtime policy. Include kill switch capacity=0 (no new claims) and graceful drain.
 7. Rollback to legacy runner requires draining new claims, confirming no active publishers, and avoiding simultaneous legacy/new execution. Existing published generations remain readable.
 
-## Unresolved before implementation
+## Verified test evidence and production cutover gates
+- On rnt-01 isolated PostgreSQL `bf4ps_ranking_scratch`: migrated 0017 to 0018; competing claim/capacity=1, expired lease reclaim, stale-token rejection test PASS; six discovered jobs; actual fenced ranking builds published generations (96,674-row ALL and 64,330-row PC samples).
+- Systemd `bf4ps-distributed-rank-worker.service` staged and verified on mak-01 and rnt-01, but disabled/inactive. The existing production hourly timer is still enabled.
+- Cutover sequence: confirm production replication health and schema; validate realistic queue ordering; verify deployed builder/image parity and environment; drain/disable legacy hourly timer and ensure no running legacy builder; apply production Alembic 0018; bootstrap queue and set global cap=1; enable workers one node at a time; verify published generations, website freshness and replica lag. Rollback: disable/drain distributed services, verify no active claims/publishers, then re-enable legacy timer. Never overlap legacy and distributed publishers.
+
+## Unresolved before production cutover
 - Verify exact live DDL for rank tables and exclusion checks; choose migrations and index strategy accordingly.
 - Verify whether scope versions increment per collector update and how often; prevent high-churn scopes from perpetual invalidation.
 - Measure PostgreSQL under a running build; host idle snapshot alone is insufficient.
