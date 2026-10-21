@@ -1,0 +1,12 @@
+[Unit]
+Description=BF4PS homepage counters exporter
+After=network-online.target
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/root/.config/bf4ps/website-production.env
+ExecStart=/opt/bf4ps-website/.venv/bin/python /opt/bf4ps-website/api/homepage_summary_export.py
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/bf4playerstats.com
+PrivateTmp=true

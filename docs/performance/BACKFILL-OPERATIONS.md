@@ -1,0 +1,7 @@
+# Derived equipment ranking backfill — NOT production approved
+
+`python -m bf4ps.ranking_backfill` requires the `0013_indexed_equipment_rankings` schema and `BF4PS_DATABASE_URL`. Defaults to at most **one 500-ID window per invocation**; `--start-id` is an inclusive soldier ID, `--batch-size` 1–5000, `--max-batches` 1–10000. It prints the next resume ID after each committed window. Re-running the same window replaces its derived rows atomically and is idempotent for an unchanged source. Reads existing PostgreSQL stats only, never Battlelog.
+
+**Not ready for production.** The backfill is an initial implementation, not yet validated against the complete website family logic, exclusions, ties and percentile population. Collector transactional maintenance is also not integrated. Without it, fresh collection could immediately stale the derived tables. `--allow-production` is a deliberate opt-in guard but is **not** authorization to execute it. Production execution requires explicit deployment review and a verified migration, collector synchronization and parity tests.
+
+Caution: derived canonical vehicle IDs must exist in `vehicle_catalog` because the read-model FK references it. If a family canonical catalog row is absent, the transaction aborts rather than creating catalog entries. The batch window is over `soldier_id` (not a count of soldiers), and sparse IDs are safe. The script is not a job scheduler or concurrency coordinator; run a single instance and do not race it with collector updates until transaction coordination is implemented.

@@ -1,0 +1,1463 @@
+{
+  "branches": [
+    {
+      "branch": "origin",
+      "files": 5,
+      "markdown": 5
+    },
+    {
+      "branch": "origin/PENDING-RELEASE",
+      "files": 136,
+      "markdown": 61
+    },
+    {
+      "branch": "origin/WEBSITE",
+      "files": 12,
+      "markdown": 6
+    },
+    {
+      "branch": "origin/archive/pre-v1-soak-worktree-20261013",
+      "files": 335,
+      "markdown": 58
+    },
+    {
+      "branch": "origin/diagnostic/phase3e-lifecycle-a-forensics",
+      "files": 112,
+      "markdown": 34
+    },
+    {
+      "branch": "origin/docs/consolidated-roadmap-20261019",
+      "files": 336,
+      "markdown": 17
+    },
+    {
+      "branch": "origin/docs/equipment-display-name-audit",
+      "files": 14,
+      "markdown": 7
+    },
+    {
+      "branch": "origin/docs/live-db-schema-20261017",
+      "files": 24,
+      "markdown": 18
+    },
+    {
+      "branch": "origin/feat/vehicle-labels-battlelog-links",
+      "files": 12,
+      "markdown": 6
+    },
+    {
+      "branch": "origin/feature/admin-artwork-ui",
+      "files": 361,
+      "markdown": 20
+    },
+    {
+      "branch": "origin/feature/admin-db-health-20261018",
+      "files": 47,
+      "markdown": 12
+    },
+    {
+      "branch": "origin/feature/admin-equipment-artwork",
+      "files": 355,
+      "markdown": 20
+    },
+    {
+      "branch": "origin/feature/approved-equipment-names",
+      "files": 12,
+      "markdown": 6
+    },
+    {
+      "branch": "origin/feature/bf4sw-discovery-importer",
+      "files": 17,
+      "markdown": 7
+    },
+    {
+      "branch": "origin/feature/bf4sw-discovery-service",
+      "files": 20,
+      "markdown": 7
+    },
+    {
+      "branch": "origin/feature/db-budget-and-idle-wait",
+      "files": 144,
+      "markdown": 63
+    },
+    {
+      "branch": "origin/feature/detailed-client",
+      "files": 24,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/detailed-collector-battlelog-client",
+      "files": 24,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/detailed-collector-client",
+      "files": 24,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/detailed-collector-phase1",
+      "files": 24,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/detailed-fetch-normalize",
+      "files": 24,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/detailed-fetcher",
+      "files": 24,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/exclusion-discovery-guard",
+      "files": 137,
+      "markdown": 61
+    },
+    {
+      "branch": "origin/feature/exclusion-worker-guards",
+      "files": 143,
+      "markdown": 62
+    },
+    {
+      "branch": "origin/feature/homepage-paginated-data",
+      "files": 351,
+      "markdown": 19
+    },
+    {
+      "branch": "origin/feature/indexed-equipment-rankings-20261018",
+      "files": 198,
+      "markdown": 72
+    },
+    {
+      "branch": "origin/feature/indexed-website-fastpath-20261018",
+      "files": 355,
+      "markdown": 20
+    },
+    {
+      "branch": "origin/feature/initial-database-schema",
+      "files": 14,
+      "markdown": 6
+    },
+    {
+      "branch": "origin/feature/leaderboard-pagination-cache-selection",
+      "files": 11,
+      "markdown": 5
+    },
+    {
+      "branch": "origin/feature/linked-soldier-profiles-20261019",
+      "files": 351,
+      "markdown": 19
+    },
+    {
+      "branch": "origin/feature/manual-api-smoke-fix",
+      "files": 297,
+      "markdown": 10
+    },
+    {
+      "branch": "origin/feature/manual-request-backend",
+      "files": 189,
+      "markdown": 66
+    },
+    {
+      "branch": "origin/feature/passive-platoon-on-0012",
+      "files": 177,
+      "markdown": 66
+    },
+    {
+      "branch": "origin/feature/patient-zero-client",
+      "files": 24,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/patient-zero-persistence",
+      "files": 29,
+      "markdown": 9
+    },
+    {
+      "branch": "origin/feature/phase1-atomic-success",
+      "files": 32,
+      "markdown": 10
+    },
+    {
+      "branch": "origin/feature/phase1-battlelog-client",
+      "files": 24,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/phase1-client-normalizer",
+      "files": 29,
+      "markdown": 9
+    },
+    {
+      "branch": "origin/feature/phase1-detailed-http",
+      "files": 24,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/phase1-detailed-persistence",
+      "files": 29,
+      "markdown": 9
+    },
+    {
+      "branch": "origin/feature/phase1-failure-recovery",
+      "files": 45,
+      "markdown": 12
+    },
+    {
+      "branch": "origin/feature/phase1-fetch-normalize",
+      "files": 24,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/phase1-fetch-normalizer",
+      "files": 24,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/phase1-multiplatform-cohort",
+      "files": 40,
+      "markdown": 10
+    },
+    {
+      "branch": "origin/feature/phase1-patient-zero",
+      "files": 38,
+      "markdown": 10
+    },
+    {
+      "branch": "origin/feature/phase1-patient-zero-persistence",
+      "files": 29,
+      "markdown": 9
+    },
+    {
+      "branch": "origin/feature/phase1-persist-success",
+      "files": 29,
+      "markdown": 9
+    },
+    {
+      "branch": "origin/feature/phase1-persistence",
+      "files": 29,
+      "markdown": 9
+    },
+    {
+      "branch": "origin/feature/phase1-persistence-impl",
+      "files": 29,
+      "markdown": 9
+    },
+    {
+      "branch": "origin/feature/phase1-queue-live-validation",
+      "files": 23,
+      "markdown": 8
+    },
+    {
+      "branch": "origin/feature/phase1-request-gate",
+      "files": 36,
+      "markdown": 10
+    },
+    {
+      "branch": "origin/feature/phase1-success-transaction",
+      "files": 29,
+      "markdown": 9
+    },
+    {
+      "branch": "origin/feature/phase1-write-path",
+      "files": 29,
+      "markdown": 9
+    },
+    {
+      "branch": "origin/feature/phase2-bounded-feeder",
+      "files": 54,
+      "markdown": 15
+    },
+    {
+      "branch": "origin/feature/phase2-bounded-feeder-design",
+      "files": 46,
+      "markdown": 13
+    },
+    {
+      "branch": "origin/feature/phase2-single-node-loop",
+      "files": 62,
+      "markdown": 18
+    },
+    {
+      "branch": "origin/feature/phase2-sustained-runtime",
+      "files": 67,
+      "markdown": 19
+    },
+    {
+      "branch": "origin/feature/phase3-coordination-design",
+      "files": 71,
+      "markdown": 21
+    },
+    {
+      "branch": "origin/feature/phase3-distributed",
+      "files": 71,
+      "markdown": 21
+    },
+    {
+      "branch": "origin/feature/phase3-distributed-collector",
+      "files": 71,
+      "markdown": 21
+    },
+    {
+      "branch": "origin/feature/phase3-distributed-collector-coordination",
+      "files": 71,
+      "markdown": 21
+    },
+    {
+      "branch": "origin/feature/phase3-distributed-collector-design",
+      "files": 76,
+      "markdown": 23
+    },
+    {
+      "branch": "origin/feature/phase3-distributed-collector-runtime",
+      "files": 71,
+      "markdown": 21
+    },
+    {
+      "branch": "origin/feature/phase3-distributed-collector-validation",
+      "files": 71,
+      "markdown": 21
+    },
+    {
+      "branch": "origin/feature/phase3-distributed-coordination",
+      "files": 71,
+      "markdown": 21
+    },
+    {
+      "branch": "origin/feature/phase3-distributed-proof",
+      "files": 71,
+      "markdown": 21
+    },
+    {
+      "branch": "origin/feature/phase3-distributed-runtime-proof",
+      "files": 71,
+      "markdown": 21
+    },
+    {
+      "branch": "origin/feature/phase3b-lease-fencing",
+      "files": 78,
+      "markdown": 24
+    },
+    {
+      "branch": "origin/feature/phase3c-operator-lifecycle",
+      "files": 81,
+      "markdown": 26
+    },
+    {
+      "branch": "origin/feature/phase3d-two-host-proof",
+      "files": 89,
+      "markdown": 29
+    },
+    {
+      "branch": "origin/feature/phase3e-endurance-design",
+      "files": 91,
+      "markdown": 30
+    },
+    {
+      "branch": "origin/feature/phase3e-endurance-implementation",
+      "files": 91,
+      "markdown": 30
+    },
+    {
+      "branch": "origin/feature/phase3e-lifecycle-a-forensics",
+      "files": 152,
+      "markdown": 39
+    },
+    {
+      "branch": "origin/feature/phase3e-live-harness",
+      "files": 112,
+      "markdown": 34
+    },
+    {
+      "branch": "origin/feature/phase3e-live-harness-forensics",
+      "files": 112,
+      "markdown": 34
+    },
+    {
+      "branch": "origin/feature/phase4b-900-sustained-run",
+      "files": 156,
+      "markdown": 40
+    },
+    {
+      "branch": "origin/feature/phase4c-multiplatform-sustained-run",
+      "files": 164,
+      "markdown": 42
+    },
+    {
+      "branch": "origin/feature/phase4c-weapon-vehicle-collection",
+      "files": 156,
+      "markdown": 40
+    },
+    {
+      "branch": "origin/feature/phase5a-cost-cohort",
+      "files": 319,
+      "markdown": 55
+    },
+    {
+      "branch": "origin/feature/phase5a-full-stats-cost-characterization",
+      "files": 175,
+      "markdown": 45
+    },
+    {
+      "branch": "origin/feature/platoon-design-20261018",
+      "files": 51,
+      "markdown": 14
+    },
+    {
+      "branch": "origin/feature/profile-collector",
+      "files": 327,
+      "markdown": 55
+    },
+    {
+      "branch": "origin/feature/website-hardening",
+      "files": 303,
+      "markdown": 11
+    },
+    {
+      "branch": "origin/fix/batch-catalog-persistence",
+      "files": 149,
+      "markdown": 64
+    },
+    {
+      "branch": "origin/fix/cross-catalog-zero-visibility",
+      "files": 11,
+      "markdown": 5
+    },
+    {
+      "branch": "origin/fix/hide-50cal-no-shield",
+      "files": 12,
+      "markdown": 6
+    },
+    {
+      "branch": "origin/fix/passive-platoon-observation-guards",
+      "files": 177,
+      "markdown": 66
+    },
+    {
+      "branch": "origin/fix/phase1-history-canonical-decimals",
+      "files": 39,
+      "markdown": 10
+    },
+    {
+      "branch": "origin/fix/phase2-feeder-actionable-depth",
+      "files": 71,
+      "markdown": 21
+    },
+    {
+      "branch": "origin/fix/production-physical-dispatch-gate",
+      "files": 142,
+      "markdown": 62
+    },
+    {
+      "branch": "origin/fix/profile-panel-battlelog-link",
+      "files": 12,
+      "markdown": 6
+    },
+    {
+      "branch": "origin/fix/rnt-01-safe-collector-bootstrap",
+      "files": 136,
+      "markdown": 61
+    },
+    {
+      "branch": "origin/fix/stage9c-d2-soak-recovery",
+      "files": 552,
+      "markdown": 120
+    },
+    {
+      "branch": "origin/fix/stage9c-t4-inspector-lease-expiry",
+      "files": 532,
+      "markdown": 114
+    },
+    {
+      "branch": "origin/fix/vehicle-canonical-leaderboards",
+      "files": 12,
+      "markdown": 6
+    },
+    {
+      "branch": "origin/fix/vehicle-dropdown-favorites",
+      "files": 11,
+      "markdown": 5
+    },
+    {
+      "branch": "origin/main",
+      "files": 5,
+      "markdown": 5
+    },
+    {
+      "branch": "origin/perf/shared-leaderboard-cache-20261018",
+      "files": 45,
+      "markdown": 12
+    },
+    {
+      "branch": "origin/perf/weapon-top50-live-20261019",
+      "files": 352,
+      "markdown": 20
+    },
+    {
+      "branch": "origin/recovery/alembic-0011-0012-20261018",
+      "files": 182,
+      "markdown": 68
+    },
+    {
+      "branch": "origin/release/website-2026-10-15",
+      "files": 335,
+      "markdown": 16
+    },
+    {
+      "branch": "origin/test/stage9c-admission-concurrency",
+      "files": 352,
+      "markdown": 61
+    },
+    {
+      "branch": "origin/tmp-ignore",
+      "files": 32,
+      "markdown": 10
+    },
+    {
+      "branch": "origin/tmp-ignore2",
+      "files": 32,
+      "markdown": 10
+    },
+    {
+      "branch": "origin/tmp-ignore3",
+      "files": 32,
+      "markdown": 10
+    },
+    {
+      "branch": "origin/tmp-noop",
+      "files": 40,
+      "markdown": 10
+    },
+    {
+      "branch": "origin/tmp-phase1-request-gate-build",
+      "files": 32,
+      "markdown": 10
+    },
+    {
+      "branch": "origin/tmp-phase2-single-node-loop",
+      "files": 54,
+      "markdown": 15
+    },
+    {
+      "branch": "origin/tmp-phase2-single-node-loop-build",
+      "files": 54,
+      "markdown": 15
+    },
+    {
+      "branch": "origin/tmp-phase5a-base",
+      "files": 164,
+      "markdown": 42
+    },
+    {
+      "branch": "origin/tmp-phase5a-base2",
+      "files": 164,
+      "markdown": 42
+    },
+    {
+      "branch": "origin/tmp-phase5a-base3",
+      "files": 164,
+      "markdown": 42
+    },
+    {
+      "branch": "origin/tmp-phase5a-base4",
+      "files": 164,
+      "markdown": 42
+    },
+    {
+      "branch": "origin/tmp-phase5a-base5",
+      "files": 164,
+      "markdown": 42
+    },
+    {
+      "branch": "origin/tmp-phase5a-base6",
+      "files": 164,
+      "markdown": 42
+    },
+    {
+      "branch": "origin/tmp-unused",
+      "files": 152,
+      "markdown": 39
+    }
+  ],
+  "selected_document_sources": {
+    "docs/2026-10-12-1800-soldier-soak-ignition.md": "origin/PENDING-RELEASE",
+    "docs/2026-10-12-451-soldier-distributed-milestone.md": "origin/PENDING-RELEASE",
+    "docs/2026-10-12-v1-release-consolidation-and-1800-soak.md": "origin/PENDING-RELEASE",
+    "docs/ADMIN-EQUIPMENT-ARTWORK-DESIGN.md": "origin/feature/admin-artwork-ui",
+    "docs/ADMIN-MODERATION-DEPLOYMENT-PLAN.md": "origin/feature/admin-artwork-ui",
+    "docs/COMMUNITY-STATS-v1.md": "origin/docs/consolidated-roadmap-20261019",
+    "docs/DATABASE-ENDPOINTS.md": "origin/feature/admin-db-health-20261018",
+    "docs/EQUIPMENT-DISPLAY-NAME-AUDIT.md": "origin/docs/consolidated-roadmap-20261019",
+    "docs/EQUIPMENT-SOURCE-OF-TRUTH.md": "origin/docs/consolidated-roadmap-20261019",
+    "docs/HOMEPAGE-PAGINATION-BENCHMARK-2026-10-15.md": "origin/docs/consolidated-roadmap-20261019",
+    "docs/HOMEPAGE-PAGINATION-PRODUCTION-CUTOVER.md": "origin/docs/consolidated-roadmap-20261019",
+    "docs/LEADERBOARD-PAGINATION-CACHE-SELECTION-DESIGN.md": "origin/WEBSITE",
+    "docs/LIVE-POSTGRESQL-SCHEMA-2026-10-17.md": "origin/docs/live-db-schema-20261017",
+    "docs/MANUAL-PLAYER-REFRESH-DESIGN.md": "origin/docs/consolidated-roadmap-20261019",
+    "docs/PERFORMANCE-OPTIMIZATION-ROADMAP.md": "origin/feature/admin-db-health-20261018",
+    "docs/PLATOON-20261018-CHECKPOINT.md": "origin/feature/admin-db-health-20261018",
+    "docs/PLATOON-DISTRIBUTED-WORKERS-20261021.md": "origin/feature/platoon-design-20261018",
+    "docs/PLATOON-QUEUE-OPERATIONS.md": "origin/feature/admin-db-health-20261018",
+    "docs/PLATOON-SHARED-LEASE-DESIGN.md": "origin/feature/platoon-design-20261018",
+    "docs/PLATOON-SUPPORT-DESIGN.md": "origin/feature/admin-db-health-20261018",
+    "docs/PLAYER-EXCLUSION-AND-ADMIN-MODERATION-DESIGN.md": "origin/feature/admin-artwork-ui",
+    "docs/PLAYER-EXCLUSION-PRODUCTION-CHECKPOINT-2026-10-15.md": "origin/feature/admin-artwork-ui",
+    "docs/PRECOMPUTED-EQUIPMENT-RANKINGS-DESIGN.md": "origin/perf/weapon-top50-live-20261019",
+    "docs/PRODUCTION-CHECKPOINT-2026-10-18-HOMEPAGE-EQUIPMENT.md": "origin/feature/admin-db-health-20261018",
+    "docs/PROJECT-CURRENT-STATE.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/RELEASE-WEBSITE-2026-10-15.md": "origin/docs/consolidated-roadmap-20261019",
+    "docs/ROADMAP.md": "origin/docs/consolidated-roadmap-20261019",
+    "docs/SOLDIER-LEADERBOARD-DEEP-LINKS.md": "origin/docs/consolidated-roadmap-20261019",
+    "docs/VEHICLE-CANONICALIZATION-DESIGN.md": "origin/WEBSITE",
+    "docs/WEBSITE-HARDENING-DESIGN.md": "origin/WEBSITE",
+    "docs/WEBSITE-HARDENING-PRODUCTION-VALIDATION-2026-10-13.md": "origin/WEBSITE",
+    "docs/WEBSITE-HARDENING-STAGING-VALIDATION-2026-10-13.md": "origin/WEBSITE",
+    "docs/battlelog-data-sources.md": "origin/PENDING-RELEASE",
+    "docs/bf4ps-bounded-live-cohort-runner-design-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-first-live-detailed-postgres-persistence-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-first-live-multiplatform-detailed-cohort-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-first-live-weapon-vehicle-postgres-persistence-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-first-manifest-live-batch-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-first-three-site-live-ignition-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-live-five-pc-detailed-cohort-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-live-multiplatform-weapons-vehicles-cohort-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-manifest-driven-live-batch-runner-v1-design.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-soak-worker-integration-checklist.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-stage9c-d2-atomic-http-admission-contract.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-three-hour-soak-restart-safety-gate-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-three-site-dynamic-live-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-three-site-live-multiresource-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-three-site-post-http-abandonment-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-three-site-pre-http-worker-loss-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-three-site-stale-fencing-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4ps-three-site-three-hour-soak-design-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/bf4sw-discovery.md": "origin/PENDING-RELEASE",
+    "docs/catalog-persistence-policy.md": "origin/feature/indexed-equipment-rankings-20261018",
+    "docs/collector-architecture.md": "origin",
+    "docs/collector-registry.md": "origin",
+    "docs/database-schema-live-validation.md": "origin/docs/live-db-schema-20261017",
+    "docs/database-schema-reference.md": "origin/feature/indexed-equipment-rankings-20261018",
+    "docs/database-schema.md": "origin/docs/live-db-schema-20261017",
+    "docs/eight-egress-distributed-collection-mandate-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/gun-master-score-retention.md": "origin/PENDING-RELEASE",
+    "docs/history/pre-0012-database-schema-live-validation.md": "origin/docs/live-db-schema-20261017",
+    "docs/history/pre-0012-database-schema-reference.md": "origin/docs/live-db-schema-20261017",
+    "docs/history/pre-0012-database-schema.md": "origin/docs/live-db-schema-20261017",
+    "docs/history/pre-0012-migration-validation.md": "origin/docs/live-db-schema-20261017",
+    "docs/history/pre-0012-operational-schema.md": "origin/docs/live-db-schema-20261017",
+    "docs/manual-request-security-plan.md": "origin/feature/indexed-equipment-rankings-20261018",
+    "docs/manual-request-sql-permissions.md": "origin/feature/indexed-equipment-rankings-20261018",
+    "docs/migration-validation.md": "origin/docs/live-db-schema-20261017",
+    "docs/operational-schema.md": "origin/docs/live-db-schema-20261017",
+    "docs/performance/BACKFILL-OPERATIONS.md": "origin/feature/indexed-equipment-rankings-20261018",
+    "docs/performance/INDEXED-RANKINGS-IMPLEMENTATION-STATUS.md": "origin/feature/indexed-equipment-rankings-20261018",
+    "docs/performance/INDEXED-WEBSITE-CANARY.md": "origin/feature/indexed-website-fastpath-20261018",
+    "docs/performance/PRECOMPUTED-EQUIPMENT-RANKINGS.md": "origin/feature/indexed-equipment-rankings-20261018",
+    "docs/performance/PRODUCTION-READINESS-AND-ROLLOUT-2026-10-18.md": "origin/feature/indexed-equipment-rankings-20261018",
+    "docs/performance/RANKING-PROTOTYPE-RESULTS-2026-10-18.md": "origin/feature/indexed-equipment-rankings-20261018",
+    "docs/performance/REHEARSAL-AND-PRODUCTION-GATES-2026-10-18.md": "origin/feature/indexed-equipment-rankings-20261018",
+    "docs/phase1-detailed-collector.md": "origin/PENDING-RELEASE",
+    "docs/phase1-failure-recovery-live-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase1-multiplatform-live-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase1-persistence-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase2-bounded-feeder-live-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase2-bounded-feeder-runtime.md": "origin/PENDING-RELEASE",
+    "docs/phase2-drained-runtime-live-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase2-mixed-platform-recovery-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase2-mixed-platform-runtime-failure-evidence.md": "origin/PENDING-RELEASE",
+    "docs/phase2-single-node-live-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase2-sustained-runtime-live-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase3-distributed-collector-design.md": "origin/PENDING-RELEASE",
+    "docs/phase3a-concurrent-live-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase3b-lease-fencing-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase3c-operator-lifecycle-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase3d-frozen-topology.md": "origin/PENDING-RELEASE",
+    "docs/phase3d-three-host-validation.md": "origin/PENDING-RELEASE",
+    "docs/phase3d-two-host-network-preflight.md": "origin/PENDING-RELEASE",
+    "docs/phase3d-two-host-runbook.md": "origin/PENDING-RELEASE",
+    "docs/phase3e-distributed-endurance-design.md": "origin/PENDING-RELEASE",
+    "docs/phase3e-final-clean-stop-closure.md": "origin/PENDING-RELEASE",
+    "docs/phase3e-first-endurance-run.md": "origin/PENDING-RELEASE",
+    "docs/phase3e-job814-closure.md": "origin/PENDING-RELEASE",
+    "docs/phase3e-lifecycle-validation-plan.md": "origin/PENDING-RELEASE",
+    "docs/phase3e-second-endurance-run.md": "origin/PENDING-RELEASE",
+    "docs/phase3e-third-endurance-run.md": "origin/PENDING-RELEASE",
+    "docs/phase4-sustained-collection-ramp.md": "origin/PENDING-RELEASE",
+    "docs/phase4a-execution-plan.md": "origin/PENDING-RELEASE",
+    "docs/phase4a-sustained-run-results.md": "origin/PENDING-RELEASE",
+    "docs/phase4b-900-sustained-run-results.md": "origin/PENDING-RELEASE",
+    "docs/phase4c-execution-plan.md": "origin/PENDING-RELEASE",
+    "docs/phase4c-multiplatform-sustained-run-results.md": "origin/PENDING-RELEASE",
+    "docs/phase5a-full-stats-cost-characterization.md": "origin/PENDING-RELEASE",
+    "docs/phase5a-implementation-census.md": "origin/PENDING-RELEASE",
+    "docs/phase5a-live-weapon-probe-results.md": "origin/PENDING-RELEASE",
+    "docs/phase5a-weapon-persistence-integration.md": "origin/PENDING-RELEASE",
+    "docs/phase5b-production-scheduling-capacity-design.md": "origin/PENDING-RELEASE",
+    "docs/phase5b-stage9c-readiness-review.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/phase5b-stage9c-rolling-budget-boundary-audit.md": "origin/PENDING-RELEASE",
+    "docs/phase5b-stage9c-supervision-time-anchor-review.md": "origin/PENDING-RELEASE",
+    "docs/phase5b-stage9c-systemd-supervision-design.md": "origin/PENDING-RELEASE",
+    "docs/phase5b-stage9c-watchdog-lease-design.md": "origin/PENDING-RELEASE",
+    "docs/phase5b-step7-endurance-plan.md": "origin/PENDING-RELEASE",
+    "docs/phase5b-step9-operator-runbook.md": "origin/PENDING-RELEASE",
+    "docs/phase5b-step9-production-activation-plan.md": "origin/PENDING-RELEASE",
+    "docs/phase5b-three-site-synthetic-soak.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/production-physical-dispatch-gate.md": "origin/feature/db-budget-and-idle-wait",
+    "docs/recovery/ALEMBIC-0011-0012-RECOVERY.md": "origin/docs/live-db-schema-20261017",
+    "docs/runtime-budgets.md": "origin/feature/db-budget-and-idle-wait",
+    "docs/stage9c-admission-concurrency-execution-2026-10-08.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-admission-concurrency-validation.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-adversarial-timing-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-buffered-write-failover-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-concurrent-identity-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-dispatch-ledger-transaction-contract.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-enforcement-feasibility-decision-gate-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-full-capacity-boundary-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-gateway-attempt-policy-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-gateway-fencing-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-gateway-http-attempt-contract-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-historical-site-ownership-evidence.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-http-transport-inventory-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-last-slot-race-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-live-ledger-verification-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-offline-gateway-coordinator-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-operator-network-baseline-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-physical-dispatch-safety-design-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-physical-http-proof-obligation-matrix-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-physical-network-boundary-decision-gate-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-postgres-ledger-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-real-sql-last-slot-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-request-gate-urllib-policy-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-scratch-schema-verification-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-send-boundary-uncertainty-design-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-soak-recovery-design.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-sql-model-parity-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-tcou-readonly-network-inventory-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-three-host-failover-model-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-three-host-gateway-failover-design-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-three-site-eight-worker-two-hour-soak-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-three-source-identity-reconciliation-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-transport-fencing-counterexamples-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d2-urllib-redirect-mock-checkpoint-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d3-900-job-endurance-design.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d3-phasea-reset-and-three-site-smoke-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-d3-real-data-300-ramp-2026-10-11.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-outbound-dispatch-architecture-decision.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-postgresql-dispatch-admission-design.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-remaining-gates-audit-2026-10-08.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-t4-cross-host-scratch-plan.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-t4-lease-expiry-safety-test-design.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/stage9c-t4-three-host-execution-and-inspector-investigation.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/three-site-configurable-worker-integration-plan-2026-10-10.md": "origin/fix/stage9c-d2-soak-recovery",
+    "docs/v1-clean-node-production-db-validation.md": "origin/PENDING-RELEASE",
+    "docs/v1-release-manifest.md": "origin/PENDING-RELEASE"
+  },
+  "alternate_versions": {
+    "docs/ADMIN-EQUIPMENT-ARTWORK-DESIGN.md": [
+      {
+        "archive": "docs/history/branch-variants/ADMIN-EQUIPMENT-ARTWORK-DESIGN--47f2fdd9ecf8.md",
+        "sha256": "47f2fdd9ecf8003585b0e021f8e60a0d0696a9713c623ab6616be4d0a7a5d411",
+        "branches": [
+          "origin/feature/admin-equipment-artwork"
+        ]
+      }
+    ],
+    "docs/PERFORMANCE-OPTIMIZATION-ROADMAP.md": [
+      {
+        "archive": "docs/history/branch-variants/PERFORMANCE-OPTIMIZATION-ROADMAP--39b625af2627.md",
+        "sha256": "39b625af262795f5912453f97cf13de7db8c4c791f894cfda6604c5e86829402",
+        "branches": [
+          "origin/docs/consolidated-roadmap-20261019",
+          "origin/feature/admin-artwork-ui",
+          "origin/feature/admin-equipment-artwork",
+          "origin/feature/homepage-paginated-data",
+          "origin/feature/indexed-website-fastpath-20261018",
+          "origin/feature/linked-soldier-profiles-20261019",
+          "origin/perf/weapon-top50-live-20261019",
+          "origin/release/website-2026-10-15"
+        ]
+      }
+    ],
+    "docs/PROJECT-CURRENT-STATE.md": [
+      {
+        "archive": "docs/history/branch-variants/PROJECT-CURRENT-STATE--dc0249dbc4b9.md",
+        "sha256": "dc0249dbc4b9a439033c362865914544f64ec09c4950b27b5d4585181236b841",
+        "branches": [
+          "origin/test/stage9c-admission-concurrency"
+        ]
+      }
+    ],
+    "docs/battlelog-data-sources.md": [
+      {
+        "archive": "docs/history/branch-variants/battlelog-data-sources--409dcd1e0910.md",
+        "sha256": "409dcd1e09100d8b92f6f6f53874bcb8ea9666fdaac0bd554fb33b0d5c619bd4",
+        "branches": [
+          "origin/diagnostic/phase3e-lifecycle-a-forensics",
+          "origin/feature/patient-zero-persistence",
+          "origin/feature/phase1-atomic-success",
+          "origin/feature/phase1-client-normalizer",
+          "origin/feature/phase1-detailed-persistence",
+          "origin/feature/phase1-failure-recovery",
+          "origin/feature/phase1-multiplatform-cohort",
+          "origin/feature/phase1-patient-zero",
+          "origin/feature/phase1-patient-zero-persistence",
+          "origin/feature/phase1-persist-success",
+          "origin/feature/phase1-persistence",
+          "origin/feature/phase1-persistence-impl",
+          "origin/feature/phase1-request-gate",
+          "origin/feature/phase1-success-transaction",
+          "origin/feature/phase1-write-path",
+          "origin/feature/phase2-bounded-feeder",
+          "origin/feature/phase2-bounded-feeder-design",
+          "origin/feature/phase2-single-node-loop",
+          "origin/feature/phase2-sustained-runtime",
+          "origin/feature/phase3-coordination-design",
+          "origin/feature/phase3-distributed",
+          "origin/feature/phase3-distributed-collector",
+          "origin/feature/phase3-distributed-collector-coordination",
+          "origin/feature/phase3-distributed-collector-design",
+          "origin/feature/phase3-distributed-collector-runtime",
+          "origin/feature/phase3-distributed-collector-validation",
+          "origin/feature/phase3-distributed-coordination",
+          "origin/feature/phase3-distributed-proof",
+          "origin/feature/phase3-distributed-runtime-proof",
+          "origin/feature/phase3b-lease-fencing",
+          "origin/feature/phase3c-operator-lifecycle",
+          "origin/feature/phase3d-two-host-proof",
+          "origin/feature/phase3e-endurance-design",
+          "origin/feature/phase3e-endurance-implementation",
+          "origin/feature/phase3e-lifecycle-a-forensics",
+          "origin/feature/phase3e-live-harness",
+          "origin/feature/phase3e-live-harness-forensics",
+          "origin/feature/phase4b-900-sustained-run",
+          "origin/feature/phase4c-multiplatform-sustained-run",
+          "origin/feature/phase4c-weapon-vehicle-collection",
+          "origin/feature/phase5a-full-stats-cost-characterization",
+          "origin/fix/phase1-history-canonical-decimals",
+          "origin/fix/phase2-feeder-actionable-depth",
+          "origin/tmp-ignore",
+          "origin/tmp-ignore2",
+          "origin/tmp-ignore3",
+          "origin/tmp-noop",
+          "origin/tmp-phase1-request-gate-build",
+          "origin/tmp-phase2-single-node-loop",
+          "origin/tmp-phase2-single-node-loop-build",
+          "origin/tmp-phase5a-base",
+          "origin/tmp-phase5a-base2",
+          "origin/tmp-phase5a-base3",
+          "origin/tmp-phase5a-base4",
+          "origin/tmp-phase5a-base5",
+          "origin/tmp-phase5a-base6",
+          "origin/tmp-unused"
+        ]
+      },
+      {
+        "archive": "docs/history/branch-variants/battlelog-data-sources--3608596778e2.md",
+        "sha256": "3608596778e2077a871ea7dc2cdb42f6b7292e6589a19f22d1bbba82ff7db548",
+        "branches": [
+          "origin",
+          "origin/feature/bf4sw-discovery-importer",
+          "origin/feature/bf4sw-discovery-service",
+          "origin/feature/detailed-client",
+          "origin/feature/detailed-collector-battlelog-client",
+          "origin/feature/detailed-collector-client",
+          "origin/feature/detailed-collector-phase1",
+          "origin/feature/detailed-fetch-normalize",
+          "origin/feature/detailed-fetcher",
+          "origin/feature/initial-database-schema",
+          "origin/feature/patient-zero-client",
+          "origin/feature/phase1-battlelog-client",
+          "origin/feature/phase1-detailed-http",
+          "origin/feature/phase1-fetch-normalize",
+          "origin/feature/phase1-fetch-normalizer",
+          "origin/feature/phase1-queue-live-validation",
+          "origin/main"
+        ]
+      }
+    ],
+    "docs/bf4sw-discovery.md": [
+      {
+        "archive": "docs/history/branch-variants/bf4sw-discovery--9af35ffb6a49.md",
+        "sha256": "9af35ffb6a490492229c60b36bdbbb5b5d58f7a44b6affe7e25c4405a2764fc1",
+        "branches": [
+          "origin/feature/bf4sw-discovery-importer"
+        ]
+      }
+    ],
+    "docs/database-schema-live-validation.md": [
+      {
+        "archive": "docs/history/branch-variants/database-schema-live-validation--e22ff2fb9fbc.md",
+        "sha256": "e22ff2fb9fbcb74132189e5e8b7b025b220e74a13c1fdbe86a7d2779c316fc88",
+        "branches": [
+          "origin/PENDING-RELEASE",
+          "origin/archive/pre-v1-soak-worktree-20261013",
+          "origin/diagnostic/phase3e-lifecycle-a-forensics",
+          "origin/feature/db-budget-and-idle-wait",
+          "origin/feature/exclusion-discovery-guard",
+          "origin/feature/exclusion-worker-guards",
+          "origin/feature/indexed-equipment-rankings-20261018",
+          "origin/feature/manual-request-backend",
+          "origin/feature/passive-platoon-on-0012",
+          "origin/feature/phase2-single-node-loop",
+          "origin/feature/phase2-sustained-runtime",
+          "origin/feature/phase3-coordination-design",
+          "origin/feature/phase3-distributed",
+          "origin/feature/phase3-distributed-collector",
+          "origin/feature/phase3-distributed-collector-coordination",
+          "origin/feature/phase3-distributed-collector-design",
+          "origin/feature/phase3-distributed-collector-runtime",
+          "origin/feature/phase3-distributed-collector-validation",
+          "origin/feature/phase3-distributed-coordination",
+          "origin/feature/phase3-distributed-proof",
+          "origin/feature/phase3-distributed-runtime-proof",
+          "origin/feature/phase3b-lease-fencing",
+          "origin/feature/phase3c-operator-lifecycle",
+          "origin/feature/phase3d-two-host-proof",
+          "origin/feature/phase3e-endurance-design",
+          "origin/feature/phase3e-endurance-implementation",
+          "origin/feature/phase3e-lifecycle-a-forensics",
+          "origin/feature/phase3e-live-harness",
+          "origin/feature/phase3e-live-harness-forensics",
+          "origin/feature/phase4b-900-sustained-run",
+          "origin/feature/phase4c-multiplatform-sustained-run",
+          "origin/feature/phase4c-weapon-vehicle-collection",
+          "origin/feature/phase5a-cost-cohort",
+          "origin/feature/phase5a-full-stats-cost-characterization",
+          "origin/feature/profile-collector",
+          "origin/fix/batch-catalog-persistence",
+          "origin/fix/passive-platoon-observation-guards",
+          "origin/fix/phase2-feeder-actionable-depth",
+          "origin/fix/production-physical-dispatch-gate",
+          "origin/fix/rnt-01-safe-collector-bootstrap",
+          "origin/fix/stage9c-d2-soak-recovery",
+          "origin/fix/stage9c-t4-inspector-lease-expiry",
+          "origin/recovery/alembic-0011-0012-20261018",
+          "origin/test/stage9c-admission-concurrency",
+          "origin/tmp-phase5a-base",
+          "origin/tmp-phase5a-base2",
+          "origin/tmp-phase5a-base3",
+          "origin/tmp-phase5a-base4",
+          "origin/tmp-phase5a-base5",
+          "origin/tmp-phase5a-base6",
+          "origin/tmp-unused"
+        ]
+      }
+    ],
+    "docs/database-schema-reference.md": [
+      {
+        "archive": "docs/history/branch-variants/database-schema-reference--45c384236ab6.md",
+        "sha256": "45c384236ab6de2bee709fc70ef02eacba5a30f37599c64cab5f985fd2cb50c3",
+        "branches": [
+          "origin/docs/live-db-schema-20261017"
+        ]
+      },
+      {
+        "archive": "docs/history/branch-variants/database-schema-reference--e3e5013d3365.md",
+        "sha256": "e3e5013d3365a63eb3e83351c0c5d423b1ec51113f35fa960c6122b263c37cb7",
+        "branches": [
+          "origin/feature/manual-request-backend"
+        ]
+      },
+      {
+        "archive": "docs/history/branch-variants/database-schema-reference--7e371055252f.md",
+        "sha256": "7e371055252fdebae06976c8c4b7c683b41dff666d07a0355d3d6e15c40b308e",
+        "branches": [
+          "origin/feature/passive-platoon-on-0012",
+          "origin/fix/passive-platoon-observation-guards",
+          "origin/recovery/alembic-0011-0012-20261018"
+        ]
+      },
+      {
+        "archive": "docs/history/branch-variants/database-schema-reference--c666eccd34c3.md",
+        "sha256": "c666eccd34c322666f222323249bf964fb69163dc502cecd8629ce13e98ce8d1",
+        "branches": [
+          "origin/feature/db-budget-and-idle-wait",
+          "origin/feature/exclusion-worker-guards",
+          "origin/fix/batch-catalog-persistence",
+          "origin/fix/production-physical-dispatch-gate"
+        ]
+      },
+      {
+        "archive": "docs/history/branch-variants/database-schema-reference--01877d2bc739.md",
+        "sha256": "01877d2bc739a31263387bfe1c690ca99a67b01f8533c3b9ae132e7364d2f3ca",
+        "branches": [
+          "origin/fix/stage9c-d2-soak-recovery",
+          "origin/fix/stage9c-t4-inspector-lease-expiry"
+        ]
+      },
+      {
+        "archive": "docs/history/branch-variants/database-schema-reference--7383b12d5e2d.md",
+        "sha256": "7383b12d5e2d5c787c168d51d2c9eb68e2dd45532f399f60fa4d20c9f1204d36",
+        "branches": [
+          "origin/PENDING-RELEASE",
+          "origin/archive/pre-v1-soak-worktree-20261013",
+          "origin/feature/exclusion-discovery-guard",
+          "origin/feature/phase5a-cost-cohort",
+          "origin/feature/profile-collector",
+          "origin/fix/rnt-01-safe-collector-bootstrap",
+          "origin/test/stage9c-admission-concurrency"
+        ]
+      },
+      {
+        "archive": "docs/history/branch-variants/database-schema-reference--dd87f967a6ac.md",
+        "sha256": "dd87f967a6aca07f45379ec55a985483fdfa7eb2382852e359574aa219ed1e33",
+        "branches": [
+          "origin/feature/phase3e-lifecycle-a-forensics",
+          "origin/feature/phase4b-900-sustained-run",
+          "origin/feature/phase4c-multiplatform-sustained-run",
+          "origin/feature/phase4c-weapon-vehicle-collection",
+          "origin/feature/phase5a-full-stats-cost-characterization",
+          "origin/tmp-phase5a-base",
+          "origin/tmp-phase5a-base2",
+          "origin/tmp-phase5a-base3",
+          "origin/tmp-phase5a-base4",
+          "origin/tmp-phase5a-base5",
+          "origin/tmp-phase5a-base6",
+          "origin/tmp-unused"
+        ]
+      },
+      {
+        "archive": "docs/history/branch-variants/database-schema-reference--7b77057ad30b.md",
+        "sha256": "7b77057ad30be54fe6f4d56d150cad2dd6fefaa24bf89ffebf9c2e0585e25b51",
+        "branches": [
+          "origin/diagnostic/phase3e-lifecycle-a-forensics",
+          "origin/feature/phase2-single-node-loop",
+          "origin/feature/phase2-sustained-runtime",
+          "origin/feature/phase3-coordination-design",
+          "origin/feature/phase3-distributed",
+          "origin/feature/phase3-distributed-collector",
+          "origin/feature/phase3-distributed-collector-coordination",
+          "origin/feature/phase3-distributed-collector-design",
+          "origin/feature/phase3-distributed-collector-runtime",
+          "origin/feature/phase3-distributed-collector-validation",
+          "origin/feature/phase3-distributed-coordination",
+          "origin/feature/phase3-distributed-proof",
+          "origin/feature/phase3-distributed-runtime-proof",
+          "origin/feature/phase3b-lease-fencing",
+          "origin/feature/phase3c-operator-lifecycle",
+          "origin/feature/phase3d-two-host-proof",
+          "origin/feature/phase3e-endurance-design",
+          "origin/feature/phase3e-endurance-implementation",
+          "origin/feature/phase3e-live-harness",
+          "origin/feature/phase3e-live-harness-forensics",
+          "origin/fix/phase2-feeder-actionable-depth"
+        ]
+      }
+    ],
+    "docs/database-schema.md": [
+      {
+        "archive": "docs/history/branch-variants/database-schema--55e8500d0492.md",
+        "sha256": "55e8500d04923bc1063d8b088ef325eb852541c1cec05ea8195300e3ac4a791c",
+        "branches": [
+          "origin",
+          "origin/PENDING-RELEASE",
+          "origin/archive/pre-v1-soak-worktree-20261013",
+          "origin/diagnostic/phase3e-lifecycle-a-forensics",
+          "origin/feature/bf4sw-discovery-importer",
+          "origin/feature/bf4sw-discovery-service",
+          "origin/feature/db-budget-and-idle-wait",
+          "origin/feature/detailed-client",
+          "origin/feature/detailed-collector-battlelog-client",
+          "origin/feature/detailed-collector-client",
+          "origin/feature/detailed-collector-phase1",
+          "origin/feature/detailed-fetch-normalize",
+          "origin/feature/detailed-fetcher",
+          "origin/feature/exclusion-discovery-guard",
+          "origin/feature/exclusion-worker-guards",
+          "origin/feature/indexed-equipment-rankings-20261018",
+          "origin/feature/initial-database-schema",
+          "origin/feature/manual-request-backend",
+          "origin/feature/passive-platoon-on-0012",
+          "origin/feature/patient-zero-client",
+          "origin/feature/patient-zero-persistence",
+          "origin/feature/phase1-atomic-success",
+          "origin/feature/phase1-battlelog-client",
+          "origin/feature/phase1-client-normalizer",
+          "origin/feature/phase1-detailed-http",
+          "origin/feature/phase1-detailed-persistence",
+          "origin/feature/phase1-failure-recovery",
+          "origin/feature/phase1-fetch-normalize",
+          "origin/feature/phase1-fetch-normalizer",
+          "origin/feature/phase1-multiplatform-cohort",
+          "origin/feature/phase1-patient-zero",
+          "origin/feature/phase1-patient-zero-persistence",
+          "origin/feature/phase1-persist-success",
+          "origin/feature/phase1-persistence",
+          "origin/feature/phase1-persistence-impl",
+          "origin/feature/phase1-queue-live-validation",
+          "origin/feature/phase1-request-gate",
+          "origin/feature/phase1-success-transaction",
+          "origin/feature/phase1-write-path",
+          "origin/feature/phase2-bounded-feeder",
+          "origin/feature/phase2-bounded-feeder-design",
+          "origin/feature/phase2-single-node-loop",
+          "origin/feature/phase2-sustained-runtime",
+          "origin/feature/phase3-coordination-design",
+          "origin/feature/phase3-distributed",
+          "origin/feature/phase3-distributed-collector",
+          "origin/feature/phase3-distributed-collector-coordination",
+          "origin/feature/phase3-distributed-collector-design",
+          "origin/feature/phase3-distributed-collector-runtime",
+          "origin/feature/phase3-distributed-collector-validation",
+          "origin/feature/phase3-distributed-coordination",
+          "origin/feature/phase3-distributed-proof",
+          "origin/feature/phase3-distributed-runtime-proof",
+          "origin/feature/phase3b-lease-fencing",
+          "origin/feature/phase3c-operator-lifecycle",
+          "origin/feature/phase3d-two-host-proof",
+          "origin/feature/phase3e-endurance-design",
+          "origin/feature/phase3e-endurance-implementation",
+          "origin/feature/phase3e-lifecycle-a-forensics",
+          "origin/feature/phase3e-live-harness",
+          "origin/feature/phase3e-live-harness-forensics",
+          "origin/feature/phase4b-900-sustained-run",
+          "origin/feature/phase4c-multiplatform-sustained-run",
+          "origin/feature/phase4c-weapon-vehicle-collection",
+          "origin/feature/phase5a-cost-cohort",
+          "origin/feature/phase5a-full-stats-cost-characterization",
+          "origin/feature/profile-collector",
+          "origin/fix/batch-catalog-persistence",
+          "origin/fix/passive-platoon-observation-guards",
+          "origin/fix/phase1-history-canonical-decimals",
+          "origin/fix/phase2-feeder-actionable-depth",
+          "origin/fix/production-physical-dispatch-gate",
+          "origin/fix/rnt-01-safe-collector-bootstrap",
+          "origin/fix/stage9c-d2-soak-recovery",
+          "origin/fix/stage9c-t4-inspector-lease-expiry",
+          "origin/main",
+          "origin/recovery/alembic-0011-0012-20261018",
+          "origin/test/stage9c-admission-concurrency",
+          "origin/tmp-ignore",
+          "origin/tmp-ignore2",
+          "origin/tmp-ignore3",
+          "origin/tmp-noop",
+          "origin/tmp-phase1-request-gate-build",
+          "origin/tmp-phase2-single-node-loop",
+          "origin/tmp-phase2-single-node-loop-build",
+          "origin/tmp-phase5a-base",
+          "origin/tmp-phase5a-base2",
+          "origin/tmp-phase5a-base3",
+          "origin/tmp-phase5a-base4",
+          "origin/tmp-phase5a-base5",
+          "origin/tmp-phase5a-base6",
+          "origin/tmp-unused"
+        ]
+      }
+    ],
+    "docs/migration-validation.md": [
+      {
+        "archive": "docs/history/branch-variants/migration-validation--5c654a5ffd43.md",
+        "sha256": "5c654a5ffd431246a2f94b892073c04b2383c76588530d59c8c280d67011b05e",
+        "branches": [
+          "origin/PENDING-RELEASE",
+          "origin/archive/pre-v1-soak-worktree-20261013",
+          "origin/diagnostic/phase3e-lifecycle-a-forensics",
+          "origin/feature/bf4sw-discovery-importer",
+          "origin/feature/bf4sw-discovery-service",
+          "origin/feature/db-budget-and-idle-wait",
+          "origin/feature/detailed-client",
+          "origin/feature/detailed-collector-battlelog-client",
+          "origin/feature/detailed-collector-client",
+          "origin/feature/detailed-collector-phase1",
+          "origin/feature/detailed-fetch-normalize",
+          "origin/feature/detailed-fetcher",
+          "origin/feature/exclusion-discovery-guard",
+          "origin/feature/exclusion-worker-guards",
+          "origin/feature/indexed-equipment-rankings-20261018",
+          "origin/feature/initial-database-schema",
+          "origin/feature/manual-request-backend",
+          "origin/feature/passive-platoon-on-0012",
+          "origin/feature/patient-zero-client",
+          "origin/feature/patient-zero-persistence",
+          "origin/feature/phase1-atomic-success",
+          "origin/feature/phase1-battlelog-client",
+          "origin/feature/phase1-client-normalizer",
+          "origin/feature/phase1-detailed-http",
+          "origin/feature/phase1-detailed-persistence",
+          "origin/feature/phase1-failure-recovery",
+          "origin/feature/phase1-fetch-normalize",
+          "origin/feature/phase1-fetch-normalizer",
+          "origin/feature/phase1-multiplatform-cohort",
+          "origin/feature/phase1-patient-zero",
+          "origin/feature/phase1-patient-zero-persistence",
+          "origin/feature/phase1-persist-success",
+          "origin/feature/phase1-persistence",
+          "origin/feature/phase1-persistence-impl",
+          "origin/feature/phase1-queue-live-validation",
+          "origin/feature/phase1-request-gate",
+          "origin/feature/phase1-success-transaction",
+          "origin/feature/phase1-write-path",
+          "origin/feature/phase2-bounded-feeder",
+          "origin/feature/phase2-bounded-feeder-design",
+          "origin/feature/phase2-single-node-loop",
+          "origin/feature/phase2-sustained-runtime",
+          "origin/feature/phase3-coordination-design",
+          "origin/feature/phase3-distributed",
+          "origin/feature/phase3-distributed-collector",
+          "origin/feature/phase3-distributed-collector-coordination",
+          "origin/feature/phase3-distributed-collector-design",
+          "origin/feature/phase3-distributed-collector-runtime",
+          "origin/feature/phase3-distributed-collector-validation",
+          "origin/feature/phase3-distributed-coordination",
+          "origin/feature/phase3-distributed-proof",
+          "origin/feature/phase3-distributed-runtime-proof",
+          "origin/feature/phase3b-lease-fencing",
+          "origin/feature/phase3c-operator-lifecycle",
+          "origin/feature/phase3d-two-host-proof",
+          "origin/feature/phase3e-endurance-design",
+          "origin/feature/phase3e-endurance-implementation",
+          "origin/feature/phase3e-lifecycle-a-forensics",
+          "origin/feature/phase3e-live-harness",
+          "origin/feature/phase3e-live-harness-forensics",
+          "origin/feature/phase4b-900-sustained-run",
+          "origin/feature/phase4c-multiplatform-sustained-run",
+          "origin/feature/phase4c-weapon-vehicle-collection",
+          "origin/feature/phase5a-cost-cohort",
+          "origin/feature/phase5a-full-stats-cost-characterization",
+          "origin/feature/profile-collector",
+          "origin/fix/batch-catalog-persistence",
+          "origin/fix/passive-platoon-observation-guards",
+          "origin/fix/phase1-history-canonical-decimals",
+          "origin/fix/phase2-feeder-actionable-depth",
+          "origin/fix/production-physical-dispatch-gate",
+          "origin/fix/rnt-01-safe-collector-bootstrap",
+          "origin/fix/stage9c-d2-soak-recovery",
+          "origin/fix/stage9c-t4-inspector-lease-expiry",
+          "origin/recovery/alembic-0011-0012-20261018",
+          "origin/test/stage9c-admission-concurrency",
+          "origin/tmp-ignore",
+          "origin/tmp-ignore2",
+          "origin/tmp-ignore3",
+          "origin/tmp-noop",
+          "origin/tmp-phase1-request-gate-build",
+          "origin/tmp-phase2-single-node-loop",
+          "origin/tmp-phase2-single-node-loop-build",
+          "origin/tmp-phase5a-base",
+          "origin/tmp-phase5a-base2",
+          "origin/tmp-phase5a-base3",
+          "origin/tmp-phase5a-base4",
+          "origin/tmp-phase5a-base5",
+          "origin/tmp-phase5a-base6",
+          "origin/tmp-unused"
+        ]
+      }
+    ],
+    "docs/operational-schema.md": [
+      {
+        "archive": "docs/history/branch-variants/operational-schema--6615be01145d.md",
+        "sha256": "6615be01145d2d44b84cfb09e9adb510fa738341a53b649b0bf18f5acfb24e88",
+        "branches": [
+          "origin",
+          "origin/PENDING-RELEASE",
+          "origin/archive/pre-v1-soak-worktree-20261013",
+          "origin/diagnostic/phase3e-lifecycle-a-forensics",
+          "origin/feature/bf4sw-discovery-importer",
+          "origin/feature/bf4sw-discovery-service",
+          "origin/feature/db-budget-and-idle-wait",
+          "origin/feature/detailed-client",
+          "origin/feature/detailed-collector-battlelog-client",
+          "origin/feature/detailed-collector-client",
+          "origin/feature/detailed-collector-phase1",
+          "origin/feature/detailed-fetch-normalize",
+          "origin/feature/detailed-fetcher",
+          "origin/feature/exclusion-discovery-guard",
+          "origin/feature/exclusion-worker-guards",
+          "origin/feature/indexed-equipment-rankings-20261018",
+          "origin/feature/initial-database-schema",
+          "origin/feature/manual-request-backend",
+          "origin/feature/passive-platoon-on-0012",
+          "origin/feature/patient-zero-client",
+          "origin/feature/patient-zero-persistence",
+          "origin/feature/phase1-atomic-success",
+          "origin/feature/phase1-battlelog-client",
+          "origin/feature/phase1-client-normalizer",
+          "origin/feature/phase1-detailed-http",
+          "origin/feature/phase1-detailed-persistence",
+          "origin/feature/phase1-failure-recovery",
+          "origin/feature/phase1-fetch-normalize",
+          "origin/feature/phase1-fetch-normalizer",
+          "origin/feature/phase1-multiplatform-cohort",
+          "origin/feature/phase1-patient-zero",
+          "origin/feature/phase1-patient-zero-persistence",
+          "origin/feature/phase1-persist-success",
+          "origin/feature/phase1-persistence",
+          "origin/feature/phase1-persistence-impl",
+          "origin/feature/phase1-queue-live-validation",
+          "origin/feature/phase1-request-gate",
+          "origin/feature/phase1-success-transaction",
+          "origin/feature/phase1-write-path",
+          "origin/feature/phase2-bounded-feeder",
+          "origin/feature/phase2-bounded-feeder-design",
+          "origin/feature/phase2-single-node-loop",
+          "origin/feature/phase2-sustained-runtime",
+          "origin/feature/phase3-coordination-design",
+          "origin/feature/phase3-distributed",
+          "origin/feature/phase3-distributed-collector",
+          "origin/feature/phase3-distributed-collector-coordination",
+          "origin/feature/phase3-distributed-collector-design",
+          "origin/feature/phase3-distributed-collector-runtime",
+          "origin/feature/phase3-distributed-collector-validation",
+          "origin/feature/phase3-distributed-coordination",
+          "origin/feature/phase3-distributed-proof",
+          "origin/feature/phase3-distributed-runtime-proof",
+          "origin/feature/phase3b-lease-fencing",
+          "origin/feature/phase3c-operator-lifecycle",
+          "origin/feature/phase3d-two-host-proof",
+          "origin/feature/phase3e-endurance-design",
+          "origin/feature/phase3e-endurance-implementation",
+          "origin/feature/phase3e-lifecycle-a-forensics",
+          "origin/feature/phase3e-live-harness",
+          "origin/feature/phase3e-live-harness-forensics",
+          "origin/feature/phase4b-900-sustained-run",
+          "origin/feature/phase4c-multiplatform-sustained-run",
+          "origin/feature/phase4c-weapon-vehicle-collection",
+          "origin/feature/phase5a-cost-cohort",
+          "origin/feature/phase5a-full-stats-cost-characterization",
+          "origin/feature/profile-collector",
+          "origin/fix/batch-catalog-persistence",
+          "origin/fix/passive-platoon-observation-guards",
+          "origin/fix/phase1-history-canonical-decimals",
+          "origin/fix/phase2-feeder-actionable-depth",
+          "origin/fix/production-physical-dispatch-gate",
+          "origin/fix/rnt-01-safe-collector-bootstrap",
+          "origin/fix/stage9c-d2-soak-recovery",
+          "origin/fix/stage9c-t4-inspector-lease-expiry",
+          "origin/main",
+          "origin/recovery/alembic-0011-0012-20261018",
+          "origin/test/stage9c-admission-concurrency",
+          "origin/tmp-ignore",
+          "origin/tmp-ignore2",
+          "origin/tmp-ignore3",
+          "origin/tmp-noop",
+          "origin/tmp-phase1-request-gate-build",
+          "origin/tmp-phase2-single-node-loop",
+          "origin/tmp-phase2-single-node-loop-build",
+          "origin/tmp-phase5a-base",
+          "origin/tmp-phase5a-base2",
+          "origin/tmp-phase5a-base3",
+          "origin/tmp-phase5a-base4",
+          "origin/tmp-phase5a-base5",
+          "origin/tmp-phase5a-base6",
+          "origin/tmp-unused"
+        ]
+      }
+    ],
+    "docs/phase1-detailed-collector.md": [
+      {
+        "archive": "docs/history/branch-variants/phase1-detailed-collector--2633584aad72.md",
+        "sha256": "2633584aad72b7c84a30e53970070e17460ea0534df5247999bcec97f72c8732",
+        "branches": [
+          "origin/feature/phase1-patient-zero"
+        ]
+      },
+      {
+        "archive": "docs/history/branch-variants/phase1-detailed-collector--562cc21a02dd.md",
+        "sha256": "562cc21a02dde029e5d7020bd293b9caeda5d59e4ff57ce1e5adf14715782847",
+        "branches": [
+          "origin/feature/phase1-request-gate"
+        ]
+      },
+      {
+        "archive": "docs/history/branch-variants/phase1-detailed-collector--1753b5601075.md",
+        "sha256": "1753b56010757a775c4cfca497bd736876554db936c9ea66b2de6d89c5540a51",
+        "branches": [
+          "origin/feature/detailed-client",
+          "origin/feature/detailed-collector-battlelog-client",
+          "origin/feature/detailed-collector-client",
+          "origin/feature/detailed-collector-phase1",
+          "origin/feature/detailed-fetch-normalize",
+          "origin/feature/detailed-fetcher",
+          "origin/feature/patient-zero-client",
+          "origin/feature/patient-zero-persistence",
+          "origin/feature/phase1-atomic-success",
+          "origin/feature/phase1-battlelog-client",
+          "origin/feature/phase1-client-normalizer",
+          "origin/feature/phase1-detailed-http",
+          "origin/feature/phase1-detailed-persistence",
+          "origin/feature/phase1-fetch-normalize",
+          "origin/feature/phase1-fetch-normalizer",
+          "origin/feature/phase1-patient-zero-persistence",
+          "origin/feature/phase1-persist-success",
+          "origin/feature/phase1-persistence",
+          "origin/feature/phase1-persistence-impl",
+          "origin/feature/phase1-success-transaction",
+          "origin/feature/phase1-write-path",
+          "origin/tmp-ignore",
+          "origin/tmp-ignore2",
+          "origin/tmp-ignore3",
+          "origin/tmp-phase1-request-gate-build"
+        ]
+      },
+      {
+        "archive": "docs/history/branch-variants/phase1-detailed-collector--6630f65b84f7.md",
+        "sha256": "6630f65b84f7e827a63bef0bd7254dfccfc2faf3569b5c51121b4c0875d841fe",
+        "branches": [
+          "origin/feature/phase1-queue-live-validation"
+        ]
+      }
+    ],
+    "docs/phase3d-two-host-runbook.md": [
+      {
+        "archive": "docs/history/branch-variants/phase3d-two-host-runbook--f1b33639ab63.md",
+        "sha256": "f1b33639ab63a26b5b7892a6b5e9794bc090c07afa4777e6f11cfb112c79918b",
+        "branches": [
+          "origin/feature/phase3c-operator-lifecycle"
+        ]
+      }
+    ],
+    "docs/phase3e-lifecycle-validation-plan.md": [
+      {
+        "archive": "docs/history/branch-variants/phase3e-lifecycle-validation-plan--44d7096e9715.md",
+        "sha256": "44d7096e9715a85b312d5cb131ffb82cd815b64d1723987d84f5878199f80a43",
+        "branches": [
+          "origin/diagnostic/phase3e-lifecycle-a-forensics",
+          "origin/feature/phase3e-live-harness",
+          "origin/feature/phase3e-live-harness-forensics"
+        ]
+      }
+    ],
+    "docs/phase5a-full-stats-cost-characterization.md": [
+      {
+        "archive": "docs/history/branch-variants/phase5a-full-stats-cost-characterization--3d1106f3c0c0.md",
+        "sha256": "3d1106f3c0c0871c33c95c235a6f39f7c85f86c232386087ed9ad2aa43d4a1ee",
+        "branches": [
+          "origin/feature/phase5a-full-stats-cost-characterization"
+        ]
+      }
+    ],
+    "docs/phase5b-stage9c-readiness-review.md": [
+      {
+        "archive": "docs/history/branch-variants/phase5b-stage9c-readiness-review--3b4673227c34.md",
+        "sha256": "3b4673227c34f642df112e1a7045cbbf7046f8ee6135b96d6543f7411f95241b",
+        "branches": [
+          "origin/PENDING-RELEASE",
+          "origin/archive/pre-v1-soak-worktree-20261013",
+          "origin/feature/db-budget-and-idle-wait",
+          "origin/feature/exclusion-discovery-guard",
+          "origin/feature/exclusion-worker-guards",
+          "origin/feature/indexed-equipment-rankings-20261018",
+          "origin/feature/manual-request-backend",
+          "origin/feature/passive-platoon-on-0012",
+          "origin/feature/phase5a-cost-cohort",
+          "origin/feature/profile-collector",
+          "origin/fix/batch-catalog-persistence",
+          "origin/fix/passive-platoon-observation-guards",
+          "origin/fix/production-physical-dispatch-gate",
+          "origin/fix/rnt-01-safe-collector-bootstrap",
+          "origin/recovery/alembic-0011-0012-20261018"
+        ]
+      }
+    ],
+    "docs/stage9c-t4-three-host-execution-and-inspector-investigation.md": [
+      {
+        "archive": "docs/history/branch-variants/stage9c-t4-three-host-execution-and-inspector-investigation--71871dfbfdea.md",
+        "sha256": "71871dfbfdea29fdb23f4974c930b2b1142d9ddd3621d9974f6d54700a03003d",
+        "branches": [
+          "origin/test/stage9c-admission-concurrency"
+        ]
+      }
+    ]
+  }
+}

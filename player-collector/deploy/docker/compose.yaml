@@ -1,0 +1,18 @@
+# Release candidate only: configure external PostgreSQL and BF4SW source.
+# No database service is bundled; migrations must be run explicitly.
+services:
+  discovery:
+    build:
+      context: ../..
+    image: bf4-player-stats:1.0.0-rc
+    restart: unless-stopped
+    env_file: ./discovery.env
+    command: ["python", "-m", "bf4ps.discovery_service"]
+  collector:
+    build:
+      context: ../..
+    image: bf4-player-stats:collector-rnt-bootstrap
+    restart: unless-stopped
+    env_file: ./collector.env
+    command: ["python", "/app/scripts/bf4ps_production_collector.py"]
+    profiles: ["collector"]
