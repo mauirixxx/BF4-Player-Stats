@@ -32,3 +32,15 @@ Build one scope at a time in a staging generation, using one consistent database
 ## Scope control
 
 Platoon fleet expansion, generic worker framework, and Discord stats bot remain separate future work. No Battlelog collection rate changes are needed for this feature.
+
+## 2026-10-21 implementation update: catalog-wide bounded rollout
+
+The production ranking service was located on **mak-01**, not the website host. Its `bf4ps-hourly-rank-builder.timer` and `bf4ps-rank-gc.timer` were both active, and the 08:00 UTC build successfully published 15 test scopes: weapon 10 and vehicle 1 on PC/PS4/Xbox, across their supported metrics. The live website on `tcou` already uses the opt-in precomputed reader with legacy fallback; the reader and guard have been restored into `website/api/` in Git commit `a459a03`.
+
+The prior hourly runner hardcoded those two items. The consolidated `player-collector/hourly_runner.py` now enumerates catalog scopes from `equipment_rank_scope_versions` and `equipment_population`, including the `all` platform, and runs a **bounded, serialized, resumable** subset each hour. It skips recently refreshed scopes, prioritizes older published scopes and high-population missing scopes, and retains the advisory lock and independent publisher's production-ack, schema, population and version checks. The builder remains in `player-collector/build_rank_hourly.py`. Neither script calls Battlelog.
+
+Safety defaults: 16 builds per run (`BF4PS_RANK_MAX_JOBS`, maximum 24), 900 seconds per run (`BF4PS_RANK_MAX_SECONDS`, maximum 1050), 120 seconds per build (`BF4PS_RANK_JOB_SECONDS`, maximum 180), and minimum population 1 (`BF4PS_RANK_MIN_POPULATION`). The website reader permits generations up to 10,800 seconds old; missing/expired/invalid generations fall back to existing queries. Large scopes may time out and must be measured before increasing budgets. Catalog-wide backfill is incremental, **not instantly complete**; verify database storage, WAL, GC retention, run times, and coverage before expanding throughput.
+
+Operational checks: `systemctl status bf4ps-hourly-rank-builder.timer bf4ps-hourly-rank-builder.service`, `journalctl -u bf4ps-hourly-rank-builder.service -n 80 --no-pager`, and read-only SQL against `equipment_rank_published` joined to `equipment_rank_generations`. Check per-platform and per-metric counts, generation age, and parity against legacy rankings. Do not copy the ranking builder to all collector hosts: one active publisher per database is intentional.
+
+Release gate: test the new runner on `mak-01` with a small bounded batch and confirm it publishes previously missing items (particularly AH-1Z/AH-6), then expand gradually. No migrations or Battlelog rate changes are part of this rollout. Preserve the old hourly runner for immediate rollback.
