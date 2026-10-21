@@ -61,11 +61,12 @@ def main():
         ), claimed AS (
           UPDATE platoon_soldier_discovery d SET status='running',attempts=d.attempts+1,
             next_attempt_at=now()+interval '15 minutes'
-          FROM candidate c WHERE d.soldier_id=c.soldier_id RETURNING d.soldier_id
-        ) SELECT c.soldier_id,s.persona_id,s.platform,s.current_name
+          FROM candidate c WHERE d.soldier_id=c.soldier_id RETURNING d.soldier_id,d.next_attempt_at
+        ) SELECT c.soldier_id,s.persona_id,s.platform,s.current_name,c.next_attempt_at
           FROM claimed c JOIN soldiers s USING(soldier_id)""")
         if not row:print('No discovery due');return 0
-        soldier,persona,platform,name=row.split('|',3)
+        soldier,persona,platform,name,lease_stamp=row.split('|',4)
+        fence=f"status='running' AND next_attempt_at='{lease_stamp}'::timestamptz"
         print('Claimed soldier',soldier,flush=True)
         try:
             if platform not in ('pc','ps4','xboxone') or not re.fullmatch(r'[0-9]+',persona):raise ValueError('unsupported identity')
@@ -89,10 +90,10 @@ def main():
                   SELECT {linked} WHERE NOT EXISTS(SELECT 1 FROM platoons WHERE platoon_id={linked})
                   ON CONFLICT DO NOTHING""")
             tag=esc(parser.tag) if parser.tag else 'NULL'
-            query(f"UPDATE platoon_soldier_discovery SET status='complete',last_checked_at=now(),linked_platoon_id={linked if linked else 'NULL'},displayed_tag={tag},last_error=NULL WHERE soldier_id={int(soldier)}")
+            query(f"UPDATE platoon_soldier_discovery SET status='complete',last_checked_at=now(),linked_platoon_id={linked if linked else 'NULL'},displayed_tag={tag},last_error=NULL WHERE soldier_id={int(soldier)} AND {fence}")
             print('Discovered soldier',soldier,'linked platoon',linked,'display tag',parser.tag,flush=True)
             return 0
         except Exception as exc:
-            error=esc(str(exc)[:250]);query(f"UPDATE platoon_soldier_discovery SET status='failed',last_error={error},next_attempt_at=now()+interval '1 hour'*LEAST(24,power(2,LEAST(attempts,4))::integer) WHERE soldier_id={int(soldier)}")
+            error=esc(str(exc)[:250]);query(f"UPDATE platoon_soldier_discovery SET status='failed',last_error={error},next_attempt_at=now()+interval '1 hour'*LEAST(24,power(2,LEAST(attempts,4))::integer) WHERE soldier_id={int(soldier)} AND {fence}")
             print('Discovery failed',soldier,str(exc),file=sys.stderr);return 1
 if __name__=='__main__':sys.exit(main())
