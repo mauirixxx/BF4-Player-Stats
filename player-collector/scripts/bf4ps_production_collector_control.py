@@ -43,7 +43,21 @@ def main() -> int:
             # Production resume requires an explicit, separate operator approval flag.
             production_resume = not desired and db == PRODUCTION_DATABASE
             allowed_db = db == TEST_DATABASE or (db == PRODUCTION_DATABASE and (desired or args.approve_production_physical_dispatch))
-            allowed_revision = (EXPECTED_REVISION, STAGE9C_REVISION, STAGE9C_SOAK_REVISION, "0007_physical_dispatch_gate", "0008_runtime_budgets") if desired else (("0008_runtime_budgets",) if production_resume else (EXPECTED_REVISION,))
+            # Additive migrations must not make production drain/resume unusable.
+            production_revisions = tuple(
+                f"{n:04d}_{name}" for n, name in (
+                    (8, "runtime_budgets"), (9, "manual_requests"),
+                    (10, "manual_api_function"), (11, "manual_verification"),
+                    (12, "manual_verify_api"), (13, "indexed_equipment_rankings"),
+                    (14, "equipment_populations"), (15, "rank_generations"),
+                    (16, "rank_scope_versions"), (17, "rank_immutable_scores"),
+                    (18, "distributed_rank_queue"),
+                )
+            )
+            allowed_revision = (
+                (EXPECTED_REVISION, STAGE9C_REVISION, STAGE9C_SOAK_REVISION, "0007_physical_dispatch_gate") + production_revisions
+                if desired else (production_revisions if production_resume else (EXPECTED_REVISION,))
+            )
             if not allowed_db or revision not in allowed_revision or recovery or read_only != "off":
                 raise RuntimeError(
                     f"wrong target db={db!r} revision={revision!r} recovery={recovery} read_only={read_only!r}"

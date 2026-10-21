@@ -96,10 +96,26 @@ def main() -> int:
         if db_name != "bf4_playerstats":
             raise SystemExit(f"REFUSING: production collector database is {db_name!r}")
         revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-        if revision != "0008_runtime_budgets":
-            raise SystemExit(
-                f"REFUSING: physical dispatch gate migration required; found {revision!r}"
-            )
+        # Revisions 0009-0018 are additive descendants of the physical
+        # dispatch gate. A strict equality check to 0008 stopped the entire
+        # collector fleet when ranking schema 0018 was installed.
+        supported_revisions = frozenset({
+            "0008_runtime_budgets", "0009_manual_requests",
+            "0010_manual_api_function", "0011_manual_verification",
+            "0012_manual_verify_api", "0013_indexed_equipment_rankings",
+            "0014_equipment_populations", "0015_rank_generations",
+            "0016_rank_scope_versions", "0017_rank_immutable_scores",
+            "0018_distributed_rank_queue",
+        })
+        if revision not in supported_revisions:
+            raise SystemExit(f"REFUSING: unverified production schema revision {revision!r}")
+        required_tables = ("outbound_dispatches", "runtime_budgets", "collectors", "collection_jobs")
+        missing = [name for name in required_tables if conn.execute(
+            text("SELECT to_regclass(:table_name)"),
+            {"table_name": "public." + name},
+        ).scalar_one() is None]
+        if missing:
+            raise SystemExit(f"REFUSING: physical dispatch gate tables missing: {missing!r}")
 
     with engine.begin() as conn:
         control = register_collector(conn, identity=identity, software_version=SOFTWARE_VERSION)

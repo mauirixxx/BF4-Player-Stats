@@ -317,3 +317,9 @@ The high-level materialization, bounded-feeder, priority, lease, liveness-event,
 - metrics and health surfaces derived from jobs/events/state.
 
 These details should be settled before migration `0001` freezes the queue/event tables.
+
+## Production collector schema preflight and migration compatibility (2026-10-21)
+
+The production background collector and its operator drain/resume script must accept **verified additive Alembic descendants** of `0008_runtime_budgets`, not require the current revision to equal `0008`. The `0018_distributed_rank_queue` ranking migration exposed an older exact-equality guard: production collector containers restarted repeatedly, leaving interactive requests and bootstrap jobs pending. This was a collector startup incompatibility, not an expired job lease. Keep the production database-name guard, an explicit list of reviewed revisions (currently 0008–0018), and read-only checks that `outbound_dispatches`, `runtime_budgets`, `collectors`, and `collection_jobs` exist. Unknown revisions must still fail closed until reviewed. The operator control's production resume guard must be updated alongside the collector guard.
+
+**Fleet rollout:** Every host using the old Docker image must receive a rebuilt image with the updated startup preflight; patching just `mak-01` does not fix other nodes. Verify live heartbeats and successful job claims after rollout. The physical-dispatch rate budget remains unchanged; do not bypass it to clear the backlog. Check pending interactive jobs (404Treeline, Financelot, Pongstroid, Iuxmatic) and the bootstrap identity `ea459b3e970a783f` after collector restoration. No job deletions or resubmissions are required for this guard fix.
