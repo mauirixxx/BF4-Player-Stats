@@ -3,6 +3,7 @@
 One capacity-row lock serializes admission. Job row locks prevent duplicate claims.
 No expensive computation runs in the admission transaction.
 """
+import os
 import uuid
 from sqlalchemy import text
 
@@ -43,6 +44,30 @@ def claim(engine, worker):
             SELECT max_active_builds,lease_seconds FROM equipment_rank_capacity
             WHERE id=1 FOR UPDATE
         """)).one()
+        # Production-only circuit breaker: a narrowly scoped SECURITY DEFINER
+        # function reports replication state without granting pg_monitor.
+        # Fail closed on missing telemetry, replica loss or WAL backlog.
+        if c.execute(text("SELECT current_database()")).scalar_one() == 'bf4_playerstats':
+            threshold = int(os.getenv('BF4PS_RANK_MAX_REPLICA_LAG_BYTES', str(128 * 1024 * 1024)))
+            if not 1_048_576 <= threshold <= 1_073_741_824:
+                raise ValueError('invalid BF4PS_RANK_MAX_REPLICA_LAG_BYTES')
+            replicas = c.execute(text("""
+                SELECT streaming_replicas,total_replicas,max_replay_lag_bytes
+                FROM public.bf4ps_rank_replication_admission_status()
+            """)).one()
+            if (replicas.streaming_replicas != 4 or replicas.total_replicas != 4
+                    or replicas.max_replay_lag_bytes is None
+                    or replicas.max_replay_lag_bytes > threshold):
+                return None
+            # Fleet-wide duty cycle, not per-worker: only one new rank claim
+            # every 5 minutes. It also bounds bursts after WAN recovery.
+            previous = c.execute(text("""
+                SELECT max(last_success_at) FROM equipment_rank_jobs
+            """)).scalar_one()
+            if previous is not None and c.execute(text(
+                "SELECT clock_timestamp() < :previous + interval '5 minutes'"
+            ), {'previous': previous}).scalar_one():
+                return None
         # Prefer any healthy mak-site worker. Remote sites are automatic
         # standby only after all mak heartbeats have aged out (30 seconds).
         # This check is under the capacity lock to avoid admission races.

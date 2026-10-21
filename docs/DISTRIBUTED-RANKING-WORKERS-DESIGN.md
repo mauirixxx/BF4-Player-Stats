@@ -74,3 +74,8 @@ The legacy `hourly_runner.py` holds PostgreSQL advisory lock (640041,170017) acr
 - Measure PostgreSQL under a running build; host idle snapshot alone is insufficient.
 - Confirm garbage collection for unpublished generations and historical generation retention.
 - Confirm deployed production ranking builder matches repository before cutover.
+
+## Replication-aware admission guard (2026-10-21)
+- A controlled one-worker restart from zero backlog generated ~800 MB unsent WAN WAL after one ~145k-row ranking publication. The operator stopped the service immediately; all four replicas later caught up again. Do not run unguarded continuous ranking.
+- Production queue admission (under the existing capacity-row lock) now fails closed unless all four expected replicas are streaming and maximum replay lag is <=128 MiB (configurable `BF4PS_RANK_MAX_REPLICA_LAG_BYTES`, range 1 MiB–1 GiB). This uses `public.bf4ps_rank_replication_admission_status()`, a SECURITY DEFINER aggregate with EXECUTE limited to the ranking-worker database role. Provision with the existing `website/scripts/provision_rank_replication_monitor.sql` on the writable primary. No direct `pg_monitor` privilege is granted.
+- The initial duty cycle permits no more than one successful published ranking per five minutes, globally, based on last successful publication under the same admission lock. It is deliberately conservative; failed jobs may need an additional admission timestamp if they become common. A successful publication can temporarily exceed the lag threshold; the guard prevents subsequent claims, not mid-build WAL generation. Retain cap=1 and MAK site preference. Reassess using observed WAN drain rate and website latency before increasing throughput.
