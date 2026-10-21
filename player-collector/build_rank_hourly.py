@@ -2,7 +2,7 @@
 Build on a repeatable-read snapshot without scope locks; publish only if the
 scope version remains identical under a short row lock. Default: dry-run.
 """
-import argparse,os,time
+import argparse,os,time,uuid
 from sqlalchemy import create_engine,text
 from sqlalchemy.engine import make_url
 
@@ -14,18 +14,25 @@ def main():
  p.add_argument('--metric',choices=('kills','kpm','accuracy'),required=True)
  p.add_argument('--publish',action='store_true')
  p.add_argument('--production-ack',action='store_true')
+ p.add_argument('--rank-worker-id',type=uuid.UUID)
+ p.add_argument('--rank-claim-token',type=uuid.UUID)
+ p.add_argument('--rank-claim-epoch',type=int)
  a=p.parse_args()
+ fenced=any(x is not None for x in (a.rank_worker_id,a.rank_claim_token,a.rank_claim_epoch))
+ if fenced and not all(x is not None for x in (a.rank_worker_id,a.rank_claim_token,a.rank_claim_epoch)):p.error('all claim credentials required')
  if a.item<1 or (a.kind=='vehicle' and a.metric=='accuracy'):p.error('invalid metric/item')
  url=os.environ['BF4PS_DATABASE_URL']; db=make_url(url).database
  if db not in ('bf4ps_ranking_scratch','bf4_playerstats'):p.error('unexpected database')
  if a.publish and db=='bf4_playerstats' and not a.production_ack:p.error('production publication requires --production-ack')
+ if db=='bf4_playerstats' and os.getenv('BF4PS_DISTRIBUTED_RANK_REQUIRED')=='1' and a.publish and not fenced:p.error('unfenced production publishing disabled')
  table='weapon_leaderboard_metrics' if a.kind=='weapon' else 'vehicle_leaderboard_metrics'
  col='weapon_id' if a.kind=='weapon' else 'vehicle_id'
  params=dict(kind=a.kind,item=a.item,platform=a.platform,metric=a.metric)
  e=create_engine(url,pool_pre_ping=True); start=time.monotonic()
  with e.connect().execution_options(isolation_level='REPEATABLE READ') as c:
   actual,revision=c.execute(text('select current_database(),(select version_num from alembic_version)')).one()
-  if (actual,revision)!=(db,'0017_rank_immutable_scores'):raise RuntimeError('wrong database/revision')
+  if actual!=db or revision not in ('0017_rank_immutable_scores','0018_distributed_rank_queue'):raise RuntimeError('wrong database/revision')
+  if fenced and revision!='0018_distributed_rank_queue':raise RuntimeError('distributed claim requires migration 0018')
   c.execute(text("SET LOCAL statement_timeout='120s'"))
   # Ranking-only memory budget; never change PostgreSQL's global work_mem.
   c.execute(text("SET LOCAL work_mem='32MB'"))
@@ -69,6 +76,14 @@ def main():
   # Snapshot captures scores consistently; subsequent collector updates are expected.
   # An hourly snapshot remains valid after ordinary metric updates.
   # Exclusion safety is checked independently by the website reader.
+  if fenced:
+   # Serialize publication against lease renewal/reclaim and verify current ownership.
+   owned=c.execute(text("""SELECT 1 FROM equipment_rank_jobs
+      WHERE kind=:kind AND item_id=:item AND platform=:platform AND metric=:metric
+        AND claimed_by=:worker AND claim_token=:token AND claim_epoch=:epoch
+        AND lease_expires_at>clock_timestamp() FOR UPDATE"""),
+      {**params,'worker':a.rank_worker_id,'token':a.rank_claim_token,'epoch':a.rank_claim_epoch}).scalar_one_or_none()
+   if owned is None:raise RuntimeError('ranking claim expired or fenced: publication denied')
   previous=c.execute(text("""SELECT generation_id FROM equipment_rank_published
    WHERE kind=:kind AND item_id=:item AND platform=:platform AND metric=:metric FOR UPDATE"""),params).scalar_one_or_none()
   c.execute(text("""INSERT INTO equipment_rank_published(kind,item_id,platform,metric,generation_id)
