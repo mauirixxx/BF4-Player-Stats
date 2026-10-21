@@ -13,8 +13,8 @@ from sqlalchemy.engine import make_url
 URL = os.environ["BF4PS_DATABASE_URL"]
 if make_url(URL).database != "bf4_playerstats":
     raise RuntimeError("refusing unexpected database")
-MAX_JOBS = max(1, min(24, int(os.environ.get("BF4PS_RANK_MAX_JOBS", "16"))))
-MAX_SECONDS = max(60, min(1050, int(os.environ.get("BF4PS_RANK_MAX_SECONDS", "900"))))
+MAX_JOBS = max(1, min(200, int(os.environ.get("BF4PS_RANK_MAX_JOBS", "50"))))
+MAX_SECONDS = max(60, min(1740, int(os.environ.get("BF4PS_RANK_MAX_SECONDS", "1740"))))
 MAX_JOB_SECONDS = max(30, min(180, int(os.environ.get("BF4PS_RANK_JOB_SECONDS", "120"))))
 MIN_POPULATION = max(1, int(os.environ.get("BF4PS_RANK_MIN_POPULATION", "1")))
 METRICS = {"weapon": ("kills", "kpm", "accuracy"), "vehicle": ("kills", "kpm")}
@@ -56,21 +56,31 @@ with engine.connect() as conn:
         """)).all()
         published = {(k,i,p,m): (when,status) for k,i,p,m,when,status in pointers}
         now = conn.execute(text("SELECT now()")).scalar_one()
+        # Pick the ten highest aggregate-kill items per category, not ten soldiers.
+        # The initial single-node rollout builds ALL-platform ranks, vehicles first.
+        top_items = {}
+        for kind, table, item_column in (
+            ('vehicle', 'vehicle_leaderboard_metrics', 'vehicle_id'),
+            ('weapon', 'weapon_leaderboard_metrics', 'weapon_id'),
+        ):
+            rows = conn.execute(text(f'''SELECT {item_column},sum(coalesce(kills,0)) AS total_kills
+                FROM {table} GROUP BY {item_column}
+                ORDER BY total_kills DESC,{item_column} LIMIT 10''')).all()
+            top_items[kind] = [item for item, _ in rows]
+            print('TOP 10',kind,rows,flush=True)
+        eligible = {(r['kind'],r['item_id']) for r in catalog if r['platform']=='all'}
         candidates = []
-        for row in catalog:
-            kind,item,platform = row["kind"],row["item_id"],row["platform"]
-            for metric in METRICS[kind]:
-                key = (kind,item,platform,metric)
-                previous = published.get(key)
-                age = (now - previous[0]).total_seconds() if previous and previous[0] else None
-                if age is not None and age < 7200 and previous[1] == "published":
+        for kind in ('vehicle','weapon'):
+            for item in top_items[kind]:
+                if (kind,item) not in eligible:
                     continue
-                # Existing scopes near reader expiry first; then missing scopes
-                # prioritized by population, allowing meaningful incremental rollout.
-                priority = (0 if age is not None and age >= 9000 else 1,
-                            -row["population"], 0 if age is not None else 1, kind,item,platform,metric)
-                candidates.append((priority,key))
-        candidates.sort()
+                for metric in METRICS[kind]:
+                    key = (kind,item,'all',metric)
+                    previous = published.get(key)
+                    age = (now - previous[0]).total_seconds() if previous and previous[0] else None
+                    if age is not None and age < 3300 and previous[1] == 'published':
+                        continue
+                    candidates.append((len(candidates),key))
         print(dict(catalog_scopes=len(catalog),pending=len(candidates),
                    budget=MAX_JOBS,seconds_budget=MAX_SECONDS),flush=True)
         attempted=0
