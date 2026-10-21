@@ -22,8 +22,9 @@ class ClaimFencingTests(unittest.TestCase):
 
     def test_claim_token_propagates_to_import(self):
         src = (SCRIPTS / "platoon_queue_worker.py").read_text()
-        self.assertIn("'--claim-timestamp',lease_stamp", src)
-        self.assertIn("'--claim-kind','request' if is_new else 'refresh'", src)
+        self.assertIn("'--claim-token',claim_token", src)
+        self.assertIn("platoon_work_leases", src)
+        self.assertIn("ON CONFLICT(platoon_id) DO UPDATE", src)
 
     def test_discovery_completion_and_failure_fenced(self):
         src = (SCRIPTS / "discover_soldier_platoons.py").read_text()
