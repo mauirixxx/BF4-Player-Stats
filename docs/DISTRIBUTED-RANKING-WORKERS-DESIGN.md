@@ -28,6 +28,7 @@ The legacy `hourly_runner.py` holds PostgreSQL advisory lock (640041,170017) acr
 
 ## Scheduler
 - Current code orders due jobs: scopes overdue by at least 24h (oldest first), then ALL-platform jobs, UCAV vehicle_id=10, descending equipment population, and due timestamp. This is a population-based proxy, not an exact top-ten kills policy; validate realistic queue ordering before production cutover.
+- Site affinity (2026-10-21): all workers registered with `site='mak'` take precedence; non-mak workers decline new claims while any mak worker has a heartbeat younger than 30 seconds. After mak heartbeats expire, remote workers may claim jobs automatically. This is a standby preference, not a fixed hostname list. Global concurrency still applies.
 - Worker refresh intervals: `BF4PS_RANK_REFRESH_ALL_SECONDS` and `BF4PS_RANK_REFRESH_PLATFORM_SECONDS`, default 3600, accepted range 300–10800 seconds. Retries use bounded exponential backoff.
 - Discover scope population from canonical catalog and existing `equipment_rank_scope_versions` and `equipment_population`; no hardcoded item IDs.
 - Persist due timestamps. First-time missing scopes outrank routine refresh, but use bounded aging/fairness to prevent permanent starvation.
@@ -55,6 +56,12 @@ The legacy `hourly_runner.py` holds PostgreSQL advisory lock (640041,170017) acr
 - First fenced production publication: UCAV vehicle_id=10, ALL kills, generation 842, 144,964 rows, 7.24s; followed by ALL KPM generation 843, 144,965 rows, 7.31s. Both marked completed successfully. Subsequent weapon job claimed.
 - Primary PostgreSQL replication checked as superuser immediately before cutover: four asynchronous replicas streaming, each 344 bytes behind at observation time. Application role masks pg_stat_replication detail.
 - Rollback remains available: stop/disable both distributed services, wait for active leases/publishers to drain, then re-enable the legacy timer; the legacy builder must not run concurrently with distributed publishers and its schema-0017 guard must be adjusted or migration reverted before using it on schema 0018.
+
+## Live admin ranking monitor (2026-10-21)
+- `/admin-console.html` uses a content-sized left navigation column, with sections for Collection Overview, Player Moderation, Database & Account, and a link to the separate ranking monitor.
+- `/admin-ranking.html` refreshes every five seconds; the same admin session protects `GET /bf4ps-admin-api/ranking-status`. The endpoint is read-only, sets a 2.5-second statement timeout, and returns queue totals, due/active/error counts, recent success counts, active claim owners, worker heartbeats, capacity, and latest successful scopes. The restricted role `bf4ps_admin_moderation` has SELECT only on the three ranking coordination tables.
+- PostgreSQL replication is explicitly marked unavailable in the dashboard until a privileged server-side replication status feed is added; do not fabricate replica health from restricted `pg_stat_replication` results.
+- Authenticated production smoke test: HTTP 200, 2,624 jobs, one active lease, three registered worker rows, twelve recent successful scopes. Unauthenticated request returns HTTP 401.
 
 ## Remaining operational follow-ups
 - Periodically re-verify live DDL and ranking exclusion behavior against the schema reference.
