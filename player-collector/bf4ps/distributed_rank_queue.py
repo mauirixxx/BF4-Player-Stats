@@ -54,11 +54,22 @@ def claim(engine, worker):
             SELECT kind,item_id,platform,metric FROM equipment_rank_jobs
             WHERE next_due_at <= clock_timestamp()
               AND (lease_expires_at IS NULL OR lease_expires_at <= clock_timestamp())
-            -- Oldest overdue first prevents low-priority scopes from starving.
-            -- At equal due times, favor the combined leaderboard.
-            ORDER BY next_due_at,
-                     CASE WHEN platform='all' THEN 0 ELSE 1 END,
-                     kind,item_id,platform,metric
+            -- Bounded fairness: jobs overdue by >= 24h win regardless of tier.
+            -- Within normal backlog, prioritize ALL and populated equipment.
+            -- Population is an inexpensive existing popularity proxy; UCAV
+            -- remains explicitly hot even when its population is lower.
+            ORDER BY
+                CASE WHEN next_due_at <= clock_timestamp()-interval '24 hours' THEN 0 ELSE 1 END,
+                CASE WHEN next_due_at <= clock_timestamp()-interval '24 hours'
+                     THEN next_due_at END ASC NULLS LAST,
+                CASE WHEN platform='all' THEN 0 ELSE 1 END,
+                CASE WHEN kind='vehicle' AND item_id=10 THEN 0 ELSE 1 END,
+                COALESCE((SELECT sum(ep.population) FROM equipment_population ep
+                          WHERE ep.kind=equipment_rank_jobs.kind
+                            AND ep.item_id=equipment_rank_jobs.item_id
+                            AND (equipment_rank_jobs.platform='all'
+                                 OR ep.platform=equipment_rank_jobs.platform)),0) DESC,
+                next_due_at,kind,item_id,platform,metric
             FOR UPDATE SKIP LOCKED LIMIT 1
         """)).mappings().first()
         if not job:
