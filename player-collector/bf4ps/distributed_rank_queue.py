@@ -24,8 +24,8 @@ def discover(engine):
                 SELECT kind,item_id,platform,sum(population) population
                   FROM equipment_population GROUP BY 1,2,3
                 UNION ALL
-                SELECT kind,item_id,'all',sum(population)
-                  FROM equipment_population WHERE platform <> 'all' GROUP BY 1,2
+                SELECT kind,item_id,'all'::text,sum(population)
+                  FROM equipment_population GROUP BY 1,2
             ) ep ON ep.kind=v.kind AND ep.item_id=v.item_id
                   AND ep.platform=v.platform
             CROSS JOIN LATERAL (
