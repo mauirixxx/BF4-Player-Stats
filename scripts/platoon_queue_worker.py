@@ -69,7 +69,7 @@ def main():
     subprocess.run([sys.executable,str(SCRIPTS/'battlelog_platoon_roster.py'),str(html),'--output',str(roster)],check=True,timeout=30)
     doc=json.loads(roster.read_text())
     if int(doc['platoon']['platoon_id'])!=pid or not doc['validation']['complete']:raise ValueError('Roster validation failed')
-    subprocess.run([sys.executable,str(SCRIPTS/'import_platoon_rosters.py'),str(roster)],check=True,timeout=120)
+    subprocess.run([sys.executable,str(SCRIPTS/'import_platoon_rosters.py'),str(roster),'--claim-kind','request' if is_new else 'refresh','--claim-timestamp',lease_stamp],check=True,timeout=120)
     # Soldier bootstrap is ancillary; an excluded identity must never invalidate
     # an otherwise successfully imported, verified platoon roster.
     admission=subprocess.run([sys.executable,str(SCRIPTS/'admit_platoon_soldiers.py')],check=False,timeout=90)
