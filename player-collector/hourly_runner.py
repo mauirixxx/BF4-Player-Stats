@@ -77,7 +77,8 @@ with engine.connect() as conn:
         failures=0
         for _,(kind,item,platform,metric) in candidates:
             remaining = MAX_SECONDS - (time.monotonic()-started)
-            if attempted >= MAX_JOBS or remaining < 35:
+            if attempted >= MAX_JOBS or remaining < MAX_JOB_SECONDS + 15:
+                print('BUDGET EXHAUSTED: deferring next job safely', round(remaining,1), flush=True)
                 break
             args=[sys.executable,"/rank/build_rank_hourly.py","--kind",kind,
                   "--item",str(item),"--platform",platform,"--metric",metric,
