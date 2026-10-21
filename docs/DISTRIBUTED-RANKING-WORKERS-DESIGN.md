@@ -1,6 +1,6 @@
 # Distributed equipment ranking workers — design v0.1 (2026-10-21)
 
-Status (2026-10-21): IMPLEMENTED AND STAGED; scratch PostgreSQL 0018 migrated and validated on rnt-01, production still at 0017 with legacy hourly timer enabled. Distributed worker service units staged but disabled on mak-01 and rnt-01. This document is the implementation reference. Verify `database-schema.md`, `operational-schema.md`, and live PostgreSQL catalog before writing migrations or database access code.
+Status (2026-10-21): LIVE IN PRODUCTION. PostgreSQL bf4_playerstats migrated to 0018; legacy hourly timer disabled; distributed worker systemd services enabled and active on mak-01 and rnt-01, centrally enforced global capacity=1. Scratch PostgreSQL 0018 previously validated on rnt-01. This document is the implementation reference. Verify `database-schema.md`, `operational-schema.md`, and live PostgreSQL catalog before writing migrations or database access code.
 
 ## Goals
 - Support any number of registered nodes with no fixed hostname assumptions; initial centrally enforced concurrent build capacity is 1, with a later controlled benchmark at 2 after replication health is confirmed.
@@ -9,7 +9,7 @@ Status (2026-10-21): IMPLEMENTED AND STAGED; scratch PostgreSQL 0018 migrated an
 - Safe under node loss, transaction retries, lease expiry, competing claims, and primary DB failover.
 
 ## Existing implementation (verified on mak-01)
-The legacy `hourly_runner.py` holds PostgreSQL advisory lock (640041,170017) across its batch. On 2026-10-21 the production staged runner selects top ten weapons (kills/KPM/accuracy), top ten vehicles (kills/KPM), plus UCAV vehicle_id=10, across ALL/PC/PS4/Xbox One. It skips generations younger than 3300s and limits to 200 jobs/1740s. A measured hourly run completed 47 jobs in 503.4s without failures. The legacy runner MUST remain production until the explicit drain/migrate/cutover sequence below.
+The legacy `hourly_runner.py` holds PostgreSQL advisory lock (640041,170017) across its batch. On 2026-10-21 the production staged runner selects top ten weapons (kills/KPM/accuracy), top ten vehicles (kills/KPM), plus UCAV vehicle_id=10, across ALL/PC/PS4/Xbox One. It skips generations younger than 3300s and limits to 200 jobs/1740s. A measured hourly run completed 47 jobs in 503.4s without failures. The legacy runner was retired from scheduled production during the 2026-10-21 drain/migrate/cutover sequence below.
 
 ## Coordination schema (implemented in Alembic 0018; scratch only as of 2026-10-21)
 1. `equipment_rank_jobs`: primary key (kind,item_id,platform,metric); next_due_at, last_success_at, last_error, attempts, claimed_by, lease_expires_at, claim_token UUID, claim_epoch bigint, updated_at. No separate priority/state/desired_scope_version columns in 0018.
@@ -46,11 +46,18 @@ The legacy `hourly_runner.py` holds PostgreSQL advisory lock (640041,170017) acr
 
 ## Verified test evidence and production cutover gates
 - On rnt-01 isolated PostgreSQL `bf4ps_ranking_scratch`: migrated 0017 to 0018; competing claim/capacity=1, expired lease reclaim, stale-token rejection test PASS; six discovered jobs; actual fenced ranking builds published generations (96,674-row ALL and 64,330-row PC samples).
-- Systemd `bf4ps-distributed-rank-worker.service` staged and verified on mak-01 and rnt-01, but disabled/inactive. The existing production hourly timer is still enabled.
+- Before cutover, systemd worker services were staged and verified on mak-01 and rnt-01; the legacy hourly timer was enabled. See activation evidence below for current state.
 - Cutover sequence: confirm production replication health and schema; validate realistic queue ordering; verify deployed builder/image parity and environment; drain/disable legacy hourly timer and ensure no running legacy builder; apply production Alembic 0018; bootstrap queue and set global cap=1; enable workers one node at a time; verify published generations, website freshness and replica lag. Rollback: disable/drain distributed services, verify no active claims/publishers, then re-enable legacy timer. Never overlap legacy and distributed publishers.
 
-## Unresolved before production cutover
-- Verify exact live DDL for rank tables and exclusion checks; choose migrations and index strategy accordingly.
+## Production activation evidence (2026-10-21)
+- `mak-01`: stopped and disabled `bf4ps-hourly-rank-builder.timer` while service was inactive; migrated production from Alembic 0017 to 0018; discovered 2,624 queue jobs; enabled `bf4ps-distributed-rank-worker.service`.
+- `rnt-01`: enabled `bf4ps-distributed-rank-worker.service` against the same production database. Both workers registered successfully; capacity=1 permits only one active job across both.
+- First fenced production publication: UCAV vehicle_id=10, ALL kills, generation 842, 144,964 rows, 7.24s; followed by ALL KPM generation 843, 144,965 rows, 7.31s. Both marked completed successfully. Subsequent weapon job claimed.
+- Primary PostgreSQL replication checked as superuser immediately before cutover: four asynchronous replicas streaming, each 344 bytes behind at observation time. Application role masks pg_stat_replication detail.
+- Rollback remains available: stop/disable both distributed services, wait for active leases/publishers to drain, then re-enable the legacy timer; the legacy builder must not run concurrently with distributed publishers and its schema-0017 guard must be adjusted or migration reverted before using it on schema 0018.
+
+## Remaining operational follow-ups
+- Periodically re-verify live DDL and ranking exclusion behavior against the schema reference.
 - Verify whether scope versions increment per collector update and how often; prevent high-churn scopes from perpetual invalidation.
 - Measure PostgreSQL under a running build; host idle snapshot alone is insufficient.
 - Confirm garbage collection for unpublished generations and historical generation retention.
