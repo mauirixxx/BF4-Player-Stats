@@ -282,10 +282,11 @@ class Handler(BaseHTTPRequestHandler):
                         ORDER BY last_success_at DESC LIMIT 12
                     """)).mappings().all()
                     capacity = conn.execute(text('SELECT max_active_builds,lease_seconds FROM equipment_rank_capacity WHERE id=1')).mappings().one()
+                    replication = conn.execute(text('SELECT * FROM public.bf4ps_admin_replication_status()')).mappings().one()
                 return self.reply(200,{'summary':dict(summary),'active':[dict(x) for x in active],
                   'workers':[dict(x) for x in workers],'recent':[dict(x) for x in recent],
                   'capacity':dict(capacity),'observed_at':time.time(),
-                  'replication_note':'Replication metrics require a privileged server-side source; not available through this restricted admin database role.'})
+                  'replication':dict(replication)})
             except Exception:
                 import logging
                 logging.exception('Ranking monitor failed')
