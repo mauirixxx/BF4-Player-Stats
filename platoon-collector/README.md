@@ -4,7 +4,7 @@ The canonical platoon scripts live in `scripts/`. The deployed `mak-05` and `hnl
 
 ## Verification
 
-Run `python3 -m unittest discover -s tests -p 'test*.py'` from this directory. Compare `sha256sum scripts/*.py` across hosts after deployment. `systemctl is-active bf4ps-platoon-alternating.timer` should report `active`; the corresponding oneshot `.service` may legitimately report `inactive (dead)` between timer firings.
+Historical test results and removed harness inventory are documented in `../docs/TEST-AND-VALIDATION-HISTORY.md`. Compare `sha256sum scripts/*.py` across hosts after deployment. `systemctl is-active bf4ps-platoon-alternating.timer` should report `active`; the corresponding oneshot `.service` may legitimately report `inactive (dead)` between timer firings.
 
 ## Deployment caution
 

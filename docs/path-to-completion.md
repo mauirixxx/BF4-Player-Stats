@@ -12,7 +12,7 @@ This document collects project milestones, outstanding designs, operational risk
 - [x] Recover **Alembic 0014–0017** from the deployed `mak-01` collector; SHA-256 checksums match the deployed source. The complete 0001–0017 revision chain is now present.
 - [ ] Run a clean-database migration rehearsal and verify the resulting catalog against production before advertising reproducible deployment.
 - [ ] Compare component sources against **deployed** code on tcou, player collector nodes and platoon workers. Consolidation source branches may lag production hotfixes.
-- [ ] Resolve imports, paths, dependency installation and deployment configuration after the new directory layout. Perform clean-host smoke tests and full component test suites. Initial platoon tests pass (9/9), but website unit tests include a stale soldier-detail contract and player-collector tests cannot run in the audit environment without pytest/dependencies.
+- [ ] Resolve imports, paths, dependency installation and deployment configuration after the new directory layout. Perform clean-host smoke tests and new release verification. Historical test harnesses were removed from the deployable tree after their purpose and actual results were documented in `docs/TEST-AND-VALIDATION-HISTORY.md`; a passing fresh integration suite is still required.
 - [ ] Establish component release tags, CI, secret scanning, README and reproducible builds; merge consolidation PR into main only after review.
 - [ ] Retain historical branches until a deliberate, separately approved archival/cleanup plan. No mass deletion.
 
