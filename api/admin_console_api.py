@@ -22,10 +22,12 @@ from urllib.parse import urlparse, parse_qs
 
 from sqlalchemy import create_engine, text
 from admin_moderation_service import get_exclusion, set_exclusion, validate_identity
+from artwork_store import ArtworkStore, allowed_keys, MAX_INPUT_BYTES
 
 SESSION_SECONDS = 3600
 MAX_BODY = 4096
 engine = None
+artwork_store = None
 _login_failures = deque()
 _login_lock = Lock()
 
@@ -201,7 +203,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        if parsed.path not in ('/session', '/search', '/exclusions', '/audit'):
+        if parsed.path not in ('/session', '/search', '/exclusions', '/audit', '/artwork/catalog', '/artwork/history', '/overview', '/database-info', '/queue/players', '/queue/platoons', '/ranking-status'):
             return self.reply(404, {'error': 'Not found'})
         session = self.require_session()
         if session is None:
@@ -210,6 +212,135 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == '/session':
             return self.reply(200, {'user': session['u'], 'csrf': csrf_for(session, effective_session_secret(cfg))})
         args = parse_qs(parsed.query)
+        if parsed.path in ('/queue/players', '/queue/platoons'):
+            with engine.connect() as conn:
+                if parsed.path == '/queue/players':
+                    records = conn.execute(text("""
+                        SELECT j.job_id,j.resource,j.priority_class,j.priority_value,
+                               j.status,j.eligible_at,j.started_at,s.soldier_id,s.current_name,s.platform
+                        FROM collection_jobs j JOIN soldiers s ON s.soldier_id=j.soldier_id
+                        WHERE j.status='running' OR (j.status='pending' AND j.eligible_at<=now())
+                        ORDER BY CASE WHEN j.status='running' THEN 0 ELSE 1 END,
+                          CASE WHEN j.status='running' THEN j.started_at END DESC NULLS LAST,
+                          CASE WHEN j.status='pending' AND j.priority_class='interactive' THEN 0 ELSE 1 END,
+                          j.priority_class ASC,j.priority_value DESC,j.eligible_at ASC,j.created_at ASC,j.job_id ASC
+                        LIMIT 10
+                    """)).mappings().all()
+                else:
+                    records = conn.execute(text("""
+                        SELECT q.platoon_id,COALESCE(p.name,'New platoon') AS name,
+                               p.tag,q.status,q.due AS next_refresh_at,p.last_success_at
+                        FROM (
+                            SELECT r.platoon_id,r.status,r.next_attempt_at AS due,
+                              CASE WHEN r.status='running' THEN -1 ELSE 0 END AS priority
+                            FROM platoon_requests r
+                            WHERE r.status='running' OR
+                              (r.status IN ('pending','failed') AND r.next_attempt_at<=now() AND r.attempts<8)
+                            UNION ALL
+                            SELECT p.platoon_id,'pending' AS status,
+                              COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now()) AS due,1 AS priority
+                            FROM platoons p
+                            WHERE COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now())<=now()
+                              AND NOT EXISTS(SELECT 1 FROM platoon_requests r WHERE r.platoon_id=p.platoon_id
+                                AND r.status IN ('pending','failed','running'))
+                        ) q LEFT JOIN platoons p ON p.platoon_id=q.platoon_id
+                        ORDER BY q.priority,q.due,q.platoon_id LIMIT 10
+                    """)).mappings().all()
+            return self.reply(200, {'rows':[dict(r) for r in records], 'kind':parsed.path.rsplit('/',1)[-1], 'observed_at':time.time()})
+        if parsed.path == '/ranking-status':
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text('SET TRANSACTION READ ONLY'))
+                    conn.execute(text("SET LOCAL statement_timeout='2500ms'"))
+                    summary = conn.execute(text("""
+                        SELECT count(*) AS total,
+                          count(*) FILTER (WHERE last_success_at IS NOT NULL) AS completed,
+                          count(*) FILTER (WHERE lease_expires_at>clock_timestamp()) AS running,
+                          count(*) FILTER (WHERE last_error IS NOT NULL) AS errors,
+                          count(*) FILTER (WHERE next_due_at<=clock_timestamp() AND
+                            (lease_expires_at IS NULL OR lease_expires_at<=clock_timestamp())) AS due,
+                          count(*) FILTER (WHERE last_success_at>clock_timestamp()-interval '1 minute') AS last_minute,
+                          count(*) FILTER (WHERE last_success_at>clock_timestamp()-interval '1 hour') AS last_hour
+                        FROM equipment_rank_jobs
+                    """)).mappings().one()
+                    active = conn.execute(text("""
+                        SELECT j.kind,j.item_id,j.platform,j.metric,j.claim_epoch,
+                          j.lease_expires_at,w.hostname,w.site,w.heartbeat_at
+                        FROM equipment_rank_jobs j LEFT JOIN equipment_rank_workers w ON w.worker_id=j.claimed_by
+                        WHERE j.lease_expires_at>clock_timestamp() ORDER BY j.lease_expires_at LIMIT 8
+                    """)).mappings().all()
+                    workers = conn.execute(text("""
+                        SELECT hostname,site,started_at,heartbeat_at,
+                          heartbeat_at>clock_timestamp()-interval '30 seconds' AS healthy
+                        FROM equipment_rank_workers
+                        WHERE started_at>clock_timestamp()-interval '1 day'
+                        ORDER BY heartbeat_at DESC LIMIT 16
+                    """)).mappings().all()
+                    recent = conn.execute(text("""
+                        SELECT kind,item_id,platform,metric,last_success_at,last_error
+                        FROM equipment_rank_jobs WHERE last_success_at IS NOT NULL
+                        ORDER BY last_success_at DESC LIMIT 12
+                    """)).mappings().all()
+                    capacity = conn.execute(text('SELECT max_active_builds,lease_seconds FROM equipment_rank_capacity WHERE id=1')).mappings().one()
+                return self.reply(200,{'summary':dict(summary),'active':[dict(x) for x in active],
+                  'workers':[dict(x) for x in workers],'recent':[dict(x) for x in recent],
+                  'capacity':dict(capacity),'observed_at':time.time(),
+                  'replication_note':'Replication metrics require a privileged server-side source; not available through this restricted admin database role.'})
+            except Exception:
+                import logging
+                logging.exception('Ranking monitor failed')
+                return self.reply(503,{'error':'Ranking monitor temporarily unavailable'})
+        if parsed.path == '/database-info':
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text('SET TRANSACTION READ ONLY'))
+                    conn.execute(text("SET LOCAL statement_timeout = '3000ms'"))
+                    data = conn.execute(text("""
+                        SELECT current_database() AS database_name,
+                               pg_database_size(current_database()) AS size_bytes,
+                               (SELECT version_num FROM public.alembic_version LIMIT 1) AS alembic_version,
+                               d.xact_commit + d.xact_rollback AS transactions,
+                               d.numbackends AS connections,
+                               d.stats_reset AS stats_reset,
+                               extract(epoch from clock_timestamp()) AS sampled_at
+                        FROM pg_stat_database d WHERE d.datname = current_database()
+                    """)).mappings().one()
+                return self.reply(200, {**dict(data), 'sampled_at': float(data['sampled_at']), 'stats_reset': str(data['stats_reset']) if data['stats_reset'] else None})
+            except Exception as exc:
+                import logging
+                logging.exception('Database health metrics failed')
+                return self.reply(503, {'error': 'Database metrics temporarily unavailable'})
+        if parsed.path == '/overview':
+            try:
+                summary_path = Path('/var/www/bf4playerstats.com/homepage-summary.json')
+                platoons_path = Path('/var/www/bf4playerstats.com/platoons-data.json')
+                summary = json.loads(summary_path.read_text())
+                source = json.loads(platoons_path.read_text())
+                platoons = source.get('platoons', [])
+                tracked = set()
+                supported = set()
+                roster_accounts = 0
+                for platoon in platoons:
+                    roster_accounts += int(platoon.get('visible_member_count') or 0)
+                    for member in platoon.get('members', []):
+                        for persona in member.get('personas', []):
+                            if persona.get('platform') in ('pc', 'playstation', 'xbox') and persona.get('soldier_id'):
+                                supported.add(str(persona['soldier_id']))
+                    tracked.update(str(k) for k in platoon.get('soldier_stats', {}))
+                return self.reply(200, {'players': summary, 'platoons': {
+                    'count': len(platoons), 'visible_roster_accounts': roster_accounts,
+                    'unique_supported_soldiers': len(supported), 'unique_tracked_soldiers': len(tracked),
+                    'updated': platoons_path.stat().st_mtime}})
+            except (OSError, ValueError, TypeError, KeyError) as exc:
+                return self.reply(503, {'error': 'Collection overview temporarily unavailable'})
+        if parsed.path == '/artwork/catalog':
+            return self.reply(200, {'keys': sorted(artwork_store.catalog), 'overrides': artwork_store.manifest()})
+        if parsed.path == '/artwork/history':
+            try:
+                rows = artwork_store.history(args.get('kind', [''])[0], args.get('raw_key', [''])[0], args.get('role', [''])[0])
+                return self.reply(200, {'rows': rows})
+            except ValueError as exc:
+                return self.reply(400, {'error': str(exc)})
         with engine.connect() as conn:
             if parsed.path == '/search':
                 term = args.get('q', [''])[0].strip()
@@ -241,16 +372,24 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
-        if path not in ('/login', '/logout', '/exclude', '/restore', '/change-password'):
+        if path not in ('/login', '/logout', '/exclude', '/restore', '/change-password', '/artwork/publish', '/artwork/restore'):
             return self.reply(404, {'error': 'Not found'})
         cfg = config()
         if self.headers.get('Origin') != cfg['BF4PS_ADMIN_ORIGIN']:
             return self.reply(403, {'error': 'Origin verification failed'})
         if path != '/login' and self.require_session(csrf=True) is None:
             return
+        if path == '/artwork/publish':
+            return self.artwork_publish(cfg)
         body = self.parse_body()
         if body is None:
             return
+        if path == '/artwork/restore':
+            try:
+                result = artwork_store.restore(body.get('kind'), body.get('raw_key'), body.get('role'), cfg['BF4PS_ADMIN_USER'])
+                return self.reply(200, result)
+            except ValueError as exc:
+                return self.reply(400, {'error': str(exc)})
         if path == '/login':
             if not login_allowed():
                 return self.reply(429, {'error': 'Too many failed login attempts; try again later'})
@@ -289,14 +428,43 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, KeyError):
             return self.reply(400, {'error': 'Invalid moderation request'})
 
+    def artwork_publish(self, cfg):
+        """Binary image upload. Identity is supplied via query parameters."""
+        parsed = urlparse(self.path)
+        args = parse_qs(parsed.query)
+        try:
+            length = int(self.headers.get('Content-Length', '-1'))
+            if self.headers.get('Content-Type', '').split(';')[0] not in ('image/png', 'image/jpeg', 'image/webp'):
+                raise ValueError('Unsupported image content type')
+            if not 0 < length <= MAX_INPUT_BYTES:
+                raise ValueError('Image upload exceeds size limit')
+            kind = args.get('kind', [''])[0]
+            raw_key = args.get('raw_key', [''])[0]
+            role = args.get('role', [''])[0]
+            from artwork_store import verify_catalog
+            verify_catalog(kind, raw_key, role, artwork_store.catalog)
+            image = self.rfile.read(length)
+            if len(image) != length:
+                raise ValueError('Incomplete image upload')
+            result = artwork_store.publish(kind, raw_key, role, image, cfg['BF4PS_ADMIN_USER'])
+            return self.reply(200, result)
+        except (ValueError, TypeError) as exc:
+            return self.reply(400, {'error': str(exc)})
+
     def log_message(self, fmt, *args):
         # Do not log request bodies or cookie values.
         super().log_message(fmt, *args)
 
 
 def main():
-    global engine
+    global engine, artwork_store
     cfg = config()
+    catalog_path = os.environ.get('BF4PS_ARTWORK_CATALOG', '')
+    private_path = os.environ.get('BF4PS_ARTWORK_PRIVATE', '')
+    public_path = os.environ.get('BF4PS_ARTWORK_PUBLIC', '')
+    if not all((catalog_path, private_path, public_path)):
+        raise RuntimeError('Artwork directories must be configured before starting admin API')
+    artwork_store = ArtworkStore(private_path, public_path, allowed_keys(catalog_path, str(Path(catalog_path).with_name('equipment-names.js'))), catalog_path)
     engine = create_engine(cfg['BF4PS_DATABASE_URL'], pool_pre_ping=True, pool_size=2, max_overflow=0)
     # A loopback-only service; public access requires separately reviewed proxy authentication.
     server = ThreadingHTTPServer(('127.0.0.1', 8767), Handler)
