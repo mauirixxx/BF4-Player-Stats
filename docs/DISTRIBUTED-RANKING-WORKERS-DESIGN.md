@@ -4,7 +4,7 @@ Status: DESIGN ONLY; not deployed. This document is the implementation reference
 
 ## Goals
 - Support any number of registered nodes, with no node count or fixed hostname assumptions.
-- Start with two nodes; bound actual simultaneous database-heavy builds by a configurable, centrally enforced concurrency budget, initially 2.
+- Support any number of registered nodes; initial centrally enforced concurrent build capacity is 1, with a later controlled benchmark at 2 after replication health is confirmed.
 - Build all populated equipment scopes (kind, item, platform, metric), including weapon/gadgets and vehicles, across ALL/PC/PS4/Xbox One; refresh popular and stale scopes without starving unpopular ones.
 - Preserve published immutable generations, website read guards, live fallback, exclusion policy, and existing rate/traffic budgets.
 - Safe under node loss, transaction retries, lease expiry, competing claims, and primary DB failover.
