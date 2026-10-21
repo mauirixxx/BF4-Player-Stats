@@ -44,3 +44,9 @@ Safety defaults: 16 builds per run (`BF4PS_RANK_MAX_JOBS`, maximum 24), 900 seco
 Operational checks: `systemctl status bf4ps-hourly-rank-builder.timer bf4ps-hourly-rank-builder.service`, `journalctl -u bf4ps-hourly-rank-builder.service -n 80 --no-pager`, and read-only SQL against `equipment_rank_published` joined to `equipment_rank_generations`. Check per-platform and per-metric counts, generation age, and parity against legacy rankings. Do not copy the ranking builder to all collector hosts: one active publisher per database is intentional.
 
 Release gate: test the new runner on `mak-01` with a small bounded batch and confirm it publishes previously missing items (particularly AH-1Z/AH-6), then expand gradually. No migrations or Battlelog rate changes are part of this rollout. Preserve the old hourly runner for immediate rollback.
+
+### Production rollout checkpoint — 2026-10-21 08:17 UTC
+
+The catalog-driven runner's first production pilot on `mak-01` **passed**: weapon ID 5, platform `all`, metric `accuracy` published generation 164 with 139,026 rows in 39.53 seconds. Discovery found 964 item/platform catalog scopes and 2,609 missing/expired metric scopes. The original `hourly_runner.py` was backed up to `hourly_runner.py.pre-catalog-20261021`; the new runner was installed, syntax-checked and the existing enabled/active hourly timer retained. A new refresh cycle was started at 08:17 UTC. This is an **incremental rollout**, not a completed 2,609-scope backfill; watch the journal and storage growth before increasing the budget.
+
+Rollback: restore the saved `hourly_runner.py.pre-catalog-20261021` to `hourly_runner.py` on `mak-01` between cycles; the existing timer will use the previous two-item plan at its next activation. Do not delete existing published generations. No other collector hosts need this script, and no Battlelog rate limits were modified.
