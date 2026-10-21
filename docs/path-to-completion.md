@@ -9,7 +9,8 @@ This document collects project milestones, outstanding designs, operational risk
 - [x] Inventory remote branches and recover Markdown documentation without deleting historical branches.
 - [x] Assemble website, player collector, platoon collector and planned Discord bot directories on a separate consolidation branch.
 - [x] Compare live PostgreSQL catalog against documentation; capture columns, indexes and constraints.
-- [ ] Recover **Alembic 0014–0017** from trusted deployment sources. Only 0001–0013 were found in remote branches, while live revision is 0017_rank_immutable_scores. Audit revision dependencies and checksums, then test migration from an empty database.
+- [x] Recover **Alembic 0014–0017** from the deployed `mak-01` collector; SHA-256 checksums match the deployed source. The complete 0001–0017 revision chain is now present.
+- [ ] Run a clean-database migration rehearsal and verify the resulting catalog against production before advertising reproducible deployment.
 - [ ] Compare component sources against **deployed** code on tcou, player collector nodes and platoon workers. Consolidation source branches may lag production hotfixes.
 - [ ] Resolve imports, paths, dependency installation and deployment configuration after the new directory layout. Perform clean-host smoke tests and full component test suites.
 - [ ] Establish component release tags, CI, secret scanning, README and reproducible builds; merge consolidation PR into main only after review.

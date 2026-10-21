@@ -2,7 +2,7 @@
 
 **Verified live database:** `bf4_playerstats` on PostgreSQL 16.15, Alembic revision **`0017_rank_immutable_scores`**. The live catalog currently contains **43 public tables, 458 columns, 94 indexes, and 183 constraints**. The complete column/type/default/index/constraint inventory is in [live-schema-snapshot-2026-10-21.md](live-schema-snapshot-2026-10-21.md).
 
-**Important:** The following original schema/design material is retained for historical context; its older migration references are not a claim that the live database is at that revision. The versioned migrations for 0014–0017 have not yet been recovered from surveyed Git branches. Do not write schema-dependent code from the historical description without checking the live snapshot and current migrations.
+**Important:** The following original schema/design material is retained for historical context; its older migration references are not a claim that the live database is at that revision. Migrations 0014–0017 were absent from the surveyed Git branches but recovered from the deployed `mak-01` collector and added to `player-collector/migrations/versions/`; a clean migration rehearsal is still pending. Do not write schema-dependent code from the historical description without checking the live snapshot and current migrations.
 
 ---
 

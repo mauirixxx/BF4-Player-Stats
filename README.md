@@ -22,6 +22,6 @@ The public website's document root is `website/site/`; the private API lives und
 
 ## Source and migration caveat
 
-The live database reported Alembic `0017_rank_immutable_scores` on October 21, 2026, but only migration files through `0013` were found across the surveyed remote branches. Recover and verify migrations `0014`–`0017` before claiming a reproducible fresh database installation. The schema snapshot documents the observed live structure, not an executable migration chain.
+The live database reported Alembic `0017_rank_immutable_scores` on October 21, 2026. Migration files `0014`–`0017` were recovered from the production player-collector checkout on `mak-01` and verified byte-for-byte against the source. All `0001`–`0017` migration files are now present, but a clean-database migration rehearsal is still required before claiming a reproducible fresh installation.
 
 The branch inventory at [docs/branch-document-inventory.json](docs/branch-document-inventory.json) records documentation provenance. No historical branch has been deleted.
