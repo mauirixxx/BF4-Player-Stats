@@ -71,9 +71,12 @@ class Cards(HTMLParser):
             self.depth -= 1
             if self.depth == 0:
                 uid = self.current["account_id"]
-                if not uid or uid in self.cards:
-                    raise ValueError("Invalid/duplicate HTML account ID")
-                self.cards[uid] = self.current
+                if uid:
+                    if uid in self.cards:
+                        raise ValueError("Invalid/duplicate HTML account ID")
+                    self.cards[uid] = self.current
+                elif (self.current["account_name"] or "").strip() != "Unknown" or self.current["personas"]:
+                    raise ValueError("Missing HTML account ID on identifiable member")
                 self.current = None
                 self.tooltip = None
 
@@ -88,7 +91,11 @@ def parse(source):
     members = [(role, m) for role in ("founders", "leaders", "members")
                for m in club.get(role, [])]
     ids = [str(m["userId"]) for _, m in members]
-    if len(ids) != len(set(ids)) or not set(boxes).issubset(set(ids)) or set(ids) != set(cards.cards):
+    missing_cards = set(ids) - set(cards.cards)
+    unidentified = {str(m["userId"]) for _, m in members if m.get("user") is None}
+    if (len(ids) != len(set(ids)) or not set(boxes).issubset(set(ids))
+            or not set(cards.cards).issubset(set(ids)) or missing_cards != unidentified
+            or any(uid in boxes for uid in unidentified)):
         raise ValueError("Roster, personaBoxes and HTML card account IDs do not reconcile")
     if len(ids) != int(club["memberCount"]):
         raise ValueError("Official member count does not match full roster")
@@ -96,12 +103,13 @@ def parse(source):
     platform_conflicts = []
     for role, m in members:
         uid = str(m["userId"])
-        card = cards.cards[uid]
-        name = (m["user"].get("username") or (card["account_name"] or "").strip()) or None
+        card = cards.cards.get(uid)
+        user = m.get("user") or {}
+        name = (user.get("username") or ((card or {}).get("account_name") or "").strip()) or None
         if name == "None":
             name = None
         personas = []
-        if uid not in boxes and card["personas"]:
+        if uid not in boxes and card and card["personas"]:
             raise ValueError("Missing personaBoxes for account with HTML persona evidence: " + uid)
         for p in boxes.get(uid, []):
             if p["game"] != GAME_BF4:
@@ -111,7 +119,7 @@ def parse(source):
                 raise ValueError("Unknown BF4 platform code: " + str(code))
             platform = PLATFORMS[code]
             # A card can have duplicate labels; require at least one exact match.
-            if (p["personaName"], "bf4", platform) not in card["personas"]:
+            if not card or (p["personaName"], "bf4", platform) not in card["personas"]:
                 platform_conflicts.append((uid, p["personaId"], platform))
             personas.append({"persona_id": str(p["personaId"]),
                              "persona_name": p["personaName"],
