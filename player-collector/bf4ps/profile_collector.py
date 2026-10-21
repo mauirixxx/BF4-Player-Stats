@@ -80,6 +80,7 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
         """), {"soldier_id": job.soldier_id}).scalar_one_or_none()
     username_was_resolved = username is None
     resolution_error = None
+    account_unresolved = False
     if username is None:
         try:
             reserve_and_wait()
@@ -94,7 +95,12 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
             else:
                 username = fetch_account_username(str(soldier[2]), persona_id, platform,
                                                   timeout_seconds=timeout_seconds)
-        except (AccountResolutionError, HTTPError, URLError, TimeoutError, OSError,
+        except AccountResolutionError as exc:
+            # A valid soldier page with no account username is not a network
+            # outage. Keep the soldier and recheck account linkage in 30 days.
+            account_unresolved = str(exc) == 'expected one account link; found 0'
+            resolution_error = ProfileFetchError(f"account resolution failed: {exc}")
+        except (HTTPError, URLError, TimeoutError, OSError,
                 UnicodeDecodeError, ValueError) as exc:
             resolution_error = ProfileFetchError(f"account resolution failed: {exc}")
     if resolution_error is None:
@@ -141,16 +147,24 @@ def collect_one_profile_job(engine: Engine, *, identity: CollectorIdentity,
     except ProfileFetchError as exc:
         duration_ms = max(0, int((monotonic()-started)*1000))
         with engine.connect() as conn:
-            retry = (int(os.environ["BF4PS_PROFILE_DIAGNOSTIC_RETRY_SECONDS"]) if "BF4PS_PROFILE_DIAGNOSTIC_RETRY_SECONDS" in os.environ else retry_delay_for_failure(conn, soldier_id=job.soldier_id, resource="profile"))
+            retry = (30 * 24 * 60 * 60 if account_unresolved else
+                     int(os.environ["BF4PS_PROFILE_DIAGNOSTIC_RETRY_SECONDS"]) if "BF4PS_PROFILE_DIAGNOSTIC_RETRY_SECONDS" in os.environ else
+                     retry_delay_for_failure(conn, soldier_id=job.soldier_id, resource="profile"))
+        error_class = 'account_unresolved' if account_unresolved else 'battlelog_profile_fetch'
         with engine.begin() as conn:
             persist_profile_failure(conn, job=job,
-                failure=ProfileFailure("battlelog_profile_fetch", str(exc)),
+                failure=ProfileFailure(error_class, str(exc)),
                 attempted_at=datetime.now(timezone.utc), persona_id=persona_id,
                 platform=platform, collector_name=identity.collector_name,
                 hostname=identity.hostname, egress_key=identity.egress_key,
                 duration_ms=duration_ms, retry_after_seconds=retry)
+            if account_unresolved:
+                conn.execute(text("""
+                    UPDATE collection_state SET profile_state='unavailable'
+                    WHERE soldier_id=:soldier_id AND profile_last_error_class='account_unresolved'
+                """), {'soldier_id': job.soldier_id})
         return FailedProfileJob(job.job_id, job.soldier_id, persona_id, platform,
-                                "battlelog_profile_fetch", None, retry, duration_ms)
+                                error_class, None, retry, duration_ms)
     duration_ms = max(0, int((monotonic()-started)*1000))
     with engine.begin() as conn:
         profile_id = persist_profile_success(conn, job=job, observation=observation,
