@@ -35,6 +35,15 @@ class DistributedRankContract(unittest.TestCase):
         self.assertIn('BF4PS_DISTRIBUTED_RANK_REQUIRED', code)
         self.assertIn('process.terminate()', code)
 
+    def test_graceful_drain_and_refresh_configuration(self):
+        code = WORKER.read_text()
+        self.assertIn('signal.SIGTERM', code)
+        self.assertIn('while not STOP:', code)
+        self.assertIn('if STOP:', code)
+        self.assertIn('BF4PS_RANK_REFRESH_ALL_SECONDS', code)
+        self.assertIn('BF4PS_RANK_REFRESH_PLATFORM_SECONDS', code)
+        self.assertIn('refresh_seconds=refresh_interval(job)', code)
+
     def test_initial_capacity_one(self):
         code = MIGRATION.read_text()
         self.assertIn("VALUES(1,1,180)", code)

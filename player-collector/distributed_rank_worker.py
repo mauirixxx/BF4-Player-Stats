@@ -5,6 +5,7 @@ Production cutover also requires disabling legacy hourly timer and setting
 BF4PS_DISTRIBUTED_RANK_REQUIRED=1 on all ranking-builder invocations.
 """
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -15,6 +16,20 @@ from sqlalchemy.engine import make_url
 from bf4ps.distributed_rank_queue import register, discover, claim, renew, finish
 
 HERE = Path(__file__).resolve().parent
+STOP = False
+
+def request_stop(signum, frame):
+    global STOP
+    STOP = True
+
+def refresh_interval(job):
+    # ALL is our highest-value public leaderboard; individual platforms follow.
+    # Environment overrides let operators tune scheduling without schema changes.
+    key = 'BF4PS_RANK_REFRESH_ALL_SECONDS' if job['platform'] == 'all' else 'BF4PS_RANK_REFRESH_PLATFORM_SECONDS'
+    value = int(os.getenv(key, '3600'))
+    if not 300 <= value <= 10800:
+        raise ValueError(f'{key} must be between 300 and 10800 seconds')
+    return value
 
 def main():
     if os.getenv("BF4PS_DISTRIBUTED_RANK_ENABLE") != "1":
@@ -30,10 +45,12 @@ def main():
         revision = c.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
         if revision != "0018_distributed_rank_queue":
             raise SystemExit("migration 0018 required")
+    signal.signal(signal.SIGTERM, request_stop)
+    signal.signal(signal.SIGINT, request_stop)
     worker = register(engine, socket.gethostname(), os.getenv("BF4PS_SITE"))
     print(f"rank worker registered: {worker}", flush=True)
     last_discovery = 0
-    while True:
+    while not STOP:
         if time.monotonic() - last_discovery > 300:
             discover(engine)
             last_discovery = time.monotonic()
@@ -56,6 +73,15 @@ def main():
         lost = False
         while process.poll() is None:
             time.sleep(10)
+            if STOP:
+                process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+                lost = True
+                break
             try:
                 if not renew(engine, job):
                     lost = True
@@ -79,7 +105,7 @@ def main():
             print("claim lost; builder terminated; refusing completion", flush=True)
             continue
         success = process.returncode == 0
-        if not finish(engine, job, success, None if success else f"exit {process.returncode}"):
+        if not finish(engine, job, success, None if success else f"exit {process.returncode}", refresh_seconds=refresh_interval(job)):
             print("claim expired before completion; no ownership", flush=True)
         else:
             print(f"completed success={success}", flush=True)
