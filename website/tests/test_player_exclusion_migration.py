@@ -11,6 +11,6 @@ class PlayerExclusionMigrationContract(unittest.TestCase):
         self.assertNotIn('DELETE FROM soldiers',sql)
         self.assertNotIn('1007062617638',sql)
     def test_design_requires_all_guards_before_activation(self):
-        design=(ROOT/'docs/PLAYER-EXCLUSION-AND-ADMIN-MODERATION-DESIGN.md').read_text()
+        design=(ROOT.parent/'docs/PLAYER-EXCLUSION-AND-ADMIN-MODERATION-DESIGN.md').read_text()
         for phrase in ('before persistence','manual submission','rediscovery','aggregates','audit'):
             self.assertIn(phrase,design.lower())
