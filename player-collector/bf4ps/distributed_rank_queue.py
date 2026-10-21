@@ -54,7 +54,11 @@ def claim(engine, worker):
             SELECT kind,item_id,platform,metric FROM equipment_rank_jobs
             WHERE next_due_at <= clock_timestamp()
               AND (lease_expires_at IS NULL OR lease_expires_at <= clock_timestamp())
-            ORDER BY next_due_at,kind,item_id,platform,metric
+            -- Oldest overdue first prevents low-priority scopes from starving.
+            -- At equal due times, favor the combined leaderboard.
+            ORDER BY next_due_at,
+                     CASE WHEN platform='all' THEN 0 ELSE 1 END,
+                     kind,item_id,platform,metric
             FOR UPDATE SKIP LOCKED LIMIT 1
         """)).mappings().first()
         if not job:
