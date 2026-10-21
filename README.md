@@ -14,6 +14,8 @@ BF4PS collects Battlefield 4 player statistics, platoon membership and historica
 
 ## Getting started
 
+For component prerequisites, source layout and release gates, read the [installation guide](INSTALL.md).
+
 **Do not deploy this consolidated branch blindly.** The October 21 consolidation collects source from multiple historical branches; components require independent integration tests and a clean-host rehearsal before production rollout. Existing live installations should remain on their known-good versions until that validation is complete.
 
 Start with [path to completion](docs/path-to-completion.md), [collector architecture](docs/collector-architecture.md), [operational schema](docs/operational-schema.md), and [live PostgreSQL schema snapshot](docs/live-schema-snapshot-2026-10-21.md).
