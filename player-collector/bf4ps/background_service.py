@@ -112,34 +112,46 @@ def claim_production_background_job(
     """
     conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:phase5b-background-service'))"))
 
-    interactive_pending = conn.execute(
-        text(
-            """
-            SELECT EXISTS (
-                SELECT 1
-                FROM collection_jobs
-                WHERE lane = 'interactive'
-                  AND eligible_at <= now()
-                  AND (
-                      status = 'pending'
-                      OR (status IN ('claimed', 'running') AND lease_expires_at <= now())
-                  )
-            )
-            """
-        )
-    ).scalar_one()
-    if interactive_pending:
-        return None
-
+    # Website requests are queued in the background lane with interactive
+    # priority. Reserve at most 10% of the rolling background budget for them;
+    # otherwise let ordinary work borrow unused capacity immediately.
     limit = int(conn.execute(text(
         "SELECT background_slots_per_hour FROM runtime_budgets WHERE singleton = true"
     )).scalar_one())
-    active_slots = int(limit * ACTIVE_SHARE)
-    bootstrap_slots = int(limit * BOOTSTRAP_FLOOR)
-    recovery_slots = limit - active_slots - bootstrap_slots
     usage = _usage(conn)
     if usage.total >= limit:
         return None
+    interactive_used = int(conn.execute(text("""
+        SELECT COUNT(*) FROM collection_events
+        WHERE lane='background' AND event_type='collection_attempt_started'
+          AND occurred_at >= now() - interval '1 hour'
+          AND metadata->>'priority_class'='interactive'
+    """)).scalar_one())
+    interactive_reserved = int(conn.execute(text("""
+        SELECT COUNT(*) FROM collection_jobs j
+        WHERE j.lane='background' AND j.priority_class='interactive'
+          AND j.status IN ('claimed','running')
+          AND NOT EXISTS (
+            SELECT 1 FROM collection_events e
+            WHERE e.job_id=j.job_id AND e.attempt_number=j.attempt_count
+              AND e.event_type='collection_attempt_started'
+          )
+    """)).scalar_one())
+    if interactive_used + interactive_reserved < max(1, limit // 10):
+        job = claim_next_job(
+            conn, collector_uuid=collector_uuid, lane='background',
+            resource=resource, lease_seconds=lease_seconds,
+            priority_classes=('interactive',),
+            allowed_soldier_ids=allowed_soldier_ids,
+            max_total_attempts=max_total_attempts,
+            attempts_after_event_id=attempts_after_event_id,
+            attempt_ceiling_resources=attempt_ceiling_resources,
+        )
+        if job is not None:
+            return job
+    active_slots = int(limit * ACTIVE_SHARE)
+    bootstrap_slots = int(limit * BOOTSTRAP_FLOOR)
+    recovery_slots = limit - active_slots - bootstrap_slots
 
     # Starvation floors take precedence while their reserved share remains
     # unused. If no eligible job exists in a floor, the slot is immediately
@@ -210,14 +222,14 @@ def claim_production_background_job(
         if job is not None:
             return job
 
-    # Borrow unused reservations. Existing queue ordering remains authoritative
-    # within this final eligible background pool.
+    # Borrow unused reservations without bypassing the interactive ceiling.
     return claim_next_job(
         conn,
         collector_uuid=collector_uuid,
         lane="background",
         resource=resource,
         lease_seconds=lease_seconds,
+        priority_classes=("active", "recent", "bootstrap"),
         allowed_soldier_ids=allowed_soldier_ids,
         max_total_attempts=max_total_attempts,
         attempts_after_event_id=attempts_after_event_id,
