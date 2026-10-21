@@ -1,6 +1,6 @@
 # Distributed equipment ranking workers — design v0.1 (2026-10-21)
 
-Status (2026-10-21): LIVE IN PRODUCTION. PostgreSQL bf4_playerstats migrated to 0018; legacy hourly timer disabled; distributed worker systemd services enabled and active on mak-01 and rnt-01, centrally enforced global capacity=1. Scratch PostgreSQL 0018 previously validated on rnt-01. This document is the implementation reference. Verify `database-schema.md`, `operational-schema.md`, and live PostgreSQL catalog before writing migrations or database access code.
+Status (2026-10-21): PRODUCTION MIGRATED, WORKERS PAUSED FOR REPLICATION BACKPRESSURE. PostgreSQL bf4_playerstats migrated to 0018; legacy hourly timer disabled; distributed worker systemd services disabled/inactive on mak-01 and rnt-01 pending WAL/network throughput investigation; centrally enforced global capacity=1. Scratch PostgreSQL 0018 previously validated on rnt-01. This document is the implementation reference. Verify `database-schema.md`, `operational-schema.md`, and live PostgreSQL catalog before writing migrations or database access code.
 
 ## Goals
 - Support any number of registered nodes with no fixed hostname assumptions; initial centrally enforced concurrent build capacity is 1, with a later controlled benchmark at 2 after replication health is confirmed.
@@ -60,8 +60,13 @@ The legacy `hourly_runner.py` holds PostgreSQL advisory lock (640041,170017) acr
 ## Live admin ranking monitor (2026-10-21)
 - `/admin-console.html` uses a content-sized left navigation column, with sections for Collection Overview, Player Moderation, Database & Account, and a link to the separate ranking monitor.
 - `/admin-ranking.html` refreshes every five seconds; the same admin session protects `GET /bf4ps-admin-api/ranking-status`. The endpoint is read-only, sets a 2.5-second statement timeout, and returns queue totals, due/active/error counts, recent success counts, active claim owners, worker heartbeats, capacity, and latest successful scopes. The restricted role `bf4ps_admin_moderation` has SELECT only on the three ranking coordination tables.
-- PostgreSQL replication is explicitly marked unavailable in the dashboard until a privileged server-side replication status feed is added; do not fabricate replica health from restricted `pg_stat_replication` results.
+- PostgreSQL replication is displayed through the narrowly scoped SECURITY DEFINER function `public.bf4ps_admin_replication_status()`, provisioned by `website/scripts/provision_rank_replication_monitor.sql`; only aggregate streaming/total counts and maximum replay lag bytes are exposed to the admin role.
 - Authenticated production smoke test: HTTP 200, 2,624 jobs, one active lease, three registered worker rows, twelve recent successful scopes. Unauthenticated request returns HTTP 401.
+
+## Backpressure incident / operational pause (2026-10-21)
+- During initial 2,624-job backlog, the monitor detected up to ~26 GB WAL replay lag on remote replicas. Superuser inspection on primary mak-db-02 showed four streaming replicas: local mak replica caught up; remote hnl/kah replicas had ~24 GB unsent, rnt ~5 GB unsent. This is transmission backlog rather than slow SQL replay; remote WAN links are a bottleneck.
+- Both distributed worker services were disabled/stopped; legacy hourly timer remains disabled to protect website latency and allow replicas to catch up. The rank data already published remains readable.
+- Do not resume the full backfill until WAL generation is paced against actual remote replication bandwidth. Consider a configurable global admission budget/duty cycle, replica-lag circuit breaker, and a smaller priority-only set first. Site preference (`mak` first, remote standby) controls where ranking computation happens, but does not remove WAL replication traffic to remote database replicas.
 
 ## Remaining operational follow-ups
 - Periodically re-verify live DDL and ranking exclusion behavior against the schema reference.
