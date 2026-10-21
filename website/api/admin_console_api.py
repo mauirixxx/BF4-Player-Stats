@@ -376,7 +376,7 @@ class Handler(BaseHTTPRequestHandler):
         if path not in ('/login', '/logout', '/exclude', '/restore', '/change-password', '/artwork/publish', '/artwork/restore'):
             return self.reply(404, {'error': 'Not found'})
         cfg = config()
-        if self.headers.get('Origin') != cfg['BF4PS_ADMIN_ORIGIN']:
+        if self.headers.get('Origin') not in ('https://bf4playerstats.com', 'https://www.bf4playerstats.com'):
             return self.reply(403, {'error': 'Origin verification failed'})
         if path != '/login' and self.require_session(csrf=True) is None:
             return
