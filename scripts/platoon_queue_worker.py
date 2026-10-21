@@ -38,7 +38,7 @@ def main():
   ) UPDATE platoon_requests r SET status='running',attempts=r.attempts+1,
     last_attempt_at=now(),next_attempt_at=now()+interval '15 minutes'
     FROM candidate c WHERE r.platoon_id=c.platoon_id
-    RETURNING r.platoon_id""")
+    RETURNING r.platoon_id, r.last_attempt_at""")
   is_new=bool(raw)
   if not raw:
    raw=query("""WITH candidate AS (
@@ -49,10 +49,13 @@ def main():
      ORDER BY COALESCE(p.next_refresh_at,p.last_success_at+interval '1 day',now()),p.platoon_id
      LIMIT 1 FOR UPDATE OF p SKIP LOCKED
    ) UPDATE platoons p SET next_refresh_at=now()+interval '15 minutes'
-     FROM candidate c WHERE p.platoon_id=c.platoon_id RETURNING p.platoon_id""")
+     FROM candidate c WHERE p.platoon_id=c.platoon_id RETURNING p.platoon_id,p.next_refresh_at""")
   if not raw:
    print('No queued platoons due');return 0
-  pid=int(raw.splitlines()[0]);print('Claimed',pid,'new',is_new,flush=True)
+  pid_text,lease_stamp=raw.splitlines()[0].split('|',1)
+  pid=int(pid_text)
+  fence=(f"last_attempt_at='{lease_stamp}'::timestamptz" if is_new else f"next_refresh_at='{lease_stamp}'::timestamptz")
+  print('Claimed',pid,'new',is_new,'lease',lease_stamp,flush=True)
   try:
    with tempfile.TemporaryDirectory(prefix='.queue-',dir=BASE) as tmp:
     html=Path(tmp)/'members.html';roster=Path(tmp)/'roster.json'
@@ -73,13 +76,14 @@ def main():
     if admission.returncode:
      print('WARNING soldier bootstrap failed; roster remains valid, exclusion guard enforced',flush=True)
     os.replace(html,BASE/f'{pid}-members.html');os.replace(roster,BASE/f'{pid}-roster.json')
-   if is_new:query(f"UPDATE platoon_requests SET status='complete',last_error=NULL WHERE platoon_id={pid}")
-   query(f"UPDATE platoons SET next_refresh_at=now()+interval '1 day' WHERE platoon_id={pid}")
+   if is_new:query(f"UPDATE platoon_requests SET status='complete',last_error=NULL WHERE platoon_id={pid} AND {fence}")
+   if is_new:query(f"UPDATE platoons SET next_refresh_at=now()+interval '1 day' WHERE platoon_id={pid}")
+   else:query(f"UPDATE platoons SET next_refresh_at=now()+interval '1 day' WHERE platoon_id={pid} AND {fence}")
    print('Completed',pid);return 0
   except Exception as exc:
    message=str(exc).replace("'","''")[:300]
-   if is_new:query(f"UPDATE platoon_requests SET status='failed',last_error='{message}',next_attempt_at=now()+interval '1 hour'*LEAST(24,power(2,LEAST(attempts,5))::integer) WHERE platoon_id={pid}")
-   else:query(f"UPDATE platoons SET next_refresh_at=now()+interval '2 hours',last_error='{message}' WHERE platoon_id={pid}")
+   if is_new:query(f"UPDATE platoon_requests SET status='failed',last_error='{message}',next_attempt_at=now()+interval '1 hour'*LEAST(24,power(2,LEAST(attempts,5))::integer) WHERE platoon_id={pid} AND {fence}")
+   else:query(f"UPDATE platoons SET next_refresh_at=now()+interval '2 hours',last_error='{message}' WHERE platoon_id={pid} AND {fence}")
    print('Failed; retry scheduled:',str(exc),file=sys.stderr);return 1
 
 if __name__=='__main__':sys.exit(main())
