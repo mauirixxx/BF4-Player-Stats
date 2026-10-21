@@ -68,11 +68,17 @@ def sql_for(doc):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('rosters', nargs='+', type=Path)
+    parser.add_argument('--claim-kind', choices=('request','refresh'))
+    parser.add_argument('--claim-timestamp')
     parser.add_argument('--host', default='db.bf4statusbot.com')
     parser.add_argument('--database', default='bf4_playerstats')
     parser.add_argument('--user', default='bf4ps_platoon_collector')
     parser.add_argument('--password-file', type=Path, default=Path('/root/.config/bf4ps/platoon-db-password'))
     args = parser.parse_args()
+    if bool(args.claim_kind) != bool(args.claim_timestamp):
+        parser.error('--claim-kind and --claim-timestamp must be supplied together')
+    if args.claim_kind and len(args.rosters) != 1:
+        parser.error('claim fencing requires exactly one roster')
     docs = [validate(p) for p in args.rosters]
     if len({int(d['platoon']['platoon_id']) for d in docs}) != len(docs):
         raise ValueError('Duplicate platoon input')
@@ -85,6 +91,14 @@ def main():
         pgpass.write_text(f'{args.host}:5432:{args.database}:{args.user}:{password}\n')
         pgpass.chmod(0o600)
         statements = ['BEGIN;', 'SET LOCAL statement_timeout = \'120s\';']
+        if args.claim_kind:
+            pid = int(docs[0]['platoon']['platoon_id'])
+            stamp = literal(args.claim_timestamp)
+            if args.claim_kind == 'request':
+                predicate = f"SELECT 1 FROM platoon_requests WHERE platoon_id={pid} AND status='running' AND last_attempt_at={stamp}::timestamptz FOR UPDATE"
+            else:
+                predicate = f"SELECT 1 FROM platoons WHERE platoon_id={pid} AND next_refresh_at={stamp}::timestamptz FOR UPDATE"
+            statements.append("DO $$ BEGIN IF NOT EXISTS (" + predicate + ") THEN RAISE EXCEPTION 'stale platoon claim'; END IF; END $$;")
         for doc in docs:
             statements.extend(sql_for(doc))
         statements.append('COMMIT;')
