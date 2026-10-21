@@ -53,13 +53,20 @@ def main():
         try:fcntl.flock(f,fcntl.LOCK_EX|fcntl.LOCK_NB)
         except BlockingIOError:return 0
         print('Seed:',seed(),flush=True)
-        row=query("""SELECT d.soldier_id,s.persona_id,s.platform,s.current_name
-          FROM platoon_soldier_discovery d JOIN soldiers s USING(soldier_id)
-          WHERE d.status IN ('pending','failed') AND d.next_attempt_at<=now() AND d.attempts<5
-          ORDER BY d.next_attempt_at,d.soldier_id LIMIT 1""")
+        row=query("""WITH candidate AS (
+          SELECT d.soldier_id FROM platoon_soldier_discovery d
+          WHERE ((d.status IN ('pending','failed') AND d.next_attempt_at<=now() AND d.attempts<5)
+              OR (d.status='running' AND d.next_attempt_at<now()))
+          ORDER BY d.next_attempt_at,d.soldier_id LIMIT 1 FOR UPDATE SKIP LOCKED
+        ), claimed AS (
+          UPDATE platoon_soldier_discovery d SET status='running',attempts=d.attempts+1,
+            next_attempt_at=now()+interval '15 minutes'
+          FROM candidate c WHERE d.soldier_id=c.soldier_id RETURNING d.soldier_id
+        ) SELECT c.soldier_id,s.persona_id,s.platform,s.current_name
+          FROM claimed c JOIN soldiers s USING(soldier_id)""")
         if not row:print('No discovery due');return 0
         soldier,persona,platform,name=row.split('|',3)
-        query(f"UPDATE platoon_soldier_discovery SET status='running',attempts=attempts+1 WHERE soldier_id={int(soldier)}")
+        print('Claimed soldier',soldier,flush=True)
         try:
             if platform not in ('pc','ps4','xboxone') or not re.fullmatch(r'[0-9]+',persona):raise ValueError('unsupported identity')
             from urllib.parse import quote
