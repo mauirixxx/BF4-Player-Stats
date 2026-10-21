@@ -27,6 +27,8 @@ def main():
   actual,revision=c.execute(text('select current_database(),(select version_num from alembic_version)')).one()
   if (actual,revision)!=(db,'0017_rank_immutable_scores'):raise RuntimeError('wrong database/revision')
   c.execute(text("SET LOCAL statement_timeout='120s'"))
+  # Ranking-only memory budget; never change PostgreSQL's global work_mem.
+  c.execute(text("SET LOCAL work_mem='32MB'"))
   version=c.execute(text("""SELECT version FROM equipment_rank_scope_versions
    WHERE kind=:kind AND item_id=:item AND platform=:platform"""),params).scalar_one_or_none()
   if version is None:raise RuntimeError('scope version missing: refusing untracked generation')
