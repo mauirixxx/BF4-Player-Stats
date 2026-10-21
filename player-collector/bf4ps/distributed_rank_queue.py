@@ -43,6 +43,17 @@ def claim(engine, worker):
             SELECT max_active_builds,lease_seconds FROM equipment_rank_capacity
             WHERE id=1 FOR UPDATE
         """)).one()
+        # Prefer any healthy mak-site worker. Remote sites are automatic
+        # standby only after all mak heartbeats have aged out (30 seconds).
+        # This check is under the capacity lock to avoid admission races.
+        local_site = c.execute(text("SELECT site FROM equipment_rank_workers WHERE worker_id=:w"), {'w':worker}).scalar_one()
+        if local_site != 'mak':
+            mak_online = c.execute(text("""SELECT EXISTS (
+                SELECT 1 FROM equipment_rank_workers
+                WHERE site='mak' AND heartbeat_at>clock_timestamp()-interval '30 seconds'
+            )""")).scalar_one()
+            if mak_online:
+                return None
         # Serialize both admission and reclamation through capacity row.
         active = c.execute(text("""
             SELECT count(*) FROM equipment_rank_jobs
