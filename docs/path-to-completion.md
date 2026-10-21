@@ -13,7 +13,8 @@ This document collects project milestones, outstanding designs, operational risk
 - [ ] Run a clean-database migration rehearsal and verify the resulting catalog against production before advertising reproducible deployment.
 - [ ] Compare component sources against **deployed** code on tcou, player collector nodes and platoon workers. Consolidation source branches may lag production hotfixes.
 - [ ] Resolve imports, paths, dependency installation and deployment configuration after the new directory layout. Perform clean-host smoke tests and new release verification. Historical test harnesses were removed from the deployable tree after their purpose and actual results were documented in `docs/TEST-AND-VALIDATION-HISTORY.md`; a passing fresh integration suite is still required.
-- [ ] Establish component release tags, CI, secret scanning, README and reproducible builds; merge consolidation PR into main only after review.
+- [x] Fast-forward consolidated source to `main` (commit `db98cb3`), with history preserved.
+- [ ] Finish CI, secret scanning, reproducible builds and component release validation; prepare a v1.0.0 GitHub draft until gates pass.
 - [ ] Retain historical branches until a deliberate, separately approved archival/cleanup plan. No mass deletion.
 
 ## 2. Player statistics collector
@@ -70,4 +71,4 @@ This document collects project milestones, outstanding designs, operational risk
 - docs/database-schema.md, docs/operational-schema.md and docs/live-schema-snapshot-2026-10-21.md — database contracts and current observed catalog.
 - docs/branch-document-inventory.json — all discovered document paths, preferred sources and archived content variants.
 
-**Acceptance criteria for main:** documentation complete, no secrets, runnable clean-checkout component builds/tests, recovered migrations through live revision, production-source parity reviewed, and a rollback plan. Until then, this consolidation is a review candidate rather than a new deployment artifact.
+**Acceptance criteria for a stable v1.0.0 release:** documentation complete, no secrets, runnable clean-checkout component builds/tests, recovered migrations through live revision, production-source parity reviewed, and a rollback plan. Until then, the GitHub release remains a draft and must not be described as a verified production installer.
