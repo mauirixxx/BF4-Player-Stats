@@ -15,6 +15,7 @@ WITH candidates AS (
  JOIN platoon_roster_accounts a ON a.platoon_id=p.platoon_id AND a.battlelog_account_id=p.battlelog_account_id AND a.is_current
  WHERE p.is_current AND p.battlelog_platform_code IN (1,32,64)
        AND btrim(p.persona_name) <> ''
+       AND NOT public.bf4ps_platoon_identity_is_excluded(CASE p.battlelog_platform_code WHEN 1 THEN 'pc' WHEN 32 THEN 'ps4' WHEN 64 THEN 'xboxone' END, p.persona_id)
  ORDER BY p.persona_id,p.battlelog_platform_code,p.last_seen_at DESC,p.platoon_id
 ), inserted AS (
  INSERT INTO soldiers(persona_id,platform,current_name,first_seen_at,last_seen_at)

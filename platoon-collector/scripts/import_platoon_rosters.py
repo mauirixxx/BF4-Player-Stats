@@ -51,7 +51,7 @@ def validate(path):
 def sql_for(doc):
     p, accounts = doc['platoon'], doc['accounts']
     pid = int(p['platoon_id'])
-    q = [f"INSERT INTO platoons(platoon_id,name,tag,official_member_count,battlelog_created_at,emblem_path,website_url,last_checked_at,last_success_at,last_error) VALUES ({pid},{literal(p['name'])},{literal(p['tag'])},{int(p['official_member_count'])},{literal(p.get('created_at'))},{literal(p.get('emblem_path'))},{literal(p.get('website_url'))},now(),now(),NULL) ON CONFLICT(platoon_id) DO UPDATE SET name=EXCLUDED.name,tag=EXCLUDED.tag,official_member_count=EXCLUDED.official_member_count,battlelog_created_at=EXCLUDED.battlelog_created_at,emblem_path=COALESCE(EXCLUDED.emblem_path,platoons.emblem_path),website_url=EXCLUDED.website_url,last_checked_at=now(),last_success_at=now(),last_error=NULL;"]
+    q = [f"INSERT INTO platoons(platoon_id,name,tag,official_member_count,battlelog_created_at,emblem_path,website_url,last_checked_at,last_success_at,last_error) VALUES ({pid},{literal(p['name'])},{literal(p['tag'])},{int(p['official_member_count'])},{literal(p.get('created_at'))},{literal(p.get('emblem_path') or '/assets/platoon-emblems/default-emblem-320.png')},{literal(p.get('website_url'))},now(),now(),NULL) ON CONFLICT(platoon_id) DO UPDATE SET name=EXCLUDED.name,tag=EXCLUDED.tag,official_member_count=EXCLUDED.official_member_count,battlelog_created_at=EXCLUDED.battlelog_created_at,emblem_path=COALESCE(EXCLUDED.emblem_path,platoons.emblem_path),website_url=EXCLUDED.website_url,last_checked_at=now(),last_success_at=now(),last_error=NULL;"]
     # Full validated snapshot only: mark absent associations former, preserving history.
     q.append(f'UPDATE platoon_roster_personas SET is_current=false WHERE platoon_id={pid};')
     q.append(f'UPDATE platoon_roster_accounts SET is_current=false WHERE platoon_id={pid};')
@@ -102,7 +102,7 @@ def main():
             token = literal(args.claim_token)
             predicate = (f"SELECT 1 FROM platoon_work_leases WHERE platoon_id={pid} "
                          f"AND claim_token={token}::uuid AND lease_until>clock_timestamp() FOR UPDATE")
-            statements.append("DO $ BEGIN IF NOT EXISTS (" + predicate + ") THEN RAISE EXCEPTION 'stale platoon claim'; END IF; END $;")
+            statements.append("DO $$ BEGIN IF NOT EXISTS (" + predicate + ") THEN RAISE EXCEPTION 'stale platoon claim'; END IF; END $$;")
         if args.claim_kind:
             pid = int(docs[0]['platoon']['platoon_id'])
             stamp = literal(args.claim_timestamp)

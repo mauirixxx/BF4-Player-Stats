@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current feature-branch Alembic head: `0013_indexed_equipment_rankings` (**not deployed to production**). Last verified production revision: `0012_manual_verify_api` (2026-10-18).
+Current recovered Alembic head: `0017_rank_immutable_scores`. Live production was observed at revision `0017_rank_immutable_scores` on 2026-10-21. Historical stage-only labels in migration docstrings are superseded by that observation. See `live-schema-snapshot-2026-10-21.md` for the observed catalog.
 
 ## Mandatory SQL development rule
 
@@ -28,7 +28,11 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0010_manual_api_function` | `0009_manual_requests` | Restricted manual-request SQL API |
 | `0011_manual_verification` | `0010_manual_api_function` | Pending Battlelog soldier verification |
 | `0012_manual_verify_api` | `0011_manual_verification` | Restricted verification request SQL API |
-| `0013_indexed_equipment_rankings` | `0012_manual_verify_api` | Inert indexed weapon and vehicle leaderboard read models; scratch only |
+| `0013_indexed_equipment_rankings` | `0012_manual_verify_api` | Indexed weapon and vehicle leaderboard read models |
+| `0014_equipment_populations` | `0013_indexed_equipment_rankings` | Equipment population data |
+| `0015_rank_generations` | `0014_equipment_populations` | Rank generation state |
+| `0016_rank_scope_versions` | `0015_rank_generations` | Rank scope versions |
+| `0017_rank_immutable_scores` | `0016_rank_scope_versions` | Immutable rank score snapshots |
 
 ### Important migration consequence: Gun Master
 
