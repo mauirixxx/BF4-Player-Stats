@@ -8,6 +8,7 @@ import discord
 from discord import app_commands
 import datetime
 from . import leases, guild_settings, player_lookup
+from .card_cache import CardCache, BusyError
 
 logging.basicConfig(level=logging.INFO,format="%(asctime)s %(levelname)s %(message)s")
 log=logging.getLogger("bf4ps.discord")
@@ -29,6 +30,7 @@ class Bot(discord.Client):
         self._audit_starts={}
         self._audit_outcomes={}
         self._audit_channels={}
+        self.card_cache=CardCache()
 
         self.tree=app_commands.CommandTree(self)
         @self.tree.command(name="ping",description="Check the BF4 Player Stats bot connection")
@@ -382,14 +384,6 @@ class Bot(discord.Client):
                         await interaction.followup.send(
                             f"No {selected_view} statistics collected yet for **{discord.utils.escape_markdown(current_name)}**.")
                         return
-                    pictures = {}
-                    try:
-                        pictures = await asyncio.wait_for(
-                            asyncio.to_thread(fetch_top_artwork,
-                                              "weapon" if selected_view == "weapons" else "vehicle",
-                                              [e["key"] for e in entries]), timeout=13)
-                    except Exception:
-                        log.warning("ranking_artwork_unavailable", exc_info=True)
                     hours = seconds / 3600 if seconds is not None else None
                     fields = {
                         "name": current_name, "platform": platform.name,
@@ -397,7 +391,21 @@ class Bot(discord.Client):
                         "view": selected_view,
                         "collected": f"Collected {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet",
                     }
-                    png = await asyncio.to_thread(render_ranking, fields, entries, pictures)
+                    # Hash actual rows (including item collection timestamps) so a
+                    # changed weapon/vehicle invalidates the PNG immediately.
+                    cache_key = CardCache.key("ranking-v2", soldier_id, found_platform,
+                                              selected_view, fields, rows)
+                    async def produce_ranking():
+                        pictures = {}
+                        try:
+                            pictures = await asyncio.wait_for(
+                                asyncio.to_thread(fetch_top_artwork,
+                                                  "weapon" if selected_view == "weapons" else "vehicle",
+                                                  [e["key"] for e in entries]), timeout=13)
+                        except Exception:
+                            log.warning("ranking_artwork_unavailable", exc_info=True)
+                        return await asyncio.to_thread(render_ranking, fields, entries, pictures)
+                    png = await self.card_cache.get_or_render(cache_key, produce_ranking)
                     buttons = discord.ui.View(timeout=None)
                     buttons.add_item(discord.ui.Button(
                         label="Player Dossier", style=discord.ButtonStyle.link,
@@ -415,6 +423,10 @@ class Bot(discord.Client):
                     await interaction.followup.send(
                         file=discord.File(BytesIO(png), filename=f"bf4-top-{selected_view}.png"),
                         view=buttons)
+                except BusyError:
+                    self.audit_result(interaction, "BUSY", "Render queue full")
+                    await interaction.followup.send(
+                        "The image renderer is busy right now. Please try again shortly.")
                 except Exception:
                     log.exception("ranking_card_failed")
                     self.audit_result(interaction, "FAILED", "Ranking view unavailable")
