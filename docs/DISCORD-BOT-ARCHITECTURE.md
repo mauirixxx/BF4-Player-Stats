@@ -1,0 +1,55 @@
+# BF4PS Discord Bot — Architecture and Implementation Plan
+Status: design proposal (2026-10-21). No bot deployed. Validate all SQL against live schema before implementation.
+
+## Goal and boundaries
+A separately deployed Discord application for fast BF4 player and equipment statistics, platform-aware rankings, and optional refresh requests. The existing BF4PS PostgreSQL database and precompute generations remain authoritative. The bot does not scrape Battlelog, calculate rankings on request, or write directly to collector tables. Keep BF4SW and BF4PS bots independent: separate Discord application/token, processes, DB roles, configuration, deployment, and failure domains.
+
+## Lessons carried forward from BF4 Server Watcher
+- Slash commands first; avoid message-content privileged intent and prefix parsing by default.
+- Durable guild configuration in PostgreSQL, not process memory; idempotent migrations and strict schema contracts.
+- One primary bot process initially, Dockerized with health reporting and graceful shutdown; add HA only after single-instance behavior is proven. Multiple Discord gateway connections can duplicate event work unless coordinated.
+- Use structured errors, audit logging, bounded timeouts, retries with backoff and jitter, and safe interaction acknowledgement/defer within Discord's response deadline.
+- Avoid high-frequency polling. Read existing snapshots; respect collector traffic budgets and refresh queue policy.
+- Fail closed on missing DB permissions or stale schema; never leak secrets, tokens, private identities, or excluded players.
+
+## Data flow
+Discord interaction -> command handler -> read-only BF4PS query/service layer -> current published generation and soldier snapshots -> embed with explicit platform and last-updated timestamp -> Discord response.
+Optional manual refresh -> restricted DB function/API -> existing bounded priority collection lane -> status acknowledgement; never bypass the collector's global request budget.
+
+## Proposed v1 commands (subject to approval)
+- `/stats player:<name> platform:<pc|xboxone|ps4|auto>`: soldier overview, data freshness, direct website link. For ambiguous names, offer a select menu instead of guessing.
+- `/weapon player:<name> item:<weapon> platform:<...>`: weapon statistics and available ranking from *published* generation.
+- `/vehicle player:<name> item:<vehicle> platform:<...>`: vehicle statistics and available ranking.
+- `/leaderboard type:<weapon|vehicle> item:<...> metric:<kills|kpm|accuracy> platform:<pc|xboxone|ps4|all>`: bounded top 10 from existing precomputed results, not a fresh full-population sort.
+- `/platoon name:<...>`: only after verifying current platoon schema, discovery completeness, and user-facing semantics.
+- `/help`, `/about`, `/health` (non-sensitive health summary).
+Future: Discord-account-to-soldier linking with proof of control; saved favorites; guild subscriptions and scheduled posts. No automatic cross-platform identity merging.
+
+## Correctness and privacy contracts
+- Persona ID + platform is the canonical identity; display names and aliases are mutable. Resolve ambiguity interactively and never infer account linkage across platforms.
+- Respect the production exclusion policy in **every** lookup, autocomplete, and ranking. Prefer DB-enforced, restricted views/functions rather than duplicating filtering logic in Discord code.
+- Display collection timestamp and ranking generation timestamp separately. Explain that ranks are accurate for the published snapshot, not necessarily current Battlelog.
+- Read only *published* generations; never expose partial builds. For absent ranking generation, say 'not yet computed', not zero rank.
+- Autocomplete/search must be bounded and indexed. Paginate results, cap embeds, and prevent arbitrary user SQL.
+- Guild-level permissions for configuration; public stats commands should not require Administrator privileges. Never expose admin-console privileges through the bot.
+
+## PostgreSQL security
+Create a dedicated `bf4ps_discord_readonly` role with narrowly scoped EXECUTE on audited SECURITY DEFINER functions or SELECT on purpose-built filtered views; no general table SELECT, no DDL, no bypass of exclusion triggers/RLS. If refresh is implemented, use a *separate* restricted role or vetted API endpoint with per-user/per-guild cooldowns and idempotent admission.
+Use `db.bf4statusbot.com` (or deployment-approved failover DNS), TLS as supported, short connect/query timeouts, and a small bounded pool. Validate role grants and query plans against the live schema before shipping.
+
+## Runtime and observability
+Python with discord.py 2.x, SQLAlchemy/psycopg as already standardized by BF4PS; pinned dependency versions, Docker image, unprivileged runtime, env-based secrets. Keep Discord gateway heartbeat independent of blocking DB operations. Cache immutable published-generation lookups briefly, invalidate by generation ID, and include stale-data timestamps. Structured logs with command, latency, cache status, errors, and anonymized guild/user IDs; no tokens or raw secrets. Add /health and metrics, restart-safe lifecycle, optional canary guild command registration.
+
+## Implementation phases and gates
+1. **Design and schema verification:** review authoritative `docs/database-schema.md`, `docs/operational-schema.md`, and live PostgreSQL; document exact soldier, alias, exclusion, equipment, ranking, platoon query contracts. Confirm bot naming and initial commands.
+2. **Read-only prototype:** isolated app/token, one host, canary guild, `/stats` and `/help`; measure p50/p95 query and interaction latency.
+3. **Equipment and leaderboards:** published-generation-only queries, bounded Top 10, autocomplete, platform disambiguation; verify parity with website.
+4. **Hardening:** least-privilege role, migrations for guild settings only if needed, audit and error reporting, timeout/failover tests, restart/reconnect soak, Docker deployment.
+5. **Optional writes:** refresh requests via existing collector queue with existing 10% rolling interactive ceiling; permissions, cooldowns, idempotency, and operational dashboards.
+6. **Expansion:** platoons, saved favorites, notifications, and HA only when justified.
+
+## Acceptance criteria for v1
+No Battlelog HTTP traffic from bot; excluded identities never appear; zero DB writes by read-only commands; no duplicate cross-platform merges; no full-cohort ranking query per Discord interaction; missing/outdated data explicitly labeled; DB outage responds gracefully; published rankings match website; canary soak and restart pass; schema and operations documentation updated with exact grants and deployment procedures.
+
+## Open decisions
+Bot application name and avatar; command naming; which platforms and platoon features ship first; host and initial guild; whether website public API or direct restricted SQL should be the read path. **Do not create Discord application credentials or production DB privileges before review.**
