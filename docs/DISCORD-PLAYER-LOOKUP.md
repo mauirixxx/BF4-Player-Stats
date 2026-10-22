@@ -22,3 +22,12 @@ Below the PNG, provide a Discord-native **Refresh Stats** interaction and a sepa
 Live investigation: TCOU's `bf4ps-manual-api` service is active and bound to `127.0.0.1:8789`. It requires a private token and an allowed Origin. MAK-01/RNT-01 therefore **cannot safely call this endpoint directly** without a separately designed authenticated private network path. Do not expose the service publicly or copy its privileged DB credentials into the Discord bot. The current read-only Discord DB role must remain read-only.
 
 **Not implemented or deployed as of this checkpoint.** The current native Discord embed remains operational. Before schema-dependent implementation, reconcile `docs/database-schema-reference.md` (currently records live head 0017) with migration `0018_distributed_rank_queue` and the actual production Alembic revision; do not assume 0018 was applied.
+
+
+### 2026-10-22 implementation progress
+
+Added `discord-bot/bf4ps_discord/overview_card.py`: standalone Pillow renderer producing 960 x 600 PNG bytes from supplied display fields and optional fancy artwork bytes. `discord-bot/requirements.txt` includes Pillow. This renderer is **not wired to the slash command** and has **not been deployed**. The existing Discord embed remains the live behavior.
+
+The deployed manual API was inspected: it is active on TCOU at `127.0.0.1:8789`, authenticates a private token plus Origin, and delegates refresh admission to `manual_api.request_existing_soldier`. The website's manual gateway uses that loopback endpoint. A production-ready HA Discord transport and cross-collection 60-minute cooldown verification are still required. Do not expose the endpoint publicly or place the website's privileged DB credentials in the bot.
+
+Migration `0018_distributed_rank_queue` is present in source and creates equipment ranking capacity, workers, and jobs. The schema reference's live observation remains 0017 on 2026-10-21; a direct attempt to inspect `alembic_version` with the website API's restricted DB role returned permission denied. Consequently **production revision remains unverified**; do not mark 0018 as deployed based on source presence alone.
