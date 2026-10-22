@@ -73,7 +73,7 @@ def render_overview(stats: dict, artwork: bytes | None = None) -> bytes:
     # Footer wordmark: a condensed, bold Battlefield-inspired fallback.
     # No proprietary Battlefield 4 font is bundled or distributed.
     wordmark = "BATTLEFIELD 4"
-    wordmark_font = ImageFont.truetype("DejaVuSansCondensed-Bold.ttf", 25)
+    wordmark_font = _font(24, True)
     wordmark_width = d.textbbox((0, 0), wordmark, font=wordmark_font)[2]
     d.text((928 - wordmark_width, 556), wordmark, font=wordmark_font, fill="#aeb6c1")
     output = BytesIO()
