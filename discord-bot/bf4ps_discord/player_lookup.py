@@ -47,3 +47,30 @@ def find_signature_weapon(dsn: str, soldier_id: int):
                 WHERE w.soldier_id=%s AND w.kills>0
                 ORDER BY w.kills DESC, w.weapon_id ASC LIMIT 1""", (soldier_id,))
             return cur.fetchone()
+
+
+def find_signature_equipment(dsn: str, soldier_id: int):
+    """Highest-kill weapon or vehicle, without summing catalog variants.
+
+    Returns (kind, localization_key, display_slug, kills). Each category
+    uses an indexed, bounded top-1 query; ties favor weapons and stable IDs.
+    """
+    with psycopg.connect(dsn, connect_timeout=4,
+                         options='-c default_transaction_read_only=on -c statement_timeout=4000') as conn:
+        with conn.cursor() as cur:
+            cur.execute("""SELECT kind, name, slug, kills FROM (
+                (SELECT 'weapon'::text AS kind, c.name, c.slug, w.kills, w.weapon_id AS item_id
+                 FROM public.soldier_weapon_stats AS w
+                 JOIN public.weapon_catalog AS c ON c.weapon_id=w.weapon_id
+                 WHERE w.soldier_id=%s AND w.kills>0
+                 ORDER BY w.kills DESC, w.weapon_id ASC LIMIT 1)
+                UNION ALL
+                (SELECT 'vehicle'::text AS kind, c.name, c.slug, v.kills, v.vehicle_id AS item_id
+                 FROM public.soldier_vehicle_stats AS v
+                 JOIN public.vehicle_catalog AS c ON c.vehicle_id=v.vehicle_id
+                 WHERE v.soldier_id=%s AND v.kills>0
+                 ORDER BY v.kills DESC, v.vehicle_id ASC LIMIT 1)
+            ) AS candidates
+            ORDER BY kills DESC, kind ASC, item_id ASC LIMIT 1""",
+                        (soldier_id, soldier_id))
+            return cur.fetchone()
