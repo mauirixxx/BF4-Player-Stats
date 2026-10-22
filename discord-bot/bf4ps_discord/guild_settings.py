@@ -130,18 +130,19 @@ def change_audit_channel(dsn: str, guild_id: int, channel_id: int, setting: bool
                 cur.execute('DELETE FROM discord_guild_settings WHERE guild_id=%s AND setting_key=%s',(guild_id,AUDIT_CHANNEL))
 
 
-def mark_present(dsn: str, guild_ids: list[int]) -> None:
-    """Upsert gateway-observed guilds, preserving original install time."""
-    if not guild_ids:
+def mark_present(dsn: str, guilds: list[tuple[int, str]]) -> None:
+    """Upsert gateway-observed guild IDs and names; preserve install time."""
+    if not guilds:
         return
     with psycopg.connect(dsn, connect_timeout=3) as conn:
         with conn.cursor() as cur:
             cur.executemany(
-                """INSERT INTO discord_guilds(guild_id,enabled,last_seen_at,removed_at)
-                   VALUES (%s,true,now(),NULL)
+                """INSERT INTO discord_guilds(guild_id,guild_name,enabled,last_seen_at,removed_at)
+                   VALUES (%s,%s,true,now(),NULL)
                    ON CONFLICT (guild_id) DO UPDATE
-                   SET last_seen_at=now(), removed_at=NULL""",
-                [(guild_id,) for guild_id in guild_ids],
+                   SET guild_name=excluded.guild_name,
+                       last_seen_at=now(), removed_at=NULL""",
+                guilds,
             )
 
 
