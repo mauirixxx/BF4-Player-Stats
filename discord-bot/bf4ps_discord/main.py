@@ -363,12 +363,12 @@ class Bot(discord.Client):
             artwork = None
             try:
                 signature = await asyncio.wait_for(
-                    asyncio.to_thread(player_lookup.find_signature_weapon, STATS_DSN, soldier_id), timeout=6)
+                    asyncio.to_thread(player_lookup.find_signature_equipment, STATS_DSN, soldier_id), timeout=6)
                 if signature:
-                    from .equipment_artwork import fetch_weapon_artwork
+                    from .equipment_artwork import fetch_equipment_artwork
                     try:
                         artwork = await asyncio.wait_for(
-                            asyncio.to_thread(fetch_weapon_artwork, signature[0]), timeout=11)
+                            asyncio.to_thread(fetch_equipment_artwork, signature[0], signature[1]), timeout=11)
                     except Exception:
                         log.warning("signature_weapon_artwork_unavailable", exc_info=True)
             except Exception:
@@ -420,8 +420,8 @@ class Bot(discord.Client):
                     "spm": ratio(total_score, seconds / 60) if seconds else "—",
                     "win_rate": percent(wins, wins + losses) if wins is not None and losses is not None else "—",
                     "best_class": best or "—",
-                    "equipment_name": (signature[1].replace("-", " ").upper() if signature and signature[1] else signature[0].rsplit("_", 1)[-1] if signature else "No weapon data"),
-                    "equipment_kills": count(signature[2]) if signature else "—",
+                    "equipment_name": (("UCAV" if signature[1] == "WARSAW_ID_P_XP1_VNAME_UCAV" else signature[2].replace("-", " ").upper()) if signature and signature[2] else signature[1].rsplit("_", 1)[-1] if signature else "No equipment data"),
+                    "equipment_kills": count(signature[3]) if signature else "—",
                     "collected": f"Collected {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet",
                 }
                 png = await asyncio.to_thread(render_overview, fields, artwork)
