@@ -80,22 +80,28 @@ def find_top_equipment(dsn: str, soldier_id: int, kind: str):
     """Return up to nine top-kill weapons or vehicles from documented current tables.
 
     Each record: (localization_key, slug, kills, equipped_seconds, fetched_at).
-    No aggregation: variants remain distinct, matching the stored equipment rows.
+    Duplicate localization-key variants are deduplicated by highest kills, never summed.
     """
     if kind not in ("weapons", "vehicles"):
         raise ValueError("Invalid equipment view")
     if kind == "weapons":
-        query = """SELECT c.name, c.slug, s.kills, s.time_equipped_seconds, s.source_fetched_at
-            FROM public.soldier_weapon_stats AS s
-            JOIN public.weapon_catalog AS c ON c.weapon_id=s.weapon_id
-            WHERE s.soldier_id=%s AND s.kills>0
-            ORDER BY s.kills DESC, s.weapon_id ASC LIMIT 9"""
+        query = """SELECT name, slug, kills, item_seconds, source_fetched_at FROM (
+                SELECT c.name, c.slug, s.kills, s.time_equipped_seconds AS item_seconds,
+                    s.source_fetched_at, s.weapon_id AS item_id,
+                    ROW_NUMBER() OVER (PARTITION BY c.name ORDER BY s.kills DESC, s.weapon_id) AS rn
+                FROM public.soldier_weapon_stats AS s
+                JOIN public.weapon_catalog AS c ON c.weapon_id=s.weapon_id
+                WHERE s.soldier_id=%s AND s.kills>0
+            ) AS ranked WHERE rn=1 ORDER BY kills DESC, item_id LIMIT 9"""
     else:
-        query = """SELECT c.name, c.slug, s.kills, s.time_in_seconds, s.source_fetched_at
-            FROM public.soldier_vehicle_stats AS s
-            JOIN public.vehicle_catalog AS c ON c.vehicle_id=s.vehicle_id
-            WHERE s.soldier_id=%s AND s.kills>0
-            ORDER BY s.kills DESC, s.vehicle_id ASC LIMIT 9"""
+        query = """SELECT name, slug, kills, item_seconds, source_fetched_at FROM (
+                SELECT c.name, c.slug, s.kills, s.time_in_seconds AS item_seconds,
+                    s.source_fetched_at, s.vehicle_id AS item_id,
+                    ROW_NUMBER() OVER (PARTITION BY c.name ORDER BY s.kills DESC, s.vehicle_id) AS rn
+                FROM public.soldier_vehicle_stats AS s
+                JOIN public.vehicle_catalog AS c ON c.vehicle_id=s.vehicle_id
+                WHERE s.soldier_id=%s AND s.kills>0
+            ) AS ranked WHERE rn=1 ORDER BY kills DESC, item_id LIMIT 9"""
     with psycopg.connect(dsn, connect_timeout=4,
                          options='-c default_transaction_read_only=on -c statement_timeout=4000') as conn:
         with conn.cursor() as cur:
