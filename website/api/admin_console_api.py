@@ -319,7 +319,9 @@ class Handler(BaseHTTPRequestHandler):
                                extract(epoch from clock_timestamp()) AS sampled_at
                         FROM pg_stat_database d WHERE d.datname = current_database()
                     """)).mappings().one()
-                return self.reply(200, {**dict(data), 'sampled_at': float(data['sampled_at']), 'stats_reset': str(data['stats_reset']) if data['stats_reset'] else None})
+                with engine.connect() as conn:
+                    storage = conn.execute(text('SELECT public.bf4ps_admin_storage_health()')).scalar_one()
+                return self.reply(200, {**dict(data), 'storage':storage, 'sampled_at': float(data['sampled_at']), 'stats_reset': str(data['stats_reset']) if data['stats_reset'] else None})
             except Exception as exc:
                 import logging
                 logging.exception('Database health metrics failed')

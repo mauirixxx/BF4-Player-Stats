@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+values=$(stat -f -c '%b %a %f %S' /var/lib/postgresql/16/main)
+set -- $values
+total=$(($1*$4)); avail=$(($2*$4)); free=$(($3*$4))
+node=$(hostname)
+runuser -u postgres -- psql -X -q -v ON_ERROR_STOP=1 -d bf4_playerstats -c "INSERT INTO public.bf4ps_primary_disk_samples(sample_id,hostname,available_bytes,total_bytes,free_bytes) SELECT 1,'$node',$avail,$total,$free WHERE NOT pg_is_in_recovery() ON CONFLICT(sample_id) DO UPDATE SET hostname=excluded.hostname,available_bytes=excluded.available_bytes,total_bytes=excluded.total_bytes,free_bytes=excluded.free_bytes,sampled_at=now()" >/dev/null

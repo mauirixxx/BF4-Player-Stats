@@ -50,7 +50,7 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 <label for="currentPassword">Current password</label><input type="password" id="currentPassword" autocomplete="current-password" required>
 <label for="newPassword">New password (16–128 characters)</label><input type="password" id="newPassword" autocomplete="new-password" minlength="16" maxlength="128" required>
 <label for="confirmPassword">Confirm new password</label><input type="password" id="confirmPassword" autocomplete="new-password" minlength="16" maxlength="128" required>
-<div style="margin-top:12px"><button type="submit">Change password and sign out</button></div></form></section><section class="card"><div class="row" style="justify-content:space-between"><h2>Database health</h2><button type="button" class="outline" id="refreshDatabase">Refresh</button></div><div class="db-metric"><small>Database size</small><strong id="dbSize">Loading…</strong></div><div class="db-metric"><small>Transactions per second (since last refresh)</small><strong id="dbTps">Sampling…</strong></div><div class="db-metric"><small>Current connections</small><strong id="dbConnections">—</strong></div><div class="db-metric"><small>Alembic revision</small><strong id="dbAlembic" style="font-size:15px;overflow-wrap:anywhere">—</strong></div><p id="dbSampleTime" class="muted"></p></section></div>
+<div style="margin-top:12px"><button type="submit">Change password and sign out</button></div></form></section><section class="card"><div class="row" style="justify-content:space-between"><h2>Database health</h2><button type="button" class="outline" id="refreshDatabase">Refresh</button></div><div class="db-metric"><small>Database size</small><strong id="dbSize">Loading…</strong></div><div class="db-metric"><small>Transactions per second (since last refresh)</small><strong id="dbTps">Sampling…</strong></div><div class="db-metric"><small>Current connections</small><strong id="dbConnections">—</strong></div><div class="db-metric"><small>Alembic revision</small><strong id="dbAlembic" style="font-size:15px;overflow-wrap:anywhere">—</strong></div><div class="db-metric"><small>Primary disk space remaining</small><strong id="dbDisk">—</strong><div id="dbDiskDetail" class="muted"></div></div><div class="db-metric"><small>Replica WAL backlog</small><div id="dbReplicas" class="muted">Loading…</div></div><p id="dbSampleTime" class="muted"></p></section></div>
 </div><div data-section="moderation" class="hidden"><div class="grid">
 <section class="card"><h2>Find soldier</h2><form id="searchForm">
 <label for="query">Name or exact persona ID</label><input id="query" minlength="2" maxlength="80" required>
@@ -129,6 +129,17 @@ async function loadDatabase(){
   $('dbSize').textContent=(Number(d.size_bytes)/1073741824).toFixed(2)+' GiB';
   $('dbConnections').textContent=fmt(d.connections);
   $('dbAlembic').textContent=d.alembic_version||'Unknown';
+  const storage=d.storage||{};const disk=storage.disk;
+  const size=v=>v==null?'—':(Number(v)/1073741824).toFixed(2)+' GiB';
+  $('dbDisk').textContent=disk?size(disk.available_bytes)+' available':'Disk sample unavailable';
+  $('dbDiskDetail').textContent=disk?size(disk.total_bytes)+' total · '+((1-Number(disk.available_bytes)/Number(disk.total_bytes))*100).toFixed(1)+'% allocated/used · '+(disk.hostname||'primary'):'Waiting for fresh primary disk sample';
+  const replicas=$('dbReplicas');replicas.replaceChildren();
+  for(const r of storage.replicas||[]){const div=document.createElement('div');div.style.cssText='padding:8px 0;border-bottom:1px solid #354659';
+   const strong=document.createElement('strong');strong.textContent=r.slot+' · '+(r.state||'disconnected');div.append(strong);
+   const line=document.createElement('div');line.textContent='Unsent: '+size(r.unsent_bytes)+' · Replay behind: '+size(r.replay_lag_bytes)+' · Retained WAL: '+size(r.retained_bytes);div.append(line);replicas.append(div);
+  }
+  if(!(storage.replicas||[]).length)replicas.textContent='No physical replicas reported';
+
   const prior=lastDatabaseSample;
   const elapsed=prior?Number(d.sampled_at)-Number(prior.sampled_at):0;
   const sameReset=prior&&d.stats_reset===prior.stats_reset;
