@@ -54,3 +54,6 @@ Exact node priority beyond RNT and MAK, Discord application name/token, initial 
 - Start with a read-only `/player` soldier lookup by player name and platform, subject to reviewing `docs/database-schema.md`, `docs/operational-schema.md`, and live schema first.
 - Confirm restricted statistics DB read role and exclusions, use bounded indexed search, handle ambiguous names, and show data freshness and canonical platform/persona identity. No Battlelog requests or writes to collector DB.
 - Add user-approved Discord embeds, test from development server, then equipment/leaderboard commands. Use `main` for rapid iteration per operator direction; no additional development branch required.
+
+## Next feature priority update — 2026-10-22
+Operator moved **guild management settings and command auditing ahead of `/player`**. Requirements are recorded in [Discord bot architecture](DISCORD-BOT-ARCHITECTURE.md). No management command code has been deployed; implementation is paused for a BF4SW outage investigation.
