@@ -500,7 +500,11 @@ class Bot(discord.Client):
                     "equipment_kills": count(signature[3]) if signature else "—",
                     "collected": f"Collected {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet",
                 }
-                png = await asyncio.to_thread(render_overview, fields, artwork)
+                cache_key = CardCache.key("overview-v2", soldier_id, found_platform,
+                                          fields, signature, fetched_at)
+                async def produce_overview():
+                    return await asyncio.to_thread(render_overview, fields, artwork)
+                png = await self.card_cache.get_or_render(cache_key, produce_overview)
                 attachment = discord.File(BytesIO(png), filename="bf4-overview.png")
                 # A native image attachment uses Discord's wider image preview.
                 buttons = discord.ui.View(timeout=None)
