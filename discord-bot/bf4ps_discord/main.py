@@ -7,7 +7,7 @@ import time
 import discord
 from discord import app_commands
 import datetime
-from . import leases, guild_settings
+from . import leases, guild_settings, player_lookup
 
 logging.basicConfig(level=logging.INFO,format="%(asctime)s %(levelname)s %(message)s")
 log=logging.getLogger("bf4ps.discord")
@@ -15,6 +15,7 @@ DSN=os.environ["BOT_DATABASE_URL"].replace("postgresql+psycopg://","postgresql:/
 NODE=os.environ["NODE_ID"]
 TOKEN=os.environ.get("DISCORD_BOT_TOKEN","")
 DRY_RUN=os.environ.get("DRY_RUN","0")=="1"
+STATS_DSN=os.environ.get("BF4PS_STATS_DSN","")
 TTL=30
 RENEW=10
 
@@ -304,6 +305,64 @@ class Bot(discord.Client):
                             ("Disabled" if not audit_id else "Configured channel missing"),inline=True)
             embed.set_footer(text=f"Node {NODE} · Live HA control-plane snapshot")
             await interaction.followup.send(embed=embed,ephemeral=True)
+
+        pstats=app_commands.Group(name="pstats",description="Battlefield 4 player statistics")
+
+        @pstats.command(name="player",description="Find a Battlefield 4 player by exact current name")
+        @app_commands.describe(name="Exact player name (case-insensitive)",platform="Battlefield 4 platform")
+        @app_commands.choices(platform=[app_commands.Choice(name=k,value=v) for k,v in player_lookup.PLATFORMS.items()])
+        async def player(interaction: discord.Interaction, name: str, platform: app_commands.Choice[str]):
+            if interaction.guild is None:
+                self.audit_result(interaction,"BLOCKED","Server-only command")
+                await interaction.response.send_message("Use this command in a server.",ephemeral=True)
+                return
+            settings=await manager_settings(interaction)
+            if settings is None:
+                self.audit_result(interaction,"FAILED","Settings unavailable")
+                await interaction.response.send_message("Player lookup is temporarily unavailable.",ephemeral=True)
+                return
+            if not guild_settings.player_allowed(interaction.user,interaction.guild,settings):
+                self.audit_result(interaction,"DENIED","Minimum role not met")
+                await interaction.response.send_message("You do not have the required role for player commands.",ephemeral=True)
+                return
+            if not guild_settings.player_channel_allowed(interaction.user,interaction.guild,interaction.channel_id,settings):
+                self.audit_result(interaction,"DENIED","Channel not allowed")
+                await interaction.response.send_message("Player commands are not enabled in this channel.",ephemeral=True)
+                return
+            if not STATS_DSN:
+                self.audit_result(interaction,"FAILED","Statistics connection not configured")
+                await interaction.response.send_message("Player lookup is temporarily unavailable.",ephemeral=True)
+                return
+            await interaction.response.defer(thinking=True)
+            try:
+                if not await asyncio.wait_for(asyncio.to_thread(leases.is_current,DSN,NODE,self.authority),timeout=5):
+                    raise RuntimeError("Leadership changed")
+                matches=await asyncio.wait_for(asyncio.to_thread(player_lookup.find_player,STATS_DSN,name.strip(),platform.value),timeout=7)
+            except ValueError:
+                self.audit_result(interaction,"BLOCKED","Invalid lookup")
+                await interaction.followup.send("Enter a valid player name (up to 100 characters).")
+                return
+            except Exception:
+                log.exception("player_lookup_failed")
+                self.audit_result(interaction,"FAILED","Player lookup unavailable")
+                await interaction.followup.send("Player lookup is temporarily unavailable. Please retry.")
+                return
+            if not matches:
+                await interaction.followup.send(f"Player not found: **{discord.utils.escape_markdown(name[:100])}** ({platform.name}).")
+                return
+            if len(matches)>1:
+                self.audit_result(interaction,"BLOCKED","Multiple exact-name matches")
+                await interaction.followup.send("Multiple players share that exact name on this platform. Identity selection is not implemented yet.")
+                return
+            current_name,found_platform,persona_id=matches[0]
+            embed=discord.Embed(title="Player found",color=discord.Color.green())
+            embed.add_field(name="Name",value=discord.utils.escape_markdown(current_name),inline=False)
+            embed.add_field(name="Platform",value=platform.name,inline=True)
+            embed.add_field(name="Persona ID",value=str(persona_id),inline=True)
+            embed.set_footer(text="Exact current-name lookup · Statistics coming later")
+            await interaction.followup.send(embed=embed)
+
+        self.tree.add_command(pstats)
 
         self.tree.add_command(admin)
 
