@@ -7,7 +7,7 @@ import time
 import discord
 from discord import app_commands
 import datetime
-from . import leases, guild_settings, player_lookup
+from . import leases, guild_settings, player_lookup, command_audit
 from .card_cache import CardCache, BusyError
 
 logging.basicConfig(level=logging.INFO,format="%(asctime)s %(levelname)s %(message)s")
@@ -543,12 +543,30 @@ class Bot(discord.Client):
 
     async def on_interaction(self, interaction: discord.Interaction):
         if interaction.type == discord.InteractionType.application_command:
-            self._audit_starts[interaction.id]=time.monotonic()
+            self._audit_starts[interaction.id]=(time.monotonic(),discord.utils.utcnow())
 
     async def _send_audit(self, interaction: discord.Interaction, result: str):
-        started=self._audit_starts.pop(interaction.id,None)
+        timing=self._audit_starts.pop(interaction.id,None)
+        started,invoked_at=timing if timing else (None,discord.utils.utcnow())
         override=self._audit_channels.pop(interaction.id,None)
         outcome,reason=self._audit_outcomes.pop(interaction.id,("SUCCESS",None)) if result=="completed" else ("FAILED","Unhandled command error")
+        command=interaction.command.qualified_name if interaction.command else "unknown"
+        duration_ms=max(0,int((time.monotonic()-started)*1000)) if started is not None else None
+        try:
+            await asyncio.wait_for(asyncio.to_thread(
+                command_audit.record, DSN,
+                interaction_id=interaction.id,
+                guild_id=interaction.guild_id,
+                channel_id=interaction.channel_id,
+                user_id=interaction.user.id,
+                command_name=command,
+                outcome=outcome,
+                reason=reason,
+                duration_ms=duration_ms,
+                invoked_at=invoked_at,
+                node_id=NODE), timeout=6)
+        except Exception:
+            log.exception("command_audit_db_failed interaction=%s", interaction.id)
         if interaction.guild is None:
             return
         try:
@@ -560,7 +578,7 @@ class Bot(discord.Client):
             if not isinstance(channel,discord.TextChannel):
                 return
             command=interaction.command.qualified_name if interaction.command else "unknown"
-            elapsed=f"{int((time.monotonic()-started)*1000)} ms" if started is not None else "unavailable"
+            elapsed=f"{duration_ms} ms" if duration_ms is not None else "unavailable"
             user=interaction.user
             embed=discord.Embed(title="BF4 Player Stats — Command audit",color=discord.Color.green() if outcome=="SUCCESS" else discord.Color.red(),timestamp=discord.utils.utcnow())
             embed.add_field(name="Command",value=f"`/{command}`",inline=False)
