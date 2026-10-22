@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+[ "$(runuser -u postgres -- psql -X -q -At -d bf4_playerstats -c 'SELECT pg_is_in_recovery()')" = 'f' ] || exit 0
 values=$(stat -f -c '%b %a %f %S' /var/lib/postgresql/16/main)
 set -- $values
 total=$(($1*$4)); avail=$(($2*$4)); free=$(($3*$4))
