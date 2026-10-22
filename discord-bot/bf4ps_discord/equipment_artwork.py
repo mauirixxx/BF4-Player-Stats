@@ -6,7 +6,9 @@ BASE = "https://www.bf4playerstats.com"
 MANIFEST = BASE + "/equipment-artwork.js"
 
 
-def fetch_weapon_artwork(guid: str) -> bytes | None:
+def fetch_equipment_artwork(kind: str, guid: str) -> bytes | None:
+    if kind not in ('weapon', 'vehicle'):
+        return None
     if not guid or len(guid) > 160 or not all(c.isalnum() or c in "_-" for c in guid):
         return None
     request = urllib.request.Request(MANIFEST, headers={"User-Agent": "BF4PS-Discord/1.0"})
@@ -16,7 +18,7 @@ def fetch_weapon_artwork(guid: str) -> bytes | None:
     if marker not in script:
         return None
     manifest = json.loads(script.split(marker, 1)[1].strip().removesuffix(";"))
-    record = manifest.get("weapon-" + guid, {})
+    record = manifest.get(kind + "-" + guid, {})
     path = record.get("fancy", {}).get("local", "")
     if not path.startswith("/assets/equipment/") or not path.lower().endswith((".png", ".webp", ".jpg", ".jpeg")):
         return None
