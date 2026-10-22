@@ -252,18 +252,9 @@ class Handler(BaseHTTPRequestHandler):
                 with engine.connect() as conn:
                     conn.execute(text("SET TRANSACTION READ ONLY"))
                     conn.execute(text("SET LOCAL statement_timeout='4000ms'"))
-                    rows = conn.execute(text("""
-                        SELECT occurred_at AS happened_at,'player' AS source,
-                               hostname_snapshot AS node,resource AS category,
-                               COALESCE(error_class,result) AS error_class,
-                               LEFT(COALESCE(error_message,''),1200) AS message,
-                               http_status,job_id::text AS reference
-                        FROM collection_events
-                        WHERE error_class IS NOT NULL OR event_type='collection_failure'
-                        ORDER BY occurred_at DESC LIMIT 50
-                    """)).mappings().all()
+                    rows = conn.execute(text("SELECT * FROM public.bf4ps_admin_recent_errors()")).mappings().all()
                 return self.reply(200, {'rows':[dict(r) for r in rows],
-                    'coverage':'Player collection events only. Platoon node-level errors are not yet centrally recorded.',
+                    'coverage':'Player and platoon collector failures, newest first. Platoon operational logging starts with this deployment.',
                     'observed_at':time.time()})
             except Exception:
                 import logging
