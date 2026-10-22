@@ -79,6 +79,36 @@ class Bot(discord.Client):
                 f"Management access: {role.mention} and higher roles, plus the guild owner." if role else
                 "Management access reset to guild owner only.",ephemeral=True)
 
+        @admin.command(name="minimumrole",description="Set the minimum role required for player statistics commands")
+        @app_commands.describe(role="Minimum player role; omit to allow Everyone")
+        async def minimumrole(interaction: discord.Interaction, role: discord.Role | None = None):
+            if interaction.guild is None:
+                await interaction.response.send_message("This command requires a server.",ephemeral=True)
+                return
+            settings=await manager_settings(interaction)
+            if settings is None:
+                await interaction.response.send_message("Settings database unavailable; no changes made.",ephemeral=True)
+                return
+            if not guild_settings.allowed(interaction.user,interaction.guild,settings):
+                await interaction.response.send_message("You are not authorized to manage this bot.",ephemeral=True)
+                return
+            if role is not None and (role.is_default() or role.is_bot_managed() or role.is_integration()):
+                await interaction.response.send_message("Choose a normal server role, not @everyone or a managed role.",ephemeral=True)
+                return
+            await interaction.response.defer(ephemeral=True)
+            try:
+                valid=await asyncio.wait_for(asyncio.to_thread(leases.is_current,DSN,NODE,self.authority),timeout=5)
+                if not valid:
+                    raise RuntimeError("leadership changed")
+                await asyncio.wait_for(asyncio.to_thread(guild_settings.set_minimum_role,
+                    DSN,interaction.guild.id,role.id if role else None,interaction.user.id),timeout=5)
+            except Exception:
+                await interaction.followup.send("Could not save the setting; please retry.",ephemeral=True)
+                return
+            await interaction.followup.send(
+                f"Player commands require {role.mention} or higher; authorized admins bypass this restriction." if role else
+                "Player commands are now available to Everyone (subject to listen-channel restrictions).",ephemeral=True)
+
         @admin.command(name="status",description="Show private bot and HA cluster status")
         async def admin_status(interaction: discord.Interaction):
             settings=await manager_settings(interaction)
@@ -114,7 +144,11 @@ class Bot(discord.Client):
             management_label=(f"{management_role.mention} and higher roles + guild owner" if management_role else
                               "Guild owner only" if not configured else "Configured role missing — guild owner only")
             embed.add_field(name="Management access",value=management_label,inline=False)
-            embed.add_field(name="Minimum role",value="Everyone (settings not yet implemented)",inline=True)
+            minimum_id=settings.get(guild_settings.MINIMUM_ROLE)
+            minimum=interaction.guild.get_role(int(minimum_id)) if minimum_id and minimum_id.isdecimal() else None
+            minimum_label=(f"{minimum.mention} and higher" if minimum else
+                           "Everyone" if not minimum_id else "Configured role missing — player access denied")
+            embed.add_field(name="Minimum role",value=minimum_label,inline=True)
             embed.add_field(name="Listen channels",value="All (settings not yet implemented)",inline=True)
             embed.add_field(name="Audit channel",value="Disabled (settings not yet implemented)",inline=True)
             embed.set_footer(text=f"Node {NODE} · Live HA control-plane snapshot")
