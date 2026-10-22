@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
-import base64
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 WIDTH, HEIGHT = 960, 600
@@ -75,9 +74,8 @@ def render_overview(stats: dict, artwork: bytes | None = None) -> bytes:
     # User-provided BF4 logo; keep its alpha and fit inside the footer.
     # An optimized base64 PNG is stored as text for the repository file API.
     try:
-        logo_path = Path(__file__).with_name("assets") / "battlefield4_wordmark.b64"
-        logo_bytes = base64.b64decode(logo_path.read_text(encoding="ascii"))
-        logo = Image.open(BytesIO(logo_bytes)).convert("RGBA")
+        logo_path = Path(__file__).with_name("assets") / "battlefield4_wordmark_commons.png"
+        logo = Image.open(logo_path).convert("RGBA")
         logo.thumbnail((218, 44), Image.Resampling.LANCZOS)
         im.paste(logo, (928 - logo.width, 548 + (44 - logo.height) // 2), logo)
     except (OSError, ValueError):
