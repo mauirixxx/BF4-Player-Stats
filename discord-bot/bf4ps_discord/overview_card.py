@@ -13,7 +13,7 @@ BG = "#20242b"
 PANEL = "#30353e"
 TILE = "#252a32"
 WHITE = "#f4f5f7"
-MUTED = "#b8bec8"
+MUTED = "#d6dbe2"
 ORANGE = "#ed8b31"
 ACCENTS = {"PC": ORANGE, "Xbox": "#107c10", "PlayStation": "#2878db"}
 
@@ -51,8 +51,8 @@ def render_overview(stats: dict, artwork: bytes | None = None) -> bytes:
         x = 24 + (i % 3) * 207
         y = 130 + (i // 3) * 120
         d.rounded_rectangle((x, y, x + 194, y + 108), radius=7, fill=TILE)
-        _text(d, (x + 14, y + 12), label, 17, MUTED, True)
-        _text(d, (x + 14, y + 47), stats.get(key, "—"), 29, WHITE, True, 11)
+        _text(d, (x + 14, y + 11), label, 18, MUTED, True)
+        _text(d, (x + 14, y + 47), stats.get(key, "—"), 31, WHITE, True, 11)
 
     d.rounded_rectangle((652, 130, 936, 476), radius=8, fill=PANEL)
     _text(d, (670, 149), "SIGNATURE EQUIPMENT", 17, accent, True)
@@ -69,7 +69,7 @@ def render_overview(stats: dict, artwork: bytes | None = None) -> bytes:
     d.rectangle((24, 508, 936, 510), fill="#4a515b")
     _text(d, (28, 531), "BF4 PLAYER STATS", 18, accent, True)
     _text(d, (320, 533), stats.get("collected", "Collection time unavailable"), 16, MUTED)
-    _text(d, (28, 568), "Statistics collected by BF4PS • Refresh subject to cooldown", 14, MUTED)
+    _text(d, (28, 568), "Statistics collected by BF4PS", 16, MUTED)
     output = BytesIO()
     im.save(output, format="PNG", optimize=True)
     return output.getvalue()
