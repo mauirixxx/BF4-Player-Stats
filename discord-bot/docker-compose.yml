@@ -1,5 +1,6 @@
 services:
   discord:
+    image: bf4ps-discord:ha-bootstrap
     build: .
     restart: unless-stopped
     env_file: .env
