@@ -5,6 +5,7 @@ import os
 import signal
 import time
 import discord
+from discord import app_commands
 from . import leases
 
 logging.basicConfig(level=logging.INFO,format="%(asctime)s %(levelname)s %(message)s")
@@ -17,6 +18,28 @@ TTL=30
 RENEW=10
 
 class Bot(discord.Client):
+    def __init__(self, authority):
+        intents=discord.Intents.none()
+        intents.guilds=True
+        super().__init__(intents=intents)
+        self.authority=authority
+        self.tree=app_commands.CommandTree(self)
+        @self.tree.command(name="ping",description="Check the BF4 Player Stats bot connection")
+        async def ping(interaction: discord.Interaction):
+            try:
+                valid=await asyncio.wait_for(asyncio.to_thread(
+                    leases.is_current,DSN,NODE,self.authority),timeout=5)
+            except Exception:
+                valid=False
+            if not valid:
+                await interaction.response.send_message("Bot leadership is changing. Please retry.",ephemeral=True)
+                return
+            await interaction.response.send_message("BF4 Player Stats bot is online! 🐹",ephemeral=True)
+
+    async def setup_hook(self):
+        synced=await self.tree.sync()
+        log.info("slash_commands_synced node=%s count=%s",NODE,len(synced))
+
     async def on_ready(self):
         log.info("discord_ready node=%s user=%s",NODE,self.user)
 
@@ -46,7 +69,7 @@ async def run():
                         next_renew=started+RENEW
                         log.info("leadership_acquired node=%s generation=%s dry_run=%s",NODE,lease.generation,DRY_RUN)
                         if not DRY_RUN:
-                            bot=Bot(intents=discord.Intents.none())
+                            bot=Bot(lease.generation)
                             session=asyncio.create_task(bot.start(TOKEN,reconnect=True))
                 elif time.monotonic()>=next_renew:
                     started=time.monotonic()

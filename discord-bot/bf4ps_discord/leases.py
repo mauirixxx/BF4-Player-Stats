@@ -68,3 +68,15 @@ def release(dsn: str, node: str, generation: int) -> bool:
                 VALUES (%s,'released',%s,NULL,%s,%s,'graceful_shutdown')""",
                 (LEASE_KEY,node,generation,generation))
             return True
+
+
+def is_current(dsn: str, node: str, generation: int) -> bool:
+    """Fence a Discord interaction against the authoritative database lease."""
+    with psycopg.connect(dsn, connect_timeout=3) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""SELECT EXISTS (
+                SELECT 1 FROM bot_leases l JOIN bot_nodes n ON n.node_id=l.owner_node_id
+                WHERE l.lease_key=%s AND l.owner_node_id=%s AND l.generation=%s
+                AND l.expires_at>clock_timestamp() AND n.enabled AND NOT n.draining
+            )""",(LEASE_KEY,node,generation))
+            return cur.fetchone()[0]
