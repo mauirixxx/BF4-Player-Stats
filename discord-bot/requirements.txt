@@ -2,3 +2,4 @@ psycopg[binary]==3.2.10
 alembic==1.16.5
 SQLAlchemy==2.0.43
 discord.py==2.6.3
+Pillow==11.3.0
