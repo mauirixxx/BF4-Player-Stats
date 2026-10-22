@@ -70,6 +70,12 @@ def render_overview(stats: dict, artwork: bytes | None = None) -> bytes:
     _text(d, (28, 531), "BF4 PLAYER STATS", 18, accent, True)
     _text(d, (320, 533), stats.get("collected", "Collection time unavailable"), 16, MUTED)
     _text(d, (28, 568), "Statistics collected by BF4PS", 16, MUTED)
+    # Footer wordmark: a condensed, bold Battlefield-inspired fallback.
+    # No proprietary Battlefield 4 font is bundled or distributed.
+    wordmark = "BATTLEFIELD 4"
+    wordmark_font = ImageFont.truetype("DejaVuSansCondensed-Bold.ttf", 25)
+    wordmark_width = d.textbbox((0, 0), wordmark, font=wordmark_font)[2]
+    d.text((928 - wordmark_width, 556), wordmark, font=wordmark_font, fill="#aeb6c1")
     output = BytesIO()
     im.save(output, format="PNG", optimize=True)
     return output.getvalue()
