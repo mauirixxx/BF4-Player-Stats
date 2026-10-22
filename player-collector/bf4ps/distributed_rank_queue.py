@@ -52,12 +52,14 @@ def claim(engine, worker):
             if not 1_048_576 <= threshold <= 1_073_741_824:
                 raise ValueError('invalid BF4PS_RANK_MAX_REPLICA_LAG_BYTES')
             replicas = c.execute(text("""
-                SELECT streaming_replicas,total_replicas,max_replay_lag_bytes
+                SELECT streaming_replicas,total_replicas,max_replay_lag_bytes,max_retained_wal_bytes
                 FROM public.bf4ps_rank_replication_admission_status()
             """)).one()
-            if (replicas.streaming_replicas != 4 or replicas.total_replicas != 4
+            if (replicas.streaming_replicas != 2 or replicas.total_replicas != 2
                     or replicas.max_replay_lag_bytes is None
-                    or replicas.max_replay_lag_bytes > threshold):
+                    or replicas.max_replay_lag_bytes > threshold
+                    or replicas.max_retained_wal_bytes is None
+                    or replicas.max_retained_wal_bytes > 32 * 1024 * 1024 * 1024):
                 return None
             # Fleet-wide duty cycle, not per-worker: only one new rank claim
             # every 5 minutes. It also bounds bursts after WAN recovery.
