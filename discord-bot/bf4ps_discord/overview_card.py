@@ -15,6 +15,7 @@ TILE = "#252a32"
 WHITE = "#f4f5f7"
 MUTED = "#b8bec8"
 ORANGE = "#ed8b31"
+ACCENTS = {"PC": ORANGE, "Xbox": "#107c10", "PlayStation": "#2878db"}
 
 
 def _font(size: int, bold: bool = False):
@@ -33,12 +34,13 @@ def render_overview(stats: dict, artwork: bytes | None = None) -> bytes:
     """Return PNG bytes; missing artwork and missing stats are supported."""
     im = Image.new("RGB", (WIDTH, HEIGHT), BG)
     d = ImageDraw.Draw(im)
-    d.rectangle((0, 0, 8, HEIGHT), fill=ORANGE)
+    accent = ACCENTS.get(stats.get("platform"), ORANGE)
+    d.rectangle((0, 0, 8, HEIGHT), fill=accent)
     d.rectangle((24, 20, 936, 115), fill=PANEL)
-    _text(d, (44, 33), "BATTLEFIELD 4  /  PLAYER OVERVIEW", 18, ORANGE, True)
-    _text(d, (44, 62), stats.get("name", "Unknown soldier"), 31, WHITE, True, 29)
-    _text(d, (650, 43), stats.get("platform", "—"), 20, MUTED)
-    _text(d, (650, 75), stats.get("hours", "—") + " HOURS", 20, WHITE, True)
+    _text(d, (44, 33), "BATTLEFIELD 4  /  PLAYER OVERVIEW", 19, accent, True)
+    _text(d, (44, 62), stats.get("name", "Unknown soldier"), 37, WHITE, True, 25)
+    _text(d, (650, 43), stats.get("platform", "—"), 23, MUTED)
+    _text(d, (650, 75), stats.get("hours", "—") + " HOURS", 24, WHITE, True)
 
     tiles = [
         ("KILLS", "kills"), ("DEATHS", "deaths"), ("K/D RATIO", "kd"),
@@ -49,11 +51,11 @@ def render_overview(stats: dict, artwork: bytes | None = None) -> bytes:
         x = 24 + (i % 3) * 207
         y = 130 + (i // 3) * 120
         d.rounded_rectangle((x, y, x + 194, y + 108), radius=7, fill=TILE)
-        _text(d, (x + 15, y + 16), label, 15, MUTED, True)
-        _text(d, (x + 15, y + 51), stats.get(key, "—"), 23, WHITE, True, 12)
+        _text(d, (x + 14, y + 12), label, 17, MUTED, True)
+        _text(d, (x + 14, y + 47), stats.get(key, "—"), 29, WHITE, True, 11)
 
     d.rounded_rectangle((652, 130, 936, 476), radius=8, fill=PANEL)
-    _text(d, (670, 149), "SIGNATURE EQUIPMENT", 16, ORANGE, True)
+    _text(d, (670, 149), "SIGNATURE EQUIPMENT", 17, accent, True)
     if artwork:
         try:
             source = Image.open(BytesIO(artwork)).convert("RGBA")
@@ -62,10 +64,10 @@ def render_overview(stats: dict, artwork: bytes | None = None) -> bytes:
         except (OSError, ValueError):
             pass
     d = ImageDraw.Draw(im)
-    _text(d, (669, 392), stats.get("equipment_name", "Not collected"), 19, WHITE, True, 22)
-    _text(d, (669, 426), stats.get("equipment_kills", "—") + " kills", 18, MUTED)
+    _text(d, (669, 392), stats.get("equipment_name", "Not collected"), 21, WHITE, True, 22)
+    _text(d, (669, 426), stats.get("equipment_kills", "—") + " kills", 20, MUTED)
     d.rectangle((24, 508, 936, 510), fill="#4a515b")
-    _text(d, (28, 531), "BF4 PLAYER STATS", 17, ORANGE, True)
+    _text(d, (28, 531), "BF4 PLAYER STATS", 18, accent, True)
     _text(d, (320, 533), stats.get("collected", "Collection time unavailable"), 16, MUTED)
     _text(d, (28, 568), "Statistics collected by BF4PS • Refresh subject to cooldown", 14, MUTED)
     output = BytesIO()
