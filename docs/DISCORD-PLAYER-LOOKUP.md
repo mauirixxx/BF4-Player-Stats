@@ -1,6 +1,6 @@
 # `/pstats player` — initial exact-name lookup
 
-The initial public player lookup is `/pstats player name:<exact name> platform:<PC|PlayStation 4|Xbox One>`.
+The initial public player lookup is `/pstats player name:<exact name> platform:<PC|PlayStation|Xbox>`.
 
 It searches the **current** soldier name only, case-insensitively, using the existing `ix_soldiers_current_name_lower` index and a platform filter. No substring search, autocomplete, historical alias search, or fuzzy matching. The verified live schema has `soldiers(current_name,platform,persona_id,last_seen_at,soldier_id)`; platform values are `pc`, `ps4`, and `xboxone`. The read-only query has a 4-second server-side statement timeout, a 4-second connect timeout, and LIMIT 2 to detect duplicate current-name matches rather than selecting an arbitrary identity.
 
