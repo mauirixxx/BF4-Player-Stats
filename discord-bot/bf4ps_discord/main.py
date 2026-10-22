@@ -410,9 +410,8 @@ class Bot(discord.Client):
                 }
                 png = await asyncio.to_thread(render_overview, fields)
                 attachment = discord.File(BytesIO(png), filename="bf4-overview.png")
-                card = discord.Embed(color=discord.Color.default())
-                card.set_image(url="attachment://bf4-overview.png")
-                await interaction.followup.send(embed=card, file=attachment)
+                # A native image attachment uses Discord's wider image preview.
+                await interaction.followup.send(file=attachment)
             except Exception:
                 log.exception("overview_card_render_failed")
                 await interaction.followup.send(embed=embed)
