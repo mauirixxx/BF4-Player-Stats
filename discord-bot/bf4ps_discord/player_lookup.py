@@ -41,7 +41,7 @@ def find_signature_weapon(dsn: str, soldier_id: int):
     with psycopg.connect(dsn, connect_timeout=4,
                          options='-c default_transaction_read_only=on -c statement_timeout=4000') as conn:
         with conn.cursor() as cur:
-            cur.execute("""SELECT c.name, c.weapon_guid, w.kills
+            cur.execute("""SELECT c.name, c.slug, w.kills
                 FROM public.soldier_weapon_stats AS w
                 JOIN public.weapon_catalog AS c ON c.weapon_id=w.weapon_id
                 WHERE w.soldier_id=%s AND w.kills>0
