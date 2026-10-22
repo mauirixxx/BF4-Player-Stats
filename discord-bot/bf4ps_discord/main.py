@@ -579,8 +579,14 @@ class Bot(discord.Client):
             pass
 
     async def setup_hook(self):
-        synced=await self.tree.sync()
-        log.info("slash_commands_synced node=%s count=%s",NODE,len(synced))
+        # Global slash commands persist at Discord between bot restarts.
+        # Avoid blocking Gateway readiness on a network sync every HA handover.
+        # Opt in to a sync only when command definitions are intentionally changed.
+        if os.environ.get("SYNC_SLASH_COMMANDS", "0") == "1":
+            synced = await self.tree.sync()
+            log.info("slash_commands_synced node=%s count=%s", NODE, len(synced))
+        else:
+            log.info("slash_commands_sync_skipped node=%s (existing Discord registrations retained)", NODE)
 
     async def on_ready(self):
         log.info("discord_ready node=%s user=%s",NODE,self.user)
