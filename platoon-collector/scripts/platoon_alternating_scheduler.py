@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Single-flight alternating 15-second platoon/soldier scheduler."""
+"""Single-flight alternating 5-second platoon/soldier scheduler."""
 import fcntl
+import socket
 import os
 import subprocess
 import sys
@@ -36,8 +37,24 @@ def main():
         script='platoon_queue_worker.py' if chosen=='platoon' else 'discover_soldier_platoons.py'
         print('Scheduler selected',chosen,flush=True)
         start=time.monotonic()
-        result=subprocess.run([sys.executable,str(SCRIPTS/script)],timeout=210)
-        print('Scheduler result',chosen,'exit',result.returncode,'duration_ms',round((time.monotonic()-start)*1000),flush=True)
-        return result.returncode
+        try:
+            result=subprocess.run([sys.executable,str(SCRIPTS/script)],timeout=210,capture_output=True,text=True,errors='replace')
+            if result.stdout: print(result.stdout,end='',flush=True)
+            if result.stderr: print(result.stderr,end='',file=sys.stderr,flush=True)
+            code=result.returncode
+            detail=(result.stderr or result.stdout or 'Child process exited nonzero')[-1200:]
+        except Exception as exc:
+            code=1
+            detail=f'{type(exc).__name__}: {exc}'[-1200:]
+            print('Scheduler execution failed:',detail,file=sys.stderr,flush=True)
+        if code:
+            def quoted(v):return "'"+str(v).replace("'","''")+"'"
+            try:
+                query('INSERT INTO platoon_collector_errors(hostname,work_kind,error_class,error_message) VALUES ('+
+                      ','.join(quoted(v) for v in (socket.gethostname(),chosen,'child_failure',detail))+')')
+            except Exception as log_exc:
+                print('Central error log write failed:',log_exc,file=sys.stderr,flush=True)
+        print('Scheduler result',chosen,'exit',code,'duration_ms',round((time.monotonic()-start)*1000),flush=True)
+        return code
 
 if __name__=='__main__':sys.exit(main())
