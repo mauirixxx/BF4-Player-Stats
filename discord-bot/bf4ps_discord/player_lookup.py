@@ -1,7 +1,7 @@
 """Bounded exact current-name lookup, independent read-only statistics connection."""
 import psycopg
 
-PLATFORMS = {'PC': 'pc', 'PlayStation 4': 'ps4', 'Xbox One': 'xboxone'}
+PLATFORMS = {'PC': 'pc', 'PlayStation': 'ps4', 'Xbox': 'xboxone'}
 
 
 def find_player(dsn: str, name: str, platform: str):
