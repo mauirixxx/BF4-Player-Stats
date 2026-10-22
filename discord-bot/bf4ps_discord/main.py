@@ -388,7 +388,34 @@ class Bot(discord.Client):
                 f"**{best}**  ·  {count(available[best])} score" if best else "—"),inline=False)
             embed.set_footer(text=f"BF4 Player Stats  •  Persona ID {persona_id}  •  "+(
                 f"Collected {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet"))
-            await interaction.followup.send(embed=embed)
+            try:
+                from io import BytesIO
+                from .overview_card import render_overview
+                fields = {
+                    "name": current_name,
+                    "platform": platform.name,
+                    "hours": f"{hours:,.1f}" if hours is not None else "—",
+                    "kills": count(kills),
+                    "deaths": count(deaths),
+                    "kd": ratio(kills, deaths),
+                    "accuracy": percent(shots_hit, shots_fired),
+                    "streak": count(streak),
+                    "kpm": ratio(kills, seconds / 60) if seconds else "—",
+                    "spm": ratio(total_score, seconds / 60) if seconds else "—",
+                    "win_rate": percent(wins, wins + losses) if wins is not None and losses is not None else "—",
+                    "best_class": best or "—",
+                    "equipment_name": "Equipment coming soon",
+                    "equipment_kills": "—",
+                    "collected": f"Collected {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet",
+                }
+                png = await asyncio.to_thread(render_overview, fields)
+                attachment = discord.File(BytesIO(png), filename="bf4-overview.png")
+                card = discord.Embed(title=f"Battlefield 4 | {safe_name}", color=0xE67E22)
+                card.set_image(url="attachment://bf4-overview.png")
+                await interaction.followup.send(embed=card, file=attachment)
+            except Exception:
+                log.exception("overview_card_render_failed")
+                await interaction.followup.send(embed=embed)
 
         self.tree.add_command(pstats)
 
