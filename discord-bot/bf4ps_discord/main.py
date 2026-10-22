@@ -367,23 +367,27 @@ class Bot(discord.Client):
             classes={"Assault":assault,"Engineer":engineer,"Support":support,"Recon":recon}
             available={key:value for key,value in classes.items() if value is not None}
             best=max(available,key=available.get) if available else None
-            embed=discord.Embed(title=f"Battlefield 4 | Overview | {current_name}",
-                                color=discord.Color.orange())
-            embed.add_field(name="Platform",value=platform.name,inline=True)
-            embed.add_field(name="Rank",value=count(rank),inline=True)
-            embed.add_field(name="Time played",value=f"{hours:,.1f} hours" if hours is not None else "—",inline=True)
-            embed.add_field(name="Kills",value=count(kills),inline=True)
-            embed.add_field(name="Deaths",value=count(deaths),inline=True)
-            embed.add_field(name="K/D ratio",value=ratio(kills,deaths),inline=True)
-            embed.add_field(name="Accuracy",value=percent(shots_hit,shots_fired),inline=True)
-            embed.add_field(name="Highest killstreak",value=count(streak),inline=True)
-            embed.add_field(name="Kills per minute",value=ratio(kills,seconds/60) if seconds else "—",inline=True)
-            embed.add_field(name="Score per minute",value=ratio(total_score,seconds/60) if seconds else "—",inline=True)
-            embed.add_field(name="Wins / Losses",value=f"{count(wins)} / {count(losses)}",inline=True)
-            embed.add_field(name="Win rate",value=percent(wins,(wins+losses) if wins is not None and losses is not None else None),inline=True)
-            embed.add_field(name="Best class",value=f"{best} ({count(available[best])} score)" if best else "—",inline=False)
-            embed.set_footer(text=f"PC/console identity: {persona_id} · BF4PS collected data · "+(
-                f"Updated {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet"))
+            # Presentation only: preserve the verified read-only query and calculations.
+            safe_name=discord.utils.escape_markdown(current_name)
+            embed=discord.Embed(
+                title=f"🎖️ {safe_name}  •  Battlefield 4",
+                description=f"**{platform.name}**  ·  **Rank {count(rank)}**  ·  "
+                            + (f"**{hours:,.1f} hours played**" if hours is not None else "**Playtime unavailable**"),
+                color=0xE67E22,
+            )
+            embed.add_field(name="⚔️ KILLS",value=f"**{count(kills)}**",inline=True)
+            embed.add_field(name="☠️ DEATHS",value=f"**{count(deaths)}**",inline=True)
+            embed.add_field(name="🎯 K/D",value=f"**{ratio(kills,deaths)}**",inline=True)
+            embed.add_field(name="🎯 ACCURACY",value=f"**{percent(shots_hit,shots_fired)}**",inline=True)
+            embed.add_field(name="🔥 BEST STREAK",value=f"**{count(streak)}**",inline=True)
+            embed.add_field(name="⚡ KILLS/MIN",value=f"**{ratio(kills,seconds/60) if seconds else '—'}**",inline=True)
+            embed.add_field(name="🏆 WINS / LOSSES",value=f"**{count(wins)} / {count(losses)}**",inline=True)
+            embed.add_field(name="📈 WIN RATE",value=f"**{percent(wins,(wins+losses) if wins is not None and losses is not None else None)}**",inline=True)
+            embed.add_field(name="⭐ SCORE/MIN",value=f"**{ratio(total_score,seconds/60) if seconds else '—'}**",inline=True)
+            embed.add_field(name="🛡️ BEST CLASS",value=(
+                f"**{best}**  ·  {count(available[best])} score" if best else "—"),inline=False)
+            embed.set_footer(text=f"BF4 Player Stats  •  Persona ID {persona_id}  •  "+(
+                f"Collected {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet"))
             await interaction.followup.send(embed=embed)
 
         self.tree.add_command(pstats)
