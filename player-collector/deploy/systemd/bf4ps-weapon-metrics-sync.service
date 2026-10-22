@@ -1,0 +1,15 @@
+[Unit]
+Description=BF4PS paced weapon leaderboard reconciliation (MAK-01)
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=35
+ExecStart=/usr/bin/docker run --rm --name bf4ps-weapon-metrics-sync --network host --env-file /opt/bf4ps-production/deploy/docker/collector.env -e BF4PS_SYNC_STATE_DIR=/state -e BF4PS_SYNC_INTERVAL_SECONDS=60 -v /opt/bf4ps-distributed-ranking/player-collector:/rank:ro -v /var/lib/bf4ps-weapon-metrics-sync:/state -w /rank --entrypoint python bf4-player-stats:collector-ranking-versions-0016-candidate /rank/scripts/weapon_metrics_sync.py
+ExecStop=/usr/bin/docker stop -t 30 bf4ps-weapon-metrics-sync
+
+[Install]
+WantedBy=multi-user.target
