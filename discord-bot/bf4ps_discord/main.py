@@ -438,11 +438,16 @@ class Bot(discord.Client):
                     style=discord.ButtonStyle.secondary,
                     disabled=True,
                 ))
+                platform_plus = {
+                    "PC": discord.PartialEmoji(name="bf4ps_plus_pc", id=1562938945388679188),
+                    "Xbox": discord.PartialEmoji(name="bf4ps_plus_xbox", id=1562938947137699930),
+                    "PlayStation": discord.PartialEmoji(name="bf4ps_plus_playstation", id=1562938948442001440),
+                }
                 buttons.add_item(discord.ui.Button(
                     label="Add Bot",
                     style=discord.ButtonStyle.link,
                     url="https://add.bf4playerstats.com",
-                    emoji="➕",
+                    emoji=platform_plus.get(platform.name, platform_plus["PC"]),
                 ))
                 await interaction.followup.send(file=attachment, view=buttons)
             except Exception:
