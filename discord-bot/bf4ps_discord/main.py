@@ -438,6 +438,12 @@ class Bot(discord.Client):
                     style=discord.ButtonStyle.secondary,
                     disabled=True,
                 ))
+                buttons.add_item(discord.ui.Button(
+                    label="Add Bot",
+                    style=discord.ButtonStyle.link,
+                    url="https://add.bf4playerstats.com",
+                    emoji="➕",
+                ))
                 await interaction.followup.send(file=attachment, view=buttons)
             except Exception:
                 log.exception("overview_card_render_failed")
