@@ -356,7 +356,7 @@ class Bot(discord.Client):
                 return
             (current_name,found_platform,persona_id,rank,seconds,kills,deaths,
              shots_fired,shots_hit,streak,wins,losses,total_score,
-             assault,engineer,support,recon,fetched_at)=matches[0]
+             assault,engineer,support,recon,fetched_at,soldier_id)=matches[0]
             def count(value):
                 return f"{value:,}" if value is not None else "—"
             def ratio(numerator,denominator,digits=2):
@@ -411,7 +411,18 @@ class Bot(discord.Client):
                 png = await asyncio.to_thread(render_overview, fields)
                 attachment = discord.File(BytesIO(png), filename="bf4-overview.png")
                 # A native image attachment uses Discord's wider image preview.
-                await interaction.followup.send(file=attachment)
+                buttons = discord.ui.View(timeout=None)
+                buttons.add_item(discord.ui.Button(
+                    label="Player Dossier",
+                    style=discord.ButtonStyle.link,
+                    url=f"https://www.bf4playerstats.com/soldier.html?id={soldier_id}",
+                ))
+                buttons.add_item(discord.ui.Button(
+                    label="Refresh Stats (coming soon)",
+                    style=discord.ButtonStyle.secondary,
+                    disabled=True,
+                ))
+                await interaction.followup.send(file=attachment, view=buttons)
             except Exception:
                 log.exception("overview_card_render_failed")
                 await interaction.followup.send(embed=embed)
