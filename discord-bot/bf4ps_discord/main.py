@@ -337,7 +337,7 @@ class Bot(discord.Client):
             try:
                 if not await asyncio.wait_for(asyncio.to_thread(leases.is_current,DSN,NODE,self.authority),timeout=5):
                     raise RuntimeError("Leadership changed")
-                matches=await asyncio.wait_for(asyncio.to_thread(player_lookup.find_player,STATS_DSN,name.strip(),platform.value),timeout=7)
+                matches=await asyncio.wait_for(asyncio.to_thread(player_lookup.find_player_overview,STATS_DSN,name.strip(),platform.value),timeout=7)
             except ValueError:
                 self.audit_result(interaction,"BLOCKED","Invalid lookup")
                 await interaction.followup.send("Enter a valid player name (up to 100 characters).")
@@ -354,12 +354,36 @@ class Bot(discord.Client):
                 self.audit_result(interaction,"BLOCKED","Multiple exact-name matches")
                 await interaction.followup.send("Multiple players share that exact name on this platform. Identity selection is not implemented yet.")
                 return
-            current_name,found_platform,persona_id=matches[0]
-            embed=discord.Embed(title="Player found",color=discord.Color.green())
-            embed.add_field(name="Name",value=discord.utils.escape_markdown(current_name),inline=False)
+            (current_name,found_platform,persona_id,rank,seconds,kills,deaths,
+             shots_fired,shots_hit,streak,wins,losses,total_score,
+             assault,engineer,support,recon,fetched_at)=matches[0]
+            def count(value):
+                return f"{value:,}" if value is not None else "—"
+            def ratio(numerator,denominator,digits=2):
+                return f"{numerator/denominator:.{digits}f}" if numerator is not None and denominator else "—"
+            def percent(numerator,denominator):
+                return f"{100*numerator/denominator:.1f}%" if numerator is not None and denominator else "—"
+            hours=seconds/3600 if seconds is not None else None
+            classes={"Assault":assault,"Engineer":engineer,"Support":support,"Recon":recon}
+            available={key:value for key,value in classes.items() if value is not None}
+            best=max(available,key=available.get) if available else None
+            embed=discord.Embed(title=f"Battlefield 4 | Overview | {current_name}",
+                                color=discord.Color.orange())
             embed.add_field(name="Platform",value=platform.name,inline=True)
-            embed.add_field(name="Persona ID",value=str(persona_id),inline=True)
-            embed.set_footer(text="Exact current-name lookup · Statistics coming later")
+            embed.add_field(name="Rank",value=count(rank),inline=True)
+            embed.add_field(name="Time played",value=f"{hours:,.1f} hours" if hours is not None else "—",inline=True)
+            embed.add_field(name="Kills",value=count(kills),inline=True)
+            embed.add_field(name="Deaths",value=count(deaths),inline=True)
+            embed.add_field(name="K/D ratio",value=ratio(kills,deaths),inline=True)
+            embed.add_field(name="Accuracy",value=percent(shots_hit,shots_fired),inline=True)
+            embed.add_field(name="Highest killstreak",value=count(streak),inline=True)
+            embed.add_field(name="Kills per minute",value=ratio(kills,seconds/60) if seconds else "—",inline=True)
+            embed.add_field(name="Score per minute",value=ratio(total_score,seconds/60) if seconds else "—",inline=True)
+            embed.add_field(name="Wins / Losses",value=f"{count(wins)} / {count(losses)}",inline=True)
+            embed.add_field(name="Win rate",value=percent(wins,(wins+losses) if wins is not None and losses is not None else None),inline=True)
+            embed.add_field(name="Best class",value=f"{best} ({count(available[best])} score)" if best else "—",inline=False)
+            embed.set_footer(text=f"PC/console identity: {persona_id} · BF4PS collected data · "+(
+                f"Updated {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet"))
             await interaction.followup.send(embed=embed)
 
         self.tree.add_command(pstats)
