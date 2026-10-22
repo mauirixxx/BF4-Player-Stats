@@ -71,13 +71,15 @@ def render_overview(stats: dict, artwork: bytes | None = None) -> bytes:
     _text(d, (28, 531), "BF4 PLAYER STATS", 18, accent, True)
     _text(d, (320, 533), stats.get("collected", "Collection time unavailable"), 16, MUTED)
     _text(d, (28, 568), "Statistics collected by BF4PS", 16, MUTED)
-    # User-provided BF4 logo; keep its alpha and fit inside the footer.
-    # An optimized base64 PNG is stored as text for the repository file API.
+    # Center the high-resolution BF4 wordmark in the open right-hand footer area.
     try:
         logo_path = Path(__file__).with_name("assets") / "battlefield4_wordmark_commons.png"
         logo = Image.open(logo_path).convert("RGBA")
-        logo.thumbnail((218, 44), Image.Resampling.LANCZOS)
-        im.paste(logo, (928 - logo.width, 548 + (44 - logo.height) // 2), logo)
+        logo.thumbnail((290, 54), Image.Resampling.LANCZOS)
+        # Footer branding area: x=630..936, y=522..596.
+        logo_x = 630 + (306 - logo.width) // 2
+        logo_y = 522 + (74 - logo.height) // 2
+        im.paste(logo, (logo_x, logo_y), logo)
     except (OSError, ValueError):
         # Keep statistics usable even if the optional branding asset is absent.
         pass
