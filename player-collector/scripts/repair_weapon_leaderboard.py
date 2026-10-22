@@ -31,7 +31,7 @@ with engine.begin() as c:
         WHERE e.platform=s.platform AND e.persona_id=s.persona_id AND e.active)"""),{"item":a.weapon_id}).scalar_one()
     indexed=c.execute(text("SELECT count(*) FROM weapon_leaderboard_metrics WHERE weapon_id=:item"),{"item":a.weapon_id}).scalar_one()
     print(dict(weapon=a.weapon_id,eligible_raw=raw,indexed=indexed,apply=a.apply),flush=True)
-    if not a.apply: return_value=None
+    if not a.apply: pass
     else:
         # Upsert only new or changed source snapshots; avoid rewriting 100k rows every run.
         upsert=c.execute(text("""INSERT INTO weapon_leaderboard_metrics
@@ -64,7 +64,8 @@ with engine.begin() as c:
               VALUES('weapon',:item,:platform,:n)
               ON CONFLICT(kind,item_id,platform) DO UPDATE SET population=EXCLUDED.population"""),
               {"item":a.weapon_id,"platform":platform,"n":n})
-        # Scope versions invalidate in-flight publishers; all-platform included.
-        c.execute(text("""UPDATE equipment_rank_scope_versions SET version=version+1
-           WHERE kind='weapon' AND item_id=:item"""),{"item":a.weapon_id})
+        # Only invalidate ranking publishers when the read model actually changed.
+        if upsert:
+            c.execute(text("""UPDATE equipment_rank_scope_versions SET version=version+1
+               WHERE kind='weapon' AND item_id=:item"""),{"item":a.weapon_id})
         print(dict(upserted=upsert,populations=dict(counts)),flush=True)
