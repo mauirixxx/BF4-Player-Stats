@@ -48,7 +48,7 @@ Exact node priority beyond RNT and MAK, Discord application name/token, initial 
 - Following code deployment, RNT acquired generation 9, Discord reported `slash_commands_synced count=1`, connected Gateway and emitted `discord_ready`; MAK remained standby. Operator subsequently verified `/ping` interaction and private response.
 - `/ping` checks authoritative `bot_leases` owner, generation, expiration, node enabled/draining before replying; errors fail closed. Command code committed as `c6947a7` on `main`.
 - Remaining validation: ungraceful process kill, delayed network partition/lease expiration with an actual Gateway, DB primary failover while active, duplicate-session observation, host reboot, and long soak. **Do not mark these passed without test evidence.**
-- Caution: current containers are running live; deployment changes must preserve a single leader. No player statistics commands have been deployed yet.
+- Caution: current containers are running live; deployment changes must preserve a single leader. `/pstats player` is now deployed on both nodes; operator verified two player embeds. RNT acquired leadership generation 29 during the overview rollout, synchronized three top-level slash commands, and connected to the Gateway.
 
 ## Next milestone — player statistics commands
 - Start with a read-only `/player` soldier lookup by player name and platform, subject to reviewing `docs/database-schema.md`, `docs/operational-schema.md`, and live schema first.
@@ -56,4 +56,4 @@ Exact node priority beyond RNT and MAK, Discord application name/token, initial 
 - Add user-approved Discord embeds, test from development server, then equipment/leaderboard commands. Use `main` for rapid iteration per operator direction; no additional development branch required.
 
 ## Next feature priority update — 2026-10-22
-Operator moved **guild management settings and command auditing ahead of `/player`**. Requirements are recorded in [Discord bot architecture](DISCORD-BOT-ARCHITECTURE.md). No management command code has been deployed; implementation is paused for a BF4SW outage investigation.
+Operator prioritized guild management settings and command auditing ahead of player lookup. Those features are now implemented; `/pstats player` detailed overview is also live. Both nodes use the dedicated read-only BF4PS statistics connection. Existing remaining HA fault-injection and soak gates are not claimed as passed.
