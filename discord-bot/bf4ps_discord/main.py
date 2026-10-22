@@ -605,7 +605,31 @@ class Bot(discord.Client):
             log.info("slash_commands_sync_skipped node=%s (existing Discord registrations retained)", NODE)
 
     async def on_ready(self):
-        log.info("discord_ready node=%s user=%s",NODE,self.user)
+        log.info("discord_ready node=%s user=%s guilds=%s", NODE, self.user, len(self.guilds))
+        await self._register_guilds(self.guilds)
+
+    async def _register_guilds(self, guilds):
+        ids = [guild.id for guild in guilds if not guild.unavailable]
+        if not ids:
+            return
+        try:
+            await asyncio.wait_for(asyncio.to_thread(guild_settings.mark_present, DSN, ids), timeout=12)
+            log.info("discord_guilds_registered count=%d", len(ids))
+        except Exception:
+            log.exception("discord_guilds_registration_failed")
+
+    async def on_guild_join(self, guild: discord.Guild):
+        await self._register_guilds([guild])
+
+    async def on_guild_available(self, guild: discord.Guild):
+        await self._register_guilds([guild])
+
+    async def on_guild_remove(self, guild: discord.Guild):
+        try:
+            await asyncio.wait_for(asyncio.to_thread(guild_settings.mark_removed, DSN, guild.id), timeout=7)
+            log.info("discord_guild_removed guild_id=%s", guild.id)
+        except Exception:
+            log.exception("discord_guild_removal_failed guild_id=%s", guild.id)
 
 async def run():
     if not DRY_RUN and (not TOKEN or TOKEN=="REPLACE_ME"):
