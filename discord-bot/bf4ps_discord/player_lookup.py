@@ -74,3 +74,30 @@ def find_signature_equipment(dsn: str, soldier_id: int):
             ORDER BY kills DESC, kind ASC, item_id ASC LIMIT 1""",
                         (soldier_id, soldier_id))
             return cur.fetchone()
+
+
+def find_top_equipment(dsn: str, soldier_id: int, kind: str):
+    """Return up to nine top-kill weapons or vehicles from documented current tables.
+
+    Each record: (localization_key, slug, kills, equipped_seconds, fetched_at).
+    No aggregation: variants remain distinct, matching the stored equipment rows.
+    """
+    if kind not in ("weapons", "vehicles"):
+        raise ValueError("Invalid equipment view")
+    if kind == "weapons":
+        query = """SELECT c.name, c.slug, s.kills, s.time_equipped_seconds, s.source_fetched_at
+            FROM public.soldier_weapon_stats AS s
+            JOIN public.weapon_catalog AS c ON c.weapon_id=s.weapon_id
+            WHERE s.soldier_id=%s AND s.kills>0
+            ORDER BY s.kills DESC, s.weapon_id ASC LIMIT 9"""
+    else:
+        query = """SELECT c.name, c.slug, s.kills, s.time_in_seconds, s.source_fetched_at
+            FROM public.soldier_vehicle_stats AS s
+            JOIN public.vehicle_catalog AS c ON c.vehicle_id=s.vehicle_id
+            WHERE s.soldier_id=%s AND s.kills>0
+            ORDER BY s.kills DESC, s.vehicle_id ASC LIMIT 9"""
+    with psycopg.connect(dsn, connect_timeout=4,
+                         options='-c default_transaction_read_only=on -c statement_timeout=4000') as conn:
+        with conn.cursor() as cur:
+            cur.execute(query, (soldier_id,))
+            return cur.fetchall()
