@@ -90,9 +90,13 @@ def update_listen_channel(dsn: str, guild_id: int, channel_id: int, add: bool, a
             row=cur.fetchone()
             channels=listen_channel_ids({LISTEN_CHANNELS:row[0]}) if row else set()
             if add:
+                if channel_id in channels:
+                    raise ValueError("Channel already configured")
                 channels.add(channel_id)
             else:
-                channels.discard(channel_id)
+                if channel_id not in channels:
+                    raise ValueError("Channel not configured")
+                channels.remove(channel_id)
             if not channels:
                 cur.execute('DELETE FROM discord_guild_settings WHERE guild_id=%s AND setting_key=%s',(guild_id,LISTEN_CHANNELS))
             else:

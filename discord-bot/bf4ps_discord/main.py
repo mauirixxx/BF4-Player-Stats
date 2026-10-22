@@ -112,7 +112,7 @@ class Bot(discord.Client):
         @admin.command(name="listenchannel",description="Add or remove a channel for player commands")
         @app_commands.describe(action="Add or remove an allowed channel",channel="Text channel for player commands")
         @app_commands.choices(action=[app_commands.Choice(name="Add",value="add"),app_commands.Choice(name="Remove",value="remove")])
-        async def listenchannel(interaction: discord.Interaction, action: app_commands.Choice[str], channel: discord.TextChannel):
+        async def listenchannel(interaction: discord.Interaction, action: app_commands.Choice[str], channel: str):
             if interaction.guild is None:
                 await interaction.response.send_message("This command requires a server.",ephemeral=True)
                 return
@@ -123,13 +123,19 @@ class Bot(discord.Client):
             if not guild_settings.allowed(interaction.user,interaction.guild,settings):
                 await interaction.response.send_message("You are not authorized to manage this bot.",ephemeral=True)
                 return
+            if not channel.isdecimal() or not isinstance(interaction.guild.get_channel(int(channel)),discord.TextChannel):
+                await interaction.response.send_message("Choose a valid server text channel.",ephemeral=True)
+                return
             await interaction.response.defer(ephemeral=True)
             try:
                 valid=await asyncio.wait_for(asyncio.to_thread(leases.is_current,DSN,NODE,self.authority),timeout=5)
                 if not valid:
                     raise RuntimeError("leadership changed")
                 channels=await asyncio.wait_for(asyncio.to_thread(guild_settings.update_listen_channel,
-                    DSN,interaction.guild.id,channel.id,action.value=="add",interaction.user.id),timeout=5)
+                    DSN,interaction.guild.id,int(channel),action.value=="add",interaction.user.id),timeout=5)
+            except ValueError as exc:
+                await interaction.followup.send(str(exc)+". No changes made.",ephemeral=True)
+                return
             except Exception:
                 await interaction.followup.send("Could not update listen channels; please retry.",ephemeral=True)
                 return
@@ -138,6 +144,25 @@ class Bot(discord.Client):
                 await interaction.followup.send("Player listen channels: "+", ".join(mentions)[:1700]+". Admins can use all channels.",ephemeral=True)
             else:
                 await interaction.followup.send("No listen channels configured — player commands allowed in all channels.",ephemeral=True)
+
+        @listenchannel.autocomplete("channel")
+        async def listenchannel_autocomplete(interaction: discord.Interaction, current: str):
+            if interaction.guild is None:
+                return []
+            settings=await manager_settings(interaction)
+            if settings is None or not guild_settings.allowed(interaction.user,interaction.guild,settings):
+                return []
+            try:
+                configured=guild_settings.listen_channel_ids(settings)
+            except ValueError:
+                return []
+            action=interaction.namespace.action
+            action=action.value if isinstance(action,app_commands.Choice) else action
+            if action not in ("add","remove"):
+                return []
+            channels=[c for c in interaction.guild.text_channels if (c.id not in configured if action=="add" else c.id in configured)]
+            query=current.lower().lstrip("#")
+            return [app_commands.Choice(name="#"+c.name,value=str(c.id)) for c in channels if query in c.name.lower() or query in str(c.id)][:25]
 
         @admin.command(name="status",description="Show private bot and HA cluster status")
         async def admin_status(interaction: discord.Interaction):
