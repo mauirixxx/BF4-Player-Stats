@@ -27,7 +27,7 @@ def find_player_overview(dsn: str, name: str, platform: str):
                 d.shots_fired, d.shots_hit, d.highest_kill_streak,
                 d.wins, d.losses, d.total_score,
                 d.assault_score, d.engineer_score, d.support_score, d.recon_score,
-                d.source_fetched_at
+                d.source_fetched_at, s.soldier_id
                 FROM public.soldiers AS s
                 LEFT JOIN public.detailed_stats_current AS d ON d.soldier_id=s.soldier_id
                 WHERE lower(s.current_name)=lower(%s) AND s.platform=%s
