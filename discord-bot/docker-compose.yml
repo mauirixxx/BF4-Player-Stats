@@ -1,0 +1,8 @@
+services:
+  discord:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ID: ${NODE_ID:?set NODE_ID}
+    stop_grace_period: 15s
