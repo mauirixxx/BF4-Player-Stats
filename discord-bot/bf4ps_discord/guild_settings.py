@@ -110,3 +110,21 @@ def update_listen_channel(dsn: str, guild_id: int, channel_id: int, add: bool, a
 
 def set_audit_channel(dsn: str, guild_id: int, channel_id: int | None, actor_id: int) -> None:
     set_role(dsn,guild_id,AUDIT_CHANNEL,channel_id,actor_id)
+
+def change_audit_channel(dsn: str, guild_id: int, channel_id: int, setting: bool, actor_id: int) -> None:
+    """Atomic compare-and-set prevents duplicates and stale removals."""
+    with psycopg.connect(dsn,connect_timeout=3) as conn:
+        with conn.cursor() as cur:
+            cur.execute('INSERT INTO discord_guilds(guild_id) VALUES (%s) ON CONFLICT (guild_id) DO NOTHING',(guild_id,))
+            cur.execute('SELECT guild_id FROM discord_guilds WHERE guild_id=%s FOR UPDATE',(guild_id,))
+            cur.execute('SELECT setting_value FROM discord_guild_settings WHERE guild_id=%s AND setting_key=%s',(guild_id,AUDIT_CHANNEL))
+            row=cur.fetchone()
+            current=row[0] if row else None
+            if setting:
+                if current==str(channel_id):
+                    raise ValueError('Channel already configured')
+                cur.execute("INSERT INTO discord_guild_settings(guild_id,setting_key,setting_value,value_type,updated_by) VALUES (%s,%s,%s,'integer',%s) ON CONFLICT (guild_id,setting_key) DO UPDATE SET setting_value=excluded.setting_value,updated_by=excluded.updated_by,updated_at=now()",(guild_id,AUDIT_CHANNEL,str(channel_id),actor_id))
+            else:
+                if current!=str(channel_id):
+                    raise ValueError('Channel not configured')
+                cur.execute('DELETE FROM discord_guild_settings WHERE guild_id=%s AND setting_key=%s',(guild_id,AUDIT_CHANNEL))

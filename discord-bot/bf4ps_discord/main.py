@@ -165,32 +165,60 @@ class Bot(discord.Client):
             query=current.lower().lstrip("#")
             return [app_commands.Choice(name="#"+c.name,value=str(c.id)) for c in channels if query in c.name.lower() or query in str(c.id)][:25]
 
-        @admin.command(name="logchannel",description="Set or disable the private command audit channel")
-        @app_commands.describe(channel="Text channel for audit logs; omit to disable")
-        async def logchannel(interaction: discord.Interaction, channel: discord.TextChannel | None = None):
+        @admin.command(name="logchannel",description="Set or remove the audit channel")
+        @app_commands.describe(action="Set or remove",channel="Choose a suggested channel")
+        @app_commands.choices(action=[app_commands.Choice(name="Set",value="set"),app_commands.Choice(name="Remove",value="remove")])
+        async def logchannel(interaction: discord.Interaction, action: app_commands.Choice[str], channel: str):
             settings=await manager_settings(interaction)
             if settings is None or interaction.guild is None:
-                await interaction.response.send_message("Settings unavailable or not in a server.",ephemeral=True)
+                await interaction.response.send_message("Settings unavailable.",ephemeral=True)
                 return
             if not guild_settings.allowed(interaction.user,interaction.guild,settings):
-                await interaction.response.send_message("You are not authorized to manage this bot.",ephemeral=True)
+                await interaction.response.send_message("Not authorized.",ephemeral=True)
                 return
-            if channel is not None:
-                permissions=channel.permissions_for(interaction.guild.me)
-                if not (permissions.view_channel and permissions.send_messages and permissions.embed_links):
-                    await interaction.response.send_message("Bot needs View Channel, Send Messages and Embed Links there.",ephemeral=True)
+            selected=interaction.guild.get_channel(int(channel)) if channel.isdecimal() else None
+            if not isinstance(selected,discord.TextChannel):
+                await interaction.response.send_message("Choose a valid text channel from suggestions.",ephemeral=True)
+                return
+            if action.value=="set":
+                perms=selected.permissions_for(interaction.guild.me)
+                if not (perms.view_channel and perms.send_messages and perms.embed_links):
+                    await interaction.response.send_message("Bot needs View Channel, Send Messages and Embed Links.",ephemeral=True)
                     return
             await interaction.response.defer(ephemeral=True)
             try:
                 if not await asyncio.wait_for(asyncio.to_thread(leases.is_current,DSN,NODE,self.authority),timeout=5):
                     raise RuntimeError("leadership changed")
-                await asyncio.wait_for(asyncio.to_thread(guild_settings.set_audit_channel,
-                    DSN,interaction.guild.id,channel.id if channel else None,interaction.user.id),timeout=5)
-            except Exception:
-                await interaction.followup.send("Could not update audit channel; please retry.",ephemeral=True)
+                await asyncio.wait_for(asyncio.to_thread(guild_settings.change_audit_channel,DSN,
+                    interaction.guild.id,selected.id,action.value=="set",interaction.user.id),timeout=5)
+            except ValueError as exc:
+                await interaction.followup.send(str(exc)+". No changes made.",ephemeral=True)
                 return
-            await interaction.followup.send(f"Audit channel set to {channel.mention}." if channel else
+            except Exception:
+                await interaction.followup.send("Could not update audit channel; retry.",ephemeral=True)
+                return
+            await interaction.followup.send(f"Audit channel set to {selected.mention}." if action.value=="set" else
                                             "Audit logging disabled.",ephemeral=True)
+
+        @logchannel.autocomplete("channel")
+        async def logchannel_autocomplete(interaction: discord.Interaction, current: str):
+            if interaction.guild is None:
+                return []
+            settings=await manager_settings(interaction)
+            if settings is None or not guild_settings.allowed(interaction.user,interaction.guild,settings):
+                return []
+            action=interaction.namespace.action
+            action=action.value if isinstance(action,app_commands.Choice) else action
+            configured=settings.get(guild_settings.AUDIT_CHANNEL)
+            if action=="remove":
+                channels=[interaction.guild.get_channel(int(configured))] if configured and configured.isdecimal() else []
+            elif action=="set":
+                channels=[c for c in interaction.guild.text_channels if str(c.id)!=configured]
+            else:
+                return []
+            query=current.lower().lstrip("#")
+            return [app_commands.Choice(name="#"+c.name,value=str(c.id)) for c in channels
+                    if isinstance(c,discord.TextChannel) and (query in c.name.lower() or query in str(c.id))][:25]
 
         @admin.command(name="status",description="Show private bot and HA cluster status")
         async def admin_status(interaction: discord.Interaction):
