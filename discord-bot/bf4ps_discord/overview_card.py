@@ -6,6 +6,8 @@ and optionally the bytes of the site's existing fancy equipment artwork.
 from __future__ import annotations
 
 from io import BytesIO
+from pathlib import Path
+import base64
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 WIDTH, HEIGHT = 960, 600
@@ -70,12 +72,17 @@ def render_overview(stats: dict, artwork: bytes | None = None) -> bytes:
     _text(d, (28, 531), "BF4 PLAYER STATS", 18, accent, True)
     _text(d, (320, 533), stats.get("collected", "Collection time unavailable"), 16, MUTED)
     _text(d, (28, 568), "Statistics collected by BF4PS", 16, MUTED)
-    # Footer wordmark: a condensed, bold Battlefield-inspired fallback.
-    # No proprietary Battlefield 4 font is bundled or distributed.
-    wordmark = "BATTLEFIELD 4"
-    wordmark_font = _font(24, True)
-    wordmark_width = d.textbbox((0, 0), wordmark, font=wordmark_font)[2]
-    d.text((928 - wordmark_width, 556), wordmark, font=wordmark_font, fill="#aeb6c1")
+    # User-provided BF4 logo; keep its alpha and fit inside the footer.
+    # An optimized base64 PNG is stored as text for the repository file API.
+    try:
+        logo_path = Path(__file__).with_name("assets") / "battlefield4_wordmark.b64"
+        logo_bytes = base64.b64decode(logo_path.read_text(encoding="ascii"))
+        logo = Image.open(BytesIO(logo_bytes)).convert("RGBA")
+        logo.thumbnail((218, 44), Image.Resampling.LANCZOS)
+        im.paste(logo, (928 - logo.width, 548 + (44 - logo.height) // 2), logo)
+    except (OSError, ValueError):
+        # Keep statistics usable even if the optional branding asset is absent.
+        pass
     output = BytesIO()
     im.save(output, format="PNG", optimize=True)
     return output.getvalue()
