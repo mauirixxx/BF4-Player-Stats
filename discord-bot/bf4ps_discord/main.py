@@ -410,7 +410,7 @@ class Bot(discord.Client):
                 }
                 png = await asyncio.to_thread(render_overview, fields)
                 attachment = discord.File(BytesIO(png), filename="bf4-overview.png")
-                card = discord.Embed(title=f"Battlefield 4 | {safe_name}", color=0xE67E22)
+                card = discord.Embed(color=discord.Color.default())
                 card.set_image(url="attachment://bf4-overview.png")
                 await interaction.followup.send(embed=card, file=attachment)
             except Exception:
