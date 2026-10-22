@@ -109,6 +109,36 @@ class Bot(discord.Client):
                 f"Player commands require {role.mention} or higher; authorized admins bypass this restriction." if role else
                 "Player commands are now available to Everyone (subject to listen-channel restrictions).",ephemeral=True)
 
+        @admin.command(name="listenchannel",description="Add or remove a channel for player commands")
+        @app_commands.describe(action="Add or remove an allowed channel",channel="Text channel for player commands")
+        @app_commands.choices(action=[app_commands.Choice(name="Add",value="add"),app_commands.Choice(name="Remove",value="remove")])
+        async def listenchannel(interaction: discord.Interaction, action: app_commands.Choice[str], channel: discord.TextChannel):
+            if interaction.guild is None:
+                await interaction.response.send_message("This command requires a server.",ephemeral=True)
+                return
+            settings=await manager_settings(interaction)
+            if settings is None:
+                await interaction.response.send_message("Settings database unavailable; no changes made.",ephemeral=True)
+                return
+            if not guild_settings.allowed(interaction.user,interaction.guild,settings):
+                await interaction.response.send_message("You are not authorized to manage this bot.",ephemeral=True)
+                return
+            await interaction.response.defer(ephemeral=True)
+            try:
+                valid=await asyncio.wait_for(asyncio.to_thread(leases.is_current,DSN,NODE,self.authority),timeout=5)
+                if not valid:
+                    raise RuntimeError("leadership changed")
+                channels=await asyncio.wait_for(asyncio.to_thread(guild_settings.update_listen_channel,
+                    DSN,interaction.guild.id,channel.id,action.value=="add",interaction.user.id),timeout=5)
+            except Exception:
+                await interaction.followup.send("Could not update listen channels; please retry.",ephemeral=True)
+                return
+            if channels:
+                mentions=[f"<#{cid}>" for cid in channels]
+                await interaction.followup.send("Player listen channels: "+", ".join(mentions)[:1700]+". Admins can use all channels.",ephemeral=True)
+            else:
+                await interaction.followup.send("No listen channels configured — player commands allowed in all channels.",ephemeral=True)
+
         @admin.command(name="status",description="Show private bot and HA cluster status")
         async def admin_status(interaction: discord.Interaction):
             settings=await manager_settings(interaction)
@@ -149,7 +179,12 @@ class Bot(discord.Client):
             minimum_label=(f"{minimum.mention} and higher" if minimum else
                            "Everyone" if not minimum_id else "Configured role missing — player access denied")
             embed.add_field(name="Minimum role",value=minimum_label,inline=True)
-            embed.add_field(name="Listen channels",value="All (settings not yet implemented)",inline=True)
+            try:
+                listen_ids=guild_settings.listen_channel_ids(settings)
+                listen_label=", ".join(f"<#{cid}>" for cid in sorted(listen_ids))[:1024] if listen_ids else "All"
+            except ValueError:
+                listen_label="Invalid configuration — player access denied"
+            embed.add_field(name="Listen channels",value=listen_label,inline=True)
             embed.add_field(name="Audit channel",value="Disabled (settings not yet implemented)",inline=True)
             embed.set_footer(text=f"Node {NODE} · Live HA control-plane snapshot")
             await interaction.followup.send(embed=embed,ephemeral=True)
