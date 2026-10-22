@@ -34,3 +34,16 @@ def find_player_overview(dsn: str, name: str, platform: str):
                 ORDER BY s.last_seen_at DESC NULLS LAST, s.soldier_id DESC
                 LIMIT 2''', (name, platform))
             return cur.fetchall()
+
+
+def find_signature_weapon(dsn: str, soldier_id: int):
+    """Top weapon by recorded kills; deterministic tie-break and read-only."""
+    with psycopg.connect(dsn, connect_timeout=4,
+                         options='-c default_transaction_read_only=on -c statement_timeout=4000') as conn:
+        with conn.cursor() as cur:
+            cur.execute("""SELECT c.name, c.weapon_guid, w.kills
+                FROM public.soldier_weapon_stats AS w
+                JOIN public.weapon_catalog AS c ON c.weapon_id=w.weapon_id
+                WHERE w.soldier_id=%s AND w.kills>0
+                ORDER BY w.kills DESC, w.weapon_id ASC LIMIT 1""", (soldier_id,))
+            return cur.fetchone()
