@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current recovered Alembic head: `0017_rank_immutable_scores`. Live production was observed at revision `0017_rank_immutable_scores` on 2026-10-21. Historical stage-only labels in migration docstrings are superseded by that observation. See `live-schema-snapshot-2026-10-21.md` for the observed catalog.
+Current production Alembic head: `0018_distributed_rank_queue`. Operator verified directly on current primary **MAK-DB-02** on 2026-10-22 with `sudo -u postgres psql -d bf4_playerstats -Atc "SELECT version_num FROM alembic_version;"`. The previous `0017_rank_immutable_scores` observation on 2026-10-21 remains historical; see `live-schema-snapshot-2026-10-21.md` for that earlier catalog. PostgreSQL primary is an HA role and may change during failover.
 
 ## Mandatory SQL development rule
 
@@ -33,6 +33,7 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0015_rank_generations` | `0014_equipment_populations` | Rank generation state |
 | `0016_rank_scope_versions` | `0015_rank_generations` | Rank scope versions |
 | `0017_rank_immutable_scores` | `0016_rank_scope_versions` | Immutable rank score snapshots |
+| `0018_distributed_rank_queue` | `0017_rank_immutable_scores` | Adds durable equipment ranking jobs, worker registry, and single-row global ranking capacity |
 
 ### Important migration consequence: Gun Master
 
@@ -394,3 +395,13 @@ The production database remains at observed revision `0012_manual_verify_api`. M
 `vehicle_leaderboard_metrics`: composite primary key (`soldier_id`, `vehicle_id`), `kills bigint NOT NULL`, `kpm numeric NULL`, `source_fetched_at timestamptz NOT NULL`. `vehicle_id` is the **canonical family ID**, not necessarily a raw source vehicle ID. Ordered indexes `(vehicle_id, kills DESC NULLS LAST, soldier_id)` and `(vehicle_id, kpm DESC NULLS LAST, soldier_id)`.
 
 The migration is intentionally inert: no automatic backfill, no triggers, no API cutover. Metric population, family mapping parity, live collector transaction integration, exclusions, tie ranks, population and percentile correctness are separate mandatory gates. Do not query these empty tables in production until backfill and ongoing maintenance are verified. The schema remains under review and may change before deployment.
+
+## Migration 0018: distributed equipment ranking queue
+
+Production revision confirmed on MAK-DB-02 (2026-10-22). Migration `0018_distributed_rank_queue` adds:
+
+- `equipment_rank_capacity`: `id` smallint primary key constrained to `1`, `max_active_builds` integer (default 1), `lease_seconds` integer (default 180); bounds enforced by check constraints.
+- `equipment_rank_workers`: `worker_id` UUID primary key, `hostname` text required, `site` text nullable, `started_at` and `heartbeat_at` timestamptz with `now()` defaults.
+- `equipment_rank_jobs`: composite primary key (`kind`, `item_id`, `platform`, `metric`); `next_due_at`, `claimed_by` (FK to `equipment_rank_workers.worker_id`), `claim_token`, `claim_epoch`, `lease_expires_at`, `attempts`, `last_success_at`, `last_error`, `updated_at`. `kind` is `weapon` or `vehicle`; platform is `all`, `pc`, `ps4`, or `xboxone`.
+
+The migration creates scheduling/coordination state; it does not change the existing `soldier_weapon_stats` and `soldier_vehicle_stats` row shapes.
