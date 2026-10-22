@@ -38,7 +38,8 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 <div id="app" class="hidden"><div class="admin-shell"><nav class="admin-side-nav" aria-label="Admin sections">
 <a href="#overview" data-tab="overview" class="current">Collection Overview</a>
 <a href="#moderation" data-tab="moderation">Player Moderation</a>
-<a href="#database" data-tab="database">Database &amp; Account</a>
+<a href="#database" data-tab="database">Database Health</a>
+<a href="#account" data-tab="account">Account Settings</a>
 <a href="#errors" data-tab="errors">Error Logs</a>
 <a href="/admin-ranking.html">Distributed Ranking Monitor ↗</a>
 </nav><div class="admin-panel">
@@ -46,11 +47,11 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 <p>Lightweight player and platoon collection summary. Snapshot values, not live Battlelog requests.</p><div class="row"><button type="button" class="outline" id="showPlayerQueue">Next 10 player jobs</button><button type="button" class="outline" id="showPlatoonQueue">Next 10 platoons</button></div>
 <div class="grid"><div><h2>Players</h2><div id="overviewPlayers" class="muted">Loading…</div></div><div><h2>Platoons</h2><div id="overviewPlatoons" class="muted">Loading…</div></div></div><p class="muted" id="overviewUpdated"></p></section>
 </div><div data-section="errors" class="hidden"><section class="card"><div class="row" style="justify-content:space-between"><h2>Last 50 collection errors</h2><button type="button" class="outline" id="refreshErrors">Refresh</button></div><p class="muted" id="errorsCoverage">Loading coverage…</p><div class="scroll"><table><thead><tr><th>When</th><th>Node</th><th>Resource</th><th>Error</th><th>HTTP</th><th>Details</th></tr></thead><tbody id="errorRows"></tbody></table></div><p id="errorsUpdated" class="muted"></p></section></div>
-<div data-section="database" class="hidden"><div class="account-db-grid"><section class="card"><h2>Account settings · Change password</h2><form id="changePasswordForm">
+<div data-section="account" class="hidden"><section class="card"><h2>Account settings · Change password</h2><form id="changePasswordForm">
 <label for="currentPassword">Current password</label><input type="password" id="currentPassword" autocomplete="current-password" required>
 <label for="newPassword">New password (16–128 characters)</label><input type="password" id="newPassword" autocomplete="new-password" minlength="16" maxlength="128" required>
 <label for="confirmPassword">Confirm new password</label><input type="password" id="confirmPassword" autocomplete="new-password" minlength="16" maxlength="128" required>
-<div style="margin-top:12px"><button type="submit">Change password and sign out</button></div></form></section><section class="card"><div class="row" style="justify-content:space-between"><h2>Database health</h2><button type="button" class="outline" id="refreshDatabase">Refresh</button></div><div class="db-metric"><small>Database size</small><strong id="dbSize">Loading…</strong></div><div class="db-metric"><small>Transactions per second (since last refresh)</small><strong id="dbTps">Sampling…</strong></div><div class="db-metric"><small>Current connections</small><strong id="dbConnections">—</strong></div><div class="db-metric"><small>Alembic revision</small><strong id="dbAlembic" style="font-size:15px;overflow-wrap:anywhere">—</strong></div><div class="db-metric"><small>Primary disk space remaining</small><strong id="dbDisk">—</strong><div id="dbDiskDetail" class="muted"></div></div><div class="db-metric"><small>Replica WAL backlog</small><div id="dbReplicas" class="muted">Loading…</div></div><p id="dbSampleTime" class="muted"></p></section></div>
+<div style="margin-top:12px"><button type="submit">Change password and sign out</button></div></form></section></div><div data-section="database" class="hidden"><section class="card"><div class="row" style="justify-content:space-between"><h2>Database health</h2><button type="button" class="outline" id="refreshDatabase">Refresh</button></div><div class="db-metric"><small>Database size</small><strong id="dbSize">Loading…</strong></div><div class="db-metric"><small>Transactions per second (since last refresh)</small><strong id="dbTps">Sampling…</strong></div><div class="db-metric"><small>Current connections</small><strong id="dbConnections">—</strong></div><div class="db-metric"><small>Alembic revision</small><strong id="dbAlembic" style="font-size:15px;overflow-wrap:anywhere">—</strong></div><div class="db-metric"><small>Primary disk space remaining</small><strong id="dbDisk">—</strong><div id="dbDiskDetail" class="muted"></div></div><div class="db-metric"><small>Replica WAL backlog</small><div id="dbReplicas" class="muted">Loading…</div></div><p id="dbSampleTime" class="muted"></p></section>
 </div><div data-section="moderation" class="hidden"><div class="grid">
 <section class="card"><h2>Find soldier</h2><form id="searchForm">
 <label for="query">Name or exact persona ID</label><input id="query" minlength="2" maxlength="80" required>
@@ -73,7 +74,7 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 <script>
 'use strict';
 function showAdminTab(tab){
- if(!['overview','moderation','database','errors'].includes(tab))tab='overview';
+ if(!['overview','moderation','database','account','errors'].includes(tab))tab='overview';
  document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('hidden',x.dataset.section!==tab));
  document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('current',x.dataset.tab===tab));
  if(tab==='database'&&typeof loadDatabase==='function')loadDatabase();
