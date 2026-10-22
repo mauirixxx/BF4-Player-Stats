@@ -39,11 +39,13 @@ def render_ranking(stats: dict, entries: list[dict], artwork: dict[str, bytes] |
     except (OSError, ValueError):
         base = Image.new("RGB", (WIDTH, HEIGHT), "#263442")
     im = base.convert("RGBA")
-    # A mild top/bottom veil preserves the dramatic official image while helping labels.
+    # Subdue the bright artwork across the whole card without losing the scene.
+    im = Image.alpha_composite(im, Image.new("RGBA", (WIDTH, HEIGHT), (8, 13, 20, 105)))
+    # Header/footer bands add contrast for text over bright portions of the scene.
     veil = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
     vd = ImageDraw.Draw(veil)
-    vd.rectangle((0, 0, WIDTH, 112), fill=(10, 15, 22, 82))
-    vd.rectangle((0, 628, WIDTH, HEIGHT), fill=(10, 15, 22, 165))
+    vd.rectangle((0, 0, WIDTH, 128), fill=(10, 15, 22, 192))
+    vd.rectangle((0, 624, WIDTH, HEIGHT), fill=(10, 15, 22, 200))
     im = Image.alpha_composite(im, veil)
     d = ImageDraw.Draw(im)
     d.rectangle((0, 0, 8, HEIGHT), fill=accent)
@@ -67,7 +69,7 @@ def render_ranking(stats: dict, entries: list[dict], artwork: dict[str, bytes] |
         x = left + (i % 3) * (tile_w + gap_x)
         y = top + (i // 3) * (tile_h + gap_y)
         # Individual semi-transparent dark tiles: background remains visible.
-        layer = Image.new("RGBA", (tile_w, tile_h), (20, 25, 31, 205))
+        layer = Image.new("RGBA", (tile_w, tile_h), (16, 21, 29, 225))
         ld = ImageDraw.Draw(layer)
         ld.rounded_rectangle((0, 0, tile_w - 1, tile_h - 1), radius=8,
                              outline=(177, 192, 205, 100), width=2)
@@ -90,10 +92,16 @@ def render_ranking(stats: dict, entries: list[dict], artwork: dict[str, bytes] |
             try:
                 with Image.open(BytesIO(artwork[key])) as source:
                     icon = source.convert("RGBA")
-                    icon.thumbnail((145, 69), Image.Resampling.LANCZOS)
-                    # Right side; overlap only the blank space above detail line.
-                    im.alpha_composite(icon, (x + tile_w - 12 - icon.width,
-                                              y + 42 + (68 - icon.height) // 2))
+                    # Battlelog fancy PNGs often contain substantial transparent padding.
+                    # Crop to the actual visible silhouette before scaling.
+                    alpha = icon.getchannel("A")
+                    bounds = alpha.point(lambda a: 255 if a > 12 else 0).getbbox()
+                    if bounds:
+                        icon = icon.crop(bounds)
+                        icon.thumbnail((181, 88), Image.Resampling.LANCZOS)
+                        # Anchor artwork to the right; keep the KPM line unobstructed.
+                        im.alpha_composite(icon, (x + tile_w - 12 - icon.width,
+                                                  y + 27 + (88 - icon.height) // 2))
             except (OSError, ValueError):
                 pass
     d = ImageDraw.Draw(im)
