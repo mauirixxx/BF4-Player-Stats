@@ -1,5 +1,5 @@
 # BF4PS Discord Bot — Architecture and Implementation Plan
-Status: design proposal (2026-10-21). No bot deployed. Validate all SQL against live schema before implementation.
+Status: living design; HA control plane and `/ping` deployed 2026-10-22. Statistics query contracts remain proposed and require live-schema validation.
 
 ## Goal and boundaries
 A separately deployed Discord application for fast BF4 player and equipment statistics and platform-aware rankings. The statistics database is strictly read-only to this bot; its own separate bot-operations database stores coordination and guild settings. See [dedicated control-plane design](DISCORD-BOT-CONTROL-PLANE-DESIGN.md). The existing BF4PS PostgreSQL database and precompute generations remain authoritative. The bot does not scrape Battlelog, calculate rankings on request, or write directly to collector tables. Keep BF4SW and BF4PS bots independent: separate Discord application/token, processes, DB roles, configuration, deployment, and failure domains.
@@ -53,3 +53,6 @@ No Battlelog HTTP traffic from bot; excluded identities never appear; zero DB wr
 
 ## Open decisions
 Bot application name and avatar; command naming; which platforms and platoon features ship first; primary and standby hosts; whether restricted SQL or a strictly read-only API is the statistics read path. Discord embed layout awaits user screenshots. **Do not create Discord application credentials or production DB privileges before review.**
+
+## Implementation status (2026-10-22)
+The initial HA-first implementation supersedes the historical phase ordering above: `bf4ps_discord` control-plane database, two-node RNT/MAK lease-fenced supervisor, real Discord Gateway failover, Docker restarts, and operator-tested ephemeral `/ping` are deployed. The player-statistics read path, embed design, and commands remain unimplemented. See [HA rollout and evidence](DISCORD-BOT-HA-ROLLOUT.md). Current development proceeds on `main`.

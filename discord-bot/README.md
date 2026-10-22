@@ -1,6 +1,6 @@
 # BF4PS Discord bot
 
-**Status: design phase; not deployed.** Entirely new Discord application, independent of BF4 Server Watcher.
+**Status: deployed two-node HA, live Gateway connected, `/ping` verified by operator (2026-10-22).** Independent Discord application, separate from BF4 Server Watcher.
 
 - Game statistics: **100% read-only** access to BF4PS production database, including no refresh queue writes.
 - Bot coordination: a **separate bot-owned PostgreSQL database** for Discord master lease, node health, guild settings, handoff, and audit events.
@@ -8,3 +8,9 @@
 - Discord result/embeds: **awaiting user screenshots**; data contracts can be designed first.
 
 Design documents: [architecture](../docs/DISCORD-BOT-ARCHITECTURE.md) and [control-plane design](../docs/DISCORD-BOT-CONTROL-PLANE-DESIGN.md). Verify live schemas before writing query code or migrations.
+
+## Live deployment (2026-10-22)
+- RNT-01 and MAK-01 run independent Docker containers using PostgreSQL lease generation fencing; only the leader connects to Discord.
+- Bot identity: `BF4 Player Stats#4096`. Slash command `/ping` is globally registered and has been successfully invoked in Discord; response is ephemeral and validates the current leadership generation.
+- Docker restart policy: `unless-stopped` on both nodes. Runtime token/DSN stay in private host `.env` files, never in Git.
+- For operational evidence, test limitations, and next steps see [HA rollout](../docs/DISCORD-BOT-HA-ROLLOUT.md). Statistics commands are not implemented yet.

@@ -1,5 +1,5 @@
 # BF4PS Discord Bot — HA-First Rollout
-Status: approved design direction, not deployment authorization. 2026-10-21.
+Status: initial two-node HA deployed and live Discord Gateway tested, 2026-10-22. Historical planning and uncompleted validation gates remain below.
 
 ## Fixed decisions
 - A new Discord application independent of BF4SW.
@@ -38,3 +38,19 @@ After commands and embed designs are usable, build once and deploy the same pinn
 
 ## Open implementation questions
 Exact node priority beyond RNT and MAK, Discord application name/token, initial development guild, operational alert destination, and preferred operator handoff interface. None blocks writing migrations and an offline HA test harness.
+
+## Actual deployment and test record — 2026-10-22
+- Independent Discord application `BF4 Player Stats#4096` invited to the initial development server; operator confirmed `/ping` responds ephemerally and supplied screenshots.
+- Production control-plane database: `bf4ps_discord`, separate from the BF4PS statistics database. Initial nodes: `rnt-01` and `mak-01`; containers `bf4ps-discord-ha-rnt` and `bf4ps-discord-ha-mak` respectively, images `bf4ps-discord:ha-ping`, `DRY_RUN=0`.
+- Both nodes configured with Docker `--restart unless-stopped`; **host reboot behavior not yet verified**. Secrets are in host-local `/opt/bf4ps-discord/discord-bot/.env` and must not enter Git.
+- Observed database outage: RNT suspended leadership when PostgreSQL was shutting down; MAK later reacquired leadership generation 4 after recovery (dry-run mode). This was observed in logs, not an orchestrated partition test.
+- Controlled graceful failover with real Discord Gateway: RNT generation 7 stopped at 07:06:43 UTC; MAK acquired generation 8 at 07:06:44 UTC, authenticated and emitted `discord_ready`. RNT rejoined standby without preempting the healthy incumbent.
+- Following code deployment, RNT acquired generation 9, Discord reported `slash_commands_synced count=1`, connected Gateway and emitted `discord_ready`; MAK remained standby. Operator subsequently verified `/ping` interaction and private response.
+- `/ping` checks authoritative `bot_leases` owner, generation, expiration, node enabled/draining before replying; errors fail closed. Command code committed as `c6947a7` on `main`.
+- Remaining validation: ungraceful process kill, delayed network partition/lease expiration with an actual Gateway, DB primary failover while active, duplicate-session observation, host reboot, and long soak. **Do not mark these passed without test evidence.**
+- Caution: current containers are running live; deployment changes must preserve a single leader. No player statistics commands have been deployed yet.
+
+## Next milestone — player statistics commands
+- Start with a read-only `/player` soldier lookup by player name and platform, subject to reviewing `docs/database-schema.md`, `docs/operational-schema.md`, and live schema first.
+- Confirm restricted statistics DB read role and exclusions, use bounded indexed search, handle ambiguous names, and show data freshness and canonical platform/persona identity. No Battlelog requests or writes to collector DB.
+- Add user-approved Discord embeds, test from development server, then equipment/leaderboard commands. Use `main` for rapid iteration per operator direction; no additional development branch required.
