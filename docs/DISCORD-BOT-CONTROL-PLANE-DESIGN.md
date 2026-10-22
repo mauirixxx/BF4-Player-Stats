@@ -1,5 +1,5 @@
 # BF4PS Discord Bot — Dedicated Control Plane (approved direction)
-Status: design, not deployed. Independent Discord application and separate PostgreSQL database.
+Status: implemented control-plane baseline and live two-node HA (2026-10-22). Historical design proposals and untested gates remain below. Independent Discord application and separate PostgreSQL database.
 
 ## Non-negotiable database separation
 1. **BF4PS statistics database `bf4_playerstats`:** the Discord application has a dedicated read-only credential. No INSERT, UPDATE, DELETE, DDL, refresh enqueueing, or Battlelog collection. Any exclusion-aware read views/functions must be audited and schema-verified.
@@ -44,4 +44,4 @@ The bot fetches existing player snapshots and **published** ranking generations 
 - Canary guild and long soak before public rollout.
 
 ## Decisions still needed
-Bot name, priority beyond the initial pair, desired admin handoff controls, command scope, screenshots/embeds, whether public-stat reads use restricted SQL views or a strictly read-only API. The approved initial HA pair is rnt-01 preferred leader and mak-01 standby, with eventual deployment to all BF4SW Docker fleet nodes. See [HA-first rollout](DISCORD-BOT-HA-ROLLOUT.md). No bot DB has been created yet.
+Bot name, priority beyond the initial pair, desired admin handoff controls, command scope, screenshots/embeds, whether public-stat reads use restricted SQL views or a strictly read-only API. The approved initial HA pair is rnt-01 preferred leader and mak-01 standby, with eventual deployment to all BF4SW Docker fleet nodes. See [HA-first rollout](DISCORD-BOT-HA-ROLLOUT.md). The separate `bf4ps_discord` control-plane database is deployed, and MAK-01/RNT-01 have demonstrated leader failover. Uncompleted fault-injection and soak tests remain open.
