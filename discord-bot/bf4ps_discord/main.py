@@ -357,6 +357,22 @@ class Bot(discord.Client):
             (current_name,found_platform,persona_id,rank,seconds,kills,deaths,
              shots_fired,shots_hit,streak,wins,losses,total_score,
              assault,engineer,support,recon,fetched_at,soldier_id)=matches[0]
+            # Weapon stats are optional: a missing catalog row or artwork must
+            # never prevent the overview from rendering.
+            signature = None
+            artwork = None
+            try:
+                signature = await asyncio.wait_for(
+                    asyncio.to_thread(player_lookup.find_signature_weapon, STATS_DSN, soldier_id), timeout=6)
+                if signature:
+                    from .equipment_artwork import fetch_weapon_artwork
+                    try:
+                        artwork = await asyncio.wait_for(
+                            asyncio.to_thread(fetch_weapon_artwork, signature[1]), timeout=11)
+                    except Exception:
+                        log.warning("signature_weapon_artwork_unavailable", exc_info=True)
+            except Exception:
+                log.warning("signature_weapon_lookup_unavailable", exc_info=True)
             def count(value):
                 return f"{value:,}" if value is not None else "—"
             def ratio(numerator,denominator,digits=2):
@@ -404,11 +420,11 @@ class Bot(discord.Client):
                     "spm": ratio(total_score, seconds / 60) if seconds else "—",
                     "win_rate": percent(wins, wins + losses) if wins is not None and losses is not None else "—",
                     "best_class": best or "—",
-                    "equipment_name": "Equipment coming soon",
-                    "equipment_kills": "—",
+                    "equipment_name": signature[0] if signature else "No weapon data",
+                    "equipment_kills": count(signature[2]) if signature else "—",
                     "collected": f"Collected {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet",
                 }
-                png = await asyncio.to_thread(render_overview, fields)
+                png = await asyncio.to_thread(render_overview, fields, artwork)
                 attachment = discord.File(BytesIO(png), filename="bf4-overview.png")
                 # A native image attachment uses Discord's wider image preview.
                 buttons = discord.ui.View(timeout=None)
