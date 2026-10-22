@@ -627,7 +627,7 @@ class Bot(discord.Client):
         await self._register_guilds(self.guilds)
 
     async def _register_guilds(self, guilds):
-        ids = [guild.id for guild in guilds if not guild.unavailable]
+        ids = [(guild.id, guild.name) for guild in guilds if not guild.unavailable]
         if not ids:
             return
         try:
