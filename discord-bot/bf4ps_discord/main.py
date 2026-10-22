@@ -6,6 +6,7 @@ import signal
 import time
 import discord
 from discord import app_commands
+import datetime
 from . import leases
 
 logging.basicConfig(level=logging.INFO,format="%(asctime)s %(levelname)s %(message)s")
@@ -23,6 +24,7 @@ class Bot(discord.Client):
         intents.guilds=True
         super().__init__(intents=intents)
         self.authority=authority
+        self.started_at=discord.utils.utcnow()
         self.tree=app_commands.CommandTree(self)
         @self.tree.command(name="ping",description="Check the BF4 Player Stats bot connection")
         async def ping(interaction: discord.Interaction):
@@ -35,6 +37,43 @@ class Bot(discord.Client):
                 await interaction.response.send_message("Bot leadership is changing. Please retry.",ephemeral=True)
                 return
             await interaction.response.send_message("BF4 Player Stats bot is online! 🐹",ephemeral=True)
+
+        admin=app_commands.Group(name="admin",description="BF4 Player Stats server administration")
+
+        @admin.command(name="status",description="Show private bot and HA cluster status")
+        async def admin_status(interaction: discord.Interaction):
+            if interaction.guild is None or interaction.user.id != interaction.guild.owner_id:
+                await interaction.response.send_message("Only the server owner can use this command until a management role is configured.",ephemeral=True)
+                return
+            await interaction.response.defer(ephemeral=True,thinking=True)
+            try:
+                state=await asyncio.wait_for(asyncio.to_thread(
+                    leases.status_snapshot,DSN,NODE,self.authority),timeout=6)
+            except Exception:
+                await interaction.followup.send("Control-plane database unavailable; status cannot be verified.",ephemeral=True)
+                return
+            if not state["authorized"]:
+                await interaction.followup.send("Leadership has changed. Please retry.",ephemeral=True)
+                return
+            now=discord.utils.utcnow()
+            nodes=state["nodes"]
+            standby=[f"`{n['node']}` ({'online' if n['fresh'] else 'stale'}, {'draining' if n['draining'] else 'enabled' if n['enabled'] else 'disabled'})" for n in nodes if n["node"]!=state["leader"]]
+            embed=discord.Embed(title="BF4 Player Stats — Operator Status",color=discord.Color.blurple(),timestamp=now)
+            embed.add_field(name="Discord leader",value=f"`{state['leader'] or 'None'}`",inline=True)
+            embed.add_field(name="Leadership generation",value=str(state["generation"]),inline=True)
+            embed.add_field(name="Lease expires",value=f"<t:{int(state['expires'].timestamp())}:R>" if state["expires"] else "Unavailable",inline=True)
+            embed.add_field(name="Standby node(s)",value="\n".join(standby)[:1024] or "None registered",inline=False)
+            embed.add_field(name="Control-plane database",value="Connected",inline=True)
+            embed.add_field(name="Bot uptime",value=str(datetime.timedelta(seconds=int((now-self.started_at).total_seconds()))),inline=True)
+            embed.add_field(name="Bot version",value=os.environ.get("BOT_VERSION","Not configured"),inline=True)
+            embed.add_field(name="Management access",value="Guild owner (role settings not yet implemented)",inline=False)
+            embed.add_field(name="Minimum role",value="Everyone (settings not yet implemented)",inline=True)
+            embed.add_field(name="Listen channels",value="All (settings not yet implemented)",inline=True)
+            embed.add_field(name="Audit channel",value="Disabled (settings not yet implemented)",inline=True)
+            embed.set_footer(text=f"Node {NODE} · Live HA control-plane snapshot")
+            await interaction.followup.send(embed=embed,ephemeral=True)
+
+        self.tree.add_command(admin)
 
     async def setup_hook(self):
         synced=await self.tree.sync()

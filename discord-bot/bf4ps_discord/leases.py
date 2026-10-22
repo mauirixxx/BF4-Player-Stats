@@ -80,3 +80,20 @@ def is_current(dsn: str, node: str, generation: int) -> bool:
                 AND l.expires_at>clock_timestamp() AND n.enabled AND NOT n.draining
             )""",(LEASE_KEY,node,generation))
             return cur.fetchone()[0]
+
+
+def status_snapshot(dsn: str, node: str, generation: int) -> dict:
+    """Read-only, generation-fenced operational status in one DB transaction."""
+    with psycopg.connect(dsn, connect_timeout=3) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""SELECT owner_node_id,generation,expires_at,clock_timestamp()
+                FROM bot_leases WHERE lease_key=%s""",(LEASE_KEY,))
+            owner,actual_gen,expires,now=cur.fetchone()
+            authorized=(owner==node and actual_gen==generation and expires is not None and expires>now)
+            cur.execute("""SELECT node_id,enabled,draining,last_heartbeat_at
+                FROM bot_nodes ORDER BY priority,node_id""")
+            nodes=[{"node":nid,"enabled":enabled,"draining":draining,
+                    "fresh":heartbeat is not None and (now-heartbeat).total_seconds()<60}
+                   for nid,enabled,draining,heartbeat in cur.fetchall()]
+            return {"authorized":authorized,"leader":owner,"generation":actual_gen,
+                    "expires":expires,"nodes":nodes}
