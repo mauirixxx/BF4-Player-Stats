@@ -1,7 +1,10 @@
 # BF4PS Discord bot
 
-**Status: design phase. No bot deployed.**
+**Status: design phase; not deployed.** Entirely new Discord application, independent of BF4 Server Watcher.
 
-The Discord bot will be a separately deployed, read-only-first Discord application consuming existing BF4PS snapshots and published ranking generations. It must not collect Battlelog data or calculate full rankings on demand.
+- Game statistics: **100% read-only** access to BF4PS production database, including no refresh queue writes.
+- Bot coordination: a **separate bot-owned PostgreSQL database** for Discord master lease, node health, guild settings, handoff, and audit events.
+- Multi-node high availability modeled on BF4SW's proven `discord_leader.py` and Alembic control-plane migrations, adapted to this bot.
+- Discord result/embeds: **awaiting user screenshots**; data contracts can be designed first.
 
-See [Discord Bot Architecture](../docs/DISCORD-BOT-ARCHITECTURE.md) for commands, database boundaries, BF4SW lessons, rollout gates, and open decisions. Implementation follows live schema verification and design approval.
+Design documents: [architecture](../docs/DISCORD-BOT-ARCHITECTURE.md) and [control-plane design](../docs/DISCORD-BOT-CONTROL-PLANE-DESIGN.md). Verify live schemas before writing query code or migrations.
