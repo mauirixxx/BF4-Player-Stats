@@ -29,9 +29,6 @@ class Bot(discord.Client):
         self._audit_outcomes={}
         self._audit_channels={}
 
-    def audit_result(self, interaction, result, reason=None):
-        self._audit_outcomes[interaction.id]=(result,reason)
-
         self.tree=app_commands.CommandTree(self)
         @self.tree.command(name="ping",description="Check the BF4 Player Stats bot connection")
         async def ping(interaction: discord.Interaction):
@@ -309,6 +306,9 @@ class Bot(discord.Client):
             await interaction.followup.send(embed=embed,ephemeral=True)
 
         self.tree.add_command(admin)
+
+    def audit_result(self, interaction, result, reason=None):
+        self._audit_outcomes[interaction.id]=(result,reason)
 
     async def on_interaction(self, interaction: discord.Interaction):
         if interaction.type == discord.InteractionType.application_command:
