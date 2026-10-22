@@ -25,6 +25,7 @@ class Bot(discord.Client):
         super().__init__(intents=intents)
         self.authority=authority
         self.started_at=discord.utils.utcnow()
+        self._audit_starts={}
         self.tree=app_commands.CommandTree(self)
         @self.tree.command(name="ping",description="Check the BF4 Player Stats bot connection")
         async def ping(interaction: discord.Interaction):
@@ -164,6 +165,33 @@ class Bot(discord.Client):
             query=current.lower().lstrip("#")
             return [app_commands.Choice(name="#"+c.name,value=str(c.id)) for c in channels if query in c.name.lower() or query in str(c.id)][:25]
 
+        @admin.command(name="logchannel",description="Set or disable the private command audit channel")
+        @app_commands.describe(channel="Text channel for audit logs; omit to disable")
+        async def logchannel(interaction: discord.Interaction, channel: discord.TextChannel | None = None):
+            settings=await manager_settings(interaction)
+            if settings is None or interaction.guild is None:
+                await interaction.response.send_message("Settings unavailable or not in a server.",ephemeral=True)
+                return
+            if not guild_settings.allowed(interaction.user,interaction.guild,settings):
+                await interaction.response.send_message("You are not authorized to manage this bot.",ephemeral=True)
+                return
+            if channel is not None:
+                permissions=channel.permissions_for(interaction.guild.me)
+                if not (permissions.view_channel and permissions.send_messages and permissions.embed_links):
+                    await interaction.response.send_message("Bot needs View Channel, Send Messages and Embed Links there.",ephemeral=True)
+                    return
+            await interaction.response.defer(ephemeral=True)
+            try:
+                if not await asyncio.wait_for(asyncio.to_thread(leases.is_current,DSN,NODE,self.authority),timeout=5):
+                    raise RuntimeError("leadership changed")
+                await asyncio.wait_for(asyncio.to_thread(guild_settings.set_audit_channel,
+                    DSN,interaction.guild.id,channel.id if channel else None,interaction.user.id),timeout=5)
+            except Exception:
+                await interaction.followup.send("Could not update audit channel; please retry.",ephemeral=True)
+                return
+            await interaction.followup.send(f"Audit channel set to {channel.mention}." if channel else
+                                            "Audit logging disabled.",ephemeral=True)
+
         @admin.command(name="status",description="Show private bot and HA cluster status")
         async def admin_status(interaction: discord.Interaction):
             settings=await manager_settings(interaction)
@@ -210,11 +238,56 @@ class Bot(discord.Client):
             except ValueError:
                 listen_label="Invalid configuration — player access denied"
             embed.add_field(name="Listen channels",value=listen_label,inline=True)
-            embed.add_field(name="Audit channel",value="Disabled (settings not yet implemented)",inline=True)
+            audit_id=settings.get(guild_settings.AUDIT_CHANNEL)
+            audit_channel=interaction.guild.get_channel(int(audit_id)) if audit_id and audit_id.isdecimal() else None
+            embed.add_field(name="Audit channel",value=audit_channel.mention if audit_channel else
+                            ("Disabled" if not audit_id else "Configured channel missing"),inline=True)
             embed.set_footer(text=f"Node {NODE} · Live HA control-plane snapshot")
             await interaction.followup.send(embed=embed,ephemeral=True)
 
         self.tree.add_command(admin)
+
+    async def on_interaction(self, interaction: discord.Interaction):
+        if interaction.type == discord.InteractionType.application_command:
+            self._audit_starts[interaction.id]=time.monotonic()
+
+    async def _send_audit(self, interaction: discord.Interaction, result: str):
+        started=self._audit_starts.pop(interaction.id,None)
+        if interaction.guild is None:
+            return
+        try:
+            settings=await asyncio.wait_for(asyncio.to_thread(guild_settings.get,DSN,interaction.guild.id),timeout=4)
+            raw=settings.get(guild_settings.AUDIT_CHANNEL)
+            if not raw or not raw.isdecimal():
+                return
+            channel=interaction.guild.get_channel(int(raw))
+            if not isinstance(channel,discord.TextChannel):
+                return
+            command=interaction.command.qualified_name if interaction.command else "unknown"
+            elapsed=f"{int((time.monotonic()-started)*1000)} ms" if started is not None else "unavailable"
+            user=interaction.user
+            embed=discord.Embed(title="BF4 Player Stats — Command audit",color=discord.Color.green() if result=="completed" else discord.Color.red(),timestamp=discord.utils.utcnow())
+            embed.add_field(name="Command",value=f"`/{command}`",inline=False)
+            embed.add_field(name="User",value=f"{discord.utils.escape_markdown(user.display_name)} (`{user.id}`)",inline=False)
+            embed.add_field(name="Used in",value=f"<#{interaction.channel_id}> (`{interaction.channel_id}`)",inline=False)
+            embed.add_field(name="Result",value=result,inline=True)
+            embed.add_field(name="Duration",value=elapsed,inline=True)
+            embed.set_footer(text=f"Guild {interaction.guild.id} · Node {NODE}")
+            await channel.send(embed=embed,allowed_mentions=discord.AllowedMentions.none())
+        except Exception:
+            log.exception("audit_delivery_failed interaction=%s",interaction.id)
+
+    async def on_app_command_completion(self, interaction: discord.Interaction, command):
+        await self._send_audit(interaction,"completed")
+
+    async def on_app_command_error(self, interaction: discord.Interaction, error):
+        log.error("app_command_error command=%s error=%r",interaction.command,error)
+        await self._send_audit(interaction,"error")
+        try:
+            if not interaction.response.is_done():
+                await interaction.response.send_message("Command failed. Please retry.",ephemeral=True)
+        except discord.HTTPException:
+            pass
 
     async def setup_hook(self):
         synced=await self.tree.sync()

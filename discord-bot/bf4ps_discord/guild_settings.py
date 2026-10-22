@@ -5,6 +5,7 @@ import json
 MANAGEMENT_ROLE = 'management_role_id'
 MINIMUM_ROLE = 'minimum_role_id'
 LISTEN_CHANNELS = 'listen_channel_ids'
+AUDIT_CHANNEL = 'audit_channel_id'
 
 def get(dsn: str, guild_id: int) -> dict[str, str]:
     with psycopg.connect(dsn, connect_timeout=3) as conn:
@@ -105,3 +106,7 @@ def update_listen_channel(dsn: str, guild_id: int, channel_id: int, add: bool, a
                     DO UPDATE SET setting_value=excluded.setting_value,value_type='json',updated_by=excluded.updated_by,updated_at=now()''',
                     (guild_id,LISTEN_CHANNELS,json.dumps(sorted(channels)),actor_id))
             return sorted(channels)
+
+
+def set_audit_channel(dsn: str, guild_id: int, channel_id: int | None, actor_id: int) -> None:
+    set_role(dsn,guild_id,AUDIT_CHANNEL,channel_id,actor_id)
