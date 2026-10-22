@@ -309,9 +309,10 @@ class Bot(discord.Client):
         pstats=app_commands.Group(name="pstats",description="Battlefield 4 player statistics")
 
         @pstats.command(name="player",description="Find a Battlefield 4 player by exact current name")
-        @app_commands.describe(name="Exact player name (case-insensitive)",platform="Battlefield 4 platform")
+        @app_commands.describe(name="Exact player name (case-insensitive)",platform="Battlefield 4 platform",view="Statistics view (default: Overview)")
+        @app_commands.choices(view=[app_commands.Choice(name="Overview",value="overview"),app_commands.Choice(name="Weapons",value="weapons"),app_commands.Choice(name="Vehicles",value="vehicles")])
         @app_commands.choices(platform=[app_commands.Choice(name=k,value=v) for k,v in player_lookup.PLATFORMS.items()])
-        async def player(interaction: discord.Interaction, name: str, platform: app_commands.Choice[str]):
+        async def player(interaction: discord.Interaction, name: str, platform: app_commands.Choice[str], view: app_commands.Choice[str] | None = None):
             if interaction.guild is None:
                 self.audit_result(interaction,"BLOCKED","Server-only command")
                 await interaction.response.send_message("Use this command in a server.",ephemeral=True)
@@ -357,6 +358,69 @@ class Bot(discord.Client):
             (current_name,found_platform,persona_id,rank,seconds,kills,deaths,
              shots_fired,shots_hit,streak,wins,losses,total_score,
              assault,engineer,support,recon,fetched_at,soldier_id)=matches[0]
+            selected_view = view.value if view else "overview"
+            if selected_view in ("weapons", "vehicles"):
+                from io import BytesIO
+                from .ranking_card import render_ranking
+                from .equipment_artwork import fetch_top_artwork
+                try:
+                    rows = await asyncio.wait_for(
+                        asyncio.to_thread(player_lookup.find_top_equipment,
+                                          STATS_DSN, soldier_id, selected_view), timeout=7)
+                    entries = []
+                    for localization_key, slug, item_kills, item_seconds, item_fetched in rows:
+                        display = (slug or localization_key.rsplit("_", 1)[-1]).replace("-", " ").upper()
+                        if localization_key == "WARSAW_ID_P_XP1_VNAME_UCAV":
+                            display = "UCAV"
+                        entries.append({
+                            "key": localization_key, "name": display,
+                            "kills": item_kills,
+                            "hours": item_seconds / 3600 if item_seconds is not None else None,
+                            "kpm": item_kills / (item_seconds / 60) if item_seconds and item_kills is not None else None,
+                        })
+                    if not entries:
+                        await interaction.followup.send(
+                            f"No {selected_view} statistics collected yet for **{discord.utils.escape_markdown(current_name)}**.")
+                        return
+                    pictures = {}
+                    try:
+                        pictures = await asyncio.wait_for(
+                            asyncio.to_thread(fetch_top_artwork,
+                                              "weapon" if selected_view == "weapons" else "vehicle",
+                                              [e["key"] for e in entries]), timeout=13)
+                    except Exception:
+                        log.warning("ranking_artwork_unavailable", exc_info=True)
+                    hours = seconds / 3600 if seconds is not None else None
+                    fields = {
+                        "name": current_name, "platform": platform.name,
+                        "hours": f"{hours:,.1f}" if hours is not None else "—",
+                        "view": selected_view,
+                        "collected": f"Collected {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet",
+                    }
+                    png = await asyncio.to_thread(render_ranking, fields, entries, pictures)
+                    buttons = discord.ui.View(timeout=None)
+                    buttons.add_item(discord.ui.Button(
+                        label="Player Dossier", style=discord.ButtonStyle.link,
+                        url=f"https://www.bf4playerstats.com/soldier.html?id={soldier_id}"))
+                    buttons.add_item(discord.ui.Button(
+                        label="Refresh Stats (coming soon)", style=discord.ButtonStyle.secondary, disabled=True))
+                    plus = {
+                        "PC": discord.PartialEmoji(name="bf4ps_plus_pc", id=1562938945388679188),
+                        "Xbox": discord.PartialEmoji(name="bf4ps_plus_xbox", id=1562938947137699930),
+                        "PlayStation": discord.PartialEmoji(name="bf4ps_plus_playstation", id=1562938948442001440),
+                    }
+                    buttons.add_item(discord.ui.Button(
+                        label="Add Bot", style=discord.ButtonStyle.link,
+                        url="https://add.bf4playerstats.com", emoji=plus.get(platform.name, plus["PC"])))
+                    await interaction.followup.send(
+                        file=discord.File(BytesIO(png), filename=f"bf4-top-{selected_view}.png"),
+                        view=buttons)
+                except Exception:
+                    log.exception("ranking_card_failed")
+                    self.audit_result(interaction, "FAILED", "Ranking view unavailable")
+                    await interaction.followup.send(
+                        "Could not generate the equipment rankings right now. Please retry.")
+                return
             # Weapon stats are optional: a missing catalog row or artwork must
             # never prevent the overview from rendering.
             signature = None
