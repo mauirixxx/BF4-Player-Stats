@@ -48,27 +48,7 @@ def claim(engine, worker):
         # function reports replication state without granting pg_monitor.
         # Fail closed on missing telemetry, replica loss or WAL backlog.
         if c.execute(text("SELECT current_database()")).scalar_one() == 'bf4_playerstats':
-            threshold = int(os.getenv('BF4PS_RANK_MAX_REPLICA_LAG_BYTES', str(128 * 1024 * 1024)))
-            if not 1_048_576 <= threshold <= 1_073_741_824:
-                raise ValueError('invalid BF4PS_RANK_MAX_REPLICA_LAG_BYTES')
-            replicas = c.execute(text("""
-                SELECT streaming_replicas,total_replicas,max_replay_lag_bytes,max_retained_wal_bytes
-                FROM public.bf4ps_rank_replication_admission_status()
-            """)).one()
-            if (replicas.streaming_replicas != 2 or replicas.total_replicas != 2
-                    or replicas.max_replay_lag_bytes is None
-                    or replicas.max_replay_lag_bytes > threshold
-                    or replicas.max_retained_wal_bytes is None
-                    or replicas.max_retained_wal_bytes > 32 * 1024 * 1024 * 1024):
-                return None
-            # Fleet-wide duty cycle, not per-worker: only one new rank claim
-            # every 5 minutes. It also bounds bursts after WAN recovery.
-            previous = c.execute(text("""
-                SELECT max(last_success_at) FROM equipment_rank_jobs
-            """)).scalar_one()
-            if previous is not None and c.execute(text(
-                "SELECT clock_timestamp() < :previous + interval '5 minutes'"
-            ), {'previous': previous}).scalar_one():
+            if not c.execute(text("SELECT public.bf4ps_rank_gate_ready()")).scalar_one():
                 return None
         # Prefer any healthy mak-site worker. Remote sites are automatic
         # standby only after all mak heartbeats have aged out (30 seconds).
@@ -97,9 +77,7 @@ def claim(engine, worker):
             -- Population is an inexpensive existing popularity proxy; UCAV
             -- remains explicitly hot even when its population is lower.
             ORDER BY
-                CASE WHEN next_due_at <= clock_timestamp()-interval '24 hours' THEN 0 ELSE 1 END,
-                CASE WHEN next_due_at <= clock_timestamp()-interval '24 hours'
-                     THEN next_due_at END ASC NULLS LAST,
+                CASE WHEN last_success_at IS NULL THEN 0 ELSE 1 END,
                 CASE WHEN platform='all' THEN 0 ELSE 1 END,
                 CASE WHEN kind='vehicle' AND item_id=10 THEN 0 ELSE 1 END,
                 COALESCE((SELECT sum(ep.population) FROM equipment_population ep
@@ -137,7 +115,7 @@ def renew(engine, job):
 
 def finish(engine, job, success, error=None, refresh_seconds=3600):
     with engine.begin() as c:
-        return c.execute(text("""
+        updated = c.execute(text("""
             UPDATE equipment_rank_jobs
             SET claimed_by=NULL,claim_token=NULL,lease_expires_at=NULL,
                 last_success_at=CASE WHEN :ok THEN clock_timestamp() ELSE last_success_at END,
@@ -150,3 +128,8 @@ def finish(engine, job, success, error=None, refresh_seconds=3600):
               AND claimed_by=:worker_id AND claim_token=:token AND claim_epoch=:epoch
               AND lease_expires_at>clock_timestamp()
         """), dict(job,ok=success,error=error,refresh=refresh_seconds)).rowcount == 1
+    # Arm only AFTER the finish transaction commits: its commit WAL must be replayed.
+    if updated and success and engine.url.database == 'bf4_playerstats':
+        with engine.begin() as c:
+            c.execute(text("SELECT public.bf4ps_rank_gate_arm()"))
+    return updated

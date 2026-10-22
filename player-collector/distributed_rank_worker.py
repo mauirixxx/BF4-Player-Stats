@@ -26,9 +26,9 @@ def refresh_interval(job):
     # ALL is our highest-value public leaderboard; individual platforms follow.
     # Environment overrides let operators tune scheduling without schema changes.
     key = 'BF4PS_RANK_REFRESH_ALL_SECONDS' if job['platform'] == 'all' else 'BF4PS_RANK_REFRESH_PLATFORM_SECONDS'
-    value = int(os.getenv(key, '3600'))
-    if not 300 <= value <= 10800:
-        raise ValueError(f'{key} must be between 300 and 10800 seconds')
+    value = int(os.getenv(key, '172800'))
+    if not 300 <= value <= 604800:
+        raise ValueError(f'{key} must be between 300 and 604800 seconds')
     return value
 
 def main():
