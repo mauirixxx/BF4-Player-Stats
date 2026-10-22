@@ -7,7 +7,7 @@ import time
 import discord
 from discord import app_commands
 import datetime
-from . import leases
+from . import leases, guild_settings
 
 logging.basicConfig(level=logging.INFO,format="%(asctime)s %(levelname)s %(message)s")
 log=logging.getLogger("bf4ps.discord")
@@ -40,10 +40,53 @@ class Bot(discord.Client):
 
         admin=app_commands.Group(name="admin",description="BF4 Player Stats server administration")
 
+        async def manager_settings(interaction):
+            if interaction.guild is None:
+                return None
+            try:
+                settings=await asyncio.wait_for(asyncio.to_thread(guild_settings.get,DSN,interaction.guild.id),timeout=5)
+                return settings
+            except Exception:
+                return None
+
+        @admin.command(name="managementrole",description="Set or clear the role allowed to administer the bot")
+        @app_commands.describe(role="Management role; omit to restore guild-owner-only access")
+        async def managementrole(interaction: discord.Interaction, role: discord.Role | None = None):
+            if interaction.guild is None:
+                await interaction.response.send_message("This command requires a server.",ephemeral=True)
+                return
+            settings=await manager_settings(interaction)
+            if settings is None:
+                await interaction.response.send_message("Settings database unavailable; no changes made.",ephemeral=True)
+                return
+            if not guild_settings.allowed(interaction.user,interaction.guild,settings):
+                await interaction.response.send_message("You are not authorized to manage this bot.",ephemeral=True)
+                return
+            if role is not None and (role.is_default() or role.is_bot_managed() or role.is_integration()):
+                await interaction.response.send_message("Choose an assignable server role, not @everyone or a managed role.",ephemeral=True)
+                return
+            await interaction.response.defer(ephemeral=True)
+            try:
+                valid=await asyncio.wait_for(asyncio.to_thread(leases.is_current,DSN,NODE,self.authority),timeout=5)
+                if not valid:
+                    raise RuntimeError("leadership changed")
+                await asyncio.wait_for(asyncio.to_thread(guild_settings.set_management_role,
+                    DSN,interaction.guild.id,role.id if role else None,interaction.user.id),timeout=5)
+            except Exception:
+                await interaction.followup.send("Could not save the setting; please retry.",ephemeral=True)
+                return
+            await interaction.followup.send(
+                f"Management access: {role.mention} and higher roles, plus the guild owner." if role else
+                "Management access reset to guild owner only.",ephemeral=True)
+
         @admin.command(name="status",description="Show private bot and HA cluster status")
         async def admin_status(interaction: discord.Interaction):
-            if interaction.guild is None or interaction.user.id != interaction.guild.owner_id:
-                await interaction.response.send_message("Only the server owner can use this command until a management role is configured.",ephemeral=True)
+            settings=await manager_settings(interaction)
+            if settings is None:
+                await interaction.response.send_message("Settings database unavailable or command used outside a server.",ephemeral=True)
+                return
+            if not guild_settings.allowed(interaction.user,interaction.guild,settings):
+                await interaction.response.send_message("You are not authorized to manage this bot.",ephemeral=True)
                 return
             await interaction.response.defer(ephemeral=True,thinking=True)
             try:
@@ -66,7 +109,11 @@ class Bot(discord.Client):
             embed.add_field(name="Control-plane database",value="Connected",inline=True)
             embed.add_field(name="Bot uptime",value=str(datetime.timedelta(seconds=int((now-self.started_at).total_seconds()))),inline=True)
             embed.add_field(name="Bot version",value=os.environ.get("BOT_VERSION","Not configured"),inline=True)
-            embed.add_field(name="Management access",value="Guild owner (role settings not yet implemented)",inline=False)
+            configured=settings.get(guild_settings.MANAGEMENT_ROLE)
+            management_role=interaction.guild.get_role(int(configured)) if configured and configured.isdecimal() else None
+            management_label=(f"{management_role.mention} and higher roles + guild owner" if management_role else
+                              "Guild owner only" if not configured else "Configured role missing — guild owner only")
+            embed.add_field(name="Management access",value=management_label,inline=False)
             embed.add_field(name="Minimum role",value="Everyone (settings not yet implemented)",inline=True)
             embed.add_field(name="Listen channels",value="All (settings not yet implemented)",inline=True)
             embed.add_field(name="Audit channel",value="Disabled (settings not yet implemented)",inline=True)
