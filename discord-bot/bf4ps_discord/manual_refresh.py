@@ -14,8 +14,8 @@ def _request(persona_id: int, platform: str, name: str):
     origin = os.environ.get("BF4PS_REFRESH_API_ORIGIN", "https://bf4playerstats.com")
     if not endpoint or not token or len(token) < 32:
         raise RuntimeError("Refresh service is not configured")
-    if not endpoint.startswith("http://127.0.0.1:"):
-        raise RuntimeError("Refresh service must use a local authenticated tunnel")
+    if endpoint != "http://192.168.10.71:8789/manual/request":
+        raise RuntimeError("Refresh service must use the configured private VPN endpoint")
     if platform not in PLATFORMS or not 0 < int(persona_id) < 2**63:
         raise ValueError("Invalid player identity")
     url = ("https://battlelog.battlefield.com/bf4/soldier/"
