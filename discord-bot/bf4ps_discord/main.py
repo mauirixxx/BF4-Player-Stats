@@ -363,28 +363,7 @@ class Bot(discord.Client):
              assault,engineer,support,recon,fetched_at,soldier_id)=matches[0]
             selected_view = view.value if view else "overview"
             selected_format = format.value if format else "image"
-            if selected_format == "html":
-                # Discord does not execute HTML. Link to the real, existing
-                # player dossier rather than inventing an unimplemented card route.
-                from urllib.parse import urlencode
-                dossier_url = "https://www.bf4playerstats.com/soldier.html?" + urlencode({"id": soldier_id})
-                summary = discord.Embed(
-                    title=f"🎖️ {discord.utils.escape_markdown(current_name)} · Battlefield 4",
-                    url=dossier_url,
-                    description=(f"**{platform.name}** · **Rank {rank if rank is not None else '—'}**"
-                                 + (f" · **{seconds / 3600:,.1f} hours**" if seconds is not None else "")
-                                 + f"\n**Kills:** {kills:,}" if kills is not None else
-                                 f"**{platform.name}** · **Rank {rank if rank is not None else '—'}**\nKills unavailable"),
-                    color=0xED8B31,
-                )
-                summary.add_field(name="View", value=selected_view.title(), inline=True)
-                summary.add_field(name="Updated", value=f"{fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Unavailable", inline=True)
-                summary.set_footer(text="Web view opens the existing player dossier · Choose Image for a shareable Discord card")
-                links = discord.ui.View(timeout=None)
-                links.add_item(discord.ui.Button(label="Open Player Dossier",style=discord.ButtonStyle.link,url=dossier_url))
-                await interaction.followup.send(embed=summary, view=links)
-                return
-            if selected_view in ("weapons", "vehicles"):
+            if selected_format != "html" and selected_view in ("weapons", "vehicles"):
                 from io import BytesIO
                 from .ranking_card import render_ranking
                 from .equipment_artwork import fetch_top_artwork
@@ -503,6 +482,25 @@ class Bot(discord.Client):
                 f"**{best}**  ·  {count(available[best])} score" if best else "—"),inline=False)
             embed.set_footer(text=f"BF4 Player Stats  •  Persona ID {persona_id}  •  "+(
                 f"Collected {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet"))
+            if selected_format == "html":
+                buttons = discord.ui.View(timeout=None)
+                buttons.add_item(discord.ui.Button(
+                    label="Player Dossier", style=discord.ButtonStyle.link,
+                    url=f"https://www.bf4playerstats.com/soldier.html?id={soldier_id}"))
+                buttons.add_item(discord.ui.Button(
+                    label="Refresh Stats (coming soon)",
+                    style=discord.ButtonStyle.secondary, disabled=True))
+                platform_plus = {
+                    "PC": discord.PartialEmoji(name="bf4ps_plus_pc", id=1562938945388679188),
+                    "Xbox": discord.PartialEmoji(name="bf4ps_plus_xbox", id=1562938947137699930),
+                    "PlayStation": discord.PartialEmoji(name="bf4ps_plus_playstation", id=1562938948442001440),
+                }
+                buttons.add_item(discord.ui.Button(
+                    label="Add Bot", style=discord.ButtonStyle.link,
+                    url="https://add.bf4playerstats.com",
+                    emoji=platform_plus.get(platform.name, platform_plus["PC"])))
+                await interaction.followup.send(embed=embed, view=buttons)
+                return
             try:
                 from io import BytesIO
                 from .overview_card import render_overview
