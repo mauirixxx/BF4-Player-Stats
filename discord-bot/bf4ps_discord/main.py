@@ -398,7 +398,7 @@ class Bot(discord.Client):
                             detail = (
                                 f"**{entry['kills']:,} kills**" if entry["kills"] is not None else "**Kills unavailable**"
                             )
-                            detail += f"\\n{item_kpm:.2f} KPM" if item_kpm is not None else "\\nKPM unavailable"
+                            detail += f"\n{item_kpm:.2f} KPM" if item_kpm is not None else "\nKPM unavailable"
                             detail += f" · {item_hours:,.1f} hours" if item_hours is not None else ""
                             ranking_embed.add_field(
                                 name=f"{place}. {entry['name']}", value=detail, inline=True)
