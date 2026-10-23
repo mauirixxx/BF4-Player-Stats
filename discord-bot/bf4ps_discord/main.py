@@ -9,6 +9,7 @@ from discord import app_commands
 import datetime
 from . import leases, guild_settings, player_lookup, command_audit
 from .card_cache import CardCache, BusyError
+from .manual_refresh import request_refresh
 
 logging.basicConfig(level=logging.INFO,format="%(asctime)s %(levelname)s %(message)s")
 log=logging.getLogger("bf4ps.discord")
@@ -19,6 +20,38 @@ DRY_RUN=os.environ.get("DRY_RUN","0")=="1"
 STATS_DSN=os.environ.get("BF4PS_STATS_DSN","")
 TTL=30
 RENEW=10
+
+def refresh_button(persona_id, platform, name):
+    """Bound Discord callback; each result carries its authoritative persona ID."""
+    button = discord.ui.Button(label="Refresh Stats", style=discord.ButtonStyle.secondary)
+
+    async def on_click(interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        try:
+            result = await request_refresh(persona_id, platform, name)
+            state = result.get("state", "unavailable")
+            retry = result.get("retry_after_seconds") or 0
+            if state in ("accepted", "verification_pending"):
+                message = "✅ Stats refresh queued! The collectors will update this player when a worker is available."
+            elif state in ("cooldown", "up_to_date"):
+                minutes = max(1, (int(retry) + 59) // 60) if retry else None
+                message = ("⏳ Refresh cooldown active." + (f" Try again in about {minutes} minutes." if minutes else ""))
+            elif state in ("already_pending", "pending", "running"):
+                message = "⏳ A refresh is already queued or running for this player."
+            elif state == "excluded":
+                message = "This player is excluded from collection."
+            elif state == "not_registered":
+                message = "This player is not registered for refresh."
+            else:
+                message = "Refresh could not be queued right now. Please try again later."
+        except Exception:
+            log.exception("manual_refresh_failed")
+            message = "The refresh service is temporarily unavailable. Please try again later."
+        await interaction.followup.send(message, ephemeral=True)
+
+    button.callback = on_click
+    return button
+
 
 class Bot(discord.Client):
     def __init__(self, authority):
@@ -409,9 +442,7 @@ class Bot(discord.Client):
                         buttons.add_item(discord.ui.Button(
                             label="Full Stats", style=discord.ButtonStyle.link,
                             url=f"https://www.bf4playerstats.com/soldier.html?id={soldier_id}"))
-                        buttons.add_item(discord.ui.Button(
-                            label="Refresh Stats (coming soon)", style=discord.ButtonStyle.secondary,
-                            disabled=True))
+                        buttons.add_item(refresh_button(persona_id, found_platform, current_name))
                         plus = {
                             "PC": discord.PartialEmoji(name="bf4ps_plus_pc", id=1562938945388679188),
                             "Xbox": discord.PartialEmoji(name="bf4ps_plus_xbox", id=1562938947137699930),
@@ -449,8 +480,7 @@ class Bot(discord.Client):
                     buttons.add_item(discord.ui.Button(
                         label="Full Stats", style=discord.ButtonStyle.link,
                         url=f"https://www.bf4playerstats.com/soldier.html?id={soldier_id}"))
-                    buttons.add_item(discord.ui.Button(
-                        label="Refresh Stats (coming soon)", style=discord.ButtonStyle.secondary, disabled=True))
+                    buttons.add_item(refresh_button(persona_id, found_platform, current_name))
                     plus = {
                         "PC": discord.PartialEmoji(name="bf4ps_plus_pc", id=1562938945388679188),
                         "Xbox": discord.PartialEmoji(name="bf4ps_plus_xbox", id=1562938947137699930),
@@ -524,9 +554,7 @@ class Bot(discord.Client):
                 buttons.add_item(discord.ui.Button(
                     label="Full Stats", style=discord.ButtonStyle.link,
                     url=f"https://www.bf4playerstats.com/soldier.html?id={soldier_id}"))
-                buttons.add_item(discord.ui.Button(
-                    label="Refresh Stats (coming soon)",
-                    style=discord.ButtonStyle.secondary, disabled=True))
+                buttons.add_item(refresh_button(persona_id, found_platform, current_name))
                 platform_plus = {
                     "PC": discord.PartialEmoji(name="bf4ps_plus_pc", id=1562938945388679188),
                     "Xbox": discord.PartialEmoji(name="bf4ps_plus_xbox", id=1562938947137699930),
@@ -571,11 +599,7 @@ class Bot(discord.Client):
                     style=discord.ButtonStyle.link,
                     url=f"https://www.bf4playerstats.com/soldier.html?id={soldier_id}",
                 ))
-                buttons.add_item(discord.ui.Button(
-                    label="Refresh Stats (coming soon)",
-                    style=discord.ButtonStyle.secondary,
-                    disabled=True,
-                ))
+                buttons.add_item(refresh_button(persona_id, found_platform, current_name))
                 platform_plus = {
                     "PC": discord.PartialEmoji(name="bf4ps_plus_pc", id=1562938945388679188),
                     "Xbox": discord.PartialEmoji(name="bf4ps_plus_xbox", id=1562938947137699930),
