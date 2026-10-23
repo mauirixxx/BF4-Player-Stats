@@ -311,10 +311,11 @@ class Bot(discord.Client):
         pstats=app_commands.Group(name="pstats",description="Battlefield 4 player statistics")
 
         @pstats.command(name="player",description="Find a Battlefield 4 player by exact current name")
-        @app_commands.describe(name="Exact player name (case-insensitive)",platform="Battlefield 4 platform",view="Statistics view (default: Overview)")
+        @app_commands.describe(name="Exact player name (case-insensitive)",platform="Battlefield 4 platform",view="Statistics view (default: Overview)",format="Presentation format (default: Web link + Discord summary)")
+        @app_commands.choices(format=[app_commands.Choice(name="Web / Discord summary (default)",value="html"),app_commands.Choice(name="Shareable image",value="image")])
         @app_commands.choices(view=[app_commands.Choice(name="Overview",value="overview"),app_commands.Choice(name="Weapons",value="weapons"),app_commands.Choice(name="Vehicles",value="vehicles")])
         @app_commands.choices(platform=[app_commands.Choice(name=k,value=v) for k,v in player_lookup.PLATFORMS.items()])
-        async def player(interaction: discord.Interaction, name: str, platform: app_commands.Choice[str], view: app_commands.Choice[str] | None = None):
+        async def player(interaction: discord.Interaction, name: str, platform: app_commands.Choice[str], view: app_commands.Choice[str] | None = None, format: app_commands.Choice[str] | None = None):
             if interaction.guild is None:
                 self.audit_result(interaction,"BLOCKED","Server-only command")
                 await interaction.response.send_message("Use this command in a server.",ephemeral=True)
@@ -361,6 +362,28 @@ class Bot(discord.Client):
              shots_fired,shots_hit,streak,wins,losses,total_score,
              assault,engineer,support,recon,fetched_at,soldier_id)=matches[0]
             selected_view = view.value if view else "overview"
+            selected_format = format.value if format else "html"
+            if selected_format == "html":
+                # Discord does not execute HTML. Link to the real, existing
+                # player dossier rather than inventing an unimplemented card route.
+                from urllib.parse import urlencode
+                dossier_url = "https://www.bf4playerstats.com/soldier.html?" + urlencode({"id": soldier_id})
+                summary = discord.Embed(
+                    title=f"🎖️ {discord.utils.escape_markdown(current_name)} · Battlefield 4",
+                    url=dossier_url,
+                    description=(f"**{platform.name}** · **Rank {rank if rank is not None else '—'}**"
+                                 + (f" · **{seconds / 3600:,.1f} hours**" if seconds is not None else "")
+                                 + f"\\n**Kills:** {kills:,}" if kills is not None else
+                                 f"**{platform.name}** · **Rank {rank if rank is not None else '—'}**\\nKills unavailable"),
+                    color=0xED8B31,
+                )
+                summary.add_field(name="View", value=selected_view.title(), inline=True)
+                summary.add_field(name="Updated", value=f"{fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Unavailable", inline=True)
+                summary.set_footer(text="Web view opens the existing player dossier · Choose Image for a shareable Discord card")
+                links = discord.ui.View(timeout=None)
+                links.add_item(discord.ui.Button(label="Open Player Dossier",style=discord.ButtonStyle.link,url=dossier_url))
+                await interaction.followup.send(embed=summary, view=links)
+                return
             if selected_view in ("weapons", "vehicles"):
                 from io import BytesIO
                 from .ranking_card import render_ranking
