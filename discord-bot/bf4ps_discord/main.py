@@ -312,7 +312,7 @@ class Bot(discord.Client):
 
         @pstats.command(name="player",description="Find a Battlefield 4 player by exact current name")
         @app_commands.describe(name="Exact player name (case-insensitive)",platform="Battlefield 4 platform",view="Statistics view (default: Overview)",format="Presentation format (default: Shareable image)")
-        @app_commands.choices(format=[app_commands.Choice(name="Shareable image (default)",value="image"),app_commands.Choice(name="Web / Discord summary",value="html")])
+        @app_commands.choices(format=[app_commands.Choice(name="Shareable image (default)",value="image"),app_commands.Choice(name="Web (experimental)",value="html")])
         @app_commands.choices(view=[app_commands.Choice(name="Overview",value="overview"),app_commands.Choice(name="Weapons",value="weapons"),app_commands.Choice(name="Vehicles",value="vehicles")])
         @app_commands.choices(platform=[app_commands.Choice(name=k,value=v) for k,v in player_lookup.PLATFORMS.items()])
         async def player(interaction: discord.Interaction, name: str, platform: app_commands.Choice[str], view: app_commands.Choice[str] | None = None, format: app_commands.Choice[str] | None = None):
