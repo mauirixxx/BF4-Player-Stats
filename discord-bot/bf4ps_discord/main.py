@@ -410,7 +410,7 @@ class Bot(discord.Client):
                     png = await self.card_cache.get_or_render(cache_key, produce_ranking)
                     buttons = discord.ui.View(timeout=None)
                     buttons.add_item(discord.ui.Button(
-                        label="Player Dossier", style=discord.ButtonStyle.link,
+                        label="Full Stats", style=discord.ButtonStyle.link,
                         url=f"https://www.bf4playerstats.com/soldier.html?id={soldier_id}"))
                     buttons.add_item(discord.ui.Button(
                         label="Refresh Stats (coming soon)", style=discord.ButtonStyle.secondary, disabled=True))
@@ -485,7 +485,7 @@ class Bot(discord.Client):
             if selected_format == "html":
                 buttons = discord.ui.View(timeout=None)
                 buttons.add_item(discord.ui.Button(
-                    label="Player Dossier", style=discord.ButtonStyle.link,
+                    label="Full Stats", style=discord.ButtonStyle.link,
                     url=f"https://www.bf4playerstats.com/soldier.html?id={soldier_id}"))
                 buttons.add_item(discord.ui.Button(
                     label="Refresh Stats (coming soon)",
@@ -530,7 +530,7 @@ class Bot(discord.Client):
                 # A native image attachment uses Discord's wider image preview.
                 buttons = discord.ui.View(timeout=None)
                 buttons.add_item(discord.ui.Button(
-                    label="Player Dossier",
+                    label="Full Stats",
                     style=discord.ButtonStyle.link,
                     url=f"https://www.bf4playerstats.com/soldier.html?id={soldier_id}",
                 ))
