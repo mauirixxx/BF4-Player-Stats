@@ -363,7 +363,7 @@ class Bot(discord.Client):
              assault,engineer,support,recon,fetched_at,soldier_id)=matches[0]
             selected_view = view.value if view else "overview"
             selected_format = format.value if format else "image"
-            if selected_format != "html" and selected_view in ("weapons", "vehicles"):
+            if selected_view in ("weapons", "vehicles"):
                 from io import BytesIO
                 from .ranking_card import render_ranking
                 from .equipment_artwork import fetch_top_artwork
@@ -385,6 +385,43 @@ class Bot(discord.Client):
                     if not entries:
                         await interaction.followup.send(
                             f"No {selected_view} statistics collected yet for **{discord.utils.escape_markdown(current_name)}**.")
+                        return
+                    if selected_format == "html":
+                        ranking_embed = discord.Embed(
+                            title=f"🎖️ {discord.utils.escape_markdown(current_name)} • TOP {selected_view.upper()}",
+                            description=f"**{platform.name}** · **{len(entries)} ranked items**",
+                            color=0xE67E22,
+                        )
+                        for place, entry in enumerate(entries[:9], 1):
+                            item_hours = entry["hours"]
+                            item_kpm = entry["kpm"]
+                            detail = (
+                                f"**{entry['kills']:,} kills**" if entry["kills"] is not None else "**Kills unavailable**"
+                            )
+                            detail += f"\\n{item_kpm:.2f} KPM" if item_kpm is not None else "\\nKPM unavailable"
+                            detail += f" · {item_hours:,.1f} hours" if item_hours is not None else ""
+                            ranking_embed.add_field(
+                                name=f"{place}. {entry['name']}", value=detail, inline=True)
+                        ranking_embed.set_footer(text=(
+                            f"BF4 Player Stats · Persona ID {persona_id} · "
+                            + (f"Collected {fetched_at:%Y-%m-%d %H:%M UTC}" if fetched_at else "Stats not collected yet")))
+                        buttons = discord.ui.View(timeout=None)
+                        buttons.add_item(discord.ui.Button(
+                            label="Full Stats", style=discord.ButtonStyle.link,
+                            url=f"https://www.bf4playerstats.com/soldier.html?id={soldier_id}"))
+                        buttons.add_item(discord.ui.Button(
+                            label="Refresh Stats (coming soon)", style=discord.ButtonStyle.secondary,
+                            disabled=True))
+                        plus = {
+                            "PC": discord.PartialEmoji(name="bf4ps_plus_pc", id=1562938945388679188),
+                            "Xbox": discord.PartialEmoji(name="bf4ps_plus_xbox", id=1562938947137699930),
+                            "PlayStation": discord.PartialEmoji(name="bf4ps_plus_playstation", id=1562938948442001440),
+                        }
+                        buttons.add_item(discord.ui.Button(
+                            label="Add Bot", style=discord.ButtonStyle.link,
+                            url="https://add.bf4playerstats.com",
+                            emoji=plus.get(platform.name, plus["PC"])))
+                        await interaction.followup.send(embed=ranking_embed, view=buttons)
                         return
                     hours = seconds / 3600 if seconds is not None else None
                     fields = {
