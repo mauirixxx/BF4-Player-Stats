@@ -311,8 +311,8 @@ class Bot(discord.Client):
         pstats=app_commands.Group(name="pstats",description="Battlefield 4 player statistics")
 
         @pstats.command(name="player",description="Find a Battlefield 4 player by exact current name")
-        @app_commands.describe(name="Exact player name (case-insensitive)",platform="Battlefield 4 platform",view="Statistics view (default: Overview)",format="Presentation format (default: Web link + Discord summary)")
-        @app_commands.choices(format=[app_commands.Choice(name="Web / Discord summary (default)",value="html"),app_commands.Choice(name="Shareable image",value="image")])
+        @app_commands.describe(name="Exact player name (case-insensitive)",platform="Battlefield 4 platform",view="Statistics view (default: Overview)",format="Presentation format (default: Shareable image)")
+        @app_commands.choices(format=[app_commands.Choice(name="Shareable image (default)",value="image"),app_commands.Choice(name="Web / Discord summary",value="html")])
         @app_commands.choices(view=[app_commands.Choice(name="Overview",value="overview"),app_commands.Choice(name="Weapons",value="weapons"),app_commands.Choice(name="Vehicles",value="vehicles")])
         @app_commands.choices(platform=[app_commands.Choice(name=k,value=v) for k,v in player_lookup.PLATFORMS.items()])
         async def player(interaction: discord.Interaction, name: str, platform: app_commands.Choice[str], view: app_commands.Choice[str] | None = None, format: app_commands.Choice[str] | None = None):
@@ -362,7 +362,7 @@ class Bot(discord.Client):
              shots_fired,shots_hit,streak,wins,losses,total_score,
              assault,engineer,support,recon,fetched_at,soldier_id)=matches[0]
             selected_view = view.value if view else "overview"
-            selected_format = format.value if format else "html"
+            selected_format = format.value if format else "image"
             if selected_format == "html":
                 # Discord does not execute HTML. Link to the real, existing
                 # player dossier rather than inventing an unimplemented card route.
@@ -373,8 +373,8 @@ class Bot(discord.Client):
                     url=dossier_url,
                     description=(f"**{platform.name}** · **Rank {rank if rank is not None else '—'}**"
                                  + (f" · **{seconds / 3600:,.1f} hours**" if seconds is not None else "")
-                                 + f"\\n**Kills:** {kills:,}" if kills is not None else
-                                 f"**{platform.name}** · **Rank {rank if rank is not None else '—'}**\\nKills unavailable"),
+                                 + f"\n**Kills:** {kills:,}" if kills is not None else
+                                 f"**{platform.name}** · **Rank {rank if rank is not None else '—'}**\nKills unavailable"),
                     color=0xED8B31,
                 )
                 summary.add_field(name="View", value=selected_view.title(), inline=True)
