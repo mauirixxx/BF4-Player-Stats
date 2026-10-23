@@ -126,6 +126,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path != '/manual/request':
             return self.respond(404, {'error': 'not_found'})
+        # Only local website gateway and two authorized bot hosts over private IPsec.
+        if self.client_address[0] not in ('127.0.0.1', '192.168.10.70', '192.168.200.47'):
+            return self.respond(403, {'error': 'forbidden_client'})
         # Require explicit same-origin token at reverse proxy before any public rollout.
         # This private endpoint also requires a shared secret, configured separately.
         expected = os.environ.get('BF4PS_MANUAL_PRIVATE_TOKEN', '')
@@ -172,9 +175,15 @@ def main():
     token = os.environ.get('BF4PS_MANUAL_PRIVATE_TOKEN', '')
     if not url or not token or len(token) < 32:
         raise SystemExit('private manual API requires separate DB URL and 32+ character token')
-    server = ThreadingHTTPServer(('127.0.0.1', int(os.environ.get('BF4PS_MANUAL_PORT', '8789'))), Handler)
-    server.engine = create_engine(url, pool_pre_ping=True, pool_size=2, max_overflow=1)
-    server.serve_forever()
+    from threading import Thread
+    port = int(os.environ.get('BF4PS_MANUAL_PORT', '8789'))
+    engine = create_engine(url, pool_pre_ping=True, pool_size=2, max_overflow=1)
+    local = ThreadingHTTPServer(('127.0.0.1', port), Handler)
+    local.engine = engine
+    private = ThreadingHTTPServer(('192.168.10.71', port), Handler)
+    private.engine = engine
+    Thread(target=local.serve_forever, daemon=True).start()
+    private.serve_forever()
 
 
 if __name__ == '__main__':
