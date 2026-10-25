@@ -7,6 +7,9 @@ from decimal import Decimal
 from typing import Sequence
 
 from sqlalchemy import text
+
+from bf4ps.bulk_values import bulk_values
+from bf4ps.catalog_refresh import needs_refresh
 from sqlalchemy.engine import Connection
 
 from bf4ps.battlelog_vehicles import NormalizedVehicleStat
@@ -87,75 +90,55 @@ def persist_vehicle_success(
     if ownership is None:
         raise RuntimeError("vehicle success rejected: job lease is no longer owned")
 
+    # The catalog is shared by every soldier. Avoid rewriting unchanged rows
+    # for every collection: this previously produced millions of dead tuples
+    # and serialized the fleet behind a global catalog lock. Metadata changes
+    # are immediate; last_seen_at is refreshed at most once per 15 minutes.
     vehicle_ids: dict[str, int] = {}
     ordered_vehicles = sorted(vehicles, key=lambda item: item.vehicle_guid)
-    for vehicle in ordered_vehicles:
-        # The catalog is global and mostly immutable. Avoid a new MVCC row
-        # version for every soldier collection when metadata is unchanged.
-        existing = conn.execute(
-            text("SELECT vehicle_id, name, slug, category FROM vehicle_catalog WHERE vehicle_guid = :guid"),
-            {"guid": vehicle.vehicle_guid},
-        ).one_or_none()
-        if existing is not None and (existing.name, existing.slug, existing.category) == (
-            vehicle.name, vehicle.slug, vehicle.category
-        ):
-            vehicle_ids[vehicle.vehicle_guid] = int(existing.vehicle_id)
-            continue
-        row = conn.execute(
-            text(
-                """
-                INSERT INTO vehicle_catalog
-                    (vehicle_guid, name, slug, category, first_seen_at, last_seen_at)
-                VALUES
-                    (:vehicle_guid, :name, :slug, :category,
-                     :source_fetched_at, :source_fetched_at)
-                ON CONFLICT (vehicle_guid) DO UPDATE
-                SET name = EXCLUDED.name,
-                    slug = EXCLUDED.slug,
-                    category = EXCLUDED.category,
-                    last_seen_at = EXCLUDED.last_seen_at
-                RETURNING vehicle_id
-                """
-            ),
-            {
-                "vehicle_guid": vehicle.vehicle_guid,
-                "name": vehicle.name,
-                "slug": vehicle.slug,
-                "category": vehicle.category,
-                "source_fetched_at": source_fetched_at,
-            },
-        ).one()
-        vehicle_ids[vehicle.vehicle_guid] = int(row[0])
+    if ordered_vehicles:
+        existing = {row[0]: row for row in conn.execute(text(
+            "SELECT vehicle_guid, vehicle_id, name, slug, category, last_seen_at "
+            "FROM vehicle_catalog WHERE vehicle_guid = ANY(:guids)"
+        ), {"guids": [item.vehicle_guid for item in ordered_vehicles]})}
+        vehicle_ids = {guid: int(row[1]) for guid, row in existing.items()}
+        catalog_rows = [
+            {"vehicle_guid": item.vehicle_guid, "name": item.name, "slug": item.slug,
+             "category": item.category}
+            for item in ordered_vehicles
+            if needs_refresh(existing.get(item.vehicle_guid), name=item.name,
+                             slug=item.slug, category=item.category, observed_at=source_fetched_at)
+        ]
+        if catalog_rows:
+            values_sql, params = bulk_values(catalog_rows, ('vehicle_guid', 'name', 'slug', 'category'))
+            params["source_fetched_at"] = source_fetched_at
+            rows = conn.execute(text(
+                "INSERT INTO vehicle_catalog (vehicle_guid, name, slug, category, first_seen_at, last_seen_at) "
+                "VALUES " + values_sql.replace(")", ", :source_fetched_at, :source_fetched_at)") +
+                " ON CONFLICT (vehicle_guid) DO UPDATE SET "
+                "name = EXCLUDED.name, slug = EXCLUDED.slug, "
+                "category = EXCLUDED.category, last_seen_at = EXCLUDED.last_seen_at "
+                "RETURNING vehicle_guid, vehicle_id"
+            ), params)
+            vehicle_ids.update({row[0]: int(row[1]) for row in rows})
 
     conn.execute(
         text("DELETE FROM soldier_vehicle_stats WHERE soldier_id = :soldier_id"),
         {"soldier_id": job.soldier_id},
     )
 
-    for vehicle in vehicles:
-        destroy_x_in_y = (
-            None if vehicle.destroy_x_in_y is None else int(vehicle.destroy_x_in_y)
-        )
-        conn.execute(
-            text(
-                """
-                INSERT INTO soldier_vehicle_stats
-                    (soldier_id, vehicle_id, kills, time_in_seconds,
-                     destroy_x_in_y, source_fetched_at, updated_at)
-                VALUES
-                    (:soldier_id, :vehicle_id, :kills, :time_in_seconds,
-                     :destroy_x_in_y, :source_fetched_at, now())
-                """
-            ),
-            {
-                "soldier_id": job.soldier_id,
-                "vehicle_id": vehicle_ids[vehicle.vehicle_guid],
-                "kills": vehicle.kills,
-                "time_in_seconds": vehicle.time_in_seconds,
-                "destroy_x_in_y": destroy_x_in_y,
-                "source_fetched_at": source_fetched_at,
-            },
-        )
+    if vehicles:
+        stat_rows = [
+            {"soldier_id": job.soldier_id, "vehicle_id": vehicle_ids[item.vehicle_guid],
+             "kills": item.kills, "time_in_seconds": item.time_in_seconds,
+             "destroy_x_in_y": None if item.destroy_x_in_y is None else int(item.destroy_x_in_y),
+             "source_fetched_at": source_fetched_at} for item in vehicles
+        ]
+        values_sql, params = bulk_values(stat_rows, (('soldier_id', 'vehicle_id', 'kills', 'time_in_seconds', 'destroy_x_in_y', 'source_fetched_at')))
+        conn.execute(text(
+            "INSERT INTO soldier_vehicle_stats (soldier_id, vehicle_id, kills, time_in_seconds, destroy_x_in_y, source_fetched_at, updated_at) VALUES "
+            + values_sql.replace(")", ", now())")
+        ), params)
 
     conn.execute(
         text(

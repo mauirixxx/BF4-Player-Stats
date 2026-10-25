@@ -6,6 +6,9 @@ from datetime import datetime
 from typing import Sequence
 
 from sqlalchemy import text
+
+from bf4ps.bulk_values import bulk_values
+from bf4ps.catalog_refresh import needs_refresh
 from sqlalchemy.engine import Connection
 
 from bf4ps.battlelog_weapons import NormalizedWeaponStat
@@ -54,15 +57,6 @@ def persist_weapon_success(
         raise ValueError("http_status must be between 100 and 599")
     _validate_weapons(weapons)
 
-    # Every successful weapon payload reconciles the same small global catalog.
-    # Serialize that shared critical section across collectors so concurrent
-    # transactions cannot acquire overlapping unique-index/catalog locks in
-    # conflicting orders. The lock is transaction-scoped and releases on
-    # commit/rollback.
-    conn.execute(
-        text("SELECT pg_advisory_xact_lock(hashtext('bf4ps:weapon-catalog-persistence'))")
-    )
-
     ownership = conn.execute(
         text(
             """
@@ -91,79 +85,74 @@ def persist_weapon_success(
     # Reconcile the global catalog first. The GUID is the durable Battlelog
     # identity; descriptive fields follow the latest successfully normalized
     # observation while first_seen_at remains immutable.
+    # The catalog is shared by every soldier. Avoid rewriting unchanged rows
+    # for every collection: this previously produced millions of dead tuples
+    # and serialized the fleet behind a global catalog lock. Metadata changes
+    # are immediate; last_seen_at is refreshed at most once per 15 minutes.
     weapon_ids: dict[str, int] = {}
     ordered_weapons = sorted(weapons, key=lambda item: item.weapon_guid)
-    for weapon in ordered_weapons:
-        # The catalog is global and mostly immutable. Avoid a new MVCC row
-        # version for every soldier collection when metadata is unchanged.
-        existing = conn.execute(
-            text("SELECT weapon_id, name, slug, category FROM weapon_catalog WHERE weapon_guid = :guid"),
-            {"guid": weapon.weapon_guid},
-        ).one_or_none()
-        if existing is not None and (existing.name, existing.slug, existing.category) == (
-            weapon.name, weapon.slug, weapon.category
-        ):
-            weapon_ids[weapon.weapon_guid] = int(existing.weapon_id)
-            continue
-        row = conn.execute(
-            text(
-                """
-                INSERT INTO weapon_catalog
-                    (weapon_guid, name, slug, category, first_seen_at, last_seen_at)
-                VALUES
-                    (:weapon_guid, :name, :slug, :category,
-                     :source_fetched_at, :source_fetched_at)
-                ON CONFLICT (weapon_guid) DO UPDATE
-                SET name = EXCLUDED.name,
-                    slug = EXCLUDED.slug,
-                    category = EXCLUDED.category,
-                    last_seen_at = EXCLUDED.last_seen_at
-                RETURNING weapon_id
-                """
-            ),
-            {
-                "weapon_guid": weapon.weapon_guid,
-                "name": weapon.name,
-                "slug": weapon.slug,
-                "category": weapon.category,
-                "source_fetched_at": source_fetched_at,
-            },
-        ).one()
-        weapon_ids[weapon.weapon_guid] = int(row[0])
+    if ordered_weapons:
+        existing = {row[0]: row for row in conn.execute(text(
+            "SELECT weapon_guid, weapon_id, name, slug, category, last_seen_at "
+            "FROM weapon_catalog WHERE weapon_guid = ANY(:guids)"
+        ), {"guids": [item.weapon_guid for item in ordered_weapons]})}
+        weapon_ids = {guid: int(row[1]) for guid, row in existing.items()}
+        catalog_rows = [
+            {"weapon_guid": item.weapon_guid, "name": item.name, "slug": item.slug,
+             "category": item.category}
+            for item in ordered_weapons
+            if needs_refresh(existing.get(item.weapon_guid), name=item.name,
+                             slug=item.slug, category=item.category, observed_at=source_fetched_at)
+        ]
+        if catalog_rows:
+            # Only rare catalog reconciliation needs fleet-wide serialization.
+            # Recheck under lock: another worker may have refreshed the GUIDs.
+            conn.execute(text(
+                "SELECT pg_advisory_xact_lock(hashtext('bf4ps:weapon-catalog-persistence'))"
+            ))
+            existing = {row[0]: row for row in conn.execute(text(
+                "SELECT weapon_guid, weapon_id, name, slug, category, last_seen_at "
+                "FROM weapon_catalog WHERE weapon_guid = ANY(:guids)"
+            ), {"guids": [item.weapon_guid for item in ordered_weapons]})}
+            weapon_ids.update({guid: int(row[1]) for guid, row in existing.items()})
+            catalog_rows = [
+                {"weapon_guid": item.weapon_guid, "name": item.name, "slug": item.slug,
+                 "category": item.category}
+                for item in ordered_weapons
+                if needs_refresh(existing.get(item.weapon_guid), name=item.name,
+                                 slug=item.slug, category=item.category, observed_at=source_fetched_at)
+            ]
+        if catalog_rows:
+            values_sql, params = bulk_values(catalog_rows, ('weapon_guid', 'name', 'slug', 'category'))
+            params["source_fetched_at"] = source_fetched_at
+            rows = conn.execute(text(
+                "INSERT INTO weapon_catalog (weapon_guid, name, slug, category, first_seen_at, last_seen_at) "
+                "VALUES " + values_sql.replace(")", ", :source_fetched_at, :source_fetched_at)") +
+                " ON CONFLICT (weapon_guid) DO UPDATE SET "
+                "name = EXCLUDED.name, slug = EXCLUDED.slug, "
+                "category = EXCLUDED.category, last_seen_at = EXCLUDED.last_seen_at "
+                "RETURNING weapon_guid, weapon_id"
+            ), params)
+            weapon_ids.update({row[0]: int(row[1]) for row in rows})
 
-    # The endpoint is authoritative for the soldier's current retained weapon
-    # set. Replacement also removes rows for weapons that disappear from a later
-    # successful payload.
     conn.execute(
         text("DELETE FROM soldier_weapon_stats WHERE soldier_id = :soldier_id"),
         {"soldier_id": job.soldier_id},
     )
 
-    for weapon in weapons:
-        conn.execute(
-            text(
-                """
-                INSERT INTO soldier_weapon_stats
-                    (soldier_id, weapon_id, kills, headshots, shots_fired,
-                     shots_hit, time_equipped_seconds, source_fetched_at,
-                     updated_at)
-                VALUES
-                    (:soldier_id, :weapon_id, :kills, :headshots, :shots_fired,
-                     :shots_hit, :time_equipped_seconds, :source_fetched_at,
-                     now())
-                """
-            ),
-            {
-                "soldier_id": job.soldier_id,
-                "weapon_id": weapon_ids[weapon.weapon_guid],
-                "kills": weapon.kills,
-                "headshots": weapon.headshots,
-                "shots_fired": weapon.shots_fired,
-                "shots_hit": weapon.shots_hit,
-                "time_equipped_seconds": weapon.time_equipped_seconds,
-                "source_fetched_at": source_fetched_at,
-            },
-        )
+    if weapons:
+        stat_rows = [
+            {"soldier_id": job.soldier_id, "weapon_id": weapon_ids[item.weapon_guid],
+             "kills": item.kills, "headshots": item.headshots,
+             "shots_fired": item.shots_fired, "shots_hit": item.shots_hit,
+             "time_equipped_seconds": item.time_equipped_seconds,
+             "source_fetched_at": source_fetched_at} for item in weapons
+        ]
+        values_sql, params = bulk_values(stat_rows, (('soldier_id', 'weapon_id', 'kills', 'headshots', 'shots_fired', 'shots_hit', 'time_equipped_seconds', 'source_fetched_at')))
+        conn.execute(text(
+            "INSERT INTO soldier_weapon_stats (soldier_id, weapon_id, kills, headshots, shots_fired, shots_hit, time_equipped_seconds, source_fetched_at, updated_at) VALUES "
+            + values_sql.replace(")", ", now())")
+        ), params)
 
     conn.execute(
         text(
