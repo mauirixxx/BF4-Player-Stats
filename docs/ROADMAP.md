@@ -1,3 +1,5 @@
+> **2026-10-24 operational update:** Nine BF4PS collector nodes were moved to 4-second per-egress pacing and exclusion-aware job claiming. The 4,800/hour shared request budget was retained; BF4SW pacing was unchanged. See [collector architecture](collector-architecture.md). Fleet rollout was observed initially, but sustained rate-limit safety, reproducible image deployment and complete test validation remain open.
+
 > **2026-10-21 update:** Both `mak-05` and `hnl-03` platoon timers are now active and have completed live work using the shared UUID lease. The October 19 pending platoon-worker deployment items below are historical; sustained two-node failover/soak testing remains outstanding. See [path-to-completion.md](path-to-completion.md).
 
 # BF4 Player Stats — Project Roadmap

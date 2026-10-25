@@ -1,3 +1,5 @@
+> **2026-10-24 operational note (no migration):** `collection_jobs` may retain pending rows for actively excluded soldiers; such rows must be ignored by the claim query, not executed. The `player_exclusions` trigger remains authoritative defense in depth. Fleet pacing changed to 4 seconds per egress; the `runtime_budgets` values remained 4,800/hour. This note does not supersede the dated live schema inventory below.
+
 # Live schema reconciliation — 2026-10-21
 
 **Verified live database:** `bf4_playerstats` on PostgreSQL 16.15, Alembic revision **`0017_rank_immutable_scores`**. The live catalog currently contains **43 public tables, 458 columns, 94 indexes, and 183 constraints**. The complete column/type/default/index/constraint inventory is in [live-schema-snapshot-2026-10-21.md](live-schema-snapshot-2026-10-21.md).

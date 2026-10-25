@@ -35,7 +35,7 @@ HOSTS = {
 
 COLLECTOR_UUIDS = tuple(host.collector_uuid for host in HOSTS.values())
 RESOURCES = ("detailed", "weapons", "vehicles", "profile")
-REQUEST_INTERVAL_SECONDS = 5.0
+REQUEST_INTERVAL_SECONDS = 4.0
 LEASE_SECONDS = 120
 SOFTWARE_VERSION = "1.0.0rc1"
 

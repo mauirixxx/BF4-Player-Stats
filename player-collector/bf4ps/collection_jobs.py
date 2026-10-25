@@ -220,9 +220,17 @@ def claim_next_job(
             f"""
             WITH candidate AS (
                 SELECT job_id
-                FROM collection_jobs
+                FROM collection_jobs AS queued_job
                 WHERE resource = :resource
                   AND lane = :lane
+                  AND NOT EXISTS (
+                      SELECT 1 FROM soldiers AS soldier
+                      JOIN player_exclusions AS excluded
+                        ON excluded.platform = soldier.platform
+                       AND excluded.persona_id = soldier.persona_id
+                       AND excluded.active
+                      WHERE soldier.soldier_id = queued_job.soldier_id
+                  )
                   {cohort_clause}
                   {priority_clause}
                   {retry_clause}

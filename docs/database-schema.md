@@ -1,3 +1,5 @@
+> **2026-10-24 collector policy note (no migration):** Active `player_exclusions` entries are matched against `soldiers` by `(platform, persona_id)` in the collection-job candidate query, before claiming work. This prevents excluded pending jobs from repeatedly tripping the existing database safeguard. The rollout did not change schema or moderation policy. The live Alembic revision should be reverified before schema-dependent work; historical revision references below remain dated snapshots.
+
 # Live schema reconciliation — 2026-10-21
 
 **Verified live database:** `bf4_playerstats` on PostgreSQL 16.15, Alembic revision **`0017_rank_immutable_scores`**. The live catalog currently contains **43 public tables, 458 columns, 94 indexes, and 183 constraints**. The complete column/type/default/index/constraint inventory is in [live-schema-snapshot-2026-10-21.md](live-schema-snapshot-2026-10-21.md).
