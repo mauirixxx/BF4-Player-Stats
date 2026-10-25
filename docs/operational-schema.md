@@ -1,3 +1,5 @@
+> **Live production checkpoint — 2026-10-25 UTC:** The `bf4_playerstats` `alembic_version` table was queried directly and returned **`0018_distributed_rank_queue`**. This is the current observed revision, superseding the older 0012/0017 current-revision wording below. The October 21 table/column/index/constraint inventory remains a **dated snapshot**, not a re-count on October 25. No migration was applied in the GitHub-first collector rollout.
+
 > **2026-10-24 operational note (no migration):** `collection_jobs` may retain pending rows for actively excluded soldiers; such rows must be ignored by the claim query, not executed. The `player_exclusions` trigger remains authoritative defense in depth. Fleet pacing changed to 4 seconds per egress; the `runtime_budgets` values remained 4,800/hour. This note does not supersede the dated live schema inventory below.
 
 # Live schema reconciliation — 2026-10-21

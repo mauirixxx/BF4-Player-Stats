@@ -1,3 +1,5 @@
+> **Live production checkpoint — 2026-10-25 UTC:** The `bf4_playerstats` `alembic_version` table was queried directly and returned **`0018_distributed_rank_queue`**. This is the current observed revision, superseding the older 0012/0017 current-revision wording below. The October 21 table/column/index/constraint inventory remains a **dated snapshot**, not a re-count on October 25. No migration was applied in the GitHub-first collector rollout.
+
 > **2026-10-24 collector policy note (no migration):** Active `player_exclusions` entries are matched against `soldiers` by `(platform, persona_id)` in the collection-job candidate query, before claiming work. This prevents excluded pending jobs from repeatedly tripping the existing database safeguard. The rollout did not change schema or moderation policy. The live Alembic revision should be reverified before schema-dependent work; historical revision references below remain dated snapshots.
 
 # Live schema reconciliation — 2026-10-21

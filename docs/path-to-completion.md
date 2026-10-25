@@ -1,3 +1,5 @@
+> **2026-10-25 update:** The nine production **player-statistics collectors** were rebuilt from GitHub `main` commit `6589a7e` and their running Git revision labels, 4-second pacing, exclusion-aware claims, module checksums, and successful collections were verified. PostgreSQL Alembic head was observed at `0018_distributed_rank_queue`. Source-parity audit for website, Discord bot, platoon/discovery/ranking services, byte-identical image publication, full integration testing and sustained soak remain open. See [current production checkpoint](PROJECT-CURRENT-STATE.md).
+
 # BF4PS — Path to Completion
 
 **Consolidation date:** 2026-10-21. **Status:** Working master plan, not a claim that every item is implemented or production validated.

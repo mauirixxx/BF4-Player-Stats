@@ -1,3 +1,31 @@
+# BF4 Player Stats — Current Production Checkpoint
+
+**Reconciled:** 2026-10-25 UTC. **Scope:** production player-collector release; other components require independent source-parity audits.
+
+## Authoritative release and production evidence
+
+- GitHub `main` is the intended source of truth. Player collectors were built from reviewed commit `6589a7ef0ac98707d0088c2ac910aa787d594631` and deployed to nine nodes: `mak-01`, `mak-02`, `mak-03`, `mak-04`, `hnl-01`, `hnl-02`, `hnl-03`, `kah-01`, `rnt-01`.
+- Every running collector reported the exact release Git revision label, direct Python import showed `REQUEST_INTERVAL_SECONDS=4.0` and exclusion-aware job claims, the three audited collector/ranking module hashes matched GitHub, restart count was zero and fresh successful collection logs were observed.
+- Production database `bf4_playerstats` reported Alembic `0018_distributed_rank_queue` on October 25. Four active player exclusions were counted at that read. No schema migration or change to moderation policy was performed.
+- The existing physical dispatch ceiling is 4,800 per rolling hour; the 4-second per-egress interval does not override it. BF4SW request pacing was not changed.
+- Eight collector nodes run individually managed Docker containers with their previous stopped container preserved for rollback; `rnt-01` remains managed by its Docker Compose override.
+- All images were built from the same Git commit on each host, **not** transported from one immutable registry digest. Their image IDs differ. The build therefore has verified source identity but not byte-for-byte binary reproducibility.
+- Container smoke tests and selected pytest checks passed (7 tests, 4 subtests). A full integration suite, sustained post-rollout soak, replica/failover validation and rate-limit safety measurement remain open.
+
+## Remaining repository source-parity work
+
+- The collector's deployed `/app/bf4ps` modules were compared with GitHub `main` on `mak-01`: all matched except `distributed_rank_queue.py`, for which GitHub contains a newer replication guard and priority behavior. The rebuilt GitHub image retains that newer version.
+- **Not yet established:** complete GitHub/deployed parity for the website/API (`tcou`), Discord bot, platoon collectors (`mak-05`, `hnl-03`), discovery service and ranking-worker services. Do not call the entire multi-component project standardized until those audits and their release rollouts pass.
+- Publish one immutable image digest to a trusted registry (or distribute a single verified image archive), then deploy by digest; stop relying on independent per-node builds for byte-identical release verification.
+
+See [production collector release procedure](../player-collector/deploy/docker/PRODUCTION-RELEASE.md), [collector architecture](collector-architecture.md), [path to completion](path-to-completion.md), and [operational schema](operational-schema.md).
+
+---
+
+## Historical Stage 9C checkpoint (2026-10-10)
+
+The material below is preserved as historical evidence, **not** the current production state.
+
 # BF4 Player Stats — Current State
 
 **Last reconciled:** 2026-10-10

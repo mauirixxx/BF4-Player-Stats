@@ -31,3 +31,7 @@ The branch inventory at [docs/branch-document-inventory.json](docs/branch-docume
 ## Historical testing artifacts
 
 One-off test harnesses and staging-only pages are excluded from the deployable tree. See [validation history](docs/TEST-AND-VALIDATION-HISTORY.md) for their purposes, actual recorded results, and recovery from Git history. This cleanup does not replace clean-install verification.
+
+## Current production collector release (2026-10-25)
+
+The nine distributed BF4PS statistics collectors run the source from GitHub commit `6589a7e`, with 4-second per-egress spacing and exclusion-aware claims, under the existing shared 4,800/hour physical dispatch budget. See [current state](docs/PROJECT-CURRENT-STATE.md) and [collector release procedure](player-collector/deploy/docker/PRODUCTION-RELEASE.md). The website, Discord bot, platoon and ranking services still require separate deployed-source parity checks; do not assume they share this release.
