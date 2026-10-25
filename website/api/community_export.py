@@ -26,12 +26,28 @@ def build(connection):
         raise RuntimeError('Unexpected database')
     counts = {r.platform: int(r.count) for r in connection.execute(text(
         'SELECT platform,count(*) AS count FROM public.soldiers s WHERE NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active) GROUP BY platform')).mappings()}
+    # Same four-resource completion definition as homepage_summary_export.py.
+    full_counts = {r.platform: int(r.full_soldiers) for r in connection.execute(text("""
+        SELECT s.platform, count(*) AS full_soldiers
+        FROM public.collection_state cs
+        JOIN public.soldiers s ON s.soldier_id=cs.soldier_id
+        WHERE cs.detailed_state='success'
+          AND cs.weapons_state='success'
+          AND cs.vehicles_state='success'
+          AND cs.profile_state='success'
+          AND NOT EXISTS (
+              SELECT 1 FROM public.player_exclusions pe
+              WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active
+          )
+        GROUP BY s.platform
+    """)).mappings()}
     values = {}
     for r in connection.execute(text(SQL)).mappings():
         values[r['platform']] = {key:int(r[key]) for key in ('detailed_soldiers',*METRICS)}
     platforms={}
     for platform in ('pc','ps4','xboxone'):
         platforms[platform]={'indexed_soldiers':counts.get(platform,0),
+                             'full_soldiers':full_counts.get(platform,0),
                              **values.get(platform,{'detailed_soldiers':0,**{m:0 for m in METRICS}})}
     all_values={key:sum(p[key] for p in platforms.values()) for key in platforms['pc']}
     return {'generated_at':datetime.now(timezone.utc).isoformat(),
