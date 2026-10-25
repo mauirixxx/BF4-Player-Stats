@@ -28,7 +28,7 @@ This document collects project milestones, outstanding designs, operational risk
 - [ ] Confirm PostgreSQL admission, global/egress pacing, rolling 4,800/hour budget, manual refresh priority ceiling, exclusion trigger, profile privacy and job-fencing behavior against production.
 - [ ] Run extended soak, crash/restart and database failover tests with measurable throughput, retry and data integrity results.
 - [ ] Keep separate persona/platform identities authoritative; support manually verified cross-platform account associations and clearly labeled combined views later.
-- [ ] Confirm BF4SW read-only discovery import, duplicate aliases, rename history, console profile username mismatches and complete multi-platform identity coverage.
+- [ ] Confirm BF4SW read-only discovery import, duplicate aliases, rename history, console profile username mismatches and complete multi-platform identity coverage. **2026-10-25 update:** production `tcou` discovery/reconciliation exclusion-trigger SAVEPOINT fix deployed and provisionally accepted; verify `bf4sw_reconcile` watermark advances in the next successful cycle (see `bf4sw-discovery.md`). Production DB Alembic revision independently verified at `0018_distributed_rank_queue`.
 
 ## 3. Platoon collection
 
