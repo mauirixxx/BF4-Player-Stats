@@ -1,3 +1,12 @@
+## 2026-10-25 — ranking worker and PostgreSQL HA read-only inspection
+
+- Operator confirmed **single-builder, slow ranking is intentional**; no concurrency or refresh interval changes authorized. Inspection nevertheless found a stalled queue, not merely slow throughput.
+- `mak-01` Docker container `bf4ps-distributed-rank-mak01` is running (image `bf4-player-stats:collector-ranking-versions-0016-candidate`), no restarts, with only worker registration in logs. Its admission code checks `public.bf4ps_rank_gate_ready()` and returns no claim if false.
+- Production DB (`mak-db-02`) rank queue: **2,624 jobs**, all due, **0 claimed**, latest successful and updated job **2026-10-22 06:31:05 UTC**; capacity is **one active build**, 180-second lease. Rank gate returned **false**.
+- Gate requires four named streaming physical replication slots (`mak_db_01`, `rnt_db_01`, `hnl_db_01`, `kah_db_01`), each caught up to its recorded WAL target; the primary currently has **only `mak_db_01`** and one streaming replica. `bf4ps_rank_wal_gate` has a target LSN and armed time from October 22. This is an intentional fail-closed HA/WAL safeguard, not an application error.
+- Remote inspection: `hnl-db-01` PostgreSQL 16/main stopped cleanly **2026-10-22 07:56:22 UTC**; `kah-db-01` stopped **07:56:27 UTC**; `rnt-db-01` stopped **2026-10-23 09:59:49 UTC** and its `postgresql@16-main.service` is **masked**. All three have ample free disk. Generic `postgresql.service` showing active is not evidence the actual 16/main cluster is running.
+- **No DB services restarted, no masks changed, no replication slots created, no admission gate weakened, no ranking jobs claimed, no production API cutover.** Before restoring HA, confirm the operator's intentional maintenance state and validate replica rebuild/catch-up procedure; then confirm all four slots stream and the rank gate re-arms safely. Only after fresh rank publication can GitHub's newer ranking API be parity-tested and deployed.
+
 # BF4 Player Stats — Current Production Checkpoint
 
 **Reconciled:** 2026-10-25 UTC. **Scope:** production player-collector release; other components require independent source-parity audits.
