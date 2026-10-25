@@ -11,6 +11,15 @@ engine = create_engine(os.environ['BF4PS_DATABASE_URL'], pool_pre_ping=True)
 def rows(conn, sql):
     return [dict(x) for x in conn.execute(text(sql)).mappings()]
 
+def homepage_summary(payload):
+    soldiers = payload['soldiers']
+    detailed = sum(s.get('detailed_state') == 'success' for s in soldiers)
+    full = sum(all(s.get(k) == 'success' for k in
+                   ('detailed_state', 'weapons_state', 'vehicles_state', 'profile_state'))
+               for s in soldiers)
+    return {'updated': payload['updated'], 'summary': payload['summary'],
+            'detailed_soldiers': detailed, 'full_soldiers': full}
+
 def export():
     with engine.connect() as c:
         db = c.execute(text('select current_database()')).scalar_one()
