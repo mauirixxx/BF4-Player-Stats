@@ -15,7 +15,7 @@ $description = $kind === 'soldier' ? 'Explore Battlefield 4 soldier statistics, 
 $image = 'https://bf4playerstats.com/og-preview.png';
 if ($kind === 'soldier') {
     $url = 'http://127.0.0.1:8765/soldier-detail?id=' . rawurlencode($id);
-    $context = stream_context_create(['http' => ['timeout' => 2, 'ignore_errors' => true]]);
+    $context = stream_context_create(['http' => ['timeout' => 5, 'ignore_errors' => true]]);
     $raw = @file_get_contents($url, false, $context);
     $soldier = is_string($raw) ? (json_decode($raw, true)['soldier'] ?? null) : null;
     if (is_array($soldier) && isset($soldier['current_name'])) {
