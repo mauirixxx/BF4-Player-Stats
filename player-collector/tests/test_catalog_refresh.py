@@ -16,8 +16,12 @@ def test_unchanged_recent_catalog_entry_skips_rewrite():
     assert not needs_refresh(row(), name='AEK', slug='aek', category='rifle', observed_at=NOW)
 
 
-def test_metadata_changes_are_immediate():
-    assert needs_refresh(row(name='OLD'), name='AEK', slug='aek', category='rifle', observed_at=NOW)
+def test_recent_metadata_drift_does_not_trigger_rewrite():
+    assert not needs_refresh(row(name='OLD'), name='AEK', slug='aek', category='rifle', observed_at=NOW)
+
+
+def test_stale_metadata_is_refreshed():
+    assert needs_refresh(row(age=timedelta(minutes=16), name='OLD'), name='AEK', slug='aek', category='rifle', observed_at=NOW)
 
 
 def test_stale_sighting_is_refreshed():
