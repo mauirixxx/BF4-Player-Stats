@@ -12,6 +12,13 @@
 - All images were built from the same Git commit on each host, **not** transported from one immutable registry digest. Their image IDs differ. The build therefore has verified source identity but not byte-for-byte binary reproducibility.
 - Container smoke tests and selected pytest checks passed (7 tests, 4 subtests). A full integration suite, sustained post-rollout soak, replica/failover validation and rate-limit safety measurement remain open.
 
+## 2026-10-25 website and platoon reconciliation checkpoint
+
+- **Community Statistics sidequest deployed and committed:** `website/api/community_export.py` and `website/site/community.html` now use the homepage four-resource full-stat completion definition and show `% of indexed` by platform. Commit `d42374f` on `main`; exporter ran successfully and the public site file was updated. The community snapshot counted 199,169 full-stat soldiers at deployment; counts are dynamic.
+- **Preserved without overwriting:** `tcou` tracked working-tree differences in `/root/bf4ps-source-audit-20261025/tcou-tracked.patch` (plus status and HEAD manifests); `mak-05` and `hnl-03` tracked diffs and untracked lease/test files in host-local `/root/bf4ps-source-audit-20261025/`. These are temporary operational preservation artifacts, not GitHub commits or complete backups of every untracked website asset.
+- **Platoon parity evidence:** SHA-256 matches between `mak-05` and `hnl-03` for `scripts/platoon_shared_lease.py`, `scripts/import_platoon_rosters.py`, `scripts/platoon_queue_worker.py`, and `scripts/admit_platoon_soldiers.py`. Their tracked HEAD revisions and other modified files differ, so full parity remains unverified. No platoon service was restarted or redeployed.
+- The `tcou` website checkout's normal remote refspec did not include `origin/main`; it was explicitly fetched for the clean sidequest worktree. Do not reset or overwrite the existing dirty website branch.
+
 ## Remaining repository source-parity work
 
 - The collector's deployed `/app/bf4ps` modules were compared with GitHub `main` on `mak-01`: all matched except `distributed_rank_queue.py`, for which GitHub contains a newer replication guard and priority behavior. The rebuilt GitHub image retains that newer version.

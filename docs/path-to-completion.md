@@ -1,3 +1,5 @@
+> **2026-10-25 reconciliation progress:** Community Statistics full-stat counts and percentages are live and committed as `d42374f`. Tracked production changes were preserved locally on `tcou`, `mak-05`, and `hnl-03`; critical untracked platoon lease/test files were archived. Four core platoon modules match byte-for-byte between the two workers, but their other files and Git revisions still differ. Complete website/platoon reconciliation, tests and reproducible releases remain open. See [current state](PROJECT-CURRENT-STATE.md).
+
 > **2026-10-25 update:** The nine production **player-statistics collectors** were rebuilt from GitHub `main` commit `6589a7e` and their running Git revision labels, 4-second pacing, exclusion-aware claims, module checksums, and successful collections were verified. PostgreSQL Alembic head was observed at `0018_distributed_rank_queue`. Source-parity audit for website, Discord bot, platoon/discovery/ranking services, byte-identical image publication, full integration testing and sustained soak remain open. See [current production checkpoint](PROJECT-CURRENT-STATE.md).
 
 # BF4PS — Path to Completion
