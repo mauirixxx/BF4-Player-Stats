@@ -346,3 +346,7 @@ Some valid HTTP 200 soldier pages return an empty `/bf4/user//` link while still
 - BF4SW request pacing was **not changed**. Monitor both projects for 403, 429, connection failures, captcha/challenge responses, and success-rate degradation. Distinguish excluded identities and ordinary profile 404s from IP blocking.
 - Fleet: `mak-01/02/03/04`, `hnl-01/02/03`, `kah-01`, `rnt-01`. `rnt-01` uses Docker Compose; the other eight collectors are individually managed Docker containers. A local `docker commit` snapshot is not a reproducible release or proof that a future container recreation will use this code. Build and deploy the image from the consolidated `player-collector/` source.
 - Regression test: `player-collector/tests/test_exclusion_claim.py`. Run the full collector suite and observe a sustained production interval before declaring the pacing experiment performance-safe.
+
+### Verification correction (2026-10-24)
+
+A subsequent direct import inspection revealed that several containers expose two copies of `bf4ps` (`/app/bf4ps` and the installed site-packages directory). Initial startup logs showed 4 seconds while direct `python -c` imports still returned 5 seconds on eight nodes. Both copies were then synchronized to 4 seconds and exclusion-aware claims, and a local Docker image snapshot was taken on each host. The executable path must be checked after container recreation, not inferred from a single startup line. These are host-local snapshots; a future deployment must use a reproducibly built image from GitHub `main`.
