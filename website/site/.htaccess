@@ -4,3 +4,10 @@
 RewriteEngine On
 RewriteCond /etc/bf4ps/maintenance.enabled -f
 RewriteRule ^(?:index\.html|soldier\.html|temp-stats\.html)?$ /maintenance.html [R=302,L,NE,QSD]
+
+# Server-rendered Open Graph metadata for individual soldier/platoon links.
+# Keep original URLs in the address bar and preserve normal browser rendering.
+RewriteCond %{QUERY_STRING} (?:^|&)id=([1-9][0-9]{0,18})(?:&|$)
+RewriteRule ^soldier\.html$ /share-preview.php?kind=soldier&id=%1 [END]
+RewriteCond %{QUERY_STRING} (?:^|&)id=([1-9][0-9]{0,18})(?:&|$)
+RewriteRule ^platoons\.html$ /share-preview.php?kind=platoon&id=%1 [END]
