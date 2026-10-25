@@ -1,0 +1,5 @@
+# Minimal, reproducible catalog-only hotfix layered over the deployed collector.
+# Build context: player-collector/; preserve all other production image behavior.
+ARG BASE_IMAGE=bf4-player-stats:git-6589a7e
+FROM ${BASE_IMAGE}
+COPY --chown=65532:65532 bf4ps/weapon_persistence.py bf4ps/vehicle_persistence.py bf4ps/catalog_refresh.py bf4ps/bulk_values.py /app/bf4ps/
