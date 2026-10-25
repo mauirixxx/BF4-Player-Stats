@@ -18,7 +18,7 @@ def query_page(conn, metric, platform, page=1, page_size=50, search='', division
     sql = f'''
       WITH cohort AS (
         SELECT s.soldier_id,s.current_name,s.persona_id,s.platform,
-               d.{metric} AS value
+               d.{metric} AS value,d.time_played_seconds AS hours_source_seconds
         FROM soldiers s
         JOIN collection_state cs ON cs.soldier_id=s.soldier_id
         JOIN detailed_stats_current d ON d.soldier_id=s.soldier_id
@@ -48,7 +48,7 @@ def query_page(conn, metric, platform, page=1, page_size=50, search='', division
     if not population:
         population=int(conn.execute(text(sql+'SELECT count(*) FROM cohort'),params).scalar_one())
     rows=[dict(r) for r in conn.execute(text(sql+'''
-       SELECT p.soldier_id,p.current_name,p.persona_id,p.platform,p.value,
+       SELECT p.soldier_id,p.current_name,p.persona_id,p.platform,p.value,p.hours_source_seconds,
               bp.country_code,bp.country_name,bp.battlelog_username,active_platoon.official_tag AS platoon_tag,active_platoon.linked_platoon_id::text AS platoon_id,
               p.rank,p.position,p.population,p.top_pct,p.division
        FROM (SELECT * FROM filtered ORDER BY value DESC,soldier_id LIMIT :limit OFFSET :offset) p
