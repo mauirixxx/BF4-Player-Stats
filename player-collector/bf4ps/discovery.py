@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection
+from sqlalchemy.exc import IntegrityError
 
 from bf4ps.config import database_url
 from bf4ps.production_scheduler import materialize_bf4sw_observation
@@ -118,7 +119,7 @@ def load_reconciliation_rows(source: Connection, *, since: datetime, through: da
     return [_alias_from_mapping(row) for row in rows]
 
 
-def import_aliases(
+def _import_aliases_unchecked(
     destination: Connection,
     aliases: list[AliasRow],
     *,
@@ -214,6 +215,33 @@ def import_aliases(
             newly_discovered=newly_discovered,
         )
     return soldier_id
+
+
+def import_aliases(
+    destination: Connection,
+    aliases: list[AliasRow],
+    *,
+    materialize_production_jobs: bool = False,
+    materialization_cutover_at: datetime | None = None,
+) -> int | None:
+    """Ignore identities rejected by the exclusion trigger, not other SQL errors.
+
+    The nested transaction rolls back only the excluded identity, preserving
+    progress for the rest of discovery and reconciliation.
+    """
+    try:
+        with destination.begin_nested():
+            return _import_aliases_unchecked(
+                destination,
+                aliases,
+                materialize_production_jobs=materialize_production_jobs,
+                materialization_cutover_at=materialization_cutover_at,
+            )
+    except IntegrityError as exc:
+        sqlstate = getattr(exc.orig, "sqlstate", getattr(exc.orig, "pgcode", None))
+        if sqlstate == "23514" and "excluded soldier identity" in str(exc.orig):
+            return None
+        raise
 
 
 def ensure_discovery_state(destination: Connection) -> int:
