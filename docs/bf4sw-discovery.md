@@ -14,6 +14,16 @@ For every identity encountered, BF4PS imports the BF4SW alias history idempotent
 
 The alias-ID cursor is intentionally responsible only for discovering new rows. BF4SW can continue changing `last_seen` on an old alias row without allocating a new alias ID, so the discovery cursor alone cannot keep mutable observations synchronized.
 
+## Production exclusion handling (2026-10-25)
+
+Both new-alias discovery and mutable-observation reconciliation use `import_aliases`. Production's `soldiers` exclusion trigger (`bf4ps_reject_excluded_soldier`) raises SQLSTATE `23514` with the message `excluded soldier identity` for an active `(platform, persona_id)` exclusion. This is intentional and must not be bypassed or disabled.
+
+Each identity import now runs inside a PostgreSQL SAVEPOINT (`Connection.begin_nested()`). Only that exact trigger rejection is treated as a skipped identity; all other integrity/database failures propagate. Rolling back the SAVEPOINT prevents one excluded identity from poisoning the entire transaction or blocking either checkpoint. Psycopg 3 exposes `sqlstate`, while older drivers may expose `pgcode`.
+
+The production discovery service currently runs on `tcou` from `/opt/bf4-player-stats.retired-20261013` under `bf4ps-discovery.service`. Despite the historical checkout name, it remains the production service; do not remove it without a verified replacement. On 2026-10-25 the patch was applied there, Python compilation passed, and the service restarted with its advisory lock acquired. The `bf4sw` cursor advanced to `235169`. The `bf4sw_reconcile` checkpoint had **not yet been observed advancing** after deployment, so record the fix as *deployed / provisionally accepted pending operational evidence*, not as a verified reconciliation success.
+
+The live production PostgreSQL `alembic_version` was independently checked as `0018_distributed_rank_queue`. Updating a checkout's schema reference and migration source files is **not** an instruction to rerun production migrations. Never commit `/etc/bf4-player-stats/discovery.env` or credentials.
+
 ## Mutable-observation reconciliation
 
 `python -m bf4ps.discovery --reconcile` refreshes BF4SW aliases selected by recent `last_seen` activity.
