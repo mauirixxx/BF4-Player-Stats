@@ -90,6 +90,17 @@ def persist_vehicle_success(
     vehicle_ids: dict[str, int] = {}
     ordered_vehicles = sorted(vehicles, key=lambda item: item.vehicle_guid)
     for vehicle in ordered_vehicles:
+        # The catalog is global and mostly immutable. Avoid a new MVCC row
+        # version for every soldier collection when metadata is unchanged.
+        existing = conn.execute(
+            text("SELECT vehicle_id, name, slug, category FROM vehicle_catalog WHERE vehicle_guid = :guid"),
+            {"guid": vehicle.vehicle_guid},
+        ).one_or_none()
+        if existing is not None and (existing.name, existing.slug, existing.category) == (
+            vehicle.name, vehicle.slug, vehicle.category
+        ):
+            vehicle_ids[vehicle.vehicle_guid] = int(existing.vehicle_id)
+            continue
         row = conn.execute(
             text(
                 """

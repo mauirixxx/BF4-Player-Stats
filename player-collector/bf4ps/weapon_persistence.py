@@ -94,6 +94,17 @@ def persist_weapon_success(
     weapon_ids: dict[str, int] = {}
     ordered_weapons = sorted(weapons, key=lambda item: item.weapon_guid)
     for weapon in ordered_weapons:
+        # The catalog is global and mostly immutable. Avoid a new MVCC row
+        # version for every soldier collection when metadata is unchanged.
+        existing = conn.execute(
+            text("SELECT weapon_id, name, slug, category FROM weapon_catalog WHERE weapon_guid = :guid"),
+            {"guid": weapon.weapon_guid},
+        ).one_or_none()
+        if existing is not None and (existing.name, existing.slug, existing.category) == (
+            weapon.name, weapon.slug, weapon.category
+        ):
+            weapon_ids[weapon.weapon_guid] = int(existing.weapon_id)
+            continue
         row = conn.execute(
             text(
                 """
