@@ -49,7 +49,7 @@ def query_page(conn, metric, platform, page=1, page_size=50, search='', division
         population=int(conn.execute(text(sql+'SELECT count(*) FROM cohort'),params).scalar_one())
     rows=[dict(r) for r in conn.execute(text(sql+'''
        SELECT p.soldier_id,p.current_name,p.persona_id,p.platform,p.value,
-              bp.country_code,bp.country_name,bp.battlelog_username,
+              bp.country_code,bp.country_name,bp.battlelog_username,active_platoon.official_tag AS platoon_tag,active_platoon.linked_platoon_id::text AS platoon_id,
               p.rank,p.position,p.population,p.top_pct,p.division
        FROM (SELECT * FROM filtered ORDER BY value DESC,soldier_id LIMIT :limit OFFSET :offset) p
        LEFT JOIN LATERAL (
@@ -57,6 +57,14 @@ def query_page(conn, metric, platform, page=1, page_size=50, search='', division
          FROM profile_soldiers ps JOIN battlelog_profiles b ON b.profile_id=ps.profile_id
          WHERE ps.soldier_id=p.soldier_id ORDER BY ps.last_seen_at DESC LIMIT 1
        ) bp ON true
+       LEFT JOIN LATERAL (
+         SELECT pl.tag AS official_tag,d.linked_platoon_id
+         FROM platoon_soldier_discovery d
+         JOIN platoons pl ON pl.platoon_id=d.linked_platoon_id
+         WHERE d.soldier_id=p.soldier_id AND d.status='complete'
+           AND pl.tag<>''
+         LIMIT 1
+       ) active_platoon ON true
        ORDER BY p.value DESC,p.soldier_id
     '''),params).mappings()]
     for row in rows:
