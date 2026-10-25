@@ -13,7 +13,7 @@ This document collects project milestones, outstanding designs, operational risk
 - [x] Compare live PostgreSQL catalog against documentation; capture columns, indexes and constraints.
 - [x] Recover **Alembic 0014–0017** from the deployed `mak-01` collector; SHA-256 checksums match the deployed source. The complete 0001–0017 revision chain is now present.
 - [ ] Run a clean-database migration rehearsal and verify the resulting catalog against production before advertising reproducible deployment.
-- [ ] Compare component sources against **deployed** code on tcou, player collector nodes and platoon workers. Consolidation source branches may lag production hotfixes.
+- [ ] Compare component sources against **deployed** code on tcou, player collector nodes and platoon workers. Nine player-statistics collectors passed SHA-level source verification on October 25, but tcou website/API, Discord HA, mak-05/hnl-03 platoon collectors, discovery and ranking workers remain on separate deployed branches/images and require independent audits.
 - [ ] Resolve imports, paths, dependency installation and deployment configuration after the new directory layout. Perform clean-host smoke tests and new release verification. Historical test harnesses were removed from the deployable tree after their purpose and actual results were documented in `docs/TEST-AND-VALIDATION-HISTORY.md`; a passing fresh integration suite is still required.
 - [x] Fast-forward consolidated source to `main` (commit `db98cb3`), with history preserved.
 - [ ] Finish CI, secret scanning, reproducible builds and component release validation; prepare a v1.0.0 GitHub draft until gates pass.
