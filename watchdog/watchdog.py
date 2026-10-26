@@ -62,6 +62,28 @@ def deliver(message):
    api('POST','/channels/'+cid+'/messages',{'content':message,'allowed_mentions':{'parse':[]}})
    print('DELIVERED',name,flush=True)
   except Exception as e:print('DELIVERY FAILED',name,type(e).__name__,flush=True)
+def format_alert(key, val, recovered=False):
+ """Readable, timezone-aware Discord incident message without raw command output."""
+ category, _, resource = key.partition(':')
+ labels = {'postgres': 'PostgreSQL 16', 'node': 'Node connectivity',
+           'disk': 'Filesystem capacity', 'container': 'Docker container',
+           'service': 'Systemd service', 'website': 'Website availability'}
+ name = labels.get(category, category.title())
+ status = 'Recovered' if recovered else 'Offline' if category in ('postgres','node') else 'Unhealthy'
+ severity = 'RECOVERED' if recovered else 'CRITICAL'
+ symbol = '✅' if recovered else '🚨'
+ when = datetime.datetime.now(datetime.timezone.utc).astimezone(
+     datetime.timezone(datetime.timedelta(hours=-10))).strftime('%b %d, %Y at %I:%M %p HST')
+ lines = [f'{symbol} **{severity} — {name} {"Recovered" if recovered else "Alert"}**',
+          f'**Node:** `{resource}`' if category != 'website' else '**Site:** bf4playerstats.com',
+          f'**Service:** {name}', f'**Status:** {status}',
+          f'**{"Recovered" if recovered else "Detected"}:** {when}']
+ if category == 'disk':
+  lines.append('**Capacity:** ' + val['detail'])
+ elif category == 'website':
+  lines.append('**Check:** ' + val['detail'])
+ return '\n'.join(lines)
+
 def main():
  if '--test' in sys.argv:
   deliver('🧪 **BF4PS infrastructure watchdog TEST** — channel + all configured admin DMs. This is a controlled test, **not an outage**.')
@@ -76,10 +98,10 @@ def main():
   failures=0 if val['ok'] else old.get('failures',0)+1
   opened=old.get('open',False)
   if not baseline and failures>=3 and not opened:
-   deliver('🚨 **BF4PS ALERT** '+key+' — '+val['detail'])
+   deliver(format_alert(key,val))
    opened=True
   if opened and val['ok']:
-   deliver('✅ **BF4PS RECOVERED** '+key+' — '+val['detail'])
+   deliver(format_alert(key,val,recovered=True))
    opened=False
   incidents[key]={'failures':failures,'open':opened,'detail':val['detail']}
  tmp=STATE.with_suffix('.tmp')
