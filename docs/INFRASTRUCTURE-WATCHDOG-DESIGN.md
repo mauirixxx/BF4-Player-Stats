@@ -21,8 +21,8 @@ Status: design only; NOT deployed or sending alerts. The administrator requested
 - Include test probes, outage simulations, false-positive controls, deployment rollback, and an on-call test message before enabling live notifications.
 
 ## Open deployment decisions
-1. Private Discord destination guild/channel ID (not yet provided).
-2. Whether alerts should DM all admins in addition to the private channel; recommend both.
+1. Private Discord destination CONFIRMED: guild ID `854574291545620530`, channel ID `1537927453509419039`. Confirm the BF4PS bot is present and has View Channel, Send Messages and Embed Links before enabling notifications.
+2. Whether alerts should DM all admins in addition to the confirmed channel; recommend both. Channel is the confirmed baseline.
 3. Initial admin allowlist and mechanism to enroll additional admins.
 4. Second watchdog failure domain and inventory of expected nodes/services, validated live.
 
