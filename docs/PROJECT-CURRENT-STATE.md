@@ -326,3 +326,7 @@ The distributed ranking dashboard showed 2,624 due jobs, zero active, and no com
 ### 2026-10-26 — ranking watchdog and shared admin navigation
 
 The watchdog now checks `bf4ps_rank_gate_ready()`, due/active ranking jobs, and last-success age using a read-only SELECT via SSH to mak-db-02; a blocked gate or stalled queue triggers Discord channel and all-admin DMs after three failures. Both admin pages now render the same six-link operations sidebar from `website/site/admin-navigation.js`, preserving the current-tab highlight and the existing admin-console hash routing. The two pages must be deployed together with the shared script.
+
+### 2026-10-26 — admin console width alignment
+
+The Moderation Console now uses the same `main` max-width of 1500px, horizontal padding 22px, and top margin 25px as the Distributed Ranking Monitor. Removed the obsolete three-link quick navigation from the console, because both pages already load the shared site header with the full public navigation and the shared six-link admin sidebar. No changes to authentication, API calls, or section behavior.
