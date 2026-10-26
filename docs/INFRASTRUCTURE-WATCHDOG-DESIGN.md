@@ -11,7 +11,7 @@ Status: design only; NOT deployed or sending alerts. The administrator requested
 
 ## Delivery and administrators
 - CONFIRMED: dedicated private Discord incident channel **and** direct messages to **every** configured BF4PS infrastructure administrator (explicit allowlist of Discord user IDs). Do NOT treat every guild administrator or management role holder as an infrastructure admin; those roles may be public/server-scoped. Add/remove BF4PS operations admins through an authenticated, audited management command with least privilege.
-- Initial admin can be Discord user ID 328032141428654092 (owner confirmation required); adding other admins requires explicit consent and audit. Discord DMs can be disabled by recipients; private incident channel is the reliable fallback. Do not store bot tokens/webhook secrets in Git.
+- Initial admins CONFIRMED by the operator: Discord user IDs `328032141428654092` (mauirixxx, operator-supplied name) and `224462914248114176` (human-readable name pending authenticated Discord lookup). The initial allowlist is recorded in `watchdog/admins.json`. Add/remove admins only through an authenticated, audited management action. Names are display-only metadata and must be refreshed from Discord; IDs remain authoritative. Discord DMs can be disabled by recipients; private incident channel is the reliable fallback. Do not store bot tokens/webhook secrets in Git.
 - Send OPEN, ESCALATED, RECOVERED; deduplicate by (node,check,resource); 2–3 failed probes before opening, bounded periodic reminders for unresolved critical events, and maintenance/silence windows with expiry. Avoid ping storms and leaking credentials, private IPs, or stack traces to public channels.
 - Notification delivery must be independent of the service being monitored. If Discord itself is unreachable, spool bounded events locally and retry with backoff; consider an independent second transport for total Discord outage.
 
@@ -23,7 +23,7 @@ Status: design only; NOT deployed or sending alerts. The administrator requested
 ## Open deployment decisions
 1. Private Discord destination CONFIRMED: guild ID `854574291545620530`, channel ID `1537927453509419039`. Confirm the BF4PS bot is present and has View Channel, Send Messages and Embed Links before enabling notifications.
 2. Delivery policy CONFIRMED: post every incident notification in the private channel AND DM every configured BF4PS infrastructure admin. Failure to DM an individual (privacy settings or blocked bot) must not prevent channel delivery or DMs to other admins; log delivery status and retry transient failures.
-3. Initial admin allowlist and mechanism to enroll additional admins.
+3. Initial admin allowlist confirmed in `watchdog/admins.json`; authenticated future enrollment and Discord name synchronization still require implementation.
 4. Second watchdog failure domain and inventory of expected nodes/services, validated live.
 
 ## Related storage incident and mitigation

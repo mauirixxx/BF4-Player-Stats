@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "guild_id": "854574291545620530",
+  "alert_channel_id": "1537927453509419039",
+  "delivery": {"channel": true, "dm_all_admins": true},
+  "admins": [
+    {
+      "discord_user_id": "328032141428654092",
+      "username": "mauirixxx",
+      "display_name": "mauirixxx",
+      "name_source": "operator_provided",
+      "last_verified_at": null,
+      "enabled": true
+    },
+    {
+      "discord_user_id": "224462914248114176",
+      "username": null,
+      "display_name": null,
+      "name_source": "pending_discord_lookup",
+      "last_verified_at": null,
+      "enabled": true
+    }
+  ]
+}
