@@ -1,0 +1,14 @@
+FROM bf4-player-stats:catalog-fix-7e94f8e
+# The production entrypoint runs /app/scripts/bf4ps_production_collector.py.
+# Python resolves bf4ps from site-packages, NOT /app/bf4ps.
+# This overlay copies the already-reviewed catalog hotfix into the import path.
+USER root
+RUN set -eu; \
+    cp /app/bf4ps/weapon_persistence.py \
+       /app/bf4ps/vehicle_persistence.py \
+       /app/bf4ps/catalog_refresh.py \
+       /app/bf4ps/bulk_values.py \
+       /usr/local/lib/python3.12/site-packages/bf4ps/; \
+    cd /app/scripts; \
+    python -c "import bf4ps.weapon_persistence as w; assert 'bulk_values' in open(w.__file__).read()"
+USER 65532

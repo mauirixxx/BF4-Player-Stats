@@ -4,8 +4,8 @@ The authoritative weapon/vehicle catalogs use stable GUIDs and catalog IDs.
 Every successful soldier fetch persists all of that soldier's current statistics
 atomically with job completion, independent of catalog metadata refresh.
 
-Catalog metadata (name, slug, category) is reconciled immediately if changed,
-and new GUIDs are inserted immediately. To prevent shared-row contention and
+New GUIDs are inserted immediately. Existing catalog metadata (name, slug, category)
+is reconciled at most once per 15 minutes per catalog item, even if changed across platforms. To prevent shared-row contention and
 unbounded MVCC dead tuples, unchanged catalog entries are not updated for every
 soldier. Their `last_seen_at` is refreshed no more often than once per 15 minutes
 when encountered; it is therefore an approximate last-observed timestamp,
@@ -23,3 +23,7 @@ Production evidence before this optimization: 174 weapon catalog entries with
 ~1.60M dead tuples, and 82 vehicle entries with ~755K dead tuples. Regular
 VACUUM can recover dead tuple space for reuse; separately evaluate index bloat
 and any `REINDEX CONCURRENTLY` operation under maintenance procedures.
+
+## Production import-path warning (2026-10-25)
+
+The collector starts from `/app/scripts` and imports the installed `bf4ps` package under `/usr/local/lib/python3.12/site-packages/bf4ps/`. An image that only replaces `/app/bf4ps/` **does not** activate the optimized catalog persistence. Use `player-collector/deploy/docker/Dockerfile.catalog-installed-hotfix` or a clean package rebuild and verify the actual imported file from the entrypoint working directory. See [CATALOG-IMPORT-PATH-RECOVERY-20261025.md](CATALOG-IMPORT-PATH-RECOVERY-20261025.md).

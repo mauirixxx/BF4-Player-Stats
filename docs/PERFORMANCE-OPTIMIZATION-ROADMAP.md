@@ -60,3 +60,8 @@ See [production cutover and verification](HOMEPAGE-PAGINATION-PRODUCTION-CUTOVER
 - Consult `docs/database-schema-reference.md` (authoritative) and verify actual live schema before SQL modifications.
 - Prefer a feature branch / PR, reversible deploy and measured results. Do not deploy an untested data-path rewrite to production.
 - Production database access uses `db.bf4statusbot.com`, never a hardcoded individual DB node.
+
+
+## Dossier/catalog recovery (2026-10-25)
+
+Top-15 equipment is selected before catalog joins in `website/api/soldier_detail.py`. Correct the installed Python package path in collector images to stop legacy catalog upserts; monitor MVCC churn and advisory lock waits after rollout. See `docs/CATALOG-IMPORT-PATH-RECOVERY-20261025.md`.

@@ -22,3 +22,8 @@ The previous historical version of this document is retained at [history/pre-001
 ## Platoon website retrieval (2026-10-25)
 
 The website reads platoon records directly from PostgreSQL using bounded SELECT-only API queries; the previous monolithic JSON export is retired. The read API accesses `platoons`, `platoon_roster_accounts`, `platoon_roster_personas`, `soldiers`, `detailed_stats_current`, and `platoon_soldier_discovery`. See [PLATOON-READ-API-CUTOVER-20261025.md](PLATOON-READ-API-CUTOVER-20261025.md). This note describes retrieval behavior, not a schema migration.
+
+
+## Catalog storage maintenance (2026-10-25)
+
+No schema migration. Weapon/vehicle catalogs retain stable IDs and their existing uniqueness constraints. Production catalog write amplification arose from the deployed collector importing an obsolete installed Python package; the correction is deployment/image related, not a table definition change. See [CATALOG-IMPORT-PATH-RECOVERY-20261025.md](CATALOG-IMPORT-PATH-RECOVERY-20261025.md).
