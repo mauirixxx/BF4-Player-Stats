@@ -394,9 +394,12 @@ class Handler(BaseHTTPRequestHandler):
                 """)).mappings().all()
             else:
                 rows = conn.execute(text("""
-                    SELECT audit_id,platform,persona_id,action,actor,reason_code,occurred_at
-                    FROM public.player_exclusion_audit
-                    ORDER BY audit_id DESC LIMIT 100
+                    SELECT a.audit_id,a.platform,a.persona_id,s.current_name AS player_name,
+                           a.action,a.actor,a.reason_code,a.occurred_at
+                    FROM public.player_exclusion_audit a
+                    LEFT JOIN public.soldiers s
+                      ON s.persona_id=a.persona_id AND s.platform=a.platform
+                    ORDER BY a.audit_id DESC LIMIT 100
                 """)).mappings().all()
         self.reply(200, {'rows': [dict(row) for row in rows]})
 

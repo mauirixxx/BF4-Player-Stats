@@ -68,7 +68,7 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 <section class="card"><div class="row" style="justify-content:space-between"><h2>Active exclusions</h2><button class="outline" id="reload">Refresh</button></div>
 <div class="scroll"><table><thead><tr><th>Platform</th><th>Persona ID</th><th>Reason</th><th>Updated</th></tr></thead><tbody id="exclusions"></tbody></table></div></section>
 
-<section class="card"><h2>Recent audit events</h2><div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Identity</th><th>Operator</th><th>Reason</th></tr></thead><tbody id="audit"></tbody></table></div></section>
+<section class="card"><h2>Recent audit events</h2><div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Persona ID</th><th>Player Name</th><th>Operator</th><th>Reason</th></tr></thead><tbody id="audit"></tbody></table></div></section>
 </div></div></div></main>
 <dialog id="queueDialog" class="queue-dialog" aria-labelledby="queueTitle"><div class="row" style="justify-content:space-between"><h2 id="queueTitle">Queue</h2><button type="button" class="outline" id="closeQueue">Close</button></div><p id="queueDescription"></p><div class="scroll"><table><thead id="queueHead"></thead><tbody id="queueBody"></tbody></table></div><p id="queueUpdated" class="muted" role="status"></p></dialog>
 <script>
@@ -205,6 +205,6 @@ async function moderate(active){
 }
 $('exclude').onclick=()=>moderate(true);$('restore').onclick=()=>moderate(false);
 function fill(id,rows,keys){const el=$(id);el.replaceChildren();for(const r of rows){const tr=document.createElement('tr');for(const k of keys)td(tr,r[k]);el.append(tr)}}
-async function reload(){try{const [a,b]=await Promise.all([request('exclusions'),request('audit')]);fill('exclusions',a.rows,['platform','persona_id','reason_code','updated_at']);fill('audit',b.rows,['occurred_at','action','persona_id','actor','reason_code'])}catch(e){message(e.message,true)}}
+async function reload(){try{const [a,b]=await Promise.all([request('exclusions'),request('audit')]);fill('exclusions',a.rows,['platform','persona_id','reason_code','updated_at']);fill('audit',b.rows,['occurred_at','action','persona_id','player_name','actor','reason_code'])}catch(e){message(e.message,true)}}
 $('reload').onclick=reload;showAdminTab(location.hash.slice(1));initialize();
 </script><script src="/shared-footer.js?v=unified-20261025"></script></body></html>
