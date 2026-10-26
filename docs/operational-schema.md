@@ -17,3 +17,8 @@
 For schema-dependent work, consult [database-schema-reference.md](database-schema-reference.md) and the [live 24-table PostgreSQL catalog](LIVE-POSTGRESQL-SCHEMA-2026-10-17.md). Read the applicable Alembic migration files as well. The complete `0005`–`0012` migration source has not yet been located in the inspected checkouts; migration lineage remains unverified.
 
 The previous historical version of this document is retained at [history/pre-0012-operational-schema.md](history/pre-0012-operational-schema.md) and must not be used as the current schema.
+
+
+## Platoon website retrieval (2026-10-25)
+
+The website reads platoon records directly from PostgreSQL using bounded SELECT-only API queries; the previous monolithic JSON export is retired. The read API accesses `platoons`, `platoon_roster_accounts`, `platoon_roster_personas`, `soldiers`, `detailed_stats_current`, and `platoon_soldier_discovery`. See [PLATOON-READ-API-CUTOVER-20261025.md](PLATOON-READ-API-CUTOVER-20261025.md). This note describes retrieval behavior, not a schema migration.

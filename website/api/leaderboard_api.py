@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, text
 from general_leaderboard import query_page as get_general_page, METRICS as GENERAL_METRICS
 from global_soldier_search import search_soldiers
 from soldier_detail import get_soldier_detail
+from platoon_read_api import list_platoons, platoon_detail, soldier_platoons
 engine=create_engine(os.environ['BF4PS_DATABASE_URL'],pool_pre_ping=True,pool_size=3,max_overflow=2)
 MAINTENANCE_FILE=Path(os.environ.get('BF4PS_SITE_CONFIG','/etc/bf4ps-website/site.env'))
 def maintenance_enabled():
@@ -644,6 +645,33 @@ class Handler(BaseHTTPRequestHandler):
                         ORDER BY other.platform,other.current_name,other.soldier_id LIMIT 30
                     """),{'id':int(raw)}).mappings()]
                 send_json(self,200,{'rows':result});return
+            if u.path=='/soldier-platoons':
+                persona=q.get('persona_id',[''])[0]
+                platform=q.get('platform',[''])[0]
+                if not persona.isdecimal() or len(persona)>19 or platform not in ('pc','ps4','xboxone'):
+                    self.send_error(400);return
+                with engine.connect() as c:
+                    c.execute(text('SET TRANSACTION READ ONLY'))
+                    c.execute(text("SET LOCAL statement_timeout = '8000ms'"))
+                    result=soldier_platoons(c,int(persona),platform)
+                send_json(self,200,result);return
+            if u.path in ('/platoons','/platoon-detail'):
+                with engine.connect() as c:
+                    c.execute(text('SET TRANSACTION READ ONLY'))
+                    c.execute(text("SET LOCAL statement_timeout = '8000ms'"))
+                    if u.path=='/platoons':
+                        search=q.get('search',[''])[0].strip()
+                        raw=q.get('page',['1'])[0]
+                        if len(search)>80 or not raw.isdecimal() or not 1<=int(raw)<=100000:
+                            self.send_error(400);return
+                        result=list_platoons(c,search,int(raw),q.get('sort',['name'])[0],q.get('direction',['asc'])[0])
+                    else:
+                        raw=q.get('id',[''])[0]
+                        if not raw.isdecimal() or len(raw)>19 or not 0<int(raw)<=9223372036854775807:
+                            self.send_error(400);return
+                        result=platoon_detail(c,int(raw))
+                if result is None:send_json(self,404,{'error':'Platoon not found'});return
+                send_json(self,200,result);return
             if u.path=='/soldier-detail':
                 raw=q.get('id',[''])[0]
                 if not raw.isdecimal() or len(raw)>19 or int(raw)<1 or int(raw)>9223372036854775807:

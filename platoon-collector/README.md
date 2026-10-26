@@ -11,3 +11,8 @@ Historical test results and removed harness inventory are documented in `../docs
 Never copy `.env` files or local backup scripts into the repository. Take a backup of each host's current scripts, stage the verified files, and atomically replace each script. Do not restart the timer or run concurrent scheduler instances during deployment. Validate the next scheduled executions and compare file hashes. The two hosts may have different Git HEAD values until their checkouts are separately reconciled; on-disk hashes are the definitive code parity check.
 
 `export_platoon_site.py` and `platoon_submit_api.py` include newer consolidated features (emblem caching and manual soldier refresh) that were not on both deployed hosts before consolidation; these are preserved intentionally rather than replaced with older deployed versions.
+
+
+## Website platoon export retired (2026-10-25)
+
+`scripts/export_platoon_site.py` was retired from production in favor of paginated read-only API endpoints in `website/api/platoon_read_api.py`. Do not schedule or deploy the legacy exporter. See `docs/PLATOON-READ-API-CUTOVER-20261025.md`.

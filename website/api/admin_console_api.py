@@ -329,24 +329,31 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == '/overview':
             try:
                 summary_path = Path('/var/www/bf4playerstats.com/homepage-summary.json')
-                platoons_path = Path('/var/www/bf4playerstats.com/platoons-data.json')
                 summary = json.loads(summary_path.read_text())
-                source = json.loads(platoons_path.read_text())
-                platoons = source.get('platoons', [])
-                tracked = set()
-                supported = set()
-                roster_accounts = 0
-                for platoon in platoons:
-                    roster_accounts += int(platoon.get('visible_member_count') or 0)
-                    for member in platoon.get('members', []):
-                        for persona in member.get('personas', []):
-                            if persona.get('platform') in ('pc', 'playstation', 'xbox') and persona.get('soldier_id'):
-                                supported.add(str(persona['soldier_id']))
-                    tracked.update(str(k) for k in platoon.get('soldier_stats', {}))
+                with engine.connect() as conn:
+                    conn.execute(text('SET TRANSACTION READ ONLY'))
+                    conn.execute(text("SET LOCAL statement_timeout = '12000ms'"))
+                    counts = conn.execute(text("""
+                      SELECT
+                      (SELECT count(*) FROM platoons) AS count,
+                      (SELECT count(*) FROM platoon_roster_accounts a WHERE a.is_current
+                       AND EXISTS (SELECT 1 FROM platoon_roster_personas x WHERE
+                       x.platoon_id=a.platoon_id AND x.battlelog_account_id=a.battlelog_account_id
+                       AND x.is_current AND x.battlelog_platform_code IN (1,32,64))) AS visible_roster_accounts,
+                      (SELECT count(DISTINCT s.soldier_id) FROM platoon_roster_personas x
+                       JOIN platoon_roster_accounts a ON a.platoon_id=x.platoon_id AND a.battlelog_account_id=x.battlelog_account_id AND a.is_current
+                       JOIN soldiers s ON s.persona_id=x.persona_id AND s.platform=CASE x.battlelog_platform_code
+                       WHEN 1 THEN 'pc' WHEN 32 THEN 'ps4' WHEN 64 THEN 'xboxone' END
+                       WHERE x.is_current AND x.battlelog_platform_code IN (1,32,64)) AS unique_supported_soldiers,
+                      (SELECT count(DISTINCT d.soldier_id) FROM platoon_roster_personas x
+                       JOIN platoon_roster_accounts a ON a.platoon_id=x.platoon_id AND a.battlelog_account_id=x.battlelog_account_id AND a.is_current
+                       JOIN soldiers s ON s.persona_id=x.persona_id AND s.platform=CASE x.battlelog_platform_code
+                       WHEN 1 THEN 'pc' WHEN 32 THEN 'ps4' WHEN 64 THEN 'xboxone' END
+                       JOIN detailed_stats_current d ON d.soldier_id=s.soldier_id
+                       WHERE x.is_current AND x.battlelog_platform_code IN (1,32,64)) AS unique_tracked_soldiers
+                    """)).mappings().one()
                 return self.reply(200, {'players': summary, 'platoons': {
-                    'count': len(platoons), 'visible_roster_accounts': roster_accounts,
-                    'unique_supported_soldiers': len(supported), 'unique_tracked_soldiers': len(tracked),
-                    'updated': platoons_path.stat().st_mtime}})
+                    **dict(counts), 'updated': time.time()}})
             except (OSError, ValueError, TypeError, KeyError) as exc:
                 return self.reply(503, {'error': 'Collection overview temporarily unavailable'})
         if parsed.path == '/artwork/catalog':
