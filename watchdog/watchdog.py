@@ -37,9 +37,8 @@ def check():
  for unit in ('bf4ps-distributed-rank-worker.service','bf4ps-rank-gc.timer','bf4ps-weapon-metrics-sync.service'):
   rc,out=run(['systemctl','is-active',unit],4)
   put('service:'+unit,rc==0 and out=='active',out)
- try:
-  with urllib.request.urlopen('https://bf4playerstats.com/',timeout=9) as r:put('website:homepage',r.status==200,'HTTP '+str(r.status))
- except Exception as e:put('website:homepage',False,type(e).__name__)
+ rc,http=run(['curl','-L','-s','-o','/dev/null','-w','%{http_code}','--max-time','9','https://bf4playerstats.com/'],12)
+ put('website:homepage',rc==0 and http=='200','HTTP '+http if http else 'unreachable')
  usage=shutil.disk_usage('/')
  put('disk:mak-01',usage.used/usage.total<0.8 and usage.free>=5*1024**3,f'{usage.used/usage.total:.0%} used, {usage.free/1024**3:.1f} GiB free')
  return result
