@@ -2,8 +2,8 @@
 Description=Five-minute bounded BF4PS retired ranking snapshot cleanup
 
 [Timer]
-OnCalendar=*:0/5
-RandomizedDelaySec=30
+OnCalendar=*-*-* *:*:00
+RandomizedDelaySec=10
 Persistent=true
 Unit=bf4ps-rank-gc.service
 

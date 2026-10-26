@@ -6,4 +6,4 @@ Requires=docker.service
 [Service]
 Type=oneshot
 TimeoutStartSec=600
-ExecStart=/usr/bin/docker run --rm --network host --env-file /opt/bf4ps-production/deploy/docker/collector.env -v /opt/bf4ps-ranking-production-stage:/rank:ro --entrypoint python bf4-player-stats:collector-ranking-versions-0016-candidate /rank/retired_snapshot_gc.py --execute --limit 5
+ExecStart=/usr/bin/docker run --rm --network host --env-file /opt/bf4ps-production/deploy/docker/collector.env -v /opt/bf4ps-ranking-production-stage:/rank:ro --entrypoint python bf4-player-stats:collector-ranking-versions-0016-candidate /rank/retired_snapshot_gc.py --execute --limit 10
