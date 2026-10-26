@@ -26,7 +26,7 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 .admin-side-nav a:hover,.admin-side-nav a.current{background:#34475b;color:#f3c860}
 .admin-panel{min-width:0}.admin-panel>.card:first-child{margin-top:0}
 @media(max-width:820px){.admin-shell{grid-template-columns:1fr}.admin-side-nav{position:static;flex-direction:row;overflow-x:auto;width:100%}.admin-side-nav a{white-space:nowrap}}
-</style></head><body><main>
+</style><link rel="stylesheet" href="/shared-header.css"></head><body><header id="bf4ps-site-header"></header><script src="/shared-header.js?v=platoon-nav-20261018a"></script><main>
 <nav class="admin-quick-nav" aria-label="Site navigation"><a href="/index.html#leaderboards">Leaderboards</a><a href="/equipment.html">Equipment View</a><a href="/community.html">Community Stats</a></nav>
 <div class="brand">BF4 PLAYER STATS / OPERATIONS</div>
 <div class="row" style="justify-content:space-between"><h1>Moderation Console</h1><button class="outline hidden" id="logout">Sign out</button></div>
@@ -64,7 +64,7 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 <section class="card"><h2>Recent audit events</h2><div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Persona ID</th><th>Player Name</th><th>Operator</th><th>Reason</th></tr></thead><tbody id="audit"></tbody></table></div></section>
 </div></div></div></main>
 <dialog id="queueDialog" class="queue-dialog" aria-labelledby="queueTitle"><div class="row" style="justify-content:space-between"><h2 id="queueTitle">Queue</h2><button type="button" class="outline" id="closeQueue">Close</button></div><p id="queueDescription"></p><div class="scroll"><table><thead id="queueHead"></thead><tbody id="queueBody"></tbody></table></div><p id="queueUpdated" class="muted" role="status"></p></dialog>
-<script src="/admin-navigation.js?v=20261026"></script>
+<script src="/admin-navigation.js?v=20261026b"></script>
 <script>
 'use strict';
 function showAdminTab(tab){

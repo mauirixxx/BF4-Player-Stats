@@ -1,6 +1,13 @@
 // Shared BF4PS operations navigation; canonical menu for both admin pages.
 (function(){
- const links = [("Collection Overview", "/admin-console.html#overview", "overview"), ("Player Moderation", "/admin-console.html#moderation", "moderation"), ("Database Health", "/admin-console.html#database", "database"), ("Account Settings", "/admin-console.html#account", "account"), ("Error Logs", "/admin-console.html#errors", "errors"), ("Distributed Ranking Monitor", "/admin-ranking.html", "ranking")];
+ const links = [
+  ["Collection Overview", "/admin-console.html#overview", "overview"],
+  ["Player Moderation", "/admin-console.html#moderation", "moderation"],
+  ["Database Health", "/admin-console.html#database", "database"],
+  ["Account Settings", "/admin-console.html#account", "account"],
+  ["Error Logs", "/admin-console.html#errors", "errors"],
+  ["Distributed Ranking Monitor", "/admin-ranking.html", "ranking"]
+ ];
  const nav=document.querySelector('[data-shared-admin-nav]');
  if(!nav)return;
  nav.replaceChildren();
