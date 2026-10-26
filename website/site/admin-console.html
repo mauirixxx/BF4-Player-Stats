@@ -204,7 +204,7 @@ async function moderate(active){
   catch(e){message(e.message,true)}
 }
 $('exclude').onclick=()=>moderate(true);$('restore').onclick=()=>moderate(false);
-function fill(id,rows,keys){const el=$(id);el.replaceChildren();for(const r of rows){const tr=document.createElement('tr');for(const k of keys)td(tr,r[k]);el.append(tr)}}
+function fill(id,rows,keys){const el=$(id);el.replaceChildren();for(const r of rows){const tr=document.createElement('tr');for(const k of keys){if(id==='audit'&&k==='player_name'&&r.player_name&&['pc','ps4','xboxone'].includes(r.platform)&&/^\d+$/.test(String(r.persona_id))){const cell=document.createElement('td'),link=document.createElement('a');link.href='https://battlelog.battlefield.com/bf4/soldier/'+encodeURIComponent(r.player_name)+'/stats/'+encodeURIComponent(String(r.persona_id))+'/'+r.platform+'/';link.target='_blank';link.rel='noopener noreferrer';link.textContent=r.player_name+' ↗';link.style.color='#f3a536';cell.append(link);tr.append(cell)}else td(tr,r[k])}el.append(tr)}}
 async function reload(){try{const [a,b]=await Promise.all([request('exclusions'),request('audit')]);fill('exclusions',a.rows,['platform','persona_id','reason_code','updated_at']);fill('audit',b.rows,['occurred_at','action','persona_id','player_name','actor','reason_code'])}catch(e){message(e.message,true)}}
 $('reload').onclick=reload;showAdminTab(location.hash.slice(1));initialize();
 </script><script src="/shared-footer.js?v=unified-20261025"></script></body></html>
