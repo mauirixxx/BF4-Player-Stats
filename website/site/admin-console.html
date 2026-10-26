@@ -207,4 +207,4 @@ $('exclude').onclick=()=>moderate(true);$('restore').onclick=()=>moderate(false)
 function fill(id,rows,keys){const el=$(id);el.replaceChildren();for(const r of rows){const tr=document.createElement('tr');for(const k of keys)td(tr,r[k]);el.append(tr)}}
 async function reload(){try{const [a,b]=await Promise.all([request('exclusions'),request('audit')]);fill('exclusions',a.rows,['platform','persona_id','reason_code','updated_at']);fill('audit',b.rows,['occurred_at','action','persona_id','actor','reason_code'])}catch(e){message(e.message,true)}}
 $('reload').onclick=reload;showAdminTab(location.hash.slice(1));initialize();
-</script></body></html>
+</script><script src="/shared-footer.js?v=unified-20261025"></script></body></html>
