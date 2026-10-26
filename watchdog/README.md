@@ -13,3 +13,5 @@ Send every OPEN, ESCALATED and RECOVERED event to the configured channel **and**
 ## Discord alert presentation
 
 Incident and recovery notifications use short multiline Markdown messages with severity, friendly service name, node, status, and detection/recovery time in Hawaii Standard Time (UTC−10). Filesystem alerts also show percent used and GiB free. Raw PostgreSQL paths and internal command output are not included in messages. This formatting change does not resend already-open incidents; only newly opened or recovered incidents trigger alerts.
+
+Ranking progress check: watchdog queries the production queue via mak-db-02's local postgres account over authenticated SSH. An unhealthy ranking gate, unavailable telemetry, or a due backlog with no active job and no successful completion in 20 minutes triggers the existing three-failed-check alert policy. This checks real progress rather than only Docker process state; prolonged active jobs still need additional timeout telemetry.

@@ -35,14 +35,7 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 <section class="card" id="loginBox"><h2>Administrator sign in</h2>
 <form id="loginForm"><label for="username">Username</label><input id="username" autocomplete="username" placeholder="Enter your username" required><label for="password">Administrator password</label><input type="password" id="password" autocomplete="current-password" required>
 <p>Sessions expire after one hour. All changes require CSRF verification.</p><button type="submit">Sign in</button></form></section>
-<div id="app" class="hidden"><div class="admin-shell"><nav class="admin-side-nav" aria-label="Admin sections">
-<a href="#overview" data-tab="overview" class="current">Collection Overview</a>
-<a href="#moderation" data-tab="moderation">Player Moderation</a>
-<a href="#database" data-tab="database">Database Health</a>
-<a href="#account" data-tab="account">Account Settings</a>
-<a href="#errors" data-tab="errors">Error Logs</a>
-<a href="/admin-ranking.html">Distributed Ranking Monitor ↗</a>
-</nav><div class="admin-panel">
+<div id="app" class="hidden"><div class="admin-shell"><nav class="admin-side-nav" aria-label="Admin sections" data-shared-admin-nav></nav><div class="admin-panel">
 <div data-section="overview"><section class="card"><div class="row" style="justify-content:space-between"><h2>Collection Overview</h2><button class="outline" id="overviewRefresh" type="button">Refresh overview</button></div>
 <p>Lightweight player and platoon collection summary. Snapshot values, not live Battlelog requests.</p><div class="row"><button type="button" class="outline" id="showPlayerQueue">Next 10 player jobs</button><button type="button" class="outline" id="showPlatoonQueue">Next 10 platoons</button></div>
 <div class="grid"><div><h2>Players</h2><div id="overviewPlayers" class="muted">Loading…</div></div><div><h2>Platoons</h2><div id="overviewPlatoons" class="muted">Loading…</div></div></div><p class="muted" id="overviewUpdated"></p></section>
@@ -71,6 +64,7 @@ th{color:var(--muted)}.scroll{overflow-x:auto}.muted{color:var(--muted)}.error{c
 <section class="card"><h2>Recent audit events</h2><div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Persona ID</th><th>Player Name</th><th>Operator</th><th>Reason</th></tr></thead><tbody id="audit"></tbody></table></div></section>
 </div></div></div></main>
 <dialog id="queueDialog" class="queue-dialog" aria-labelledby="queueTitle"><div class="row" style="justify-content:space-between"><h2 id="queueTitle">Queue</h2><button type="button" class="outline" id="closeQueue">Close</button></div><p id="queueDescription"></p><div class="scroll"><table><thead id="queueHead"></thead><tbody id="queueBody"></tbody></table></div><p id="queueUpdated" class="muted" role="status"></p></dialog>
+<script src="/admin-navigation.js?v=20261026"></script>
 <script>
 'use strict';
 function showAdminTab(tab){

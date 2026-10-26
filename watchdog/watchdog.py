@@ -26,6 +26,23 @@ def check():
     used=int(fields[4].strip('%')); free=int(fields[3])*1024
     put('disk:'+host,used<80 and free>=5*1024**3,f'{used}% used, {free/1024**3:.1f} GiB free')
    put('postgres:'+host,lines[1]=='active' and 'online' in lines[2],lines[1]+' '+lines[2][-70:])
+ # A live container is insufficient: verify ranking admission and actual progress.
+ rank_sql = ("SELECT public.bf4ps_rank_gate_ready(), "
+             "(SELECT count(*) FROM equipment_rank_jobs WHERE next_due_at<=now()), "
+             "(SELECT count(*) FROM equipment_rank_jobs WHERE lease_expires_at>now()), "
+             "(SELECT extract(epoch FROM now()-max(last_success_at))::bigint FROM equipment_rank_jobs)")
+ rc,out=run(['ssh','-o','BatchMode=yes','-o','ConnectTimeout=3','mak-db-02',
+             'runuser -u postgres -- psql -d bf4_playerstats -At -F \'|\' -c '+__import__('shlex').quote(rank_sql)],12)
+ try:
+  gate,due,active,age=out.splitlines()[-1].split('|')
+  due,active=int(due),int(active)
+  age=int(age) if age else None
+  ready=(gate=='t')
+  healthy=ready and (due==0 or active>0 or (age is not None and age<1200))
+  put('ranking:production',healthy,
+      f'gate={"ready" if ready else "blocked"}, due={due}, active={active}, last success age={age if age is not None else "unknown"}s')
+ except (ValueError,IndexError):
+  put('ranking:production',False,'ranking queue telemetry unavailable')
  for host,addr in TCP_NODES.items():
   try:
    with socket.create_connection((addr,22),timeout=2): ok=True
@@ -67,7 +84,7 @@ def format_alert(key, val, recovered=False):
  category, _, resource = key.partition(':')
  labels = {'postgres': 'PostgreSQL 16', 'node': 'Node connectivity',
            'disk': 'Filesystem capacity', 'container': 'Docker container',
-           'service': 'Systemd service', 'website': 'Website availability'}
+           'service': 'Systemd service', 'website': 'Website availability', 'ranking': 'Ranking calculator'}
  name = labels.get(category, category.title())
  status = 'Recovered' if recovered else 'Offline' if category in ('postgres','node') else 'Unhealthy'
  severity = 'RECOVERED' if recovered else 'CRITICAL'
@@ -80,7 +97,7 @@ def format_alert(key, val, recovered=False):
           f'**{"Recovered" if recovered else "Detected"}:** {when}']
  if category == 'disk':
   lines.append('**Capacity:** ' + val['detail'])
- elif category == 'website':
+ elif category in ('website','ranking'):
   lines.append('**Check:** ' + val['detail'])
  return '\n'.join(lines)
 
