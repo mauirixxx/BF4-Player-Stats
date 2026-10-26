@@ -293,3 +293,8 @@ The previous nine-node image hotfix did not change the installed `site-packages/
 #### Catalog maintenance completion
 
 All nine running collector containers verified the optimized imported persistence code. Both catalogs vacuumed; all four catalog indexes concurrently reindexed successfully after releasing one stale idle transaction. Post-maintenance `n_dead_tup=0` for both; catalog index sizes total 80 kB. Corrected images were built on all nine nodes, but running container image references have not yet been changed. Continue monitoring catalog update rates and use corrected image tag on recreation.
+
+
+### 2026-10-25 — corrected collector images deployed fleet-wide
+
+Completed image-reference cutover for all nine soldier collectors to `bf4-player-stats:catalog-fix-installed-20261025`. All nine verified running with successful collection logs and zero restart counts. Eight standalone nodes retain previous containers for rollback; RNT's Compose override was updated with a backup. Post-cutover PostgreSQL counters showed no further catalog updates since the maintenance baseline and zero dead tuples at that check. This supersedes the earlier warning that the corrected image was only built, not selected. See `docs/CATALOG-IMPORT-PATH-RECOVERY-20261025.md`.
