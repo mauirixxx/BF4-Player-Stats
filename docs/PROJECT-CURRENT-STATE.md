@@ -288,3 +288,8 @@ The first two commits on the current branch were documentation and offline safet
 ### 2026-10-25 — actual collector import-path root cause
 
 The previous nine-node image hotfix did not change the installed `site-packages/bf4ps` package imported by `/app/scripts/bf4ps_production_collector.py`. Database evidence identified old single-row catalog upserts still executing. Corrected the installed package inside all nine running containers and restarted them; all nine subsequently verified importing optimized persistence. Built reproducible corrected image `bf4-player-stats:catalog-fix-installed-20261025` on all nodes. **Existing containers still use the old image tag**, so explicitly switch their image configuration on future recreation. Both catalogs were vacuumed online, and concurrent index maintenance began. See [CATALOG-IMPORT-PATH-RECOVERY-20261025.md](CATALOG-IMPORT-PATH-RECOVERY-20261025.md).
+
+
+#### Catalog maintenance completion
+
+All nine running collector containers verified the optimized imported persistence code. Both catalogs vacuumed; all four catalog indexes concurrently reindexed successfully after releasing one stale idle transaction. Post-maintenance `n_dead_tup=0` for both; catalog index sizes total 80 kB. Corrected images were built on all nine nodes, but running container image references have not yet been changed. Continue monitoring catalog update rates and use corrected image tag on recreation.

@@ -25,3 +25,8 @@ On mak-db-02 ordinary online `VACUUM (ANALYZE)` was run on both catalogs after r
 - Complete/verify concurrent index maintenance and measure index sizes and dossier response times.
 - Recreate collectors from the corrected image using each host's existing deployment configuration and preserved environment; do not replace unrelated ranking/platoon services.
 - Keep `docs/catalog-persistence-policy.md` authoritative for the bounded 15-minute refresh policy.
+
+
+## Completed database maintenance verification
+
+After terminating a single 11-hour idle-in-transaction backend that held an old snapshot, all four indexes were rebuilt using `REINDEX INDEX CONCURRENTLY`: `weapon_catalog_pkey`, `weapon_catalog_weapon_guid_key`, `vehicle_catalog_pkey`, and `vehicle_catalog_vehicle_guid_key`. All four commands returned `REINDEX`. PostgreSQL reported `n_dead_tup=0` for both catalogs after vacuum. Index sizes were 16 kB, 32 kB, 16 kB and 16 kB respectively, down from roughly 30 MB total. This is a point-in-time check, not proof that future catalog churn has stopped.
