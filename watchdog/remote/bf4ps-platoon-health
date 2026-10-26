@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Restricted forced-command SSH probe for BF4PS platoon scheduler."""
+import json,subprocess,datetime
+
+def cmd(args):
+ p=subprocess.run(args,text=True,capture_output=True,timeout=5)
+ return p.returncode,p.stdout.strip()
+
+_,timer=cmd(['systemctl','is-active','bf4ps-platoon-alternating.timer'])
+_,log=cmd(['journalctl','-u','bf4ps-platoon-alternating.service','--since','5 minutes ago','-n','150','--no-pager','-o','cat'])
+fails=log.count('Failed with result')+log.count('Scheduler result platoon exit 1')+log.count('Scheduler result soldier exit 1')
+successes=log.count('Scheduler result platoon exit 0')+log.count('Scheduler result soldier exit 0')
+print(json.dumps({'timer_active':timer=='active','failures_recent':fails,'successes_recent':successes,'observed_at':datetime.datetime.now(datetime.timezone.utc).isoformat()}))

@@ -66,6 +66,19 @@ def check():
  except (ValueError,IndexError):
   put('platoon:progress',False,'platoon queue telemetry unavailable')
   put('platoon:queue-age',False,'platoon queue telemetry unavailable')
+ # Restricted SSH forced-command probe; no interactive shell or remote root commands.
+ for host in ('mak-05','hnl-03'):
+  rc,out=run(['ssh','-i','/root/.ssh/bf4ps-watchdog-platoon',
+    '-o','IdentitiesOnly=yes','-o','BatchMode=yes','-o','ConnectTimeout=3',host,'probe'],9)
+  try:
+   if rc: raise ValueError('SSH probe failed')
+   info=json.loads(out)
+   failures=int(info['failures_recent'])
+   healthy=info['timer_active'] and failures<3
+   put('platoon-service:'+host,healthy,
+       f'timer={"active" if info["timer_active"] else "inactive"}, recent failures={failures}, recent successes={info["successes_recent"]}')
+  except (ValueError,KeyError,TypeError):
+   put('platoon-service:'+host,False,'restricted service probe unavailable')
  for host,addr in TCP_NODES.items():
   try:
    with socket.create_connection((addr,22),timeout=2): ok=True
@@ -107,7 +120,7 @@ def format_alert(key, val, recovered=False):
  category, _, resource = key.partition(':')
  labels = {'postgres': 'PostgreSQL 16', 'node': 'Node connectivity',
            'disk': 'Filesystem capacity', 'container': 'Docker container',
-           'service': 'Systemd service', 'website': 'Website availability', 'ranking': 'Ranking calculator', 'platoon': 'Platoon collector'}
+           'service': 'Systemd service', 'website': 'Website availability', 'ranking': 'Ranking calculator', 'platoon': 'Platoon collector', 'platoon-service': 'Platoon worker service'}
  name = labels.get(category, category.title())
  status = 'Recovered' if recovered else 'Offline' if category in ('postgres','node') else 'Unhealthy'
  severity = 'RECOVERED' if recovered else 'CRITICAL'
@@ -120,7 +133,7 @@ def format_alert(key, val, recovered=False):
           f'**{"Recovered" if recovered else "Detected"}:** {when}']
  if category == 'disk':
   lines.append('**Capacity:** ' + val['detail'])
- elif category in ('website','ranking','platoon'):
+ elif category in ('website','ranking','platoon','platoon-service'):
   lines.append('**Check:** ' + val['detail'])
  return '\n'.join(lines)
 

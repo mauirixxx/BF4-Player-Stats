@@ -334,3 +334,7 @@ The Moderation Console now uses the same `main` max-width of 1500px, horizontal 
 ### 2026-10-26 — platoon watchdog checks
 
 Added production DB-backed `platoon:progress` (no successful refresh in 20 minutes with due work) and `platoon:queue-age` (oldest due refresh 24 hours), both with existing 3-check Discord alert/recovery policy. A service-level failure count check is not yet deployed because mak-01 SSH access to mak-05 and hnl-03 was denied; this is a known monitoring gap, not a reason to expose bot credentials to worker nodes.
+
+### 2026-10-26 — restricted SSH monitoring on platoon workers
+
+Established a **dedicated** key from mak-01 to mak-05 and hnl-03 with an authorized_keys forced command and `restrict`; verified both SSH probes return JSON without allowing an interactive root shell. The helper at `/usr/local/sbin/bf4ps-platoon-health` checks the alternating scheduler timer and counts recent failures/successes from a bounded journal sample. Watchdog checks `platoon-service:<host>` independently and alerts after three failed cycles if the timer is inactive or >=3 failures are observed in the sample. This closes the initial SSH authentication gap without broadening root SSH access. Documented source in `watchdog/remote/`.
