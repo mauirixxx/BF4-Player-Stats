@@ -43,6 +43,29 @@ def check():
       f'gate={"ready" if ready else "blocked"}, due={due}, active={active}, last success age={age if age is not None else "unknown"}s')
  except (ValueError,IndexError):
   put('ranking:production',False,'ranking queue telemetry unavailable')
+ # Platoon processing health is measured from committed DB progress, not SSH port status.
+ platoon_sql = ("SELECT "
+   "(SELECT count(*) FROM platoons WHERE next_refresh_at<=now()), "
+   "(SELECT extract(epoch FROM now()-max(last_success_at))::bigint FROM platoons), "
+   "(SELECT extract(epoch FROM now()-min(next_refresh_at))::bigint FROM platoons WHERE next_refresh_at<=now()), "
+   "(SELECT count(*) FROM platoon_work_leases WHERE lease_until>now()), "
+   "(SELECT count(*) FROM platoon_requests WHERE status='failed')")
+ rc,out=run(['ssh','-o','BatchMode=yes','-o','ConnectTimeout=3','mak-db-02',
+   'runuser -u postgres -- psql -d bf4_playerstats -At -F \'|\' -c '+__import__('shlex').quote(platoon_sql)],12)
+ try:
+  due,age,oldest,active,failed=out.splitlines()[-1].split('|')
+  due,active,failed=int(due),int(active),int(failed)
+  age=int(age) if age else None
+  oldest=int(oldest) if oldest else 0
+  progressing=(age is not None and age<1200) or due==0
+  put('platoon:progress',progressing,
+      f'due={due}, active leases={active}, last success age={age if age is not None else "unknown"}s, failed requests={failed}')
+  # Backlog age is separately reported: it must not mask ongoing progress.
+  put('platoon:queue-age',oldest<86400 or due==0,
+      f'oldest due={oldest//3600}h, due={due}, active leases={active}')
+ except (ValueError,IndexError):
+  put('platoon:progress',False,'platoon queue telemetry unavailable')
+  put('platoon:queue-age',False,'platoon queue telemetry unavailable')
  for host,addr in TCP_NODES.items():
   try:
    with socket.create_connection((addr,22),timeout=2): ok=True
@@ -84,7 +107,7 @@ def format_alert(key, val, recovered=False):
  category, _, resource = key.partition(':')
  labels = {'postgres': 'PostgreSQL 16', 'node': 'Node connectivity',
            'disk': 'Filesystem capacity', 'container': 'Docker container',
-           'service': 'Systemd service', 'website': 'Website availability', 'ranking': 'Ranking calculator'}
+           'service': 'Systemd service', 'website': 'Website availability', 'ranking': 'Ranking calculator', 'platoon': 'Platoon collector'}
  name = labels.get(category, category.title())
  status = 'Recovered' if recovered else 'Offline' if category in ('postgres','node') else 'Unhealthy'
  severity = 'RECOVERED' if recovered else 'CRITICAL'
@@ -97,7 +120,7 @@ def format_alert(key, val, recovered=False):
           f'**{"Recovered" if recovered else "Detected"}:** {when}']
  if category == 'disk':
   lines.append('**Capacity:** ' + val['detail'])
- elif category in ('website','ranking'):
+ elif category in ('website','ranking','platoon'):
   lines.append('**Check:** ' + val['detail'])
  return '\n'.join(lines)
 

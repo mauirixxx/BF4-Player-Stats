@@ -330,3 +330,7 @@ The watchdog now checks `bf4ps_rank_gate_ready()`, due/active ranking jobs, and 
 ### 2026-10-26 — admin console width alignment
 
 The Moderation Console now uses the same `main` max-width of 1500px, horizontal padding 22px, and top margin 25px as the Distributed Ranking Monitor. Removed the obsolete three-link quick navigation from the console, because both pages already load the shared site header with the full public navigation and the shared six-link admin sidebar. No changes to authentication, API calls, or section behavior.
+
+### 2026-10-26 — platoon watchdog checks
+
+Added production DB-backed `platoon:progress` (no successful refresh in 20 minutes with due work) and `platoon:queue-age` (oldest due refresh 24 hours), both with existing 3-check Discord alert/recovery policy. A service-level failure count check is not yet deployed because mak-01 SSH access to mak-05 and hnl-03 was denied; this is a known monitoring gap, not a reason to expose bot credentials to worker nodes.
