@@ -1,0 +1,15 @@
+[Unit]
+Description=BF4PS distributed ranking worker (requires 0018 and legacy timer cutover)
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=45
+ExecStart=/usr/bin/docker run --rm --name bf4ps-distributed-rank-mak01 --network host --env-file /opt/bf4ps-production/deploy/docker/collector.env -e BF4PS_DISTRIBUTED_RANK_ENABLE=1 -e BF4PS_DISTRIBUTED_RANK_REQUIRED=1 -e BF4PS_SITE=mak -e BF4PS_RANK_REFRESH_ALL_SECONDS=300 -e BF4PS_RANK_REFRESH_PLATFORM_SECONDS=300 -v /opt/bf4ps-distributed-ranking/player-collector:/rank:ro -w /rank --entrypoint python bf4-player-stats:collector-ranking-versions-0016-candidate /rank/distributed_rank_worker.py
+ExecStop=/usr/bin/docker stop -t 30 bf4ps-distributed-rank-mak01
+
+[Install]
+WantedBy=multi-user.target
