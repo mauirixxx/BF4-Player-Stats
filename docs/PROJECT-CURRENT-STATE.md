@@ -310,3 +310,5 @@ The admin Collection Overview SQL (introduced during the platoon JSON-to-API cut
 ### 2026-10-26 — watchdog design requested
 
 Operator requested BF4SW-style Discord notifications to multiple BF4PS infrastructure administrators for node, service, database, and disk failures. Design and prerequisites are in `docs/INFRASTRUCTURE-WATCHDOG-DESIGN.md`. This feature is **not yet deployed** and cannot send notifications until a private Discord destination and administrator enrollment policy are configured. Existing bounded ranking GC and disk-recovery changes are recorded in `docs/DISTRIBUTED-RANKING-WORKERS-DESIGN.md`.
+
+Watchdog delivery decision confirmed: post to Discord guild `854574291545620530`, channel `1537927453509419039`, and DM **every configured infrastructure admin** for each incident and recovery. Implementation and delivery verification remain pending.
