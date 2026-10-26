@@ -1,0 +1,11 @@
+[Unit]
+Description=BF4PS infrastructure watchdog every minute
+
+[Timer]
+OnBootSec=90s
+OnUnitInactiveSec=60s
+AccuracySec=10s
+Unit=bf4ps-watchdog.service
+
+[Install]
+WantedBy=timers.target

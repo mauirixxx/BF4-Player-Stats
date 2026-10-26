@@ -1,0 +1,9 @@
+[Unit]
+Description=BF4PS infrastructure watchdog check
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/bf4ps-watchdog/watchdog.py
+TimeoutStartSec=120
