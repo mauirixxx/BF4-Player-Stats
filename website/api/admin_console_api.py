@@ -219,11 +219,18 @@ class Handler(BaseHTTPRequestHandler):
                         SELECT j.job_id,j.resource,j.priority_class,j.priority_value,
                                j.status,j.eligible_at,j.started_at,s.soldier_id,s.current_name,s.platform
                         FROM collection_jobs j JOIN soldiers s ON s.soldier_id=j.soldier_id
-                        WHERE j.status='running' OR (j.status='pending' AND j.eligible_at<=now())
+                        WHERE (j.status='running' OR (j.status='pending' AND j.eligible_at<=now()))
+                          AND NOT EXISTS (
+                              SELECT 1 FROM player_exclusions e
+                              WHERE e.platform=s.platform AND e.persona_id=s.persona_id AND e.active
+                          )
                         ORDER BY CASE WHEN j.status='running' THEN 0 ELSE 1 END,
                           CASE WHEN j.status='running' THEN j.started_at END DESC NULLS LAST,
-                          CASE WHEN j.status='pending' AND j.priority_class='interactive' THEN 0 ELSE 1 END,
-                          j.priority_class ASC,j.priority_value DESC,j.eligible_at ASC,j.created_at ASC,j.job_id ASC
+                          CASE j.priority_class
+                            WHEN 'interactive' THEN 4 WHEN 'active' THEN 3
+                            WHEN 'recent' THEN 2 WHEN 'bootstrap' THEN 1 ELSE 0
+                          END DESC,
+                          j.priority_value DESC,j.eligible_at ASC,j.created_at ASC,j.job_id ASC
                         LIMIT 10
                     """)).mappings().all()
                 else:
