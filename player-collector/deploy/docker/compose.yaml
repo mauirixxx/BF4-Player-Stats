@@ -9,6 +9,8 @@ services:
     env_file: ./discovery.env
     command: ["python", "-m", "bf4ps.discovery_service"]
   collector:
+    # Match fleet-wide operations (docker stop/start by this exact name).
+    container_name: bf4ps-production-collector
     build:
       context: ../..
     image: bf4-player-stats:collector-rnt-bootstrap
