@@ -31,3 +31,7 @@ No schema migration. Weapon/vehicle catalogs retain stable IDs and their existin
 ### Platoon emblem cache operational path (2026-10-27)
 
 `platoons.emblem_path` contains the official Battlelog emblem URL template (`[SIZE]`/`[FORMAT]` placeholders). The website read API uses a deterministic cached local PNG if present, otherwise a default. `bf4ps-platoon-emblem-cache.timer` periodically runs the bounded read-only database reconciler in `website/scripts/cache_platoon_emblems.py` on `tcou`. No database migration or new table is required. Failed downloads use local `.retry` markers with a six-hour cooldown. See `docs/PLATOON-QUEUE-OPERATIONS.md` for deployment and validation.
+
+### Discord platoon preview publishing (2026-10-27, v3 production)
+
+No database migration. On `tcou`, `bf4ps-platoon-emblem-cache.timer` populates official local emblem PNGs; `bf4ps-platoon-preview-images.timer` produces 1200x630 branded cards with proportionally enlarged emblems (up to 495x495, Pillow Lanczos resize), publishing `-v3.png` files; `bf4ps-share-preview-index.timer` reads `platoons` and selects existing v3 assets for the server-rendered Discord OG image. Missing artwork falls back to standard `og-preview.png`. The PHP unfurl handler reads the atomically published JSON index, and platoon OG titles use `BF4 Platoon Stats`. See `docs/PLATOON-QUEUE-OPERATIONS.md` for operational steps.
