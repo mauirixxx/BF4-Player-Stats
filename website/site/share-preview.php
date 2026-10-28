@@ -38,7 +38,7 @@ if ($kind === 'soldier') {
         $description = ($tag !== '' ? '[' . $tag . '] · ' : '') . $members . ' official members · Battlefield 4 platoon roster and community statistics.';
         // Only publish cached local emblems; never use an arbitrary external URL.
         $emblem = (string)($p['emblem'] ?? '');
-        if (preg_match('~^/assets/platoon-previews/[0-9]+-[a-f0-9]{16}\.png$~D', $emblem) && is_file($root . $emblem)) {
+        if (preg_match('~^/assets/platoon-previews/[0-9]+-[a-f0-9]{16}-v2\.png$~D', $emblem) && is_file($root . $emblem)) {
             $image = 'https://bf4playerstats.com' . $emblem;
         }
     }
