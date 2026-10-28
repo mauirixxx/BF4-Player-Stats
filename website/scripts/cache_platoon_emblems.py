@@ -24,6 +24,10 @@ def emblem_asset(pid, template, directory):
         return None
     url = template.replace('[SIZE]', '256').replace('[FORMAT]', 'png')
     parsed = urlsplit(url)
+    # Legacy Battlelog records store http:// URLs; force TLS on the fixed allowlisted host.
+    if parsed.scheme == 'http' and parsed.hostname == 'eaassets-a.akamaihd.net':
+        url = 'https://' + url[len('http://'):]
+        parsed = urlsplit(url)
     if (parsed.scheme != 'https' or parsed.hostname != 'eaassets-a.akamaihd.net'
             or parsed.port not in (None, 443) or parsed.username or parsed.password
             or not PATH.fullmatch(parsed.path) or not re.fullmatch(r'[1-9][0-9]{0,18}', str(pid))):
