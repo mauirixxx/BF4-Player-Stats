@@ -1,0 +1,8 @@
+[Unit]
+Description=Generate BF4PS wide platoon preview images
+After=local-fs.target
+[Service]
+Type=oneshot
+ExecStart=/opt/bf4ps-website/.venv/bin/python /opt/bf4ps-website/scripts/build_platoon_preview_images.py --limit 50
+TimeoutStartSec=300
+NoNewPrivileges=true

@@ -1,0 +1,9 @@
+[Unit]
+Description=Generate BF4PS platoon preview images periodically
+[Timer]
+OnBootSec=3min
+OnUnitInactiveSec=5min
+Persistent=true
+Unit=bf4ps-platoon-preview-images.service
+[Install]
+WantedBy=timers.target
