@@ -21,7 +21,8 @@ def render(source, dest):
     draw.rectangle((0, 0, 1199, 9), fill='#f4a62a')
     draw.rounded_rectangle((42, 49, 1158, 578), radius=24, fill='#203247')
     draw.rounded_rectangle((55, 62, 615, 565), radius=20, fill='#142333')
-    emblem.thumbnail((495, 495), Image.Resampling.LANCZOS)
+    scale = min(495 / emblem.width, 495 / emblem.height)
+    emblem = emblem.resize((max(1, round(emblem.width * scale)), max(1, round(emblem.height * scale))), Image.Resampling.LANCZOS)
     image.paste(emblem, (335 - emblem.width // 2, 315 - emblem.height // 2), emblem)
     regular='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
     bold='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
@@ -50,7 +51,7 @@ def main():
     created=0
     for source in sorted(source_dir.glob('*.png')):
         if not source.name[:1].isdigit() or not source.stem.rsplit('-',1)[-1].isalnum():continue
-        dest=dest_dir/(source.stem + '-v2.png')
+        dest=dest_dir/(source.stem + '-v3.png')
         if dest.exists():continue
         if render(source,dest):created+=1
         if created>=args.limit:break

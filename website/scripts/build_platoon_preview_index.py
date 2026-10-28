@@ -17,7 +17,7 @@ def build(engine, root=ROOT):
         index = {}
         for pid, name, tag, members, template in rows:
             emblem = emblem_asset(pid, template, root / 'assets/platoon-emblems')
-            preview = root / 'assets/platoon-previews' / (emblem[1].stem + '-v2.png') if emblem else None
+            preview = root / 'assets/platoon-previews' / (emblem[1].stem + '-v3.png') if emblem else None
             local = ('/assets/platoon-previews/' + preview.name) if preview and preview.is_file() else ''
             index[pid] = {'name': name or '', 'tag': tag or '', 'members': members or 0, 'emblem': local}
     fd, tmp = tempfile.mkstemp(prefix='.platoon-preview-', dir=root)

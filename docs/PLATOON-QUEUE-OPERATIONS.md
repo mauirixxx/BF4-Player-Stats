@@ -83,3 +83,7 @@ Square Battlelog emblems render with excess vertical whitespace in Discord large
 ### Preview card layout revision v2 (2026-10-27)
 
 The emblem area was enlarged to 495x495 maximum within the 1200x630 card, and the left panel expanded. Generated preview filenames now end in `-v2.png` to invalidate Discord/CDN image caches without overwriting the original `-<hash>.png` cards. The index publishes a v2 URL only after its generated file exists; otherwise the generic OG card remains the fallback. Regenerate with `systemctl start bf4ps-platoon-preview-images.service`, then rebuild the index. Older v1 files can be removed after v2 backfill if no longer referenced.
+
+### Preview card layout revision v3 (2026-10-27)
+
+Fixed a Pillow scaling bug: `thumbnail()` never enlarges a 256x256 Battlelog emblem, even when the design reserves 495x495. The renderer now calculates a proportional scale factor and uses `resize(..., Image.Resampling.LANCZOS)` to upscale smaller emblems into the available 495x495 panel, preserving transparency and aspect ratio. The output filename suffix is `-v3.png` to invalidate Discord/CDN caches. Existing v2 images remain intact until no longer referenced.
