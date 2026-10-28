@@ -27,3 +27,9 @@ The website reads platoon records directly from PostgreSQL using bounded SELECT-
 ## Catalog storage maintenance (2026-10-25)
 
 No schema migration. Weapon/vehicle catalogs retain stable IDs and their existing uniqueness constraints. Production catalog write amplification arose from the deployed collector importing an obsolete installed Python package; the correction is deployment/image related, not a table definition change. See [CATALOG-IMPORT-PATH-RECOVERY-20261025.md](CATALOG-IMPORT-PATH-RECOVERY-20261025.md).
+
+### `platoon_manual_refresh` (2026-10-28)
+
+- `platoon_id bigint PRIMARY KEY REFERENCES platoons(platoon_id) ON DELETE CASCADE`
+- `last_requested_at timestamptz NOT NULL DEFAULT now()`
+- Controlled by `request_platoon_refresh(bigint,boolean)` SECURITY DEFINER function, granted to `bf4ps_stage9c_d2`; see `website/migrations/0019_platoon_manual_refresh.sql`.

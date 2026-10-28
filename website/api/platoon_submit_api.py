@@ -9,11 +9,46 @@ engine=create_engine(os.environ['BF4PS_DATABASE_URL'],pool_pre_ping=True)
 PATH=re.compile(r'^/bf4/platoons/(?:members|view)/([1-9][0-9]{0,18})/?$')
 class Handler(BaseHTTPRequestHandler):
  def do_POST(self):
-  if self.path not in ('/submit','/refresh-soldier') or self.headers.get('Content-Type')!='application/json':self.send_error(404);return
+  if self.path not in ('/submit','/refresh-soldier','/refresh-platoon') or self.headers.get('Content-Type')!='application/json':self.send_error(404);return
   try:
    size=int(self.headers.get('Content-Length','0'))
    if size<1 or size>1024:raise ValueError('Invalid size')
    data=json.loads(self.rfile.read(size))
+   if self.path=='/refresh-platoon':
+    if (not isinstance(data,dict) or set(data)!={'platoon_id','lan_bypass'}
+        or not isinstance(data['platoon_id'],str) or not re.fullmatch(r'[1-9][0-9]{0,18}',data['platoon_id'])
+        or type(data['lan_bypass']) is not bool):raise ValueError('Invalid refresh request')
+    pid=int(data['platoon_id'])
+    with engine.begin() as c:
+     c.execute(text("SET LOCAL statement_timeout='5000ms'"))
+     result=c.execute(text('SELECT state,retry_after_seconds FROM public.request_platoon_refresh(:pid,:bypass)'),{'pid':pid,'bypass':data['lan_bypass']}).mappings().one()
+     state=result['state'];retry=result['retry_after_seconds']
+    if state=='not_found':self.reply(404,{'state':state});return
+    artwork='pending'
+    if state in ('queued','already_queued'):
+     try:
+      import sys
+      sys.path.insert(0,'/opt/bf4ps-website/scripts')
+      from pathlib import Path
+      from cache_platoon_emblems import emblem_asset,fetch
+      from build_platoon_preview_images import render
+      from build_platoon_preview_index import build
+      root=Path('/var/www/bf4playerstats.com')
+      with engine.connect() as c:
+       template=c.execute(text('SELECT emblem_path FROM platoons WHERE platoon_id=:pid'),{'pid':pid}).scalar()
+      asset=emblem_asset(str(pid),template,root/'assets/platoon-emblems')
+      if asset:
+       url,path=asset
+       # Manual refresh deliberately re-fetches artwork, even when locally cached.
+       fetch(url,path)
+       dest=root/'assets/platoon-previews'/(path.stem+'-v3.png')
+       render(path,dest)
+       build(engine,root)
+       artwork='ready' if dest.is_file() else 'unavailable'
+      else:artwork='no_emblem_url'
+     except Exception:
+      artwork='retry_scheduled'
+    self.reply(200,{'state':state,'retry_after_seconds':retry,'platoon_id':str(pid),'artwork':artwork});return
    if self.path=='/refresh-soldier':
     if not isinstance(data,dict) or set(data)!={'soldier_id'} or not isinstance(data['soldier_id'],int) or isinstance(data['soldier_id'],bool) or data['soldier_id']<=0:raise ValueError('Invalid soldier ID')
     sid=data['soldier_id']

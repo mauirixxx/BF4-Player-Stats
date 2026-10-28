@@ -35,3 +35,7 @@ No schema migration. Weapon/vehicle catalogs retain stable IDs and their existin
 ### Discord platoon preview publishing (2026-10-27, v3 production)
 
 No database migration. On `tcou`, `bf4ps-platoon-emblem-cache.timer` populates official local emblem PNGs; `bf4ps-platoon-preview-images.timer` produces 1200x630 branded cards with proportionally enlarged emblems (up to 495x495, Pillow Lanczos resize), publishing `-v3.png` files; `bf4ps-share-preview-index.timer` reads `platoons` and selects existing v3 assets for the server-rendered Discord OG image. Missing artwork falls back to standard `og-preview.png`. The PHP unfurl handler reads the atomically published JSON index, and platoon OG titles use `BF4 Platoon Stats`. See `docs/PLATOON-QUEUE-OPERATIONS.md` for operational steps.
+
+### Public manual platoon refresh (2026-10-28)
+
+`public.platoon_manual_refresh` holds durable 60-minute per-platoon cooldown timestamps. `public.request_platoon_refresh(bigint,boolean)` is a SECURITY DEFINER scheduling entry point callable only by the website role; it locks the platoon row and advances `platoons.next_refresh_at` without bypassing the collector lease/fencing logic. Gateway-authenticated LAN CIDR clients bypass cooldowns and public rate limits. Migration: `website/migrations/0019_platoon_manual_refresh.sql`; operational details in `docs/PLATOON-QUEUE-OPERATIONS.md`.
