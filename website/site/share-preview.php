@@ -10,7 +10,7 @@ $root = __DIR__;
 $page = $kind === 'soldier' ? 'soldier.html' : 'platoons.html';
 $html = file_get_contents($root . '/' . $page);
 if ($html === false) { http_response_code(503); exit('Page unavailable'); }
-$title = $kind === 'soldier' ? 'BF4 Player Stats — Soldier Dossier' : 'BF4 Player Stats — Platoons';
+$title = $kind === 'soldier' ? 'BF4 Player Stats — Soldier Dossier' : 'BF4 Platoon Stats — Platoons';
 $description = $kind === 'soldier' ? 'Explore Battlefield 4 soldier statistics, weapons, vehicles, and known player aliases.' : 'Battlefield 4 official Battlelog platoons, membership, and community statistics.';
 $image = 'https://bf4playerstats.com/og-preview.png';
 if ($kind === 'soldier') {
@@ -34,7 +34,7 @@ if ($kind === 'soldier') {
         $name = (string)($p['name'] ?? 'Platoon');
         $tag = trim((string)($p['tag'] ?? ''));
         $members = (int)($p['members'] ?? 0);
-        $title = 'BF4 Player Stats — ' . $name;
+        $title = 'BF4 Platoon Stats — ' . $name;
         $description = ($tag !== '' ? '[' . $tag . '] · ' : '') . $members . ' official members · Battlefield 4 platoon roster and community statistics.';
         // Only publish cached local emblems; never use an arbitrary external URL.
         $emblem = (string)($p['emblem'] ?? '');
@@ -52,7 +52,7 @@ $meta = '<title>' . $escape($title) . '</title>' . "\n";
 foreach (['description' => $description, 'twitter:card' => 'summary_large_image', 'twitter:title' => $title, 'twitter:description' => $description, 'twitter:image' => $image] as $key => $value) {
     $meta .= '<meta name="' . $escape($key) . '" content="' . $escape($value) . '">' . "\n";
 }
-foreach (['og:type' => 'website', 'og:site_name' => 'BF4 Player Stats', 'og:title' => $title, 'og:description' => $description, 'og:url' => $canonical, 'og:image' => $image, 'og:image:alt' => $title] as $key => $value) {
+foreach (['og:type' => 'website', 'og:site_name' => ($kind === 'platoon' ? 'BF4 Platoon Stats' : 'BF4 Player Stats'), 'og:title' => $title, 'og:description' => $description, 'og:url' => $canonical, 'og:image' => $image, 'og:image:alt' => $title] as $key => $value) {
     $meta .= '<meta property="' . $escape($key) . '" content="' . $escape($value) . '">' . "\n";
 }
 $html = preg_replace('~</head>~i', $meta . '</head>', $html, 1);
