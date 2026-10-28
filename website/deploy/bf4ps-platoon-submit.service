@@ -1,0 +1,12 @@
+[Unit]
+Description=BF4PS platoon admission loopback API
+After=network-online.target
+[Service]
+Type=simple
+EnvironmentFile=/root/.config/bf4ps/website-production.env
+ExecStart=/opt/bf4ps-website/.venv/bin/python /opt/bf4ps-website/api/platoon_submit_api.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+[Install]
+WantedBy=multi-user.target

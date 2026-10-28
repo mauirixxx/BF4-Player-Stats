@@ -27,3 +27,7 @@ The website reads platoon records directly from PostgreSQL using bounded SELECT-
 ## Catalog storage maintenance (2026-10-25)
 
 No schema migration. Weapon/vehicle catalogs retain stable IDs and their existing uniqueness constraints. Production catalog write amplification arose from the deployed collector importing an obsolete installed Python package; the correction is deployment/image related, not a table definition change. See [CATALOG-IMPORT-PATH-RECOVERY-20261025.md](CATALOG-IMPORT-PATH-RECOVERY-20261025.md).
+
+### Platoon emblem cache operational path (2026-10-27)
+
+`platoons.emblem_path` contains the official Battlelog emblem URL template (`[SIZE]`/`[FORMAT]` placeholders). The website read API uses a deterministic cached local PNG if present, otherwise a default. `bf4ps-platoon-emblem-cache.timer` periodically runs the bounded read-only database reconciler in `website/scripts/cache_platoon_emblems.py` on `tcou`. No database migration or new table is required. Failed downloads use local `.retry` markers with a six-hour cooldown. See `docs/PLATOON-QUEUE-OPERATIONS.md` for deployment and validation.

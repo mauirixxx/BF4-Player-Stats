@@ -1,0 +1,10 @@
+[Unit]
+Description=Reconcile BF4PS platoon emblems every five minutes
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=5min
+Persistent=true
+RandomizedDelaySec=30s
+Unit=bf4ps-platoon-emblem-cache.service
+[Install]
+WantedBy=timers.target

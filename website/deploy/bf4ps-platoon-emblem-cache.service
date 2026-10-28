@@ -1,0 +1,10 @@
+[Unit]
+Description=BF4PS bounded platoon emblem cache reconciliation
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+EnvironmentFile=/root/.config/bf4ps/website-production.env
+ExecStart=/opt/bf4ps-website/.venv/bin/python /opt/bf4ps-website/scripts/cache_platoon_emblems.py --limit 20
+TimeoutStartSec=300
+NoNewPrivileges=true

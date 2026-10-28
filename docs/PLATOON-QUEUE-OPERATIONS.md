@@ -61,3 +61,11 @@ CREATE TABLE platoon_soldier_discovery (
 );
 CREATE INDEX ix_platoon_soldier_discovery_due ON platoon_soldier_discovery(next_attempt_at) WHERE status IN ('pending','failed');
 ```
+
+## Production platoon artwork reconciliation (2026-10-27)
+
+Battlelog `platoons.emblem_path` is the authoritative URL template, not the cached file. The public read API (`website/api/platoon_read_api.py`) intentionally **never fetches external URLs** on requests: it displays `/assets/platoon-emblems/<platoon_id>-<sha256(url)[:16]>.png` when present, otherwise the default emblem. A newly imported platoon can therefore show the fallback until the background cache job runs.
+
+On `tcou`, deploy `website/scripts/cache_platoon_emblems.py` to `/opt/bf4ps-website/scripts/`, install `website/deploy/bf4ps-platoon-emblem-cache.{service,timer}` into `/etc/systemd/system/`, run `systemctl daemon-reload`, and `systemctl enable --now bf4ps-platoon-emblem-cache.timer`. Check with `systemctl status bf4ps-platoon-emblem-cache.timer` and `journalctl -u bf4ps-platoon-emblem-cache.service`. Manual safe test: `set -a; . /root/.config/bf4ps/website-production.env; set +a; /opt/bf4ps-website/.venv/bin/python /opt/bf4ps-website/scripts/cache_platoon_emblems.py --dry-run --limit 5` (avoid printing environment variables). The job is read-only against PostgreSQL and writes only validated PNG files to the website cache. Every run fetches at most 20 missing emblems, with a 6-hour per-file failure cooldown. It accepts only Battlelog's fixed HTTPS Akamai emblem host/path, rejects redirects, caps responses at 1 MB, and publishes files atomically. New platoons appear after their metadata has been collected and a cache cycle completes. The cached filename includes a hash of the resolved URL, so changed Battlelog emblems are fetched as new assets.
+
+Platoon admission API: production `bf4ps-platoon-submit.service` uses `website/api/platoon_submit_api.py` at `/opt/bf4ps-website/api/platoon_submit_api.py`, **not** `/tmp`. Deploy the matching service unit from `website/deploy/bf4ps-platoon-submit.service`; it binds loopback `127.0.0.1:8792` and requires the existing private gateway security checks. `systemctl restart bf4ps-platoon-submit.service` and verify its listener. Keep database credentials in the existing root-only environment file; never commit them.
