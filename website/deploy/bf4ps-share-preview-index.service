@@ -1,0 +1,12 @@
+[Unit]
+Description=Refresh BF4PS lightweight platoon link-preview index
+After=network-online.target
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/root/.config/bf4ps/website-production.env
+ExecStart=/opt/bf4ps-website/.venv/bin/python /opt/bf4ps-website/scripts/build_platoon_preview_index.py
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/www/bf4playerstats.com

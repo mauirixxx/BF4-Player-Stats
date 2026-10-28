@@ -1,0 +1,8 @@
+[Unit]
+Description=Refresh BF4PS platoon link previews periodically
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Persistent=true
+[Install]
+WantedBy=timers.target

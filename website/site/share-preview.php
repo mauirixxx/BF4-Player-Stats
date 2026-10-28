@@ -36,7 +36,11 @@ if ($kind === 'soldier') {
         $members = (int)($p['members'] ?? 0);
         $title = 'BF4 Player Stats — ' . $name;
         $description = ($tag !== '' ? '[' . $tag . '] · ' : '') . $members . ' official members · Battlefield 4 platoon roster and community statistics.';
-        // A wide image produces the same Discord card style as soldier links.
+        // Only publish cached local emblems; never use an arbitrary external URL.
+        $emblem = (string)($p['emblem'] ?? '');
+        if (preg_match('~^/assets/platoon-emblems/[0-9]+-[a-f0-9]{16}\.png$~D', $emblem) && is_file($root . $emblem)) {
+            $image = 'https://bf4playerstats.com' . $emblem;
+        }
     }
 }
 $canonical = 'https://bf4playerstats.com/' . $page . '?id=' . rawurlencode($id);
