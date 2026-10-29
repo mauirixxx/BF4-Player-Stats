@@ -2,6 +2,7 @@
 """Manual bounded BF4 report downloader. Run only on reports as root."""
 import argparse, datetime as dt, json, random, subprocess, sys, time
 from pathlib import Path
+from fetch_diagnostics import fetch_diagnostic
 
 DB = 'bf4_battle_reports'
 PLATFORM_NAMES = {1: 'PC', 32: 'PlayStation', 64: 'Xbox'}
@@ -121,9 +122,10 @@ LIMIT {remaining};""")
             print('FETCH',platform_name(platform),rid,flush=True)
             for i in range(args.attempts):
                 try:
-                    obj=fetch(platform,rid)
+                    obj=fetch_diagnostic(sql,parse,platform,rid,i+1)
                     # Archive committed separately, before import.
                     sql(f"INSERT INTO battle_report_raw(platform,battlelog_report_id,raw_response) VALUES ({platform},{rid},{q(json.dumps(obj,ensure_ascii=True))}::jsonb) ON CONFLICT DO NOTHING;")
+                    sql(f"INSERT INTO battle_report_details(platform,battlelog_report_id,report_json) VALUES ({platform},{rid},{q(json.dumps(obj,ensure_ascii=True))}::jsonb) ON CONFLICT(platform,battlelog_report_id) DO NOTHING;")
                     attempt(platform,rid,'archived')
                     print('ARCHIVED',platform_name(platform),rid,flush=True)
                     try:
@@ -136,6 +138,7 @@ LIMIT {remaining};""")
                     break
                 except Exception as e:
                     attempt(platform,rid,'retryable: '+str(e)[:120])
+                    print('FAILURE_CLASS',type(e).__name__,'DETAIL',repr(str(e)),flush=True)
                     print('RETRYABLE',platform_name(platform),rid,'attempt',i+1,str(e)[:120],flush=True)
                     if i+1==args.attempts:results['failed']+=1;per_platform[platform]['failed']+=1
                     else:
