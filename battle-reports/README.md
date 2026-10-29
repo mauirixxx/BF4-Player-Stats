@@ -1,6 +1,6 @@
 # Battle Reports — discovery research (2026-10-28)
 
-Status: **research/proof of concept only**. No production crawler, schema migration, or ingestion authorized. Prioritize the existing ~6-million-record MySQL identity dump before other bulk imports.
+Status (2026-10-29): **bounded manual proof of concept with a deployed database on `reports`**; no unattended crawler or bulk ingestion enabled. The earlier research-only statements below describe historical milestones and are superseded by this status. Prioritize the existing ~6-million-record MySQL identity dump before other bulk imports.
 
 ## Verified on tcou via unauthenticated curl
 
@@ -127,3 +127,14 @@ Executed **on `reports`**, not tcou. Read-only Python 3.14 subprocess/curl probe
 | Xbox `2058418070585130688` | HTTP 200, JSON null, 0.47 s | HTTP 200, JSON null, 0.44 s |
 
 **1/8 potential success, 7/8 JSON null; no timeouts.** The successful response was classified by the presence of a `players` key; this run did not persist the full response for detailed field validation. A later retry succeeded after an earlier null, consistent with intermittent backend availability. This experiment **cannot establish** whether concurrency helped, whether retry timing helped, or a general success rate. Start with concurrency 2, bounded backoff/jitter, and strict payload validation. More measured samples needed before increasing concurrency.
+
+
+## 2026-10-29 — live database and schema ownership locked
+
+The authoritative deployed 11-table design and each table's sole duty are documented in [SCHEMA-V1.md](SCHEMA-V1.md). **`battle_reports` contains only fully imported reports.** `history_discoveries` holds report IDs to fetch; `battle_report_raw` preserves original validated JSON even if the structured import fails; `battle_report_download_attempts` holds aggregate retry state, not report content. The raw archive is intentionally separate to avoid treating partially processed reports as complete. No further tables were added for this decision.
+
+Verified on `reports`, PostgreSQL database `bf4_battle_reports`: **3** `battle_reports`, **3** `battle_report_raw` rows, **3** `servers`, **170** `players`, **171** `report_players`, **170** `player_name_history`, **350** `history_discoveries`, **350** `history_report_sources`, **35** `history_pages`, **1** `history_checkpoints`, and **3** `battle_report_download_attempts`. These counts are a dated snapshot, not invariants. The new PC report `2115035533362014592` was successfully archived and imported, alongside the earlier PC and PS4 reports.
+
+Manual scripts currently on **`reports` only**: `/var/tmp/bf4reports-history-persist.py`, `/var/tmp/bf4reports-download-test.py`, `/var/tmp/bf4reports-build-import.py`; schema SQL snapshots `/var/tmp/bf4reports-schema-v1.sql`, `/var/tmp/bf4reports-history-schema.sql`, `/var/tmp/bf4reports-download-schema.sql`. They are **not** production-installed or committed source; `/var/tmp` is temporary. Do not run multiple downloader instances because the test importer uses shared fixed filenames. The importer still needs A→B→A name-transition handling and stronger atomicity/error recovery before unattended use. All Battlelog operations for this project must run on `reports`, not `tcou`.
+
+Next gate: move reviewed code and migrations into this repository, test raw archive → relational import idempotence and rollback, repair name-history semantics, and then design controlled scheduling and pacing. Preserve existing raw JSON and history responses during all migrations.
