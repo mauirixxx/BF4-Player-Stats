@@ -62,3 +62,14 @@ Cursor is Unix timestamp in seconds. Starting from the initial batch, use `min(r
 - Are commander/spectator/duplicate roster entries included? Are roster IDs always stable?
 - Whether `createdAt` cursor boundary is inclusive/exclusive under ties.
 - How far historical data extends after the reported 2018 Battlelog migration.
+
+
+## Follow-up validation (2026-10-28, tcou)
+
+**Xbox full roster confirmed:** `/bf4/battlereport/loadgeneralreport/2058418070585130688/64/0/` returned HTTP 200, 91,568 bytes in 4.04 s; JSON platform=64, **79 players** (39 + 40), including persona `1680895792` named `deceptions56`. This closes the Xbox-roster open item above.
+
+**Historical report fetches succeeded:**
+- PS4 report `1379705792854707712` from April 7, 2021: HTTP 200, 88,651 bytes, 4.37 s, JSON platform=32 with **78 players**.
+- Xbox report `1724222489168005376` from November 2023: HTTP 200, 98,313 bytes, 4.84 s, JSON platform=64 with **87 players**.
+
+These are successful spot checks, **not** a reliability sample. We have not yet tested pre-2018 loss, timeouts across a large sample, or pagination termination. Do not infer historical availability rates from these three successes.
