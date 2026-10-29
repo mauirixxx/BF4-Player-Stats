@@ -113,3 +113,17 @@ Read-only tests from `tcou` (three requests, no crawler):
 - PC soldier history `/bf4/warsawbattlereportspopulate/236753552/2048/1/`: **curl timeout after 20 s with zero bytes received** (HTTP 000); no JSON file produced.
 
 These results do **not** establish permanent report deletion, general Battlelog outage, or rate blocking. They establish that HTTP 200 alone is insufficient and that endpoint availability needs further controlled investigation. No identity records were imported. No server GUID or rename semantics could be verified from today's `null` responses.
+
+
+## 2026-10-29 — bounded sequential versus concurrency-2 experiment (reports host)
+
+Executed **on `reports`**, not tcou. Read-only Python 3.14 subprocess/curl probe: four previously documented full-report URLs (two PC, one PS4, one Xbox), one sequential pass with 1.5-second gaps, then a concurrency-2 pass in pairs with 3-second gaps. Eight requests total; each had a 5-second connect timeout and 12-second total timeout. Per-request classification and timings saved on `reports` at `/var/tmp/bf4reports-probe-20261029.jsonl`; script at `/var/tmp/bf4reports-probe.py`. No DB writes.
+
+| Report | Sequential | Concurrent 2 |
+|---|---|---|
+| PC `2112147262198514752` | HTTP 200, JSON null, 3.90 s | HTTP 200, JSON null, 3.38 s |
+| PC `932053209641301888` (2017) | HTTP 200, JSON null, 0.45 s | HTTP 200, **40,112-byte JSON potential report**, 3.68 s |
+| PS4 `1379705792854707712` | HTTP 200, JSON null, 0.44 s | HTTP 200, JSON null, 0.43 s |
+| Xbox `2058418070585130688` | HTTP 200, JSON null, 0.47 s | HTTP 200, JSON null, 0.44 s |
+
+**1/8 potential success, 7/8 JSON null; no timeouts.** The successful response was classified by the presence of a `players` key; this run did not persist the full response for detailed field validation. A later retry succeeded after an earlier null, consistent with intermittent backend availability. This experiment **cannot establish** whether concurrency helped, whether retry timing helped, or a general success rate. Start with concurrency 2, bounded backoff/jitter, and strict payload validation. More measured samples needed before increasing concurrency.
