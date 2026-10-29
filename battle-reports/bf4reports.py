@@ -75,8 +75,8 @@ def main():
     parser.add_argument('action',choices=['download'])
     parser.add_argument('--limit',type=int,default=3)
     parser.add_argument('--attempts',type=int,default=3)
-    parser.add_argument('--delay',type=float,default=4.0)
-    parser.add_argument('--retry-cooldown-minutes', type=int, default=30)
+    parser.add_argument('--delay',type=float,default=10.0)
+    parser.add_argument('--retry-cooldown-minutes', type=int, default=20)
     args=parser.parse_args()
     if not (1<=args.limit<=100 and 1<=args.attempts<=8 and args.delay>=1 and 0<=args.retry_cooldown_minutes<=10080):
         parser.error('limit 1..100, attempts 1..8, delay >=1, retry cooldown 0..10080 minutes')
