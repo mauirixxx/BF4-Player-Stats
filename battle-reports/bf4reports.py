@@ -4,6 +4,8 @@ import argparse, datetime as dt, json, random, subprocess, sys, time
 from pathlib import Path
 
 DB = 'bf4_battle_reports'
+PLATFORM_NAMES = {1: 'PC', 32: 'PlayStation', 64: 'Xbox'}
+def platform_name(platform): return PLATFORM_NAMES.get(platform, f'Unknown({platform})')
 def sql(query):
     p=subprocess.run(['runuser','-u','postgres','--','psql','-X','-v','ON_ERROR_STOP=1','-d',DB,'-At'],input=query,text=True,capture_output=True)
     if p.returncode: raise RuntimeError(p.stderr.strip())
@@ -86,13 +88,14 @@ def main():
         # Import existing archives before fetching anything new.
         archived=sql(f"SELECT platform,battlelog_report_id,raw_response::text FROM battle_report_raw WHERE imported_at IS NULL ORDER BY fetched_at LIMIT {args.limit};")
         results={'archived_imported':0,'new_imported':0,'failed':0}
+        per_platform={p:{'imported':0,'failed':0} for p in PLATFORM_NAMES}
         for line in archived.splitlines():
             platform,rid,payload=line.split('|',2);platform=int(platform);rid=int(rid)
             try:
                 n=import_report(json.loads(payload),platform,rid)
-                results['archived_imported']+=1
-                print('RECOVERED',platform,rid,'players',n,flush=True)
-            except Exception as e:results['failed']+=1;print('IMPORT FAILED archive retained',platform,rid,str(e)[:250],flush=True)
+                results['archived_imported']+=1;per_platform[platform]['imported']+=1
+                print('RECOVERED',platform_name(platform),rid,'players',n,flush=True)
+            except Exception as e:results['failed']+=1;per_platform[platform]['failed']+=1;print('IMPORT FAILED archive retained',platform_name(platform),rid,str(e)[:250],flush=True)
         remaining=max(0,args.limit-len(archived.splitlines()))
         targets=sql(f"""WITH eligible AS (
 SELECT d.platform,d.battlelog_report_id,d.report_timestamp,
@@ -115,29 +118,34 @@ LIMIT {remaining};""")
         for index,line in enumerate(targets.splitlines()):
             platform,rid=map(int,line.split('|'))
             if index:time.sleep(args.delay)
-            print('FETCH',platform,rid,flush=True)
+            print('FETCH',platform_name(platform),rid,flush=True)
             for i in range(args.attempts):
                 try:
                     obj=fetch(platform,rid)
                     # Archive committed separately, before import.
                     sql(f"INSERT INTO battle_report_raw(platform,battlelog_report_id,raw_response) VALUES ({platform},{rid},{q(json.dumps(obj,ensure_ascii=True))}::jsonb) ON CONFLICT DO NOTHING;")
                     attempt(platform,rid,'archived')
-                    print('ARCHIVED',platform,rid,flush=True)
+                    print('ARCHIVED',platform_name(platform),rid,flush=True)
                     try:
                         n=import_report(obj,platform,rid)
-                        results['new_imported']+=1
-                        print('IMPORTED',platform,rid,'players',n,flush=True)
+                        results['new_imported']+=1;per_platform[platform]['imported']+=1
+                        print('IMPORTED',platform_name(platform),rid,'players',n,flush=True)
                     except Exception as e:
-                        results['failed']+=1
-                        print('IMPORT FAILED archive retained',platform,rid,str(e)[:250],flush=True)
+                        results['failed']+=1;per_platform[platform]['failed']+=1
+                        print('IMPORT FAILED archive retained',platform_name(platform),rid,str(e)[:250],flush=True)
                     break
                 except Exception as e:
                     attempt(platform,rid,'retryable: '+str(e)[:120])
-                    print('RETRYABLE',platform,rid,'attempt',i+1,str(e)[:120],flush=True)
-                    if i+1==args.attempts:results['failed']+=1
+                    print('RETRYABLE',platform_name(platform),rid,'attempt',i+1,str(e)[:120],flush=True)
+                    if i+1==args.attempts:results['failed']+=1;per_platform[platform]['failed']+=1
                     else:
                         base=min(60,2*(2**i))
                         pause=random.uniform(base*.5,base*1.5)
                         print('BACKOFF',round(pause,1),flush=True);time.sleep(pause)
+        print('SUMMARY BY PLATFORM',flush=True)
+        print(f"{'Platform':<14} {'Imported':>8} {'Failed':>8}",flush=True)
+        for p in (1,32,64):
+            counts=per_platform[p]
+            print(f"{platform_name(p):<14} {counts['imported']:>8} {counts['failed']:>8}",flush=True)
         print('SUMMARY',json.dumps(results),flush=True)
 if __name__=='__main__':main()
