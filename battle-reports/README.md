@@ -84,3 +84,19 @@ For PS4 persona `406653213`, `warsawbattlereportspopulatemore` returned 10 repor
 - Cursors 2017-07-01, 2017-04-01, 2017-02-01, 2017-01-15, 2017-01-01, 2016-01-01, 2015-01-01 and 2014-01-01 returned zero report summaries **for this particular persona**. This is not proof that reports from those dates are globally absent.
 
 **Conclusion:** Some pre-2018 reports remain accessible, contradicting an absolute global 2018 cutoff. Exact earliest surviving report and platform-wide availability remain unknown; a broader sample across soldiers/platforms is necessary. These successful fetches are not evidence of general reliability.
+
+
+## Veteran PC account test — mauirixxx (2026-10-28, tcou)
+
+Persona `236753552`, PC platform `1`. Soldier history page `/bf4/soldier/mauirixxx/battlereports/236753552/pc/` returned HTTP 200 and embedded `/bf4/warsawbattlereportspopulate/236753552/2048/1/`.
+
+History cursor findings:
+- Before 2019-01-01: 10 reports dated December 2018.
+- Before 2018-01-01: 8 reports dated 2017-09-23 through 2017-12-24.
+- Before 2017-01-01, 2016-01-01, 2015-01-01, 2014-01-01 and 2013-01-01: zero summaries for this persona, despite the user's known BF4 activity since 2013. **Do not interpret missing history as proof of no historical play.**
+
+Crucial payload failure mode:
+- 2017-09-23 report `911517592119201856`: HTTP **200**, 4-byte body **`null`**, 0.50 s. This is not a valid report despite HTTP success.
+- 2017-11-19 report `932053209641301888`: HTTP **200**, 40,112 bytes, 5.70 s, valid JSON with **33 players**.
+
+Crawler must classify JSON `null`, malformed JSON, and incomplete roster separately from valid success; treat a historical missing report as unavailable unless a retry policy establishes a transient condition. Some 2017 reports are accessible and others are not.
