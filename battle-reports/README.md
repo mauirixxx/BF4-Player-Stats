@@ -100,3 +100,16 @@ Crucial payload failure mode:
 - 2017-11-19 report `932053209641301888`: HTTP **200**, 40,112 bytes, 5.70 s, valid JSON with **33 players**.
 
 Crawler must classify JSON `null`, malformed JSON, and incomplete roster separately from valid success; treat a historical missing report as unavailable unless a retry policy establishes a transient condition. Some 2017 reports are accessible and others are not.
+
+
+## 2026-10-29 — V1 schema approved; read-only curl smoke test
+
+The approved identity-discovery schema is documented in [SCHEMA-V1.md](SCHEMA-V1.md). This supersedes the earlier research-only schema status **for design only**; no database migration or ingestion was deployed.
+
+Read-only tests from `tcou` (three requests, no crawler):
+
+- PC full report `2112147262198514752` on platform 1: HTTP 200, **4 bytes, JSON `null`**, 0.43 s. This URL had returned a full roster on October 28.
+- Xbox full report `2058418070585130688` on platform 64: HTTP 200, **4 bytes, JSON `null`**, 0.45 s. This URL had returned a full roster on October 28.
+- PC soldier history `/bf4/warsawbattlereportspopulate/236753552/2048/1/`: **curl timeout after 20 s with zero bytes received** (HTTP 000); no JSON file produced.
+
+These results do **not** establish permanent report deletion, general Battlelog outage, or rate blocking. They establish that HTTP 200 alone is insufficient and that endpoint availability needs further controlled investigation. No identity records were imported. No server GUID or rename semantics could be verified from today's `null` responses.
