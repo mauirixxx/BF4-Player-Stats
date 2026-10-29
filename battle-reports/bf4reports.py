@@ -94,14 +94,24 @@ def main():
                 print('RECOVERED',platform,rid,'players',n,flush=True)
             except Exception as e:results['failed']+=1;print('IMPORT FAILED archive retained',platform,rid,str(e)[:250],flush=True)
         remaining=max(0,args.limit-len(archived.splitlines()))
-        targets=sql(f"""SELECT d.platform,d.battlelog_report_id FROM history_discoveries d
+        targets=sql(f"""WITH eligible AS (
+SELECT d.platform,d.battlelog_report_id,d.report_timestamp,
+       COALESCE(a.attempts,0) AS attempts
+FROM history_discoveries d
 LEFT JOIN battle_reports b ON b.platform=d.platform AND b.battlelog_report_id=d.battlelog_report_id
 LEFT JOIN battle_report_raw r ON r.platform=d.platform AND r.battlelog_report_id=d.battlelog_report_id
 LEFT JOIN battle_report_download_attempts a ON a.platform=d.platform AND a.battlelog_report_id=d.battlelog_report_id
 WHERE b.id IS NULL AND r.battlelog_report_id IS NULL
 AND (a.last_attempt_at IS NULL OR a.last_result = 'archived'
      OR a.last_attempt_at <= now() - make_interval(mins => {args.retry_cooldown_minutes}))
-ORDER BY COALESCE(a.attempts,0),d.report_timestamp DESC LIMIT {remaining};""")
+), ranked AS (
+SELECT platform,battlelog_report_id,
+       row_number() OVER (PARTITION BY platform ORDER BY attempts,report_timestamp DESC) AS turn
+FROM eligible
+)
+SELECT platform,battlelog_report_id FROM ranked
+ORDER BY turn,CASE platform WHEN 1 THEN 0 WHEN 32 THEN 1 WHEN 64 THEN 2 ELSE 3 END
+LIMIT {remaining};""")
         for index,line in enumerate(targets.splitlines()):
             platform,rid=map(int,line.split('|'))
             if index:time.sleep(args.delay)
