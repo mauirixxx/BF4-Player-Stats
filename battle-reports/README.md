@@ -73,3 +73,14 @@ Cursor is Unix timestamp in seconds. Starting from the initial batch, use `min(r
 - Xbox report `1724222489168005376` from November 2023: HTTP 200, 98,313 bytes, 4.84 s, JSON platform=64 with **87 players**.
 
 These are successful spot checks, **not** a reliability sample. We have not yet tested pre-2018 loss, timeouts across a large sample, or pagination termination. Do not infer historical availability rates from these three successes.
+
+
+## 2018 boundary exploration (2026-10-28, tcou)
+
+For PS4 persona `406653213`, `warsawbattlereportspopulatemore` returned 10 report summaries each for cursors at 2018-10-01, 2018-07-01, 2018-04-01, 2018-01-01 and 2017-12-31. Dates in those results were earlier than each cursor.
+
+- **2018-12-31** report `1079881192119748160`: full JSON HTTP 200, 95,405 bytes, 4.03 s, 84 players; created 2018-12-31 23:41:36 UTC.
+- **2017-12-31** report `947584453687928384`: full JSON HTTP 200, 101,500 bytes, 7.23 s, 91 players; created 2017-12-31 22:12:07 UTC.
+- Cursors 2017-07-01, 2017-04-01, 2017-02-01, 2017-01-15, 2017-01-01, 2016-01-01, 2015-01-01 and 2014-01-01 returned zero report summaries **for this particular persona**. This is not proof that reports from those dates are globally absent.
+
+**Conclusion:** Some pre-2018 reports remain accessible, contradicting an absolute global 2018 cutoff. Exact earliest surviving report and platform-wide availability remain unknown; a broader sample across soldiers/platforms is necessary. These successful fetches are not evidence of general reliability.
