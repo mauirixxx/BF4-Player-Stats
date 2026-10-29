@@ -11,15 +11,18 @@ def main():
  ap=argparse.ArgumentParser()
  ap.add_argument('--players',type=int,default=10)
  ap.add_argument('--pages-per-player',type=int,default=1)
+ ap.add_argument('--failure-cooldown-hours',type=int,default=24)
  args=ap.parse_args()
- if not 1<=args.players<=30 or not 1<=args.pages_per_player<=3: ap.error('players 1..30, pages 1..3')
+ if not 1<=args.players<=30 or not 1<=args.pages_per_player<=3 or not 1<=args.failure_cooldown_hours<=168: ap.error('players 1..30, pages 1..3, failure cooldown 1..168 hours')
  # Fair selection across platforms, avoiding any persona with an existing checkpoint.
  candidates=sql("""WITH ranked AS (
  SELECT p.platform,p.persona_id,row_number() OVER
  (PARTITION BY p.platform ORDER BY p.latest_report_at DESC,p.persona_id) AS turn
  FROM players p LEFT JOIN history_checkpoints c
  ON c.platform=p.platform AND c.persona_id=p.persona_id
- WHERE c.persona_id IS NULL
+ LEFT JOIN history_discovery_failures f
+ ON f.platform=p.platform AND f.persona_id=p.persona_id
+ WHERE c.persona_id IS NULL AND (f.retry_after IS NULL OR f.retry_after <= now())
  ) SELECT platform,persona_id FROM ranked
  ORDER BY turn,CASE platform WHEN 1 THEN 0 WHEN 32 THEN 1 WHEN 64 THEN 2 ELSE 3 END
  LIMIT """+str(args.players))
@@ -46,6 +49,8 @@ def main():
     if attempt<3:time.sleep(2**attempt+random.random())
    if not good:
     print('STOP',label,persona,'no usable page; checkpoint unchanged',flush=True)
+    sql(f"INSERT INTO history_discovery_failures(platform,persona_id,failures,last_failed_at,retry_after,last_reason) VALUES ({platform},{persona},1,now(),now()+interval '{args.failure_cooldown_hours} hours','no usable history after 3 attempts') ON CONFLICT(platform,persona_id) DO UPDATE SET failures=history_discovery_failures.failures+1,last_failed_at=now(),retry_after=now()+interval '{args.failure_cooldown_hours} hours',last_reason=excluded.last_reason;")
+    print('COOLDOWN',label,persona,args.failure_cooldown_hours,'hours',flush=True)
     totals['stopped']+=1
     break
    rows=[]
@@ -63,6 +68,7 @@ def main():
     statements.append(f"INSERT INTO history_report_sources(platform,persona_id,battlelog_report_id) VALUES ({platform},{persona},{rid}) ON CONFLICT DO NOTHING;")
    statements.append(f"INSERT INTO history_pages(platform,persona_id,cursor_used,raw_response,report_count,next_cursor) VALUES ({platform},{persona},{cursor},{q(json.dumps(payload))}::jsonb,{len(rows)},{next_cursor}) ON CONFLICT(platform,persona_id,cursor_used) DO NOTHING;")
    statements.append(f"INSERT INTO history_checkpoints(platform,persona_id,next_cursor,pages_saved) VALUES ({platform},{persona},{next_cursor},1) ON CONFLICT(platform,persona_id) DO UPDATE SET next_cursor=EXCLUDED.next_cursor,pages_saved=history_checkpoints.pages_saved+1,updated_at=now() WHERE history_checkpoints.next_cursor={cursor};")
+   statements.append(f'DELETE FROM history_discovery_failures WHERE platform={platform} AND persona_id={persona};')
    statements.append('COMMIT;')
    sql('\n'.join(statements))
    added=int(sql('SELECT count(*) FROM history_discoveries'))-before
