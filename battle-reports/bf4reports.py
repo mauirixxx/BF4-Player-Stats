@@ -72,7 +72,8 @@ def fetch(platform,rid):
     return obj
 def main():
     parser=argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('action',choices=['download'])
+    parser._positionals.title='required argument (pick ONE)'
+    parser.add_argument('action',choices=['download','dry-run'],help='download or dry-run (non functional at this time)')
     parser.add_argument('--limit',type=int,default=3)
     parser.add_argument('--attempts',type=int,default=3,help='Attempts per report')
     parser.add_argument('--delay',type=float,default=10.0,metavar='DELAY_IN_SECONDS',help='Delay between report IDs in seconds')
