@@ -16,6 +16,9 @@ def main():
    sql=f'SELECT ({column} AT TIME ZONE \'UTC\')::date AS day,count(*) AS n FROM public.{table} WHERE {column} IS NOT NULL AND {column} < :cutoff GROUP BY 1 ORDER BY 1'
    return {str(r.day):int(r.n) for r in c.execute(text(sql),{'cutoff':today}).all()}
   soldiers=daily('soldiers','first_seen_at'); platoons=daily('platoons','first_seen_at')
+  platform_soldiers={}
+  for row in c.execute(text("SELECT (first_seen_at AT TIME ZONE 'UTC')::date AS day, platform, count(*) AS n FROM public.soldiers WHERE first_seen_at IS NOT NULL AND first_seen_at < :cutoff GROUP BY 1,2"),{'cutoff':today}):
+   platform_soldiers.setdefault(str(row.day),{})[row.platform]=int(row.n)
   full=int(c.execute(text("SELECT count(*) FROM public.collection_state cs JOIN public.soldiers s ON s.soldier_id=cs.soldier_id WHERE cs.detailed_state='success' AND cs.profile_state='success' AND cs.weapons_state='success' AND cs.vehicles_state='success' AND NOT EXISTS (SELECT 1 FROM public.player_exclusions pe WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)" )).scalar_one())
  HISTORY.parent.mkdir(parents=True,exist_ok=True)
  history=json.loads(HISTORY.read_text()) if HISTORY.exists() else {}
@@ -26,7 +29,7 @@ def main():
  for d in sorted(history):
   previous=(datetime.fromisoformat(d).date()-timedelta(days=1)).isoformat()
   if previous in history: full_daily[d]=max(0,history[d]['full_total']-history[previous]['full_total'])
- payload={'generated_at':now.isoformat(),'timezone':'UTC','note':'Full-stats daily net growth begins with the first recorded snapshot; refreshes and exclusions may affect net growth.','days':[{'date':d,'soldiers':soldiers.get(d,0),'platoons':platoons.get(d,0),'full':full_daily.get(d)} for d in days]}
+ payload={'generated_at':now.isoformat(),'timezone':'UTC','note':'Full-stats daily net growth begins with the first recorded snapshot; refreshes and exclusions may affect net growth.','days':[{'date':d,'soldiers':soldiers.get(d,0),'soldiers_by_platform':{p:platform_soldiers.get(d,{}).get(p,0) for p in ('pc','ps4','xboxone')},'platoons':platoons.get(d,0),'full':full_daily.get(d)} for d in days]}
  def publish(path,data):
   fd,tmp=tempfile.mkstemp(dir=path.parent,prefix='.graphs-')
   try:
