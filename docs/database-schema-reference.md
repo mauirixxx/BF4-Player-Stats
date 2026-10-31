@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current production Alembic head: `0018_distributed_rank_queue`. Operator verified directly on current primary **MAK-DB-02** on 2026-10-22 with `sudo -u postgres psql -d bf4_playerstats -Atc "SELECT version_num FROM alembic_version;"`. The previous `0017_rank_immutable_scores` observation on 2026-10-21 remains historical; see `live-schema-snapshot-2026-10-21.md` for that earlier catalog. PostgreSQL primary is an HA role and may change during failover.
+Current production Alembic head: `0019_soldier_search_trigrams` (2026-10-31 search-index deployment). Operator verified directly on current primary **MAK-DB-02** on 2026-10-22 with `sudo -u postgres psql -d bf4_playerstats -Atc "SELECT version_num FROM alembic_version;"`. The previous `0017_rank_immutable_scores` observation on 2026-10-21 remains historical; see `live-schema-snapshot-2026-10-21.md` for that earlier catalog. PostgreSQL primary is an HA role and may change during failover.
 
 ## Mandatory SQL development rule
 
@@ -34,6 +34,7 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0016_rank_scope_versions` | `0015_rank_generations` | Rank scope versions |
 | `0017_rank_immutable_scores` | `0016_rank_scope_versions` | Immutable rank score snapshots |
 | `0018_distributed_rank_queue` | `0017_rank_immutable_scores` | Adds durable equipment ranking jobs, worker registry, and single-row global ranking capacity |
+| `0019_soldier_search_trigrams` | `0018_distributed_rank_queue` | Adds pg_trgm and concurrent GIN lower(name) indexes for soldier current and historical substring search |
 
 ### Important migration consequence: Gun Master
 
@@ -82,6 +83,8 @@ Historical/observed names for a soldier.
 Columns: `soldier_name_id` PK, `soldier_id` FK CASCADE, `name`, `first_seen_at`, `last_seen_at`.
 
 Unique: (`soldier_id`, `name`).
+
+Search acceleration: `pg_trgm` GIN expression indexes on `lower(soldiers.current_name)` and `lower(soldier_names.name)` support `LIKE '%term%'` queries. Built concurrently to avoid long exclusive table locks.
 
 ### `battlelog_profiles`
 
