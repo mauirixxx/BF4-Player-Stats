@@ -9,7 +9,41 @@
     '<div class="header-add-row"><input id="headerBattlelog" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://battlelog.battlefield.com/bf4/soldier/mauirixxx/stats/236753552/pc/" aria-label="Battlelog BF4 soldier stats URL">' +
     '<button id="headerAddStats" type="button" title="Submit a BF4 soldier">Add Stats</button></div>' +
     '<span class="header-add-hint" role="status" aria-live="polite">Paste a Battlelog BF4 soldier stats URL</span></div>' +
-    '<div class="topnav-stack"><nav class="topnav" aria-label="Main navigation"><a href="/index.html#leaderboards">LEADERBOARDS</a><a href="/equipment.html">EQUIPMENT VIEW</a><a href="/index.html#searchpanel">SOLDIERS</a></nav><nav class="topnav-sub" aria-label="Community navigation"><a href="/community.html">COMMUNITY STATS</a></nav></div></div>';
+    '<div class="topnav-stack"><nav class="topnav" aria-label="Main navigation"><a href="/index.html#leaderboards">LEADERBOARDS</a><a href="/equipment.html">EQUIPMENT VIEW</a><a href="/graphs.html">GRAPHS</a><a href="/admin-console.html">ADMIN</a></nav><nav class="topnav-sub" aria-label="Secondary navigation"><a href="/index.html#searchpanel">SOLDIERS</a><a href="/platoons.html">PLATOONS</a><a href="/community.html">COMMUNITY STATS</a><a href="/support.html">SUPPORT</a></nav></div></div>';
+  const platoonPage=location.pathname.replace(/\/$/,'').endsWith('/platoons.html');
+  if(platoonPage){
+    const area=mount.querySelector('.header-add');
+    area.innerHTML='<label for="headerPlatoon">Have an official Battlelog platoon? Add your platoon!</label>'+
+      '<div class="header-add-row"><input id="headerPlatoon" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://battlelog.battlefield.com/bf4/platoons/members/754443074295858477/" aria-label="Official Battlelog platoon URL">'+
+      '<button id="headerAddPlatoon" type="button" title="Queue an official Battlelog platoon">Add Platoon</button></div>'+
+      '<span class="header-add-hint" role="status">Paste an official Battlelog platoon URL to queue collection.</span>';
+    const button=document.getElementById('headerAddPlatoon'),input=document.getElementById('headerPlatoon'),hint=area.querySelector('.header-add-hint');
+    const dialog=document.createElement('dialog');
+    dialog.className='bf4ps-add-confirmation';
+    dialog.setAttribute('aria-labelledby','bf4ps-platoon-confirmation-title');
+    dialog.innerHTML='<h2 id="bf4ps-platoon-confirmation-title">Platoon request received</h2><p id="bf4ps-platoon-confirmation-message"></p><form method="dialog"><button type="submit" autofocus>OK</button></form>';
+    document.body.appendChild(dialog);
+    const message=dialog.querySelector('#bf4ps-platoon-confirmation-message');
+    function reset(){input.value='';hint.textContent='Paste an official Battlelog platoon URL to queue collection.';input.focus()}
+    dialog.addEventListener('close',reset);
+    button.addEventListener('click',async()=>{
+      if(!input.value.trim()){hint.textContent='Paste an official Battlelog platoon URL first';input.focus();return}
+      button.disabled=true;hint.textContent='Submitting platoon…';
+      try{
+        const token=await fetch('/platoon-gateway.php',{credentials:'same-origin',cache:'no-store'});
+        if(!token.ok)throw Error('Unable to get security token');
+        const {csrf}=await token.json();
+        const response=await fetch('/platoon-gateway.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-BF4PS-CSRF':csrf},body:JSON.stringify({url:input.value.trim()})});
+        const result=await response.json();
+        if(!response.ok)throw Error(result.error||'Submission failed');
+        const messages={queued:'Your platoon has been queued for Battlelog roster collection.',already_queued:'This platoon is already queued for collection.',already_collected:'This platoon is already in our database.'};
+        message.textContent=messages[result.state]||'Your platoon request was processed.';
+        hint.textContent=messages[result.state]||result.state||'Submitted';
+        if(typeof dialog.showModal==='function')dialog.showModal();else{window.alert(message.textContent);reset()}
+      }catch(err){hint.textContent=err.message||'Submission failed'}finally{button.disabled=false}
+    });
+    return;
+  }
   const btn=document.getElementById('headerAddStats'), field=document.getElementById('headerBattlelog'), hint=document.querySelector('.header-add-hint');
   // Acknowledge successful submissions without making bulk entry cumbersome.
   const dialog=document.createElement('dialog');

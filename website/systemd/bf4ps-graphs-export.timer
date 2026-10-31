@@ -1,0 +1,8 @@
+[Unit]
+Description=BF4PS daily graphs at 00:01 UTC
+[Timer]
+OnCalendar=*-*-* 00:01:00 UTC
+Persistent=true
+Unit=bf4ps-graphs-export.service
+[Install]
+WantedBy=timers.target

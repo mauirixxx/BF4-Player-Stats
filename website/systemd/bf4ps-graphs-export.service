@@ -1,0 +1,6 @@
+[Unit]
+Description=BF4PS daily graph export
+[Service]
+Type=oneshot
+EnvironmentFile=/root/.config/bf4ps/website-production.env
+ExecStart=/opt/bf4ps-website/.venv/bin/python /opt/bf4ps-website/api/graphs_export.py
