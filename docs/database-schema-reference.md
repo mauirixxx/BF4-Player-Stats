@@ -500,3 +500,23 @@ Scratch publication can validate an optional worker/token/epoch lease under
 row lock; production publication remains prohibited. Scratch-only
 `cleanup_compact_rank.py` preserves published and newest two generations per
 scope, and excludes any legacy rank references. No production cleanup enabled.
+
+### RNT-01 end-to-end scratch results (2026-10-31)
+
+On a separate localhost-only PostgreSQL 16.15 cluster (port 55432), applied
+migrations 0001 through 0021, seeded 100,003 synthetic soldiers and published
+multiple compact generations. Real reader returned correct name/persona
+searches, tied ranks, pagination and divisions. Direct PostgreSQL window-rank
+comparison matched soldier IDs, competition ranks and deterministic positions
+on pages 1, 10, 500, 1000 and 2001. After incrementing the source scope
+version inside a transaction, the reader correctly fell back. Publishing with
+an absent worker claim was rejected; a valid worker/token/epoch lease published.
+Scratch retention deleted four unreferenced generations, preserved the newest
+two (including the current publication pointer), and the reader remained
+functional afterward. Targeted Python tests: 11 passed.
+
+**Remaining production blockers:** realistic data and concurrent worker stress;
+complete website route/response parity and error handling; production migration
+review and access grants; an enforced (not optional) distributed claim for any
+future production writer; robust orphan generation cleanup; and testing
+production-size WAL, replica replay and rollback. Feature flag remains off.
