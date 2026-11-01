@@ -578,3 +578,7 @@ RNT-01 scratch HTTP comparison passed 20 of 20 combinations (weapon kills/KPM/ac
 ### Isolated physical streaming replica check
 
 RNT-01 scratch primary port 55432 was cloned via pg_basebackup to a second PostgreSQL 16 cluster on localhost port 55433 (hot standby). Under repeated 100003-player compact publications, pg_stat_replication showed streaming async replay with 2024 bytes of replay lag at one observation. Direct compact reader against standby returned population 100003 and 50 rows. This tests physical WAL replay locally, not real-data WAN replication or production latency. No production replica changed. Verified audited multi-variant vehicle family request (canonical item 2) bypasses compact reader and uses legacy fallback. Production roles and grants remain a rollout gate.
+
+### Repeated publication standby replay stress
+
+RNT-01 localhost PostgreSQL primary and physical standby replayed a second full 20-scope publication matrix (100003 PC, 100007 ALL for large scopes). Total elapsed 78.48 seconds; WAL LSN advanced approximately 290 MB across the matrix, including PostgreSQL overhead. Standby remained streaming with 2024 bytes replay gap during workload and 0 bytes after completion. Read-only compact reader on standby returned 50 rows and population 100003. Same-host scratch synthetic-data benchmark only: WAN production replica performance and real-data compression remain unverified. Added automated vehicle-family fallback guard test; 12 targeted tests passed.
