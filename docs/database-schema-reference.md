@@ -608,5 +608,3 @@ vehicle kills/KPM for each family, and weapon kills/KPM/accuracy. A discovered
 The five targeted reader/fallback tests also passed. This confirms executable
 nonempty source and encoding, but does not yet establish independent row-by-row
 legacy parity or production performance. No production changes were made.
-
-[executed on device: rnt-01 (aa6d9aec-0414-4ad7-b824-1d53cc1368b2)]
