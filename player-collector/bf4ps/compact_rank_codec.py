@@ -36,8 +36,8 @@ def decode_block(payload):
     if not isinstance(payload, bytes) or not payload.startswith(MAGIC):
         raise ValueError('unknown compact ranking format')
     decompressor = zlib.decompressobj()
-    raw = decompressor.decompress(payload[len(MAGIC):], 512_000)
-    if not decompressor.eof or decompressor.unused_data or decompressor.unconsumed_tail:
+    raw = decompressor.decompress(payload[len(MAGIC):], 512_001)
+    if len(raw) > 512_000 or not decompressor.eof or decompressor.unused_data or decompressor.unconsumed_tail:
         raise ValueError('invalid or oversized compact ranking payload')
     rows = json.loads(raw)
     if not isinstance(rows, list) or not 1 <= len(rows) <= BLOCK_SIZE:

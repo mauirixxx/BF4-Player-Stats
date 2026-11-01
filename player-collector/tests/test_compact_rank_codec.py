@@ -35,3 +35,13 @@ def test_reject_bad_rows(rows):
 def test_reject_bad_payload():
     with pytest.raises(ValueError):
         codec.decode_block(b'bad')
+
+
+def test_reject_trailing_data_and_oversize():
+    import zlib
+    valid = codec.encode_block([(1, 1, 1, None, None, None)])
+    with pytest.raises(ValueError):
+        codec.decode_block(valid + b'junk')
+    oversize = codec.MAGIC + zlib.compress(b'x' * 512_001)
+    with pytest.raises(ValueError):
+        codec.decode_block(oversize)
