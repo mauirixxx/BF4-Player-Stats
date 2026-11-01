@@ -42,7 +42,7 @@ def main():
     started = time.monotonic()
     with engine.connect().execution_options(isolation_level='REPEATABLE READ') as conn:
         revision = conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
-        if revision != '0020_compact_rank_snapshots':
+        if revision not in ('0020_compact_rank_snapshots', '0021_reconcile_player_exclusions'):
             raise RuntimeError(f'migration 0020 required, found {revision}')
         conn.execute(text("SET LOCAL statement_timeout='120s'"))
         conn.execute(text("SET LOCAL work_mem='32MB'"))
