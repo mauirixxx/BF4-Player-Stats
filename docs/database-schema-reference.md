@@ -608,3 +608,24 @@ vehicle kills/KPM for each family, and weapon kills/KPM/accuracy. A discovered
 The five targeted reader/fallback tests also passed. This confirms executable
 nonempty source and encoding, but does not yet establish independent row-by-row
 legacy parity or production performance. No production changes were made.
+
+
+### Scratch legacy parity and least-privilege verification (2026-10-31)
+
+An independent nonempty scratch comparison captured the builder's encoded
+rows and queried the legacy `leaderboard_api.get_page` SQL with compact and
+precomputed reads disabled. Seven scopes matched exactly on soldier IDs,
+competition ranks, kills, KPM, accuracy, order, and cohort population:
+vehicle SUM family 2 kills/KPM; vehicle MAX family 47 kills/KPM; weapon 1
+kills/KPM/accuracy. The executable scratch harness is
+`website/tests/compact_rank_scratch_parity.py`; it requires the existing
+scratch database and its bounded fixture, and does not publish generations.
+
+A transaction-scoped least-privilege rehearsal created NOLOGIN reader/writer
+roles, granted only required source and compact table privileges, and checked
+`has_table_privilege`: reader SELECT permitted, reader INSERT/raw vehicle
+SELECT denied; writer compact INSERT/raw vehicle SELECT permitted, soldier
+UPDATE denied. The transaction was rolled back, leaving no roles or grants.
+This is a permission design rehearsal, not production role provisioning.
+The scratch standby reported streaming with zero replay-byte backlog at the
+sampled instant. This does not establish production WAN replica performance.
