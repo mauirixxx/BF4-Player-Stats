@@ -427,3 +427,10 @@ Production remains on 0019 until an explicitly approved rollout. Existing
 Migration 0020 is **schema only** until the writer, reader, parity, exclusion
 validation, and safe generation retention have been implemented and tested.
 Do not activate compact publication or drop legacy storage from this migration.
+
+The candidate codec `player-collector/bf4ps/compact_rank_codec.py` uses
+`BF4RC1`-prefixed zlib-compressed JSON arrays of up to 1000 immutable rows.
+Each row stores soldier ID, competition rank, kills, KPM, accuracy, and fetched
+at. KPM/accuracy are serialized as decimal strings to avoid precision loss.
+The payload does not include soldier names; these must be read from `soldiers`
+using the same read snapshot and the compact lookup index.
