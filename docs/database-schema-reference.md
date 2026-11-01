@@ -467,3 +467,23 @@ materializes the ranked query result before inserts to avoid interleaving a
 server-side cursor and DML on the same connection. Production writer fencing,
 search performance, generation retention, and complete migration validation
 remain release blockers.
+
+## Migration 0021: reconcile externally provisioned player exclusions
+
+Production inspection on MAK-DB-02 confirmed `public.player_exclusions` exists
+outside Alembic head 0019. Its composite PK is `(platform, persona_id)`;
+fields: `reason_code text NOT NULL`, `private_note text NULL`,
+`created_by text NOT NULL`, `created_at timestamptz NOT NULL DEFAULT now()`,
+`updated_at timestamptz NOT NULL DEFAULT now()`, and
+`active boolean NOT NULL DEFAULT true`. Constraints enforce persona ID > 0
+and platform in `pc`, `ps4`, `xboxone`. A partial btree index
+`ix_player_exclusions_active` covers `(platform, persona_id) WHERE active`.
+The `bf4ps_exclusion_soldiers` trigger runs before soldier insert or
+persona/platform update, calling security-definer
+`public.bf4ps_reject_excluded_soldier()` (fixed pg_catalog/pg_temp search path)
+to reject active exclusions with SQLSTATE 23514.
+
+Additive migration `0021_reconcile_player_exclusions` creates these objects on
+fresh installations and validates the table shape on existing installations.
+It does not drop them on downgrade, to preserve pre-existing production
+moderation safeguards. No migration has been applied to production.
