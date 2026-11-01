@@ -36,6 +36,8 @@ def main():
     db = make_url(url).database
     if db not in ('bf4ps_ranking_scratch', 'bf4_playerstats'):
         parser.error('unexpected database')
+    if args.publish and not all(v is not None for v in (args.rank_worker_id,args.rank_claim_token,args.rank_claim_epoch)):
+        parser.error('publication requires worker id, claim token and claim epoch')
     if args.publish and db != 'bf4ps_ranking_scratch':
         parser.error('production publication disabled until fenced writer validation')
     if any(v is not None for v in (args.rank_worker_id,args.rank_claim_token,args.rank_claim_epoch)) and not all(v is not None for v in (args.rank_worker_id,args.rank_claim_token,args.rank_claim_epoch)):
@@ -112,7 +114,7 @@ def main():
           WHERE kind=:kind AND item_id=:item AND platform=:platform FOR UPDATE'''),params).scalar_one()
         if current != scope_version:
             raise RuntimeError('scope changed during build: refusing publication')
-        if args.rank_worker_id is not None:
+        if args.publish:
             job = conn.execute(text('''SELECT 1 FROM equipment_rank_jobs WHERE
               kind=:kind AND item_id=:item AND platform=:platform AND metric=:metric
               AND claimed_by=CAST(:worker AS uuid) AND claim_token=CAST(:token AS uuid)

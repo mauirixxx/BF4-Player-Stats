@@ -520,3 +520,13 @@ complete website route/response parity and error handling; production migration
 review and access grants; an enforced (not optional) distributed claim for any
 future production writer; robust orphan generation cleanup; and testing
 production-size WAL, replica replay and rollback. Feature flag remains off.
+
+### Additional safety review (candidate)
+
+Compact publication now requires worker UUID, claim UUID, and claim epoch
+regardless of database; production publication is still explicitly blocked.
+The website HTTP leaderboard handler now selects REPEATABLE READ and bypasses
+its process-local Top-10 cache when compact reads are enabled, matching the
+precomputed reader's transaction isolation and cache behavior. The compact
+reader is still disabled by default. Full live HTTP response compatibility,
+replica/WAL impact, and production access grants require verification.
