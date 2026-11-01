@@ -487,3 +487,16 @@ Additive migration `0021_reconcile_player_exclusions` creates these objects on
 fresh installations and validates the table shape on existing installations.
 It does not drop them on downgrade, to preserve pre-existing production
 moderation safeguards. No migration has been applied to production.
+
+### Compact candidate stress/retention notes (RNT-01 isolated PostgreSQL)
+
+100,003 synthetic PC weapon soldiers: 6.18 s build/publish, 74 MB peak
+Python RSS, 685 KB compressed payload, about 12.5 MB block + lookup
+relation storage. Page/search/division reads were 0.28–0.48 s locally.
+Synthetic data compressibility and latency are not representative of actual
+player distributions. Reader now requires generation input scope version to
+match the current scope version, failing closed after source invalidation.
+Scratch publication can validate an optional worker/token/epoch lease under
+row lock; production publication remains prohibited. Scratch-only
+`cleanup_compact_rank.py` preserves published and newest two generations per
+scope, and excludes any legacy rank references. No production cleanup enabled.

@@ -26,6 +26,9 @@ def main():
     parser.add_argument('--platform', required=True, choices=('pc', 'ps4', 'xboxone', 'all'))
     parser.add_argument('--metric', required=True, choices=('kills', 'kpm', 'accuracy'))
     parser.add_argument('--publish', action='store_true')
+    parser.add_argument('--rank-worker-id')
+    parser.add_argument('--rank-claim-token')
+    parser.add_argument('--rank-claim-epoch', type=int)
     args = parser.parse_args()
     if args.item < 1 or (args.kind == 'vehicle' and args.metric == 'accuracy'):
         parser.error('invalid item/metric')
@@ -35,6 +38,8 @@ def main():
         parser.error('unexpected database')
     if args.publish and db != 'bf4ps_ranking_scratch':
         parser.error('production publication disabled until fenced writer validation')
+    if any(v is not None for v in (args.rank_worker_id,args.rank_claim_token,args.rank_claim_epoch)) and not all(v is not None for v in (args.rank_worker_id,args.rank_claim_token,args.rank_claim_epoch)):
+        parser.error('claim fencing requires worker id, token and epoch together')
     table = 'weapon_leaderboard_metrics' if args.kind == 'weapon' else 'vehicle_leaderboard_metrics'
     item_column = 'weapon_id' if args.kind == 'weapon' else 'vehicle_id'
     params = vars(args).copy()
@@ -107,6 +112,14 @@ def main():
           WHERE kind=:kind AND item_id=:item AND platform=:platform FOR UPDATE'''),params).scalar_one()
         if current != scope_version:
             raise RuntimeError('scope changed during build: refusing publication')
+        if args.rank_worker_id is not None:
+            job = conn.execute(text('''SELECT 1 FROM equipment_rank_jobs WHERE
+              kind=:kind AND item_id=:item AND platform=:platform AND metric=:metric
+              AND claimed_by=CAST(:worker AS uuid) AND claim_token=CAST(:token AS uuid)
+              AND claim_epoch=:epoch AND lease_expires_at>now() FOR UPDATE'''),
+              {**params,'worker':args.rank_worker_id,'token':args.rank_claim_token,'epoch':args.rank_claim_epoch}).first()
+            if job is None:
+                raise RuntimeError('stale or expired distributed claim: refusing publication')
         conn.execute(text('''INSERT INTO equipment_rank_compact_published
           (kind,item_id,platform,metric,generation_id) VALUES
           (:kind,:item,:platform,:metric,:g)

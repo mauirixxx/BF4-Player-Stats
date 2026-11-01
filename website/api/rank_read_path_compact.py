@@ -26,7 +26,9 @@ def get_compact_page(conn, kind, platform, item, page, page_size, search, divisi
       JOIN equipment_rank_generations g ON g.generation_id=p.generation_id
       WHERE p.kind=:kind AND p.item_id=:item AND p.platform=:platform AND p.metric=:metric
       AND g.status='published' AND g.snapshot_format=1 AND g.input_scope_version IS NOT NULL
-      AND g.completed_at >= now() - interval '3 hours' '''), params).mappings().first()
+      AND g.completed_at >= now() - interval '3 hours'
+      AND g.input_scope_version=(SELECT v.version FROM equipment_rank_scope_versions v
+        WHERE v.kind=p.kind AND v.item_id=p.item_id AND v.platform=p.platform) '''), params).mappings().first()
     if published is None:
         return None
     generation = published['generation_id']
