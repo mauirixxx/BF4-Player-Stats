@@ -530,3 +530,15 @@ its process-local Top-10 cache when compact reads are enabled, matching the
 precomputed reader's transaction isolation and cache behavior. The compact
 reader is still disabled by default. Full live HTTP response compatibility,
 replica/WAL impact, and production access grants require verification.
+
+### Production privilege reconnaissance (read-only, 2026-10-31)
+
+Current primary `mak-db-02` has application roles including
+`bf4ps_stage9c_d2`, `bf4ps_stage9c_d4`, `bf4ps_admin_moderation`, and
+`bf4_playerstats_test_migrator`. `bf4ps_stage9c_d2` has SELECT on
+`equipment_rank_generations`, `equipment_rank_scope_versions`, and
+`player_exclusions`; it has no observed DML grants on ranking generation
+or job tables in the inspected grants. New compact tables do not yet exist
+in production, so no reader/writer grants have been provisioned. Dedicated
+least-privilege compact reader and writer roles/grants must be designed and
+verified before production activation. No grants changed in this audit.
