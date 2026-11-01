@@ -542,3 +542,31 @@ or job tables in the inspected grants. New compact tables do not yet exist
 in production, so no reader/writer grants have been provisioned. Dedicated
 least-privilege compact reader and writer roles/grants must be designed and
 verified before production activation. No grants changed in this audit.
+
+### Isolated HTTP and concurrency validation (RNT-01)
+
+With `BF4PS_ISOLATED_HTTP_TEST=1` and compact reads enabled, the real
+`leaderboard_api.py` was launched on localhost port 18765 against the scratch
+PostgreSQL cluster. HTTP 200 responses verified page 1 and deep page 2001,
+name search, divisions 1 and 10, and accuracy sort; invalid page/sort returned
+HTTP 400. The isolated HTTP database exception is allowed only when the
+requested database is exactly `bf4ps_ranking_scratch` and PostgreSQL server
+address is loopback; the production database guard is otherwise unchanged.
+
+Two simultaneous 100,003-player builders using a valid versus deliberately
+invalid claim token produced one successful publication (generation 10) and
+one rejected stale-claim publication. An earlier attempt with an expired
+lease correctly rejected both builders. One isolated 100,003-row generation
+and pointer publication produced approximately **47 MB of WAL** as measured
+by `pg_current_wal_lsn()` difference; this is a synthetic-data, local-only
+measurement, not an HA replica replay measurement. Production primary
+read-only check showed three async streaming replicas and 0-byte replay lag
+at observation. No production rank writes or migrations occurred.
+
+TCOU production leaderboard loopback HTTP smoke check returned 200 with the
+existing response envelope (population/filtered_count/page/page_size/
+total_pages/rows). No website service restart or production flag change.
+
+**Unfinished:** complete HTTP parity across vehicle-family aggregation and
+all platform/metric combinations, production grants, real-data WAL/replica
+soak, and production publication rollout. Keep production feature disabled.
