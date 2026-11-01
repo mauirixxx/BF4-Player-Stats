@@ -582,3 +582,31 @@ RNT-01 scratch primary port 55432 was cloned via pg_basebackup to a second Postg
 ### Repeated publication standby replay stress
 
 RNT-01 localhost PostgreSQL primary and physical standby replayed a second full 20-scope publication matrix (100003 PC, 100007 ALL for large scopes). Total elapsed 78.48 seconds; WAL LSN advanced approximately 290 MB across the matrix, including PostgreSQL overhead. Standby remained streaming with 2024 bytes replay gap during workload and 0 bytes after completion. Read-only compact reader on standby returned 50 rows and population 100003. Same-host scratch synthetic-data benchmark only: WAN production replica performance and real-data compression remain unverified. Added automated vehicle-family fallback guard test; 12 targeted tests passed.
+
+### Compact builder legacy-source alignment (candidate, not activated)
+
+The compact candidate builder now constructs its cohort from the same raw
+`soldier_weapon_stats` / `soldier_vehicle_stats` and successful
+`collection_state` resource status used by the legacy leaderboard. Weapon
+statistics use per-soldier MAX, minimum 100 shots for accuracy, and minimum
+60 seconds for KPM. Vehicles deduplicate raw IDs before SUM of distinct
+variants or MAX of mirrored variants, including usage seconds; the audited
+28-entry family map is matched to `website/api/leaderboard_api.py`. Active
+`player_exclusions` are excluded. The resulting legacy cohort, not the
+separately maintained metric-table `equipment_population`, determines compact
+row count. This is candidate implementation only: no production activation,
+no demonstrated full live-data parity, and no WAN replication sign-off.
+
+### Nonempty scratch candidate verification
+
+On RNT-01 scratch port 55432, a bounded fixture with three successful
+collector-state soldiers and raw vehicle variants for canonical SUM (2/30)
+and MAX (47/67) families passed seven rolled-back compact builder dry runs:
+vehicle kills/KPM for each family, and weapon kills/KPM/accuracy. A discovered
+`Decimal` JSON serialization failure for aggregated kills was corrected in
+`compact_rank_codec.py` by converting non-null kills to integer before encoding.
+The five targeted reader/fallback tests also passed. This confirms executable
+nonempty source and encoding, but does not yet establish independent row-by-row
+legacy parity or production performance. No production changes were made.
+
+[executed on device: rnt-01 (aa6d9aec-0414-4ad7-b824-1d53cc1368b2)]
