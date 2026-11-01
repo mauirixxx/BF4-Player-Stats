@@ -574,3 +574,7 @@ soak, and production publication rollout. Keep production feature disabled.
 ### Cross-platform compact verification
 
 RNT-01 scratch HTTP comparison passed 20 of 20 combinations (weapon kills/KPM/accuracy and vehicle kills/KPM, each on PC/PS4/Xbox/ALL). PC population 100003, PS4 2, Xbox 2, ALL 100007. Compared JSON top-10 IDs, ranks, positions, population against direct PostgreSQL window functions. Multi-variant vehicle families use legacy SUM/MAX aggregation from raw stats; compact single-item metric source is not yet proven equivalent. The website now explicitly falls back for these families. Production remains disabled.
+
+### Isolated physical streaming replica check
+
+RNT-01 scratch primary port 55432 was cloned via pg_basebackup to a second PostgreSQL 16 cluster on localhost port 55433 (hot standby). Under repeated 100003-player compact publications, pg_stat_replication showed streaming async replay with 2024 bytes of replay lag at one observation. Direct compact reader against standby returned population 100003 and 50 rows. This tests physical WAL replay locally, not real-data WAN replication or production latency. No production replica changed. Verified audited multi-variant vehicle family request (canonical item 2) bypasses compact reader and uses legacy fallback. Production roles and grants remain a rollout gate.
