@@ -408,3 +408,22 @@ Production revision confirmed on MAK-DB-02 (2026-10-22). Migration `0018_distrib
 - `equipment_rank_jobs`: composite primary key (`kind`, `item_id`, `platform`, `metric`); `next_due_at`, `claimed_by` (FK to `equipment_rank_workers.worker_id`), `claim_token`, `claim_epoch`, `lease_expires_at`, `attempts`, `last_success_at`, `last_error`, `updated_at`. `kind` is `weapon` or `vehicle`; platform is `all`, `pc`, `ps4`, or `xboxone`.
 
 The migration creates scheduling/coordination state; it does not change the existing `soldier_weapon_stats` and `soldier_vehicle_stats` row shapes.
+
+## Candidate migration 0020: compact ranking snapshots (NOT DEPLOYED)
+
+The feature branch `feature/compact-rank-snapshots` introduces additive migration
+`0020_compact_rank_snapshots`, following production head `0019_soldier_search_trigrams`.
+Production remains on 0019 until an explicitly approved rollout. Existing
+`equipment_rank_rows` and `equipment_rank_published` remain untouched.
+
+- `equipment_rank_compact_blocks`: PK `(generation_id, block_id)`; FK generation
+  with cascading delete; first/last position and binary immutable payload.
+- `equipment_rank_compact_lookup`: PK `(generation_id, soldier_id)`; block ID and
+  zero-based block offset; FK `(generation_id, block_id)` to compact blocks with
+  cascading delete; secondary `(soldier_id, generation_id)` index.
+- `equipment_rank_compact_published`: scope PK `(kind, item_id, platform, metric)`;
+  generation FK; timestamp. This pointer is independent of legacy publication.
+
+Migration 0020 is **schema only** until the writer, reader, parity, exclusion
+validation, and safe generation retention have been implemented and tested.
+Do not activate compact publication or drop legacy storage from this migration.
