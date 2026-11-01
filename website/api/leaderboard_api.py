@@ -735,7 +735,11 @@ class Handler(BaseHTTPRequestHandler):
                 if os.environ.get('BF4PS_PRECOMPUTED_RANK_READS') == '1' or os.environ.get('BF4PS_COMPACT_RANK_READS') == '1':
                     c = c.execution_options(isolation_level='REPEATABLE READ')
                 if c.execute(text('select current_database()')).scalar_one()!='bf4_playerstats':
-                    raise RuntimeError('Only D3 scratch database permitted')
+                    if not (os.environ.get('BF4PS_ISOLATED_HTTP_TEST') == '1'
+                            and os.environ.get('BF4PS_COMPACT_RANK_READS') == '1'
+                            and c.execute(text('select current_database()')).scalar_one() == 'bf4ps_ranking_scratch'
+                            and c.execute(text('SELECT inet_server_addr()')).scalar_one().is_loopback):
+                        raise RuntimeError('Unexpected database for leaderboard HTTP')
                 c.execute(text('SET TRANSACTION READ ONLY'))
                 c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
                 c.execute(text("SET LOCAL statement_timeout = '12000ms'"))
