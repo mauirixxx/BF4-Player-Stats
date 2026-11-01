@@ -434,3 +434,22 @@ Each row stores soldier ID, competition rank, kills, KPM, accuracy, and fetched
 at. KPM/accuracy are serialized as decimal strings to avoid precision loss.
 The payload does not include soldier names; these must be read from `soldiers`
 using the same read snapshot and the compact lookup index.
+
+## Compact ranking integration (feature branch, NOT ACTIVE)
+
+`player-collector/build_compact_rank.py` builds immutable blocks and per-soldier
+lookup records. Its default mode rolls back. Publication is restricted to the
+`bf4ps_ranking_scratch` database; production publishing is explicitly rejected
+until distributed lease fencing, retention and parity tests are complete.
+
+`website/api/rank_read_path_compact.py` is a separately gated candidate reader.
+`BF4PS_COMPACT_RANK_READS=1` enables it only when the new schema exists and a
+valid compact pointer is present; do not set this in production yet. The reader
+falls back when no valid generation exists or when an excluded identity remains
+in the generation. It preserves rank ties, immutable scores, names and persona
+search, pagination and division calculations. Current candidate scans all
+compressed blocks for division and filtered counts; performance and search
+parity require measurement before deployment.
+
+No production schema migration, ranking writer, feature flag, or table cleanup
+has been executed as part of this branch. Legacy rankings remain unchanged.
