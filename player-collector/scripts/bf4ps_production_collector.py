@@ -96,7 +96,7 @@ def main() -> int:
         if db_name != "bf4_playerstats":
             raise SystemExit(f"REFUSING: production collector database is {db_name!r}")
         revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-        # Revisions 0009-0018 are additive descendants of the physical
+        # Revisions 0009-0019 are additive descendants of the physical
         # dispatch gate. A strict equality check to 0008 stopped the entire
         # collector fleet when ranking schema 0018 was installed.
         supported_revisions = frozenset({
@@ -106,6 +106,7 @@ def main() -> int:
             "0014_equipment_populations", "0015_rank_generations",
             "0016_rank_scope_versions", "0017_rank_immutable_scores",
             "0018_distributed_rank_queue",
+            "0019_soldier_search_trigrams",
         })
         if revision not in supported_revisions:
             raise SystemExit(f"REFUSING: unverified production schema revision {revision!r}")
