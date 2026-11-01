@@ -408,3 +408,15 @@ Production revision confirmed on MAK-DB-02 (2026-10-22). Migration `0018_distrib
 - `equipment_rank_jobs`: composite primary key (`kind`, `item_id`, `platform`, `metric`); `next_due_at`, `claimed_by` (FK to `equipment_rank_workers.worker_id`), `claim_token`, `claim_epoch`, `lease_expires_at`, `attempts`, `last_success_at`, `last_error`, `updated_at`. `kind` is `weapon` or `vehicle`; platform is `all`, `pc`, `ps4`, or `xboxone`.
 
 The migration creates scheduling/coordination state; it does not change the existing `soldier_weapon_stats` and `soldier_vehicle_stats` row shapes.
+
+
+## Production collector compatibility hotfix (2026-11-01)
+
+Production Alembic revision `0019_soldier_search_trigrams` is an additive
+search-index migration following `0018_distributed_rank_queue`. The player
+collector's fail-closed startup allowlist previously ended at `0018`, causing
+all nine production player-collector containers to restart without collecting.
+The validated allowlist now includes `0019` without relaxing the existing
+physical-dispatch table checks or accepting unknown future revisions.
+Platoon scheduler processes remained active. This hotfix does not activate
+compact rankings or apply migrations `0020`/`0021`.
