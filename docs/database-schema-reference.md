@@ -453,3 +453,17 @@ parity require measurement before deployment.
 
 No production schema migration, ranking writer, feature flag, or table cleanup
 has been executed as part of this branch. Legacy rankings remain unchanged.
+
+### Candidate test coverage (2026-10-31)
+
+`website/tests/test_compact_rank_reader.py` exercises the gated reader with a
+fake SQL connection: tied ranks, pagination, exact numeric score precision,
+name/persona filtering, divisions, and fallback on exclusion or missing
+publication. These are **unit tests, not a migrated PostgreSQL integration
+harness**. Do not claim the 0020 end-to-end scratch test has passed until the
+migration is applied to a disposable PostgreSQL database and the real builder,
+reader, and cleanup paths are exercised together. The builder currently
+materializes the ranked query result before inserts to avoid interleaving a
+server-side cursor and DML on the same connection. Production writer fencing,
+search performance, generation retention, and complete migration validation
+remain release blockers.

@@ -64,7 +64,10 @@ def main():
           rank() OVER (ORDER BY score DESC NULLS LAST) AS rank,
           row_number() OVER (ORDER BY score DESC NULLS LAST,soldier_id) AS position
           FROM ({source}) eligible ORDER BY position''')
-        result = conn.execution_options(stream_results=True).execute(ranked, params)
+        # Materialize the ranked source before issuing writes on this connection.
+        # PostgreSQL server-side cursors cannot safely interleave with inserts
+        # through the same connection while their result is still streaming.
+        result = conn.execute(ranked, params)
         count = 0
         latest = None
         for block_id, batch in enumerate(chunks(result, BLOCK_SIZE)):

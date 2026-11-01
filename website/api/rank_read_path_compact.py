@@ -83,6 +83,8 @@ def get_compact_page(conn, kind, platform, item, page, page_size, search, divisi
         ids = [row['soldier_id'] for row in page_rows]
         identities = {r['soldier_id']:r for r in conn.execute(text('''SELECT soldier_id,current_name,persona_id,platform
           FROM soldiers WHERE soldier_id=ANY(:ids)'''),{'ids':ids}).mappings()}
+        if len(identities) != len(page_rows):
+            raise ValueError('compact snapshot references missing soldier identities')
         for row in page_rows:
             row.update(identities[row['soldier_id']])
     return {'population':population,'filtered_count':count,'page':page,'page_size':page_size,
