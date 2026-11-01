@@ -570,3 +570,7 @@ total_pages/rows). No website service restart or production flag change.
 **Unfinished:** complete HTTP parity across vehicle-family aggregation and
 all platform/metric combinations, production grants, real-data WAL/replica
 soak, and production publication rollout. Keep production feature disabled.
+
+### Cross-platform compact verification
+
+RNT-01 scratch HTTP comparison passed 20 of 20 combinations (weapon kills/KPM/accuracy and vehicle kills/KPM, each on PC/PS4/Xbox/ALL). PC population 100003, PS4 2, Xbox 2, ALL 100007. Compared JSON top-10 IDs, ranks, positions, population against direct PostgreSQL window functions. Multi-variant vehicle families use legacy SUM/MAX aggregation from raw stats; compact single-item metric source is not yet proven equivalent. The website now explicitly falls back for these families. Production remains disabled.
