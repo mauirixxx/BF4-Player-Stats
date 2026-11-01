@@ -52,5 +52,3 @@ def position_to_block(position):
     if not isinstance(position, int) or position < 1:
         raise ValueError('position must be positive')
     return divmod(position - 1, BLOCK_SIZE)
-
-[executed on device: rnt-01 (aa6d9aec-0414-4ad7-b824-1d53cc1368b2)]
