@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current production Alembic head: `0019_soldier_search_trigrams` (2026-10-31 search-index deployment). Operator verified directly on current primary **MAK-DB-02** on 2026-10-22 with `sudo -u postgres psql -d bf4_playerstats -Atc "SELECT version_num FROM alembic_version;"`. The previous `0017_rank_immutable_scores` observation on 2026-10-21 remains historical; see `live-schema-snapshot-2026-10-21.md` for that earlier catalog. PostgreSQL primary is an HA role and may change during failover.
+Current production Alembic head: `0021_reconcile_player_exclusions` (verified on MAK-DB-02 on 2026-11-02). Earlier 0019 observations are historical. Revisions 0020 and 0021 were recovered from the RNT-01 compact-ranking worktree and committed to main on 2026-11-02.
 
 ## Mandatory SQL development rule
 
@@ -35,6 +35,8 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0017_rank_immutable_scores` | `0016_rank_scope_versions` | Immutable rank score snapshots |
 | `0018_distributed_rank_queue` | `0017_rank_immutable_scores` | Adds durable equipment ranking jobs, worker registry, and single-row global ranking capacity |
 | `0019_soldier_search_trigrams` | `0018_distributed_rank_queue` | Adds pg_trgm and concurrent GIN lower(name) indexes for soldier current and historical substring search |
+| `0020_compact_rank_snapshots` | `0019_soldier_search_trigrams` | Adds compact ranking blocks, soldier lookup, and published-generation mapping; existing ranking path retained |
+| `0021_reconcile_player_exclusions` | `0020_compact_rank_snapshots` | Reconciles the production player-exclusion table and soldier insert/update guard without replacing existing protections |
 
 ### Important migration consequence: Gun Master
 
@@ -420,3 +422,12 @@ The validated allowlist now includes `0019` without relaxing the existing
 physical-dispatch table checks or accepting unknown future revisions.
 Platoon scheduler processes remained active. This hotfix does not activate
 compact rankings or apply migrations `0020`/`0021`.
+
+
+## Recovered migrations and current production checkpoint (2026-11-02)
+
+Production `alembic_version` is `0021_reconcile_player_exclusions`. Migration 0020 adds `equipment_rank_compact_blocks` (composite key `generation_id`, `block_id`; positional bounds and binary payload), `equipment_rank_compact_lookup` (composite key `generation_id`, `soldier_id`; block ID and offset, plus soldier lookup index), and `equipment_rank_compact_published` (composite key `kind`, `item_id`, `platform`, `metric`; generation FK and publication timestamp). Existing ranking tables are not removed.
+
+Migration 0021 introduces `player_exclusions` on new installations with key (`platform`, `persona_id`), `reason_code`, nullable `private_note`, `created_by`, timestamps and `active`; validates pre-existing production table shape, and creates `bf4ps_reject_excluded_soldier()` and `bf4ps_exclusion_soldiers` trigger only when absent. Its downgrade intentionally retains these pre-existing moderation protections. Neither migration alters `soldier_names` or `collection_state`.
+
+On 2026-11-02, production `soldiers`, `soldier_names`, and `collection_state` were independently introspected. `soldier_names` has PK `soldier_name_id`, FK `soldier_id`, `name`, required `first_seen_at`/`last_seen_at`, unique (`soldier_id`, `name`) and nonempty-name check. `collection_state` has one row per soldier, and four resource state/last-success pairs. Historical Rusty alias import is a data-only operation; no schema migration is needed.
