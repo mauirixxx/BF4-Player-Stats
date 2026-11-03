@@ -6,6 +6,8 @@ request pacing, and persistence remain in the existing production primitives.
 from __future__ import annotations
 
 import os
+import json
+from pathlib import Path
 import signal
 import socket
 import time
@@ -24,6 +26,40 @@ STOP = False
 HEARTBEAT_SECONDS = 15.0
 IDLE_SLEEP_SECONDS = 0.5
 BUDGET_WAIT_SECONDS = 15.0
+THROTTLE_COOLDOWN_SECONDS = 900
+COOLDOWN_FILE = Path(os.environ.get("BF4PS_COOLDOWN_FILE", "/var/lib/bf4ps-cooldown/until.json"))
+
+
+def read_cooldown_until() -> float:
+    # Fail closed: corrupt/unreadable state must never bypass an active cooldown.
+    try:
+        return float(json.loads(COOLDOWN_FILE.read_text())["until"])
+    except FileNotFoundError:
+        return 0.0
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        raise RuntimeError(f"cooldown state unavailable: {COOLDOWN_FILE}") from exc
+
+
+def persist_cooldown(seconds: int) -> float:
+    if seconds < THROTTLE_COOLDOWN_SECONDS:
+        seconds = THROTTLE_COOLDOWN_SECONDS
+    COOLDOWN_FILE.parent.mkdir(parents=True, exist_ok=True)
+    until = max(read_cooldown_until(), time.time() + seconds)
+    tmp = COOLDOWN_FILE.with_suffix(".tmp")
+    try:
+        with tmp.open("w") as f:
+            json.dump({"until": until}, f)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, COOLDOWN_FILE)
+        directory_fd = os.open(COOLDOWN_FILE.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+    finally:
+        tmp.unlink(missing_ok=True)
+    return until
 
 
 def request_stop(*_args) -> None:
@@ -87,6 +123,11 @@ def main() -> int:
         configured.egress_key,
         "background",
     )
+    # Check host-persistent state before registering or attempting any requests.
+    # The mount must exist, including on first startup, or fail closed.
+    if not COOLDOWN_FILE.parent.is_dir():
+        raise SystemExit(f"REFUSING: persistent cooldown mount missing: {COOLDOWN_FILE.parent}")
+    read_cooldown_until()
     engine = create_engine(url, pool_pre_ping=True)
 
     # Refuse to register, claim, or send anything on an unprepared database.
@@ -148,6 +189,11 @@ def main() -> int:
                     )
                 next_heartbeat = now + HEARTBEAT_SECONDS
 
+            remaining = read_cooldown_until() - time.time()
+            if remaining > 0:
+                time.sleep(min(HEARTBEAT_SECONDS, remaining))
+                continue
+
             if not control.enabled:
                 print("collector disabled; clean stop", flush=True)
                 break
@@ -172,8 +218,9 @@ def main() -> int:
             message, throttle = describe_result(resource, result)
             print(message, flush=True)
             if throttle:
-                print("THROTTLE SIGNAL; stopping production collector", flush=True)
-                break
+                until = persist_cooldown(getattr(result, "retry_after_seconds", 0) or THROTTLE_COOLDOWN_SECONDS)
+                print(f"THROTTLE SIGNAL; persistent cooldown until_epoch={until:.0f}; no HTTP during cooldown", flush=True)
+                continue
     finally:
         try:
             with engine.begin() as conn:
