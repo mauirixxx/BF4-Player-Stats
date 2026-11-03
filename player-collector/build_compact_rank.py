@@ -40,7 +40,7 @@ def main():
         parser.error('unexpected database')
     if args.publish and not all(v is not None for v in (args.rank_worker_id,args.rank_claim_token,args.rank_claim_epoch)):
         parser.error('publication requires worker id, claim token and claim epoch')
-    if args.publish and db != 'bf4ps_ranking_scratch':
+    if args.publish and db not in ('bf4ps_ranking_scratch', 'bf4ps_ranking_real_parity'):
         parser.error('production publication disabled until fenced writer validation')
     if any(v is not None for v in (args.rank_worker_id,args.rank_claim_token,args.rank_claim_epoch)) and not all(v is not None for v in (args.rank_worker_id,args.rank_claim_token,args.rank_claim_epoch)):
         parser.error('claim fencing requires worker id, token and epoch together')
