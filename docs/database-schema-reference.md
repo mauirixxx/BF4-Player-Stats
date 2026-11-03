@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current production Alembic head: `0019_soldier_search_trigrams` (2026-10-31 search-index deployment). Operator verified directly on current primary **MAK-DB-02** on 2026-10-22 with `sudo -u postgres psql -d bf4_playerstats -Atc "SELECT version_num FROM alembic_version;"`. The previous `0017_rank_immutable_scores` observation on 2026-10-21 remains historical; see `live-schema-snapshot-2026-10-21.md` for that earlier catalog. PostgreSQL primary is an HA role and may change during failover.
+Current production Alembic head: `0023_compact_exclusion_guard` (verified on MAK-DB-02 and streaming replicas MAK-DB-01, HNL-DB-01, RNT-DB-01 on 2026-11-03 UTC). KAH-DB-01 is intentionally offline pending storage expansion and its revision is unverified. Previous production revision observations are historical.
 
 ## Mandatory SQL development rule
 
@@ -35,6 +35,10 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0017_rank_immutable_scores` | `0016_rank_scope_versions` | Immutable rank score snapshots |
 | `0018_distributed_rank_queue` | `0017_rank_immutable_scores` | Adds durable equipment ranking jobs, worker registry, and single-row global ranking capacity |
 | `0019_soldier_search_trigrams` | `0018_distributed_rank_queue` | Adds pg_trgm and concurrent GIN lower(name) indexes for soldier current and historical substring search |
+| `0020_compact_rank_snapshots` | `0019_soldier_search_trigrams` | Compact blocks, lookup, and independent publication pointer |
+| `0021_reconcile_player_exclusions` | `0020_compact_rank_snapshots` | Reconciles production exclusions and trigger |
+| `0022_compact_blocks_only_format` | `0021_reconcile_player_exclusions` | Permits snapshot format 2 |
+| `0023_compact_exclusion_guard` | `0022_compact_blocks_only_format` | Adds exclusion fingerprint column |
 
 ### Important migration consequence: Gun Master
 
@@ -409,11 +413,11 @@ Production revision confirmed on MAK-DB-02 (2026-10-22). Migration `0018_distrib
 
 The migration creates scheduling/coordination state; it does not change the existing `soldier_weapon_stats` and `soldier_vehicle_stats` row shapes.
 
-## Candidate migration 0020: compact ranking snapshots (NOT DEPLOYED)
+## Migration 0020: compact ranking snapshots (schema deployed; feature not activated)
 
 The feature branch `feature/compact-rank-snapshots` introduces additive migration
 `0020_compact_rank_snapshots`, following production head `0019_soldier_search_trigrams`.
-Production remains on 0019 until an explicitly approved rollout. Existing
+Production schema is at 0023; compact publication remains disabled. Existing
 `equipment_rank_rows` and `equipment_rank_published` remain untouched.
 
 - `equipment_rank_compact_blocks`: PK `(generation_id, block_id)`; FK generation
@@ -486,7 +490,7 @@ to reject active exclusions with SQLSTATE 23514.
 Additive migration `0021_reconcile_player_exclusions` creates these objects on
 fresh installations and validates the table shape on existing installations.
 It does not drop them on downgrade, to preserve pre-existing production
-moderation safeguards. No migration has been applied to production.
+moderation safeguards. Migration 0021 and subsequent 0022/0023 are deployed to production.
 
 ### Compact candidate stress/retention notes (RNT-01 isolated PostgreSQL)
 
