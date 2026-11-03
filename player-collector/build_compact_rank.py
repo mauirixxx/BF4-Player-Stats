@@ -36,7 +36,7 @@ def main():
         parser.error('invalid item/metric')
     url = os.environ['BF4PS_DATABASE_URL']
     db = make_url(url).database
-    if db not in ('bf4ps_ranking_scratch', 'bf4_playerstats'):
+    if db not in ('bf4ps_ranking_scratch', 'bf4ps_ranking_real_parity', 'bf4_playerstats'):
         parser.error('unexpected database')
     if args.publish and not all(v is not None for v in (args.rank_worker_id,args.rank_claim_token,args.rank_claim_epoch)):
         parser.error('publication requires worker id, claim token and claim epoch')
