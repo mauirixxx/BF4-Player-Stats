@@ -12,6 +12,7 @@ from itertools import islice
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from bf4ps.compact_rank_codec import BLOCK_SIZE, encode_block
+from bf4ps.compact_exclusions import exclusion_fingerprint
 
 
 def chunks(iterator, size):
@@ -26,6 +27,7 @@ def main():
     parser.add_argument('--platform', required=True, choices=('pc', 'ps4', 'xboxone', 'all'))
     parser.add_argument('--metric', required=True, choices=('kills', 'kpm', 'accuracy'))
     parser.add_argument('--publish', action='store_true')
+    parser.add_argument('--snapshot-format', type=int, choices=(1,2), default=1)
     parser.add_argument('--rank-worker-id')
     parser.add_argument('--rank-claim-token')
     parser.add_argument('--rank-claim-epoch', type=int)
@@ -106,17 +108,23 @@ def main():
     started = time.monotonic()
     with engine.connect().execution_options(isolation_level='REPEATABLE READ') as conn:
         revision = conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
-        if revision not in ('0020_compact_rank_snapshots', '0021_reconcile_player_exclusions'):
+        if revision not in ('0020_compact_rank_snapshots', '0021_reconcile_player_exclusions', '0022_compact_blocks_only_format'):
             raise RuntimeError(f'migration 0020 required, found {revision}')
+        if args.snapshot_format == 2 and revision != '0022_compact_blocks_only_format':
+            raise RuntimeError('format-2 requires migration 0022')
         conn.execute(text("SET LOCAL statement_timeout='120s'"))
         conn.execute(text("SET LOCAL work_mem='32MB'"))
         scope_version = conn.execute(text('''SELECT version FROM equipment_rank_scope_versions
           WHERE kind=:kind AND item_id=:item AND platform=:platform'''), params).scalar_one_or_none()
         if scope_version is None:
             raise RuntimeError('scope version missing')
+        fingerprint = exclusion_fingerprint(conn) if args.snapshot_format == 2 else None
         generation = conn.execute(text('''INSERT INTO equipment_rank_generations
+          (kind,item_id,platform,metric,snapshot_format,exclusion_fingerprint)
+          VALUES (:kind,:item,:platform,:metric,:format,:fingerprint) RETURNING generation_id'''),
+          {**params,'format':args.snapshot_format,'fingerprint':fingerprint}).scalar_one() if revision == '0022_compact_blocks_only_format' else conn.execute(text('''INSERT INTO equipment_rank_generations
           (kind,item_id,platform,metric,snapshot_format)
-          VALUES (:kind,:item,:platform,:metric,1) RETURNING generation_id'''), params).scalar_one()
+          VALUES (:kind,:item,:platform,:metric,1) RETURNING generation_id'''),params).scalar_one()
         source = f'SELECT m.soldier_id,m.{args.metric} AS score,m.kills,m.kpm,m.accuracy,m.source_fetched_at FROM ({source}) m'
         ranked = text(f'''SELECT soldier_id,kills,kpm,accuracy,source_fetched_at,
           rank() OVER (ORDER BY score DESC NULLS LAST) AS rank,
@@ -136,11 +144,12 @@ def main():
               (generation_id,block_id,first_position,last_position,payload)
               VALUES (:g,:b,:first,:last,:payload)'''),
               {'g':generation,'b':block_id,'first':first,'last':first+len(batch)-1,'payload':payload})
-            conn.execute(text('''INSERT INTO equipment_rank_compact_lookup
+            if args.snapshot_format == 1:
+                conn.execute(text('''INSERT INTO equipment_rank_compact_lookup
               (generation_id,soldier_id,block_id,block_offset)
               VALUES (:g,:soldier,:block,:offset)'''),
               [{'g':generation,'soldier':int(r.soldier_id),'block':block_id,'offset':offset}
-               for offset,r in enumerate(batch)])
+                   for offset,r in enumerate(batch)])
             for r in batch:
                 if r.source_fetched_at is not None and (latest is None or r.source_fetched_at > latest):
                     latest = r.source_fetched_at
@@ -164,6 +173,8 @@ def main():
           WHERE kind=:kind AND item_id=:item AND platform=:platform FOR UPDATE'''),params).scalar_one()
         if current != scope_version:
             raise RuntimeError('scope changed during build: refusing publication')
+        if args.snapshot_format == 2 and exclusion_fingerprint(conn) != fingerprint:
+            raise RuntimeError('exclusions changed during build: refusing publication')
         if args.publish:
             job = conn.execute(text('''SELECT 1 FROM equipment_rank_jobs WHERE
               kind=:kind AND item_id=:item AND platform=:platform AND metric=:metric
