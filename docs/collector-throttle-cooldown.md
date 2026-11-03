@@ -1,0 +1,9 @@
+# BF4PS production collector throttle cooldown (2026-11-03)
+
+All nine production player collectors use a persistent, per-host cooldown state file at `/var/lib/bf4ps-cooldown/until.json` inside the container, bind-mounted from `/var/lib/bf4ps-cooldown` on the host. The directory is writable by UID/GID 65532. It is deliberately independent of the collector image and survives container and host restarts.
+
+On HTTP 403/429 or `battlelog_throttle`, the collector writes the deadline atomically (fsync + replace), respecting at least 900 seconds or a longer retry delay from the failed job. During the cooldown it performs no Battlelog requests, while retaining database heartbeats. On startup it checks the persisted deadline before collection. If the mount is missing or its contents are invalid, the collector fails closed. A missing file in an existing mounted directory means no prior cooldown.
+
+Deploy each node with `--network host --restart unless-stopped --env-file <existing collector.env> -v /var/lib/bf4ps-cooldown:/var/lib/bf4ps-cooldown` and the tested `collector-cooldown-0023` image, preserving the existing command. Do not delete the cooldown file to force an early retry. Roll out one node first, then the fleet; preserve old containers renamed `-pre-cooldown` for rollback. Verify no restart loop and that throttle signals enter a 15-minute cooldown without another outbound attempt. The previous schema safety checks and database job retry scheduling remain in place.
+
+Historical incident: the schema-0023 rollout exposed fleet-wide 429 responses; Docker `unless-stopped` restarted collectors after clean throttle shutdown, bypassing the intended per-host delay. The new code keeps the process alive and stores the deadline across restarts. MAK-02 was deliberately paused after repeated 429 responses.
