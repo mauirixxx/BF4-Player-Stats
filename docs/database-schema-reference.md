@@ -642,3 +642,23 @@ must be reviewed before production. The recovery is format 1 only: it does
 **not** restore lost format-2 migration `0022`, format-2 writer, or its original
 97 ms benchmark, and no production performance claim is made. The targeted
 local tests passed 14/14 after recovery. Production remains disabled.
+
+### Reconstructed migration 0022: blocks-only format 2 (2026-11-03; scratch only)
+
+`0022_compact_blocks_only_format` follows `0021_reconcile_player_exclusions`.
+It expands `equipment_rank_generations.snapshot_format` from `0,1` to `0,1,2`,
+adds nullable `exclusion_fingerprint text`, and constrains format-2 rows to
+have a non-null fingerprint. Existing formats and publication pointers remain
+unchanged. Downgrade refuses while format-2 generations exist, preventing
+accidental data loss. No production migration is authorized by this document.
+
+The writer's `--snapshot-format 2` builds compressed blocks but **no**
+`equipment_rank_compact_lookup` rows. The fingerprint is SHA-256 of the sorted
+active `(platform,persona_id)` set, each encoded as `platform:persona_id\\n`.
+The writer records the fingerprint with its generation and rechecks it before
+publication; the reader compares the complete active set in its REPEATABLE READ
+snapshot, falling back to legacy on activation or restoration. This avoids
+relying on `player_exclusions.updated_at` and does not require a new trigger.
+Search and division remain full scans. The opt-in flag remains disabled in
+production. This is a reconstructed implementation, not a claim of historical
+byte-for-byte recovery or reproduced 97 ms performance.
