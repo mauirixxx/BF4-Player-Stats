@@ -31,8 +31,10 @@ class Result:
 
 
 class FakeConnection:
-    def __init__(self, excluded=False, published=True):
+    def __init__(self, excluded=False, published=True, snapshot_format=1, fingerprint=None):
         self.excluded = excluded
+        self.snapshot_format = snapshot_format
+        self.fingerprint = fingerprint
         self.published = published
         self.blocks = [
             {'block_id':0,'first_position':1,'last_position':3,
@@ -44,9 +46,16 @@ class FakeConnection:
     def execute(self, statement, params=None):
         sql = str(statement)
         if 'FROM equipment_rank_compact_published' in sql:
-            return Result([{'generation_id':5,'row_count':3,'completed_at':'test'}] if self.published else [])
+            return Result([{'generation_id':5,'row_count':3,'completed_at':'test',
+                            'snapshot_format':self.snapshot_format,'exclusion_fingerprint':self.fingerprint}] if self.published else [])
+        if 'SELECT platform,persona_id FROM player_exclusions' in sql:
+            return Result([('pc', 102)] if self.excluded else [])
         if 'JOIN player_exclusions' in sql:
             return Result([(1,)] if self.excluded else [])
+        if 'SELECT s.soldier_id FROM soldiers s' in sql:
+            needle = params['pattern'].strip('%').lower()
+            return Result([sid for sid,(name,persona,_) in self.people.items()
+                           if needle in name.lower() or needle in str(persona)])
         if 'FROM equipment_rank_compact_lookup l' in sql:
             needle = params['pattern'].strip('%').lower()
             return Result([sid for sid,(name,persona,_) in self.people.items()
@@ -107,3 +116,26 @@ def test_filtered_page_keeps_full_scan():
     c = FakeConnection()
     get(c, division=10)
     assert c.block_queries == [{'g':5}]
+
+
+def test_format2_pages_and_filters_without_lookup():
+    from bf4ps.compact_exclusions import exclusion_fingerprint
+    c = FakeConnection(snapshot_format=2)
+    c.fingerprint = exclusion_fingerprint(c)
+    assert [r['soldier_id'] for r in get(c)['rows']] == [1,2]
+    assert [r['soldier_id'] for r in get(c,page=2)['rows']] == [3]
+    assert get(c,page=3)['filtered_count'] == 3
+    assert [r['soldier_id'] for r in get(c,search='bra')['rows']] == [2]
+    assert get(c,division=10)['filtered_count'] == 1
+
+def test_format2_exclusion_activation_and_deactivation_invalidate():
+    from bf4ps.compact_exclusions import exclusion_fingerprint
+    c = FakeConnection(snapshot_format=2)
+    c.fingerprint = exclusion_fingerprint(c)
+    assert get(c) is not None
+    c.excluded = True
+    assert get(c) is None  # active exclusion appeared, regardless of timestamp
+    c.fingerprint = exclusion_fingerprint(c)
+    assert get(c) is not None  # snapshot representing active set
+    c.excluded = False
+    assert get(c) is None  # restoration also invalidates
