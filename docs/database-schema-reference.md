@@ -643,22 +643,29 @@ must be reviewed before production. The recovery is format 1 only: it does
 97 ms benchmark, and no production performance claim is made. The targeted
 local tests passed 14/14 after recovery. Production remains disabled.
 
-### Reconstructed migration 0022: blocks-only format 2 (2026-11-03; scratch only)
+### Recovered migration 0022 and new exclusion safeguard 0023 (2026-11-03)
 
-`0022_compact_blocks_only_format` follows `0021_reconcile_player_exclusions`.
-It expands `equipment_rank_generations.snapshot_format` from `0,1` to `0,1,2`,
-adds nullable `exclusion_fingerprint text`, and constrains format-2 rows to
-have a non-null fingerprint. Existing formats and publication pointers remain
-unchanged. Downgrade refuses while format-2 generations exist, preventing
-accidental data loss. No production migration is authorized by this document.
+The surviving RNT-01 scratch databases were already stamped at
+`0022_compact_blocks_only_format`, and direct schema inspection confirmed
+`equipment_rank_generations.snapshot_format` allows `0,1,2`, **without** an
+exclusion fingerprint column. The reconstructed `0022` therefore changes only
+`ck_rank_generation_snapshot_format` from `(0,1)` to `(0,1,2)`.
 
-The writer's `--snapshot-format 2` builds compressed blocks but **no**
-`equipment_rank_compact_lookup` rows. The fingerprint is SHA-256 of the sorted
-active `(platform,persona_id)` set, each encoded as `platform:persona_id\\n`.
-The writer records the fingerprint with its generation and rechecks it before
-publication; the reader compares the complete active set in its REPEATABLE READ
-snapshot, falling back to legacy on activation or restoration. This avoids
-relying on `player_exclusions.updated_at` and does not require a new trigger.
-Search and division remain full scans. The opt-in flag remains disabled in
-production. This is a reconstructed implementation, not a claim of historical
-byte-for-byte recovery or reproduced 97 ms performance.
+New additive migration `0023_compact_exclusion_guard` adds nullable
+`equipment_rank_generations.exclusion_fingerprint text`. Existing format-2
+generations are deliberately not trusted until rebuilt with a fingerprint.
+The writer requires 0023 for format-2 builds and emits compressed blocks with
+no `equipment_rank_compact_lookup` rows. Its fingerprint is SHA-256 of the
+sorted active `(platform,persona_id)` set, encoded as `platform:persona_id\n`.
+The writer rechecks the fingerprint before publication; the reader compares
+the active set in its REPEATABLE READ snapshot, falling back to legacy on
+activation or restoration. This avoids timestamp assumptions or new triggers.
+Search and division remain full scans. The opt-in feature stays OFF in
+production. These are reconstructed changes, not a reproduction of the
+historical 97 ms benchmark. Both migrations are pending isolated tests.
+
+Recovery verification: RNT-01 isolated `bf4ps_ranking_scratch` upgraded
+0022 -> 0023, downgraded 0023 -> 0022, and upgraded again successfully.
+Format-1 and format-2 three-row writer dry runs both rolled back successfully;
+16/16 targeted unit tests passed. The original 214,779-row HTTP benchmark has
+not yet been reproduced. Production is unchanged.
