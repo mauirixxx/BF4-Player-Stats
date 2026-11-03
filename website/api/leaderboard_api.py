@@ -10,7 +10,7 @@ from general_leaderboard import query_page as get_general_page, METRICS as GENER
 from global_soldier_search import search_soldiers
 from soldier_detail import get_soldier_detail
 from platoon_read_api import list_platoons, platoon_detail, soldier_platoons
-engine=create_engine(os.environ['BF4PS_DATABASE_URL'],pool_pre_ping=True,pool_size=3,max_overflow=2)
+engine=create_engine(os.environ['BF4PS_DATABASE_URL'],pool_pre_ping=True,pool_size=int(os.environ.get("BF4PS_DB_POOL_SIZE",3)),max_overflow=int(os.environ.get("BF4PS_DB_MAX_OVERFLOW",2)))
 MAINTENANCE_FILE=Path(os.environ.get('BF4PS_SITE_CONFIG','/etc/bf4ps-website/site.env'))
 def maintenance_enabled():
     try:
