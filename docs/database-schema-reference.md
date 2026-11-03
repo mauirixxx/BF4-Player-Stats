@@ -693,3 +693,20 @@ families; unverified families retain legacy fallback. A regression test now
 checks family 2 enters compact and family 41 remains on legacy. **17/17**
 targeted tests pass. HTTP 24-request p95 is still pending measurement; the
 historical 97 ms figure is not yet reproduced. Production compact reads OFF.
+
+### Reproduced isolated HTTP format-2 baseline (user-run, 2026-11-03)
+
+The RNT-01 isolated HTTP endpoint using `bf4ps_ranking_real_parity`
+returned 24/24 successful requests against published generation 37,
+with eight concurrent client workers, 50 rows/page, and pages 1, 100,
+and 1000. The user-run script asserted HTTP 200, population 214779,
+50 returned rows, and a non-null compact `rank_updated_at` on every request.
+After three sequential warmups, measured client-observed wall-clock latency:
+**p50 98.59 ms; interpolated p95 176.10 ms; maximum 184.21 ms**.
+The historical 97 ms p95 has **not** been reproduced (current p95 is
+81.5% higher). These are client-side timings on one isolated host, not
+production/WAN measurements. The endpoint's SQLAlchemy engine has
+`pool_size=3,max_overflow=2`, which may contribute under eight concurrent
+workers; this is a hypothesis, not yet a measured bottleneck. Do not
+attribute the difference without component timing or controlled comparisons.
+The opt-in compact feature remains disabled in production.
