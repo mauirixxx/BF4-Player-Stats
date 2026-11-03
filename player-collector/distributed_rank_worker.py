@@ -43,8 +43,12 @@ def main():
     engine = create_engine(url, pool_pre_ping=True)
     with engine.connect() as c:
         revision = c.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-        if revision != "0018_distributed_rank_queue":
-            raise SystemExit("migration 0018 required")
+        compact_mode = os.getenv("BF4PS_COMPACT_RANK_WRITER") == "1"
+        expected = "0023_compact_exclusion_guard" if compact_mode else "0018_distributed_rank_queue"
+        if revision != expected:
+            raise SystemExit(f"ranking worker requires migration {expected}; found {revision}")
+        if compact_mode and database == "bf4_playerstats":
+            raise SystemExit("production compact writer remains disabled pending fenced publication validation")
     signal.signal(signal.SIGTERM, request_stop)
     signal.signal(signal.SIGINT, request_stop)
     worker = register(engine, socket.gethostname(), os.getenv("BF4PS_SITE"))
@@ -60,13 +64,16 @@ def main():
                 c.execute(text("UPDATE equipment_rank_workers SET heartbeat_at=clock_timestamp() WHERE worker_id=:w"), {"w":worker})
             time.sleep(5)
             continue
-        cmd = [sys.executable, str(HERE / "build_rank_hourly.py"),
+        builder = "build_compact_rank.py" if compact_mode else "build_rank_hourly.py"
+        cmd = [sys.executable, str(HERE / builder),
                "--kind", job["kind"], "--item", str(job["item_id"]),
                "--platform", job["platform"], "--metric", job["metric"],
                "--publish", "--rank-worker-id", str(worker),
                "--rank-claim-token", str(job["token"]),
                "--rank-claim-epoch", str(job["epoch"])]
-        if database == "bf4_playerstats":
+        if compact_mode:
+            cmd.extend(("--snapshot-format", "2"))
+        elif database == "bf4_playerstats":
             cmd.append("--production-ack")
         print(f"claimed {job['kind']} {job['item_id']} {job['platform']} {job['metric']}", flush=True)
         process = subprocess.Popen(cmd, env=os.environ.copy())
