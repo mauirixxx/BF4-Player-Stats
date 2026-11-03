@@ -9,6 +9,7 @@ from decimal import Decimal
 
 from sqlalchemy import text
 from bf4ps.compact_rank_codec import decode_block
+from bf4ps.compact_exclusions import exclusion_fingerprint
 
 CUTOFFS = (3, 8, 15, 25, 35, 50, 65, 80, 90)
 
@@ -21,11 +22,11 @@ def get_compact_page(conn, kind, platform, item, page, page_size, search, divisi
     if item < 1 or page < 1 or not 1 <= page_size <= 100 or division not in range(11):
         return None
     params = {'kind':kind,'platform':platform,'item':item,'metric':metric}
-    published = conn.execute(text('''SELECT g.generation_id,g.row_count,g.completed_at
+    published = conn.execute(text('''SELECT g.generation_id,g.row_count,g.completed_at,g.snapshot_format,g.exclusion_fingerprint
       FROM equipment_rank_compact_published p
       JOIN equipment_rank_generations g ON g.generation_id=p.generation_id
       WHERE p.kind=:kind AND p.item_id=:item AND p.platform=:platform AND p.metric=:metric
-      AND g.status='published' AND g.snapshot_format=1 AND g.input_scope_version IS NOT NULL
+      AND g.status='published' AND g.snapshot_format IN (1,2) AND g.input_scope_version IS NOT NULL
       AND g.completed_at >= now() - interval '72 hours'
       AND g.input_scope_version=(SELECT v.version FROM equipment_rank_scope_versions v
         WHERE v.kind=p.kind AND v.item_id=p.item_id AND v.platform=p.platform) '''), params).mappings().first()
@@ -35,29 +36,41 @@ def get_compact_page(conn, kind, platform, item, page, page_size, search, divisi
     population = int(published['row_count'])
     if population <= 0:
         return None
-    excluded = conn.execute(text('''SELECT 1 FROM equipment_rank_compact_lookup l
-      JOIN soldiers s ON s.soldier_id=l.soldier_id
-      JOIN player_exclusions x ON x.platform=s.platform AND x.persona_id=s.persona_id AND x.active
-      WHERE l.generation_id=:g LIMIT 1'''),{'g':generation}).first()
-    if excluded is not None:
-        return None
+    snapshot_format = int(published['snapshot_format'])
+    if snapshot_format == 2:
+        # Compare the complete active set, not timestamps: covers manual edits,
+        # backdating, activation and restoration, in the reader's MVCC snapshot.
+        if published['exclusion_fingerprint'] != exclusion_fingerprint(conn):
+            return None
+    else:
+        excluded = conn.execute(text('''SELECT 1 FROM equipment_rank_compact_lookup l
+          JOIN soldiers s ON s.soldier_id=l.soldier_id
+          JOIN player_exclusions x ON x.platform=s.platform AND x.persona_id=s.persona_id AND x.active
+          WHERE l.generation_id=:g LIMIT 1'''),{'g':generation}).first()
+        if excluded is not None:
+            return None
     search = (search or '').lower()
     selected = None
     if search:
         # Name/persona filtering is performed by the existing indexed identity
         # table, then intersected with the immutable generation lookup.
-        hits = conn.execute(text('''SELECT l.soldier_id FROM equipment_rank_compact_lookup l
-          JOIN soldiers s ON s.soldier_id=l.soldier_id
-          WHERE l.generation_id=:g AND
-          (lower(s.current_name) LIKE :pattern OR s.persona_id::text LIKE :pattern)'''),
-          {'g':generation,'pattern':'%'+search+'%'}).scalars().all()
+        if snapshot_format == 2:
+            hits = conn.execute(text('''SELECT s.soldier_id FROM soldiers s
+              WHERE lower(s.current_name) LIKE :pattern OR s.persona_id::text LIKE :pattern'''),
+              {'pattern':'%'+search+'%'}).scalars().all()
+        else:
+            hits = conn.execute(text('''SELECT l.soldier_id FROM equipment_rank_compact_lookup l
+              JOIN soldiers s ON s.soldier_id=l.soldier_id
+              WHERE l.generation_id=:g AND
+              (lower(s.current_name) LIKE :pattern OR s.persona_id::text LIKE :pattern)'''),
+              {'g':generation,'pattern':'%'+search+'%'}).scalars().all()
         selected = set(hits)
         if not selected:
             return {'population':population,'filtered_count':0,'page':page,'page_size':page_size,
                     'total_pages':0,'rows':[],'rank_updated_at':published['completed_at']}
     offset = (page-1)*page_size
     # Ordinary pages need only the compressed blocks intersecting their page.
-    # The exclusion join above still guards every soldier in format-1 snapshots.
+    # Format 1 checks the full lookup; format 2 checks the active-set fingerprint.
     ordinary_page = not search and division == 0
     if ordinary_page:
         blocks = conn.execute(text('''SELECT block_id,first_position,last_position,payload
