@@ -710,3 +710,50 @@ production/WAN measurements. The endpoint's SQLAlchemy engine has
 workers; this is a hypothesis, not yet a measured bottleneck. Do not
 attribute the difference without component timing or controlled comparisons.
 The opt-in compact feature remains disabled in production.
+
+### Controlled HTTP pool comparison (2026-11-03)
+
+RNT-01 ran two independent isolated localhost HTTP servers against the
+same published format-2 generation 37 (214779 PC vehicle family-2 kills
+entries). Port 18765 used the original SQLAlchemy pool (size 3 + overflow
+2, at most 5 connections); port 18766 used pool size 8 + overflow 0.
+Three alternating-order rounds per server, each with three warmup requests
+and 24 timed requests from eight client workers, passed HTTP 200, 50 rows,
+correct population and compact `rank_updated_at` assertions.
+
+| Round | 5-connection p50/p95/max (ms) | 8-connection p50/p95/max (ms) |
+| --- | --- | --- |
+| 1 | 68.34 / 83.51 / 103.78 | 71.99 / 123.74 / 131.06 |
+| 2 | 65.78 / 93.59 / 96.36 | 70.42 / 90.89 / 103.02 |
+| 3 | 69.63 / 94.13 / 106.85 | 69.44 / 88.60 / 95.23 |
+
+The historical p95 target (97 ms) was met in 5 of 6 rounds, including
+all three five-connection rounds. Eight connections did not consistently
+improve latency; pool contention is not established as the dominant cost.
+The earlier single-run 176.10 ms p95 remains a valid observed result,
+showing that repeatability/system-load investigation is still needed.
+No ranking algorithm changes or production feature activation were made.
+
+### Sustained isolated format-2 HTTP load test (2026-11-03)
+
+Both RNT-01 localhost servers were exercised for ten alternating-order
+rounds of 100 timed requests per server (2000 total, eight concurrent
+client workers, pages 1/100/1000/4000, four warmups per round). Every
+response passed HTTP 200, population 214779, 50 rows and non-null compact
+`rank_updated_at` assertions; **zero failures**. Total elapsed 19.4 seconds.
+
+| Statistic | Port 18765: max 5 DB connections | Port 18766: max 8 DB connections |
+| --- | ---: | ---: |
+| Timed requests | 1000 | 1000 |
+| p50 | 68.24 ms | 72.12 ms |
+| p95 | 113.14 ms | 106.79 ms |
+| p99 | 150.31 ms | 122.74 ms |
+| Maximum | 198.53 ms | 169.81 ms |
+| Requests above 97 ms | 121 | 113 |
+| Failures | 0 | 0 |
+
+The eight-connection server had lower tail latency in this test, but
+neither configuration sustained the historical 97 ms p95 target. Pool
+contention is not established as the sole cause. These timings are local
+client-observed HTTP results, not production or WAN measurements. Continue
+profiling under repeatable load before production activation.
