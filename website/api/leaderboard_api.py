@@ -743,7 +743,7 @@ class Handler(BaseHTTPRequestHandler):
                 if c.execute(text('select current_database()')).scalar_one()!='bf4_playerstats':
                     if not (os.environ.get('BF4PS_ISOLATED_HTTP_TEST') == '1'
                             and os.environ.get('BF4PS_COMPACT_RANK_READS') == '1'
-                            and c.execute(text('select current_database()')).scalar_one() == 'bf4ps_ranking_scratch'
+                            and c.execute(text('select current_database()')).scalar_one() in ('bf4ps_ranking_scratch', 'bf4ps_ranking_real_parity')
                             and c.execute(text('SELECT inet_server_addr()')).scalar_one().is_loopback):
                         raise RuntimeError('Unexpected database for leaderboard HTTP')
                 c.execute(text('SET TRANSACTION READ ONLY'))
