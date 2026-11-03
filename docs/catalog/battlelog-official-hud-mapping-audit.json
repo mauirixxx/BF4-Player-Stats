@@ -1,0 +1,3042 @@
+{
+  "generated_at": "2026-10-17T17:25:41.325728+00:00",
+  "catalog_records": 233,
+  "official_sprites": {
+    "weapon": 112,
+    "vehicle": 64
+  },
+  "verified_mappings": [],
+  "pending": [
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_AEK971",
+      "label": "AEK-971",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_AEK971-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-010.png",
+          "similarity": 0.1547
+        },
+        {
+          "sprite": "weapon-075.png",
+          "similarity": 0.1348
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1344
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP1_WNAME_MTAR21",
+      "label": "MTAR-21",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP1_WNAME_MTAR21-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1451
+        },
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1378
+        },
+        {
+          "sprite": "weapon-045.png",
+          "similarity": 0.1344
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_ACR",
+      "label": "ACW-R",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_ACR-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-010.png",
+          "similarity": 0.1122
+        },
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.112
+        },
+        {
+          "sprite": "weapon-105.png",
+          "similarity": 0.1105
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_GLOCK18",
+      "label": "G18",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_GLOCK18-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-066.png",
+          "similarity": 0.1133
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1122
+        },
+        {
+          "sprite": "weapon-014.png",
+          "similarity": 0.1116
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_GALIL23",
+      "label": "ACE 23",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_GALIL23-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.1549
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.137
+        },
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1295
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP0_WNAME_F2000",
+      "label": "F2000",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP0_WNAME_F2000-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.1149
+        },
+        {
+          "sprite": "weapon-053.png",
+          "similarity": 0.1087
+        },
+        {
+          "sprite": "weapon-048.png",
+          "similarity": 0.1075
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M16A4",
+      "label": "M16A4",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M16A4-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1278
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1155
+        },
+        {
+          "sprite": "weapon-027.png",
+          "similarity": 0.1126
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_MG4",
+      "label": "MG4",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_MG4-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1312
+        },
+        {
+          "sprite": "weapon-022.png",
+          "similarity": 0.1158
+        },
+        {
+          "sprite": "weapon-037.png",
+          "similarity": 0.1132
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SAIGA12",
+      "label": "SAIGA 12K",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SAIGA12-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-024.png",
+          "similarity": 0.1555
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1392
+        },
+        {
+          "sprite": "weapon-036.png",
+          "similarity": 0.138
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M416",
+      "label": "M416",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M416-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-036.png",
+          "similarity": 0.1253
+        },
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1246
+        },
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1239
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_CLAYMORE",
+      "label": "M18 CLAYMORE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP2_WNAME_AWS",
+      "label": "AWS",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP2_WNAME_AWS-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-045.png",
+          "similarity": 0.188
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1842
+        },
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1818
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_M67",
+      "label": "M67 FRAG",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_AK5C",
+      "label": "AK 5C",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_AK5C-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-025.png",
+          "similarity": 0.1031
+        },
+        {
+          "sprite": "weapon-071.png",
+          "similarity": 0.1005
+        },
+        {
+          "sprite": "weapon-022.png",
+          "similarity": 0.1
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SCORP",
+      "label": "CZ-3A1",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SCORP-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-010.png",
+          "similarity": 0.1256
+        },
+        {
+          "sprite": "weapon-001.png",
+          "similarity": 0.1183
+        },
+        {
+          "sprite": "weapon-088.png",
+          "similarity": 0.1032
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_40MM",
+      "label": "M320 HE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_FAMAS",
+      "label": "FAMAS",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_FAMAS-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-026.png",
+          "similarity": 0.1566
+        },
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.1473
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1422
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_GALIL52",
+      "label": "ACE 52 CQB",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_GALIL52-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-014.png",
+          "similarity": 0.1221
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1112
+        },
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1109
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SCARH",
+      "label": "SCAR-H",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SCARH-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1336
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1242
+        },
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1192
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_A91",
+      "label": "A-91",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_A91-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1491
+        },
+        {
+          "sprite": "weapon-022.png",
+          "similarity": 0.1383
+        },
+        {
+          "sprite": "weapon-024.png",
+          "similarity": 0.1242
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M200",
+      "label": "SRR-61",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M200-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1516
+        },
+        {
+          "sprite": "weapon-026.png",
+          "similarity": 0.1246
+        },
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1243
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SG553",
+      "label": "SG553",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SG553-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1209
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.12
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1068
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_C4",
+      "label": "C4 EXPLOSIVE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_RPG7",
+      "label": "RPG-7V2",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_GALIL21",
+      "label": "ACE 21 CQB",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_GALIL21-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-071.png",
+          "similarity": 0.1238
+        },
+        {
+          "sprite": "weapon-025.png",
+          "similarity": 0.1116
+        },
+        {
+          "sprite": "weapon-009.png",
+          "similarity": 0.107
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M249",
+      "label": "M249",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M249-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-095.png",
+          "similarity": 0.1208
+        },
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1146
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1092
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_870",
+      "label": "870 MCS",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_870-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.125
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1107
+        },
+        {
+          "sprite": "weapon-009.png",
+          "similarity": 0.1032
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_40MM_LVG",
+      "label": "M320 LVG",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_DBV12",
+      "label": "DBV-12",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_DBV12-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1403
+        },
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1307
+        },
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.1305
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_TYPE88",
+      "label": "TYPE 88 LMG",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_TYPE88-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1591
+        },
+        {
+          "sprite": "weapon-071.png",
+          "similarity": 0.1543
+        },
+        {
+          "sprite": "weapon-013.png",
+          "similarity": 0.137
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M1014",
+      "label": "M1014",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M1014-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1212
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1136
+        },
+        {
+          "sprite": "weapon-068.png",
+          "similarity": 0.1134
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_MBTLAW",
+      "label": "MBT LAW",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SCARHSV",
+      "label": "SCAR-H SV",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SCARHSV-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-068.png",
+          "similarity": 0.138
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.132
+        },
+        {
+          "sprite": "weapon-024.png",
+          "similarity": 0.1209
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_GROZA1",
+      "label": "GROZA-1",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_GROZA1-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.159
+        },
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.151
+        },
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.151
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_STEYRAUG",
+      "label": "AUG A3",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_STEYRAUG-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1287
+        },
+        {
+          "sprite": "weapon-029.png",
+          "similarity": 0.1133
+        },
+        {
+          "sprite": "weapon-099.png",
+          "similarity": 0.1066
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP2_WNAME_AR160",
+      "label": "AR160",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP2_WNAME_AR160-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.206
+        },
+        {
+          "sprite": "weapon-092.png",
+          "similarity": 0.164
+        },
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1598
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_XM25",
+      "label": "XM25 AIRBURST",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_P90",
+      "label": "P90",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_G36C",
+      "label": "G36C",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_G36C-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-010.png",
+          "similarity": 0.1546
+        },
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1319
+        },
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.1258
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SKS",
+      "label": "SKS",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SKS-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-005.png",
+          "similarity": 0.1394
+        },
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1392
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1353
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_AKU12",
+      "label": "AKU-12",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_AKU12-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1292
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1256
+        },
+        {
+          "sprite": "weapon-005.png",
+          "similarity": 0.1215
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_MK11",
+      "label": "MK11 MOD 0",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_MK11-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-039.png",
+          "similarity": 0.1493
+        },
+        {
+          "sprite": "weapon-023.png",
+          "similarity": 0.1484
+        },
+        {
+          "sprite": "weapon-033.png",
+          "similarity": 0.1446
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SVD12",
+      "label": "SVD-12",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SVD12-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-019.png",
+          "similarity": 0.1363
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1273
+        },
+        {
+          "sprite": "weapon-098.png",
+          "similarity": 0.1267
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_TYPE95B1",
+      "label": "TYPE-95B-1",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_TYPE95B1-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-010.png",
+          "similarity": 0.1459
+        },
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.1323
+        },
+        {
+          "sprite": "weapon-048.png",
+          "similarity": 0.1213
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_RPK12",
+      "label": "RPK-12",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_RPK12-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.1206
+        },
+        {
+          "sprite": "weapon-041.png",
+          "similarity": 0.1181
+        },
+        {
+          "sprite": "weapon-110.png",
+          "similarity": 0.1143
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_PECHENEG",
+      "label": "PKP PECHENEG",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_PECHENEG-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-039.png",
+          "similarity": 0.1376
+        },
+        {
+          "sprite": "weapon-095.png",
+          "similarity": 0.1291
+        },
+        {
+          "sprite": "weapon-098.png",
+          "similarity": 0.1238
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_PDR",
+      "label": "PDW-R",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_MX4",
+      "label": "MX4",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_GALIL53",
+      "label": "ACE 53 SV",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_GALIL53-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-051.png",
+          "similarity": 0.1464
+        },
+        {
+          "sprite": "weapon-009.png",
+          "similarity": 0.1166
+        },
+        {
+          "sprite": "weapon-077.png",
+          "similarity": 0.1162
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_QBB95",
+      "label": "QBB-95-1",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_QBB95-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-039.png",
+          "similarity": 0.1196
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1129
+        },
+        {
+          "sprite": "weapon-013.png",
+          "similarity": 0.1098
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M98B",
+      "label": "M98B",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M98B-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1497
+        },
+        {
+          "sprite": "weapon-045.png",
+          "similarity": 0.1398
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.134
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M4A1",
+      "label": "M4",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M4A1-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1674
+        },
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.1379
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1251
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_AN94",
+      "label": "AN-94",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_AN94-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.1596
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1443
+        },
+        {
+          "sprite": "weapon-001.png",
+          "similarity": 0.1365
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_IMPACT",
+      "label": "RGO IMPACT",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_SMAW",
+      "label": "SMAW",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP3_WNAME_BULLDOG",
+      "label": "BULLDOG",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP3_WNAME_BULLDOG-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1253
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1224
+        },
+        {
+          "sprite": "weapon-002.png",
+          "similarity": 0.118
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP1_WNAME_L85A2",
+      "label": "L85A2",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP1_WNAME_L85A2-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1979
+        },
+        {
+          "sprite": "weapon-092.png",
+          "similarity": 0.1704
+        },
+        {
+          "sprite": "weapon-027.png",
+          "similarity": 0.1639
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP1_WNAME_MP7",
+      "label": "MP7",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP1_WNAME_MP7-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1127
+        },
+        {
+          "sprite": "weapon-075.png",
+          "similarity": 0.1104
+        },
+        {
+          "sprite": "weapon-105.png",
+          "similarity": 0.0983
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP0_WNAME_DAO12",
+      "label": "DAO-12",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP0_WNAME_DAO12-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.16
+        },
+        {
+          "sprite": "weapon-017.png",
+          "similarity": 0.1299
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1272
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_PP2000",
+      "label": "PP-2000",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_CBJMS",
+      "label": "CBJ-MS",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_CBJMS-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-075.png",
+          "similarity": 0.1762
+        },
+        {
+          "sprite": "weapon-007.png",
+          "similarity": 0.1412
+        },
+        {
+          "sprite": "weapon-005.png",
+          "similarity": 0.132
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M240",
+      "label": "M240B",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M240-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.145
+        },
+        {
+          "sprite": "weapon-022.png",
+          "similarity": 0.1396
+        },
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1235
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_AK12",
+      "label": "AK-12",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_AK12-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-010.png",
+          "similarity": 0.1284
+        },
+        {
+          "sprite": "weapon-001.png",
+          "similarity": 0.1243
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1216
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_UMP45",
+      "label": "UMP-45",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_UMP45-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-051.png",
+          "similarity": 0.1311
+        },
+        {
+          "sprite": "weapon-025.png",
+          "similarity": 0.1082
+        },
+        {
+          "sprite": "weapon-071.png",
+          "similarity": 0.1059
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP0_WNAME_M60E4",
+      "label": "M60-E4",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP0_WNAME_M60E4-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1559
+        },
+        {
+          "sprite": "weapon-088.png",
+          "similarity": 0.1277
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1157
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_QBU88",
+      "label": "QBU-88",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_QBU88-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-020.png",
+          "similarity": 0.1381
+        },
+        {
+          "sprite": "weapon-094.png",
+          "similarity": 0.1294
+        },
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1242
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_HAWK",
+      "label": "HAWK 12G",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_HAWK-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-027.png",
+          "similarity": 0.1374
+        },
+        {
+          "sprite": "weapon-061.png",
+          "similarity": 0.1219
+        },
+        {
+          "sprite": "weapon-065.png",
+          "similarity": 0.1082
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_M32MGL",
+      "label": "M32 MGL",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_LSAT",
+      "label": "LSAT",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_LSAT-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1279
+        },
+        {
+          "sprite": "weapon-031.png",
+          "similarity": 0.1236
+        },
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1214
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M82A3MID",
+      "label": "M82A3 MID",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SAR21",
+      "label": "SAR-21",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SAR21-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1334
+        },
+        {
+          "sprite": "weapon-026.png",
+          "similarity": 0.1324
+        },
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1315
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP1_WNAME_L96A1",
+      "label": "L96A1",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP1_WNAME_L96A1-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1296
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1256
+        },
+        {
+          "sprite": "weapon-027.png",
+          "similarity": 0.1226
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP0_WNAME_GOL",
+      "label": "GOL MAGNUM",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP0_WNAME_GOL-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-089.png",
+          "similarity": 0.1334
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1287
+        },
+        {
+          "sprite": "weapon-092.png",
+          "similarity": 0.1265
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP0_WNAME_ASVAL",
+      "label": "AS VAL",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP0_WNAME_ASVAL-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-010.png",
+          "similarity": 0.161
+        },
+        {
+          "sprite": "weapon-005.png",
+          "similarity": 0.1528
+        },
+        {
+          "sprite": "weapon-001.png",
+          "similarity": 0.1341
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_RFBTARGET",
+      "label": "RFB",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_RFBTARGET-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-092.png",
+          "similarity": 0.126
+        },
+        {
+          "sprite": "weapon-094.png",
+          "similarity": 0.1167
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1143
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_QBS09",
+      "label": "QBS-09",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_QBS09-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1153
+        },
+        {
+          "sprite": "weapon-071.png",
+          "similarity": 0.1131
+        },
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1077
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_CZ805",
+      "label": "CZ-805",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_CZ805-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1256
+        },
+        {
+          "sprite": "weapon-086.png",
+          "similarity": 0.1183
+        },
+        {
+          "sprite": "weapon-092.png",
+          "similarity": 0.1182
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_UMP9",
+      "label": "UMP-9",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_UMP9-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-018.png",
+          "similarity": 0.1279
+        },
+        {
+          "sprite": "weapon-039.png",
+          "similarity": 0.1239
+        },
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1227
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SRS",
+      "label": "338-RECON",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SRS-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-092.png",
+          "similarity": 0.1746
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1613
+        },
+        {
+          "sprite": "weapon-024.png",
+          "similarity": 0.1469
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_93R",
+      "label": "93R",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_93R-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-075.png",
+          "similarity": 0.1524
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1459
+        },
+        {
+          "sprite": "weapon-007.png",
+          "similarity": 0.1411
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP1_WNAME_RPK74",
+      "label": "RPK-74M",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP1_WNAME_RPK74-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-005.png",
+          "similarity": 0.1538
+        },
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1472
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1461
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP3_WNAME_MPX",
+      "label": "MPX",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_SRAW",
+      "label": "SRAW",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_CSLR4",
+      "label": "CS-LR4",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_CSLR4-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-020.png",
+          "similarity": 0.1334
+        },
+        {
+          "sprite": "weapon-019.png",
+          "similarity": 0.1315
+        },
+        {
+          "sprite": "weapon-071.png",
+          "similarity": 0.1276
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_L86A1",
+      "label": "L86A2",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_L86A1-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1226
+        },
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1215
+        },
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1186
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_TAURUS44",
+      "label": ".44 MAGNUM",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_TAURUS44-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-010.png",
+          "similarity": 0.1546
+        },
+        {
+          "sprite": "weapon-001.png",
+          "similarity": 0.1365
+        },
+        {
+          "sprite": "weapon-013.png",
+          "similarity": 0.1206
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP3_WNAME_DEAGLE",
+      "label": "DEAGLE 44",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP3_WNAME_DEAGLE-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-033.png",
+          "similarity": 0.1451
+        },
+        {
+          "sprite": "weapon-008.png",
+          "similarity": 0.1343
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.132
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M40A5",
+      "label": "M40A5",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M40A5-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-019.png",
+          "similarity": 0.1184
+        },
+        {
+          "sprite": "weapon-071.png",
+          "similarity": 0.1073
+        },
+        {
+          "sprite": "weapon-031.png",
+          "similarity": 0.1021
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_JNG90",
+      "label": "JNG-90",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_JNG90-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-092.png",
+          "similarity": 0.1308
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1267
+        },
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1146
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M39",
+      "label": "M39 EMR",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M39-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.154
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1387
+        },
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1272
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_M15",
+      "label": "M15 AT MINE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SHORTY",
+      "label": "SHORTY 12G",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SHORTY-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-094.png",
+          "similarity": 0.1176
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1172
+        },
+        {
+          "sprite": "weapon-098.png",
+          "similarity": 0.1138
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP2_WNAME_SR338",
+      "label": "SR338",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP2_WNAME_SR338-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.1842
+        },
+        {
+          "sprite": "weapon-001.png",
+          "similarity": 0.1656
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1647
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SV98",
+      "label": "SV-98",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SV98-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-051.png",
+          "similarity": 0.1314
+        },
+        {
+          "sprite": "weapon-071.png",
+          "similarity": 0.1273
+        },
+        {
+          "sprite": "weapon-012.png",
+          "similarity": 0.1077
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_P226",
+      "label": "P226",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_P226-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-077.png",
+          "similarity": 0.1298
+        },
+        {
+          "sprite": "weapon-051.png",
+          "similarity": 0.1185
+        },
+        {
+          "sprite": "weapon-090.png",
+          "similarity": 0.1179
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_M34",
+      "label": "M34 INCENDIARY",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP4_WNAME_SPYDER",
+      "label": "Phantom Bow",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_ULTIM",
+      "label": "U-100 MK5",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_ULTIM-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1344
+        },
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1171
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1139
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP2_WNAME_SR2",
+      "label": "SR-2",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_JS2",
+      "label": "JS2",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_JS2-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-099.png",
+          "similarity": 0.1369
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1365
+        },
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1204
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SPAS12",
+      "label": "SPAS-12",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SPAS12-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1435
+        },
+        {
+          "sprite": "weapon-092.png",
+          "similarity": 0.1343
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1255
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP3_WNAME_CS5",
+      "label": "CS5",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP3_WNAME_CS5-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1451
+        },
+        {
+          "sprite": "weapon-019.png",
+          "similarity": 0.1157
+        },
+        {
+          "sprite": "weapon-014.png",
+          "similarity": 0.115
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_BAYONETT",
+      "label": "BAYONET",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_M2",
+      "label": "M2 SLAM",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M1911",
+      "label": "M1911",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M1911-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-051.png",
+          "similarity": 0.1299
+        },
+        {
+          "sprite": "weapon-092.png",
+          "similarity": 0.0994
+        },
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.0994
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_FYJS",
+      "label": "FY-JS",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_FYJS-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-019.png",
+          "similarity": 0.1466
+        },
+        {
+          "sprite": "weapon-020.png",
+          "similarity": 0.1418
+        },
+        {
+          "sprite": "weapon-094.png",
+          "similarity": 0.1338
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_GROZA4",
+      "label": "GROZA-4",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_GROZA4-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-045.png",
+          "similarity": 0.1589
+        },
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1561
+        },
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1497
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_QBZ951",
+      "label": "QBZ-95-1",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_QBZ951-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.128
+        },
+        {
+          "sprite": "weapon-056.png",
+          "similarity": 0.1169
+        },
+        {
+          "sprite": "weapon-049.png",
+          "similarity": 0.1131
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_UTAS",
+      "label": "UTS 15",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_UTAS-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-041.png",
+          "similarity": 0.1083
+        },
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1081
+        },
+        {
+          "sprite": "weapon-075.png",
+          "similarity": 0.1071
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SCOUTELIT",
+      "label": "SCOUT ELITE",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SCOUTELIT-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1212
+        },
+        {
+          "sprite": "weapon-099.png",
+          "similarity": 0.1144
+        },
+        {
+          "sprite": "weapon-024.png",
+          "similarity": 0.1108
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_V40",
+      "label": "V40 MINI",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_FIM92",
+      "label": "FIM-92 STINGER",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_USAS12",
+      "label": "USAS-12",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_USAS12-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1402
+        },
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1152
+        },
+        {
+          "sprite": "weapon-098.png",
+          "similarity": 0.1102
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M412REX",
+      "label": "M412 REX",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M412REX-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-018.png",
+          "similarity": 0.1105
+        },
+        {
+          "sprite": "weapon-009.png",
+          "similarity": 0.1089
+        },
+        {
+          "sprite": "weapon-082.png",
+          "similarity": 0.1
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M9",
+      "label": "M9",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M9-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-082.png",
+          "similarity": 0.1538
+        },
+        {
+          "sprite": "weapon-055.png",
+          "similarity": 0.1265
+        },
+        {
+          "sprite": "weapon-009.png",
+          "similarity": 0.1127
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_HK45C",
+      "label": "COMPACT 45",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_HK45C-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-068.png",
+          "similarity": 0.1433
+        },
+        {
+          "sprite": "weapon-039.png",
+          "similarity": 0.1342
+        },
+        {
+          "sprite": "weapon-033.png",
+          "similarity": 0.1226
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M82A3CQB",
+      "label": "M82A3 CQB",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_QSZ92",
+      "label": "QSZ-92",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_QSZ92-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.151
+        },
+        {
+          "sprite": "weapon-082.png",
+          "similarity": 0.1422
+        },
+        {
+          "sprite": "weapon-068.png",
+          "similarity": 0.1304
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_SP_WNAME_USAS12NV",
+      "label": "USAS-12 FLIR",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP3_WNAME_UN6",
+      "label": "UNICA 6",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP3_WNAME_UN6-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-075.png",
+          "similarity": 0.149
+        },
+        {
+          "sprite": "weapon-010.png",
+          "similarity": 0.1184
+        },
+        {
+          "sprite": "weapon-007.png",
+          "similarity": 0.1054
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_MP443",
+      "label": "MP443",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_MP443-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-073.png",
+          "similarity": 0.1351
+        },
+        {
+          "sprite": "weapon-074.png",
+          "similarity": 0.1296
+        },
+        {
+          "sprite": "weapon-056.png",
+          "similarity": 0.1266
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP4_INAME_KNIFEBIPOD",
+      "label": "C100",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_CZ75",
+      "label": "CZ-75",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_CZ75-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-069.png",
+          "similarity": 0.1644
+        },
+        {
+          "sprite": "weapon-010.png",
+          "similarity": 0.1317
+        },
+        {
+          "sprite": "weapon-068.png",
+          "similarity": 0.1296
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_FGM148",
+      "label": "FGM-148 JAVELIN",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP2_WNAME_SW40",
+      "label": "SW40",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP2_WNAME_SW40-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-007.png",
+          "similarity": 0.1248
+        },
+        {
+          "sprite": "weapon-010.png",
+          "similarity": 0.1202
+        },
+        {
+          "sprite": "weapon-036.png",
+          "similarity": 0.1194
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_AMR2",
+      "label": "AMR-2",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_AMR2-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.2002
+        },
+        {
+          "sprite": "weapon-027.png",
+          "similarity": 0.1663
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1525
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_IGLA",
+      "label": "SA-18 IGLA",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_FN57",
+      "label": "FN57",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_FN57-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-051.png",
+          "similarity": 0.1505
+        },
+        {
+          "sprite": "weapon-066.png",
+          "similarity": 0.1499
+        },
+        {
+          "sprite": "weapon-037.png",
+          "similarity": 0.1348
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_NECKKNIFE",
+      "label": "NECK",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_AMR2MID",
+      "label": "AMR-2 MID",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_BPKNIFE6",
+      "label": "BOWIE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_REPAIR",
+      "label": "REPAIR TOOL",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_DEFIB",
+      "label": "DEFIBRILLATOR",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_STARSTREAK",
+      "label": "HVM-II",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_BPKNIFE4",
+      "label": "CARBON FIBER",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_KNIFE14100BT",
+      "label": "TACTICAL",
+      "current_hud": null,
+      "official_sprite": "/assets/equipment/battlelog-official/hud-v1/weapon/weapon-086.png",
+      "status": "candidate_tactical_visual_atlas_only"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_SADDLEGUN",
+      "label": "MARE\u2019S LEG",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_SADDLEGUN-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-001.png",
+          "similarity": 0.1137
+        },
+        {
+          "sprite": "weapon-044.png",
+          "similarity": 0.1133
+        },
+        {
+          "sprite": "weapon-043.png",
+          "similarity": 0.1121
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_MACHETE",
+      "label": "MACHETE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP4_INAME_KNIFEWEAVER",
+      "label": "WEAVER",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_BPKNIFE7",
+      "label": "BOOT",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_BPKNIFE3",
+      "label": "TRENCH",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP4_INAME_KNIFETANTO",
+      "label": "TANTO",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_BPKNIFE1",
+      "label": "IMPROVISED",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_M26_MASS",
+      "label": "M26 MASS",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_KNIFE2142",
+      "label": "BJ-2",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_ACB90",
+      "label": "ACB-90",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_KNIFEPRECISION",
+      "label": "PRECISION",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_M136",
+      "label": "M136 CS",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP2_INAME_40MM_3GL",
+      "label": "M320 3GL",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_BPKNIFE8",
+      "label": "SEAL",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_SHANK",
+      "label": "SHANK",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_BPKNIFE5",
+      "label": "SURVIVAL",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_M26_FLECHETTE",
+      "label": "M26 DART",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP4_WNAME_RAILGUN",
+      "label": "RORSCH MK-1",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_XP4_WNAME_RAILGUN-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-063.png",
+          "similarity": 0.1637
+        },
+        {
+          "sprite": "weapon-027.png",
+          "similarity": 0.1542
+        },
+        {
+          "sprite": "weapon-093.png",
+          "similarity": 0.1463
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_40MM_FLASH",
+      "label": "M320 FB",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_DIVERKNIFE",
+      "label": "DIVE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_M82A3",
+      "label": "M82A3",
+      "current_hud": "/assets/equipment/weapon-WARSAW_ID_P_WNAME_M82A3-hud.webp",
+      "official_sprite": null,
+      "status": "ranked_unverified",
+      "candidates": [
+        {
+          "sprite": "weapon-091.png",
+          "similarity": 0.1711
+        },
+        {
+          "sprite": "weapon-092.png",
+          "similarity": 0.1306
+        },
+        {
+          "sprite": "weapon-086.png",
+          "similarity": 0.1304
+        }
+      ]
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_40MM_SHG",
+      "label": "M320 BUCK",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_M26_FRAG",
+      "label": "M26 FRAG",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_XM25_FLECHETTE",
+      "label": "XM25 DART",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_WNAME_AMR2CQB",
+      "label": "AMR-2 CQB",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_BPKNIFE2",
+      "label": "SCOUT",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_FLASHBANG",
+      "label": "FLASHBANG",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP6_INAME_M60ULT",
+      "label": "M60 Ultimate",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_M26_SLUG",
+      "label": "M26 SLUG",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_XP3_WNAME_SHIELD",
+      "label": "BALLISTIC SHIELD",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_40MM_SMK",
+      "label": "M320 SMK",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_XM25_SMK",
+      "label": "XM25 SMOKE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_FLARE",
+      "label": "HAND FLARE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "weapon-WARSAW_ID_P_INAME_M18",
+      "label": "M18 SMOKE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_T99",
+      "label": "Type 99 MBT",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_M1ABRAMS",
+      "label": "M1 Abrams",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_T90",
+      "label": "T-90A",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_LAV25",
+      "label": "LAV-25",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_ZBD09",
+      "label": "ZBD-09",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_AH1Z",
+      "label": "AH-1Z Viper",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_Z11",
+      "label": "Z-11W",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_Z10",
+      "label": "Z-10W",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_AH6",
+      "label": "AH-6 Little Bird",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP1_VNAME_BTR90",
+      "label": "BTR-90",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_CB90",
+      "label": "RCB-90",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_LAVAD",
+      "label": "LAV-AD",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_MI28",
+      "label": "Mi-28 Havoc",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_DV15",
+      "label": "DV-15 Interceptor",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_PGZ95",
+      "label": "Type 95 AA",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_INAME_MORTAR",
+      "label": "M224 MORTAR",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_9K22",
+      "label": "9K22 Tunguska-M",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP1_VNAME_UCAV",
+      "label": "UCAV",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_Q5",
+      "label": "Q-5 Fantan",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_HIMARS",
+      "label": "M142 (HIMARS)",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP1_VNAME_F35",
+      "label": "F-35",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_SU39",
+      "label": "SU-39",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_A10",
+      "label": "A-10 Warthog",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_J20",
+      "label": "J-20",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_PAKFA",
+      "label": "Su-50",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_RIB",
+      "label": "RHIB Boat",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_UH1Y",
+      "label": "UH-1Y Venom",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP1_VNAME_SUAV",
+      "label": "SUAV",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_AAV",
+      "label": "AAV-7A1 AMTRAC",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_INAME_EOD",
+      "label": "EOD BOT",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_Z9",
+      "label": "Z-9 Haitun",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_COUGAR",
+      "label": "MRAP",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_ZFB05",
+      "label": "ZFB-05",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_AC130",
+      "label": "AC-130 Gunship",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_LYT2021",
+      "label": "LYT2021",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_INAME_MAV",
+      "label": "MAV",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_VDV",
+      "label": "VDV Buggy",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP3_WNAME_RAWR",
+      "label": "RAWR",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_SPM3",
+      "label": "SPM-3",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_TOW",
+      "label": "M220 TOW Launcher",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_50CAL",
+      "label": ".50 Cal",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_50CALNOSHIELD",
+      "label": ".50 CAL (NO SHIELD)",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_KA60",
+      "label": "KA-60 Kasatka",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_QUAD",
+      "label": "Quad Bike",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP1_VNAME_BOMBER",
+      "label": "BOMBER",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_KORNET",
+      "label": "9M133 Kornet Launcher",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_GROWLER",
+      "label": "GROWLER ITV",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP4_MP_VNAME_HTANK",
+      "label": "HT-95 LEVKOV",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP2_INAME_AAMINE",
+      "label": "AA MINE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_HJ8",
+      "label": "HJ-8 Launcher",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP4_WNAME_MKV",
+      "label": "XD-1 ACCIPITER",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP1_VNAME_DIRTBIKE",
+      "label": "Dirt Bike",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP4_MP_VNAME_METAL",
+      "label": "SCHIPUNOV 42",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP0_VNAME_DPV",
+      "label": "Desert Patrol Vehicle",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP4_MP_VNAME_SNOWMO",
+      "label": "SNOWMOBILE",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_PWC",
+      "label": "PWC",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP2_VNAME_OLDCANNON",
+      "label": "Old Cannon",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP2_VNAME_ACV",
+      "label": "ACV",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP0_VNAME_SKIDLOADER",
+      "label": "Skid Loader",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_CENTURION",
+      "label": "Centurion C-RAM",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_LD2000",
+      "label": "LD-2000 AA",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_VNAME_PANTSIR",
+      "label": "Pantsir-S1",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    },
+    {
+      "key": "vehicle-WARSAW_ID_P_XP4_MP_VNAME_POD",
+      "label": "LAUNCH POD",
+      "current_hud": null,
+      "official_sprite": null,
+      "status": "needs_visual_verification"
+    }
+  ]
+}

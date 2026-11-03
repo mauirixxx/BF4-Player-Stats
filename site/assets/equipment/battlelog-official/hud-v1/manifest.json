@@ -1,0 +1,24 @@
+{
+  "installed_at": "2026-10-17T11:36:05.886768+00:00",
+  "sources": {
+    "weapon": {
+      "sha256": "bfb64d924e6cba2e91570b71acf24f0b185f266f6e93e6f0fd92cf704862ad68",
+      "count": 112,
+      "cell": [
+        128,
+        52
+      ],
+      "url": "https://cdn.battlelog.com/bl-cdn/cdnprefix/develop-20260605/public/profile/warsaw/gamedata/weapon/small.png"
+    },
+    "vehicle": {
+      "sha256": "df267c0fc16ddd23d3a97a28e0a581a3e6f6774af75a2a17e76545489ac5735e",
+      "count": 64,
+      "cell": [
+        208,
+        52
+      ],
+      "url": "https://cdn.battlelog.com/bl-cdn/cdnprefix/develop-20260605/public/profile/warsaw/gamedata/vehicle/medium.png"
+    }
+  },
+  "catalog_mappings_changed": 0
+}

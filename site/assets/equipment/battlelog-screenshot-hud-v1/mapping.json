@@ -1,0 +1,1196 @@
+{
+  "version": 1,
+  "source": "17 mauirixxx Battlelog screenshots",
+  "mappings": [
+    {
+      "screenshot_index": 1,
+      "screenshot_name": "SKS",
+      "raw_key": "WARSAW_ID_P_WNAME_SKS",
+      "catalog_id": 135,
+      "catalog_name": "SKS"
+    },
+    {
+      "screenshot_index": 2,
+      "screenshot_name": "MK11 MOD 0",
+      "raw_key": "WARSAW_ID_P_WNAME_MK11",
+      "catalog_id": 71,
+      "catalog_name": "MK11 MOD 0"
+    },
+    {
+      "screenshot_index": 3,
+      "screenshot_name": "F2000",
+      "raw_key": "WARSAW_ID_P_XP0_WNAME_F2000",
+      "catalog_id": 25,
+      "catalog_name": "F2000"
+    },
+    {
+      "screenshot_index": 4,
+      "screenshot_name": "FAMAS",
+      "raw_key": "WARSAW_ID_P_WNAME_FAMAS",
+      "catalog_id": 95,
+      "catalog_name": "FAMAS"
+    },
+    {
+      "screenshot_index": 5,
+      "screenshot_name": "AEK-971",
+      "raw_key": "WARSAW_ID_P_WNAME_AEK971",
+      "catalog_id": 64,
+      "catalog_name": "AEK-971"
+    },
+    {
+      "screenshot_index": 6,
+      "screenshot_name": "MG4",
+      "raw_key": "WARSAW_ID_P_WNAME_MG4",
+      "catalog_id": 28,
+      "catalog_name": "MG4"
+    },
+    {
+      "screenshot_index": 7,
+      "screenshot_name": "G18",
+      "raw_key": "WARSAW_ID_P_WNAME_GLOCK18",
+      "catalog_id": 149,
+      "catalog_name": "G18"
+    },
+    {
+      "screenshot_index": 8,
+      "screenshot_name": "L85A2",
+      "raw_key": "WARSAW_ID_P_XP1_WNAME_L85A2",
+      "catalog_id": 168,
+      "catalog_name": "L85A2"
+    },
+    {
+      "screenshot_index": 9,
+      "screenshot_name": "M26 DART",
+      "raw_key": "WARSAW_ID_P_INAME_M26_FLECHETTE",
+      "catalog_id": 83,
+      "catalog_name": "M26 DART"
+    },
+    {
+      "screenshot_index": 10,
+      "screenshot_name": "ACW-R",
+      "raw_key": "WARSAW_ID_P_WNAME_ACR",
+      "catalog_id": 23,
+      "catalog_name": "ACW-R"
+    },
+    {
+      "screenshot_index": 11,
+      "screenshot_name": "ACE 23",
+      "raw_key": "WARSAW_ID_P_WNAME_GALIL23",
+      "catalog_id": 66,
+      "catalog_name": "ACE 23"
+    },
+    {
+      "screenshot_index": 12,
+      "screenshot_name": "PKP PECHENEG",
+      "raw_key": "WARSAW_ID_P_WNAME_PECHENEG",
+      "catalog_id": 50,
+      "catalog_name": "PKP PECHENEG"
+    },
+    {
+      "screenshot_index": 13,
+      "screenshot_name": "MTAR-21",
+      "raw_key": "WARSAW_ID_P_XP1_WNAME_MTAR21",
+      "catalog_id": 24,
+      "catalog_name": "MTAR-21"
+    },
+    {
+      "screenshot_index": 14,
+      "screenshot_name": "BULLDOG",
+      "raw_key": "WARSAW_ID_P_XP3_WNAME_BULLDOG",
+      "catalog_id": 86,
+      "catalog_name": "BULLDOG"
+    },
+    {
+      "screenshot_index": 15,
+      "screenshot_name": "A-91",
+      "raw_key": "WARSAW_ID_P_WNAME_A91",
+      "catalog_id": 133,
+      "catalog_name": "A-91"
+    },
+    {
+      "screenshot_index": 16,
+      "screenshot_name": "870 MCS",
+      "raw_key": "WARSAW_ID_P_WNAME_870",
+      "catalog_id": 7,
+      "catalog_name": "870 MCS"
+    },
+    {
+      "screenshot_index": 17,
+      "screenshot_name": "SCAR-H SV",
+      "raw_key": "WARSAW_ID_P_WNAME_SCARHSV",
+      "catalog_id": 49,
+      "catalog_name": "SCAR-H SV"
+    },
+    {
+      "screenshot_index": 18,
+      "screenshot_name": "SRR-61",
+      "raw_key": "WARSAW_ID_P_WNAME_M200",
+      "catalog_id": 163,
+      "catalog_name": "SRR-61"
+    },
+    {
+      "screenshot_index": 19,
+      "screenshot_name": "SCAR-H",
+      "raw_key": "WARSAW_ID_P_WNAME_SCARH",
+      "catalog_id": 39,
+      "catalog_name": "SCAR-H"
+    },
+    {
+      "screenshot_index": 20,
+      "screenshot_name": "M26 MASS",
+      "raw_key": "WARSAW_ID_P_INAME_M26_MASS",
+      "catalog_id": 122,
+      "catalog_name": "M26 MASS"
+    },
+    {
+      "screenshot_index": 21,
+      "screenshot_name": "ACE 21 CQB",
+      "raw_key": "WARSAW_ID_P_WNAME_GALIL21",
+      "catalog_id": 171,
+      "catalog_name": "ACE 21 CQB"
+    },
+    {
+      "screenshot_index": 22,
+      "screenshot_name": "M34 INCENDIARY",
+      "raw_key": "WARSAW_ID_P_INAME_M34",
+      "catalog_id": 79,
+      "catalog_name": "M34 INCENDIARY"
+    },
+    {
+      "screenshot_index": 23,
+      "screenshot_name": "AUG A3",
+      "raw_key": "WARSAW_ID_P_WNAME_STEYRAUG",
+      "catalog_id": 54,
+      "catalog_name": "AUG A3"
+    },
+    {
+      "screenshot_index": 24,
+      "screenshot_name": "M67 FRAG",
+      "raw_key": "WARSAW_ID_P_INAME_M67",
+      "catalog_id": 103,
+      "catalog_name": "M67 FRAG"
+    },
+    {
+      "screenshot_index": 25,
+      "screenshot_name": "AWS",
+      "raw_key": "WARSAW_ID_P_XP2_WNAME_AWS",
+      "catalog_id": 100,
+      "catalog_name": "AWS"
+    },
+    {
+      "screenshot_index": 26,
+      "screenshot_name": "M249",
+      "raw_key": "WARSAW_ID_P_WNAME_M249",
+      "catalog_id": 116,
+      "catalog_name": "M249"
+    },
+    {
+      "screenshot_index": 27,
+      "screenshot_name": "DAO-12",
+      "raw_key": "WARSAW_ID_P_XP0_WNAME_DAO12",
+      "catalog_id": 38,
+      "catalog_name": "DAO-12"
+    },
+    {
+      "screenshot_index": 28,
+      "screenshot_name": "GROZA-1",
+      "raw_key": "WARSAW_ID_P_WNAME_GROZA1",
+      "catalog_id": 87,
+      "catalog_name": "GROZA-1"
+    },
+    {
+      "screenshot_index": 29,
+      "screenshot_name": "DEFIBRILLATOR",
+      "raw_key": "WARSAW_ID_P_INAME_DEFIB",
+      "catalog_id": 80,
+      "catalog_name": "DEFIBRILLATOR"
+    },
+    {
+      "screenshot_index": 30,
+      "screenshot_name": "DEAGLE 44",
+      "raw_key": "WARSAW_ID_P_XP3_WNAME_DEAGLE",
+      "catalog_id": 93,
+      "catalog_name": "DEAGLE 44"
+    },
+    {
+      "screenshot_index": 31,
+      "screenshot_name": "M18 CLAYMORE",
+      "raw_key": "WARSAW_ID_P_INAME_CLAYMORE",
+      "catalog_id": 57,
+      "catalog_name": "M18 CLAYMORE"
+    },
+    {
+      "screenshot_index": 32,
+      "screenshot_name": "AN-94",
+      "raw_key": "WARSAW_ID_P_WNAME_AN94",
+      "catalog_id": 173,
+      "catalog_name": "AN-94"
+    },
+    {
+      "screenshot_index": 33,
+      "screenshot_name": "M416",
+      "raw_key": "WARSAW_ID_P_WNAME_M416",
+      "catalog_id": 45,
+      "catalog_name": "M416"
+    },
+    {
+      "screenshot_index": 34,
+      "screenshot_name": "AKU-12",
+      "raw_key": "WARSAW_ID_P_WNAME_AKU12",
+      "catalog_id": 70,
+      "catalog_name": "AKU-12"
+    },
+    {
+      "screenshot_index": 35,
+      "screenshot_name": "MP443",
+      "raw_key": "WARSAW_ID_P_WNAME_MP443",
+      "catalog_id": 75,
+      "catalog_name": "MP443"
+    },
+    {
+      "screenshot_index": 36,
+      "screenshot_name": "DBV-12",
+      "raw_key": "WARSAW_ID_P_WNAME_DBV12",
+      "catalog_id": 33,
+      "catalog_name": "DBV-12"
+    },
+    {
+      "screenshot_index": 37,
+      "screenshot_name": "AK 5C",
+      "raw_key": "WARSAW_ID_P_WNAME_AK5C",
+      "catalog_id": 18,
+      "catalog_name": "AK 5C"
+    },
+    {
+      "screenshot_index": 38,
+      "screenshot_name": "SR-2",
+      "raw_key": "WARSAW_ID_P_XP2_WNAME_SR2",
+      "catalog_id": 154,
+      "catalog_name": "SR-2"
+    },
+    {
+      "screenshot_index": 39,
+      "screenshot_name": "M320 LVG",
+      "raw_key": "WARSAW_ID_P_INAME_40MM_LVG",
+      "catalog_id": 43,
+      "catalog_name": "M320 LVG"
+    },
+    {
+      "screenshot_index": 40,
+      "screenshot_name": "AR160",
+      "raw_key": "WARSAW_ID_P_XP2_WNAME_AR160",
+      "catalog_id": 156,
+      "catalog_name": "AR160"
+    },
+    {
+      "screenshot_index": 41,
+      "screenshot_name": "FY-JS",
+      "raw_key": "WARSAW_ID_P_WNAME_FYJS",
+      "catalog_id": 158,
+      "catalog_name": "FY-JS"
+    },
+    {
+      "screenshot_index": 42,
+      "screenshot_name": "SAIGA 12K",
+      "raw_key": "WARSAW_ID_P_WNAME_SAIGA12",
+      "catalog_id": 97,
+      "catalog_name": "SAIGA 12K"
+    },
+    {
+      "screenshot_index": 43,
+      "screenshot_name": "M39 EMR",
+      "raw_key": "WARSAW_ID_P_WNAME_M39",
+      "catalog_id": 157,
+      "catalog_name": "M39 EMR"
+    },
+    {
+      "screenshot_index": 44,
+      "screenshot_name": "TYPE-95B-1",
+      "raw_key": "WARSAW_ID_P_WNAME_TYPE95B1",
+      "catalog_id": 16,
+      "catalog_name": "TYPE-95B-1"
+    },
+    {
+      "screenshot_index": 45,
+      "screenshot_name": "QBU-88",
+      "raw_key": "WARSAW_ID_P_WNAME_QBU88",
+      "catalog_id": 161,
+      "catalog_name": "QBU-88"
+    },
+    {
+      "screenshot_index": 46,
+      "screenshot_name": "HAWK 12G",
+      "raw_key": "WARSAW_ID_P_WNAME_HAWK",
+      "catalog_id": 104,
+      "catalog_name": "HAWK 12G"
+    },
+    {
+      "screenshot_index": 47,
+      "screenshot_name": "M16A4",
+      "raw_key": "WARSAW_ID_P_WNAME_M16A4",
+      "catalog_id": 109,
+      "catalog_name": "M16A4"
+    },
+    {
+      "screenshot_index": 48,
+      "screenshot_name": "QBZ-95-1",
+      "raw_key": "WARSAW_ID_P_WNAME_QBZ951",
+      "catalog_id": 84,
+      "catalog_name": "QBZ-95-1"
+    },
+    {
+      "screenshot_index": 49,
+      "screenshot_name": "CZ-805",
+      "raw_key": "WARSAW_ID_P_WNAME_CZ805",
+      "catalog_id": 17,
+      "catalog_name": "CZ-805"
+    },
+    {
+      "screenshot_index": 50,
+      "screenshot_name": "SAR-21",
+      "raw_key": "WARSAW_ID_P_WNAME_SAR21",
+      "catalog_id": 145,
+      "catalog_name": "SAR-21"
+    },
+    {
+      "screenshot_index": 51,
+      "screenshot_name": "RPK-12",
+      "raw_key": "WARSAW_ID_P_WNAME_RPK12",
+      "catalog_id": 9,
+      "catalog_name": "RPK-12"
+    },
+    {
+      "screenshot_index": 52,
+      "screenshot_name": "M1014",
+      "raw_key": "WARSAW_ID_P_WNAME_M1014",
+      "catalog_id": 166,
+      "catalog_name": "M1014"
+    },
+    {
+      "screenshot_index": 53,
+      "screenshot_name": "AK-12",
+      "raw_key": "WARSAW_ID_P_WNAME_AK12",
+      "catalog_id": 170,
+      "catalog_name": "AK-12"
+    },
+    {
+      "screenshot_index": 54,
+      "screenshot_name": "PHANTOM",
+      "raw_key": "WARSAW_ID_P_XP4_WNAME_SPYDER",
+      "catalog_id": 245,
+      "catalog_name": "Phantom Bow"
+    },
+    {
+      "screenshot_index": 55,
+      "screenshot_name": "SPAS-12",
+      "raw_key": "WARSAW_ID_P_WNAME_SPAS12",
+      "catalog_id": 165,
+      "catalog_name": "SPAS-12"
+    },
+    {
+      "screenshot_index": 56,
+      "screenshot_name": "SVD-12",
+      "raw_key": "WARSAW_ID_P_WNAME_SVD12",
+      "catalog_id": 126,
+      "catalog_name": "SVD-12"
+    },
+    {
+      "screenshot_index": 57,
+      "screenshot_name": "QBB-95-1",
+      "raw_key": "WARSAW_ID_P_WNAME_QBB95",
+      "catalog_id": 78,
+      "catalog_name": "QBB-95-1"
+    },
+    {
+      "screenshot_index": 58,
+      "screenshot_name": "NECK",
+      "raw_key": "WARSAW_ID_P_INAME_NECKKNIFE",
+      "catalog_id": 2,
+      "catalog_name": "NECK"
+    },
+    {
+      "screenshot_index": 59,
+      "screenshot_name": "UTS 15",
+      "raw_key": "WARSAW_ID_P_WNAME_UTAS",
+      "catalog_id": 37,
+      "catalog_name": "UTS 15"
+    },
+    {
+      "screenshot_index": 60,
+      "screenshot_name": "M32 MGL",
+      "raw_key": "WARSAW_ID_P_INAME_M32MGL",
+      "catalog_id": 121,
+      "catalog_name": "M32 MGL"
+    },
+    {
+      "screenshot_index": 61,
+      "screenshot_name": "P226",
+      "raw_key": "WARSAW_ID_P_WNAME_P226",
+      "catalog_id": 61,
+      "catalog_name": "P226"
+    },
+    {
+      "screenshot_index": 62,
+      "screenshot_name": "QSZ-92",
+      "raw_key": "WARSAW_ID_P_WNAME_QSZ92",
+      "catalog_id": 63,
+      "catalog_name": "QSZ-92"
+    },
+    {
+      "screenshot_index": 63,
+      "screenshot_name": "SCOUT ELITE",
+      "raw_key": "WARSAW_ID_P_WNAME_SCOUTELIT",
+      "catalog_id": 77,
+      "catalog_name": "SCOUT ELITE"
+    },
+    {
+      "screenshot_index": 64,
+      "screenshot_name": "ACE 53 SV",
+      "raw_key": "WARSAW_ID_P_WNAME_GALIL53",
+      "catalog_id": 105,
+      "catalog_name": "ACE 53 SV"
+    },
+    {
+      "screenshot_index": 65,
+      "screenshot_name": "RGO IMPACT",
+      "raw_key": "WARSAW_ID_P_INAME_IMPACT",
+      "catalog_id": 112,
+      "catalog_name": "RGO IMPACT"
+    },
+    {
+      "screenshot_index": 66,
+      "screenshot_name": "ACE 52 CQB",
+      "raw_key": "WARSAW_ID_P_WNAME_GALIL52",
+      "catalog_id": 123,
+      "catalog_name": "ACE 52 CQB"
+    },
+    {
+      "screenshot_index": 67,
+      "screenshot_name": "COMPACT 45",
+      "raw_key": "WARSAW_ID_P_WNAME_HK45C",
+      "catalog_id": 3,
+      "catalog_name": "COMPACT 45"
+    },
+    {
+      "screenshot_index": 68,
+      "screenshot_name": "CS5",
+      "raw_key": "WARSAW_ID_P_XP3_WNAME_CS5",
+      "catalog_id": 147,
+      "catalog_name": "CS5"
+    },
+    {
+      "screenshot_index": 69,
+      "screenshot_name": "M98B",
+      "raw_key": "WARSAW_ID_P_WNAME_M98B",
+      "catalog_id": 4,
+      "catalog_name": "M98B"
+    },
+    {
+      "screenshot_index": 70,
+      "screenshot_name": "RFB",
+      "raw_key": "WARSAW_ID_P_WNAME_RFBTARGET",
+      "catalog_id": 148,
+      "catalog_name": "RFB"
+    },
+    {
+      "screenshot_index": 71,
+      "screenshot_name": "XM25 AIRBURST",
+      "raw_key": "WARSAW_ID_P_INAME_XM25",
+      "catalog_id": 134,
+      "catalog_name": "XM25 AIRBURST"
+    },
+    {
+      "screenshot_index": 72,
+      "screenshot_name": "BAYONET",
+      "raw_key": "WARSAW_ID_P_INAME_BAYONETT",
+      "catalog_id": 88,
+      "catalog_name": "BAYONET"
+    },
+    {
+      "screenshot_index": 73,
+      "screenshot_name": "GOL MAGNUM",
+      "raw_key": "WARSAW_ID_P_XP0_WNAME_GOL",
+      "catalog_id": 55,
+      "catalog_name": "GOL MAGNUM"
+    },
+    {
+      "screenshot_index": 74,
+      "screenshot_name": "SG553",
+      "raw_key": "WARSAW_ID_P_WNAME_SG553",
+      "catalog_id": 6,
+      "catalog_name": "SG553"
+    },
+    {
+      "screenshot_index": 75,
+      "screenshot_name": "M4",
+      "raw_key": "WARSAW_ID_P_WNAME_M4A1",
+      "catalog_id": 120,
+      "catalog_name": "M4"
+    },
+    {
+      "screenshot_index": 76,
+      "screenshot_name": "L86A2",
+      "raw_key": "WARSAW_ID_P_WNAME_L86A1",
+      "catalog_id": 5,
+      "catalog_name": "L86A2"
+    },
+    {
+      "screenshot_index": 77,
+      "screenshot_name": "M320 HE",
+      "raw_key": "WARSAW_ID_P_INAME_40MM",
+      "catalog_id": 26,
+      "catalog_name": "M320 HE"
+    },
+    {
+      "screenshot_index": 78,
+      "screenshot_name": "G36C",
+      "raw_key": "WARSAW_ID_P_WNAME_G36C",
+      "catalog_id": 21,
+      "catalog_name": "G36C"
+    },
+    {
+      "screenshot_index": 79,
+      "screenshot_name": "M240B",
+      "raw_key": "WARSAW_ID_P_WNAME_M240",
+      "catalog_id": 52,
+      "catalog_name": "M240B"
+    },
+    {
+      "screenshot_index": 80,
+      "screenshot_name": "QBS-09",
+      "raw_key": "WARSAW_ID_P_WNAME_QBS09",
+      "catalog_id": 98,
+      "catalog_name": "QBS-09"
+    },
+    {
+      "screenshot_index": 81,
+      "screenshot_name": "M9",
+      "raw_key": "WARSAW_ID_P_WNAME_M9",
+      "catalog_id": 119,
+      "catalog_name": "M9"
+    },
+    {
+      "screenshot_index": 82,
+      "screenshot_name": "MP7",
+      "raw_key": "WARSAW_ID_P_XP1_WNAME_MP7",
+      "catalog_id": 29,
+      "catalog_name": "MP7"
+    },
+    {
+      "screenshot_index": 83,
+      "screenshot_name": "RPK",
+      "raw_key": "WARSAW_ID_P_XP1_WNAME_RPK74",
+      "catalog_id": 1,
+      "catalog_name": "RPK-74M"
+    },
+    {
+      "screenshot_index": 84,
+      "screenshot_name": "JNG-90",
+      "raw_key": "WARSAW_ID_P_WNAME_JNG90",
+      "catalog_id": 68,
+      "catalog_name": "JNG-90"
+    },
+    {
+      "screenshot_index": 85,
+      "screenshot_name": "SV-98",
+      "raw_key": "WARSAW_ID_P_WNAME_SV98",
+      "catalog_id": 94,
+      "catalog_name": "SV-98"
+    },
+    {
+      "screenshot_index": 86,
+      "screenshot_name": "SHORTY 12G",
+      "raw_key": "WARSAW_ID_P_WNAME_SHORTY",
+      "catalog_id": 19,
+      "catalog_name": "SHORTY 12G"
+    },
+    {
+      "screenshot_index": 87,
+      "screenshot_name": "L115",
+      "raw_key": "WARSAW_ID_P_XP1_WNAME_L96A1",
+      "catalog_id": 34,
+      "catalog_name": "L96A1"
+    },
+    {
+      "screenshot_index": 88,
+      "screenshot_name": "P90",
+      "raw_key": "WARSAW_ID_P_WNAME_P90",
+      "catalog_id": 128,
+      "catalog_name": "P90"
+    },
+    {
+      "screenshot_index": 89,
+      "screenshot_name": "M40A5",
+      "raw_key": "WARSAW_ID_P_WNAME_M40A5",
+      "catalog_id": 96,
+      "catalog_name": "M40A5"
+    },
+    {
+      "screenshot_index": 90,
+      "screenshot_name": "JS2",
+      "raw_key": "WARSAW_ID_P_WNAME_JS2",
+      "catalog_id": 132,
+      "catalog_name": "JS2"
+    },
+    {
+      "screenshot_index": 91,
+      "screenshot_name": "M412 REX",
+      "raw_key": "WARSAW_ID_P_WNAME_M412REX",
+      "catalog_id": 41,
+      "catalog_name": "M412 REX"
+    },
+    {
+      "screenshot_index": 92,
+      "screenshot_name": "CS-LR4",
+      "raw_key": "WARSAW_ID_P_WNAME_CSLR4",
+      "catalog_id": 146,
+      "catalog_name": "CS-LR4"
+    },
+    {
+      "screenshot_index": 93,
+      "screenshot_name": "U-100 MK5",
+      "raw_key": "WARSAW_ID_P_WNAME_ULTIM",
+      "catalog_id": 140,
+      "catalog_name": "U-100 MK5"
+    },
+    {
+      "screenshot_index": 94,
+      "screenshot_name": "SW40",
+      "raw_key": "WARSAW_ID_P_XP2_WNAME_SW40",
+      "catalog_id": 65,
+      "catalog_name": "SW40"
+    },
+    {
+      "screenshot_index": 95,
+      "screenshot_name": "TYPE 88 LMG",
+      "raw_key": "WARSAW_ID_P_WNAME_TYPE88",
+      "catalog_id": 138,
+      "catalog_name": "TYPE 88 LMG"
+    },
+    {
+      "screenshot_index": 96,
+      "screenshot_name": "UNICA 6",
+      "raw_key": "WARSAW_ID_P_XP3_WNAME_UN6",
+      "catalog_id": 118,
+      "catalog_name": "UNICA 6"
+    },
+    {
+      "screenshot_index": 97,
+      "screenshot_name": "338-RECON",
+      "raw_key": "WARSAW_ID_P_WNAME_SRS",
+      "catalog_id": 53,
+      "catalog_name": "338-RECON"
+    },
+    {
+      "screenshot_index": 98,
+      "screenshot_name": "FGM-172 SRAW",
+      "raw_key": "WARSAW_ID_P_INAME_SRAW",
+      "catalog_id": 46,
+      "catalog_name": "SRAW"
+    },
+    {
+      "screenshot_index": 99,
+      "screenshot_name": "SR338",
+      "raw_key": "WARSAW_ID_P_XP2_WNAME_SR338",
+      "catalog_id": 91,
+      "catalog_name": "SR338"
+    },
+    {
+      "screenshot_index": 100,
+      "screenshot_name": "CZ-75",
+      "raw_key": "WARSAW_ID_P_WNAME_CZ75",
+      "catalog_id": 85,
+      "catalog_name": "CZ-75"
+    },
+    {
+      "screenshot_index": 101,
+      "screenshot_name": "AS VAL",
+      "raw_key": "WARSAW_ID_P_XP0_WNAME_ASVAL",
+      "catalog_id": 124,
+      "catalog_name": "AS VAL"
+    },
+    {
+      "screenshot_index": 102,
+      "screenshot_name": "M1911",
+      "raw_key": "WARSAW_ID_P_WNAME_M1911",
+      "catalog_id": 110,
+      "catalog_name": "M1911"
+    },
+    {
+      "screenshot_index": 103,
+      "screenshot_name": "FN57",
+      "raw_key": "WARSAW_ID_P_WNAME_FN57",
+      "catalog_id": 143,
+      "catalog_name": "FN57"
+    },
+    {
+      "screenshot_index": 104,
+      "screenshot_name": "MPX",
+      "raw_key": "WARSAW_ID_P_XP3_WNAME_MPX",
+      "catalog_id": 108,
+      "catalog_name": "MPX"
+    },
+    {
+      "screenshot_index": 105,
+      "screenshot_name": "LSAT",
+      "raw_key": "WARSAW_ID_P_WNAME_LSAT",
+      "catalog_id": 67,
+      "catalog_name": "LSAT"
+    },
+    {
+      "screenshot_index": 106,
+      "screenshot_name": "CZ-3A1",
+      "raw_key": "WARSAW_ID_P_WNAME_SCORP",
+      "catalog_id": 114,
+      "catalog_name": "CZ-3A1"
+    },
+    {
+      "screenshot_index": 107,
+      "screenshot_name": "PDW-R",
+      "raw_key": "WARSAW_ID_P_WNAME_PDR",
+      "catalog_id": 167,
+      "catalog_name": "PDW-R"
+    },
+    {
+      "screenshot_index": 108,
+      "screenshot_name": "MX4",
+      "raw_key": "WARSAW_ID_P_WNAME_MX4",
+      "catalog_id": 159,
+      "catalog_name": "MX4"
+    },
+    {
+      "screenshot_index": 109,
+      "screenshot_name": "M60-E4",
+      "raw_key": "WARSAW_ID_P_XP0_WNAME_M60E4",
+      "catalog_id": 125,
+      "catalog_name": "M60-E4"
+    },
+    {
+      "screenshot_index": 110,
+      "screenshot_name": "GROZA-4",
+      "raw_key": "WARSAW_ID_P_WNAME_GROZA4",
+      "catalog_id": 74,
+      "catalog_name": "GROZA-4"
+    },
+    {
+      "screenshot_index": 111,
+      "screenshot_name": "93R",
+      "raw_key": "WARSAW_ID_P_WNAME_93R",
+      "catalog_id": 111,
+      "catalog_name": "93R"
+    },
+    {
+      "screenshot_index": 112,
+      "screenshot_name": "PP-2000",
+      "raw_key": "WARSAW_ID_P_WNAME_PP2000",
+      "catalog_id": 59,
+      "catalog_name": "PP-2000"
+    },
+    {
+      "screenshot_index": 113,
+      "screenshot_name": ".44 MAGNUM",
+      "raw_key": "WARSAW_ID_P_WNAME_TAURUS44",
+      "catalog_id": 22,
+      "catalog_name": ".44 MAGNUM"
+    },
+    {
+      "screenshot_index": 114,
+      "screenshot_name": "UMP-45",
+      "raw_key": "WARSAW_ID_P_WNAME_UMP45",
+      "catalog_id": 27,
+      "catalog_name": "UMP-45"
+    },
+    {
+      "screenshot_index": 115,
+      "screenshot_name": "UMP-9",
+      "raw_key": "WARSAW_ID_P_WNAME_UMP9",
+      "catalog_id": 58,
+      "catalog_name": "UMP-9"
+    },
+    {
+      "screenshot_index": 116,
+      "screenshot_name": "CBJ-MS",
+      "raw_key": "WARSAW_ID_P_WNAME_CBJMS",
+      "catalog_id": 35,
+      "catalog_name": "CBJ-MS"
+    },
+    {
+      "screenshot_index": 117,
+      "screenshot_name": "V40 MINI",
+      "raw_key": "WARSAW_ID_P_INAME_V40",
+      "catalog_id": 13,
+      "catalog_name": "V40 MINI"
+    },
+    {
+      "screenshot_index": 118,
+      "screenshot_name": "MACHETE",
+      "raw_key": "WARSAW_ID_P_INAME_MACHETE",
+      "catalog_id": 51,
+      "catalog_name": "MACHETE"
+    },
+    {
+      "screenshot_index": 119,
+      "screenshot_name": "C4 EXPLOSIVE",
+      "raw_key": "WARSAW_ID_P_INAME_C4",
+      "catalog_id": 12,
+      "catalog_name": "C4 EXPLOSIVE"
+    },
+    {
+      "screenshot_index": 120,
+      "screenshot_name": "RPG-7V2",
+      "raw_key": "WARSAW_ID_P_INAME_RPG7",
+      "catalog_id": 8,
+      "catalog_name": "RPG-7V2"
+    },
+    {
+      "screenshot_index": 121,
+      "screenshot_name": "USAS-12",
+      "raw_key": "WARSAW_ID_P_WNAME_USAS12",
+      "catalog_id": 73,
+      "catalog_name": "USAS-12"
+    },
+    {
+      "screenshot_index": 122,
+      "screenshot_name": "FIM-92 STINGER",
+      "raw_key": "WARSAW_ID_P_INAME_FIM92",
+      "catalog_id": 155,
+      "catalog_name": "FIM-92 STINGER"
+    },
+    {
+      "screenshot_index": 123,
+      "screenshot_name": "M26 SLUG",
+      "raw_key": "WARSAW_ID_P_INAME_M26_SLUG",
+      "catalog_id": 144,
+      "catalog_name": "M26 SLUG"
+    },
+    {
+      "screenshot_index": 124,
+      "screenshot_name": "M82A3 MID",
+      "raw_key": "WARSAW_ID_P_WNAME_M82A3MID",
+      "catalog_id": 131,
+      "catalog_name": "M82A3 MID"
+    },
+    {
+      "screenshot_index": 125,
+      "screenshot_name": "MARE'S LEG",
+      "raw_key": "WARSAW_ID_P_WNAME_SADDLEGUN",
+      "catalog_id": 102,
+      "catalog_name": "MARE\u2019S LEG"
+    },
+    {
+      "screenshot_index": 126,
+      "screenshot_name": "MBT LAW",
+      "raw_key": "WARSAW_ID_P_INAME_MBTLAW",
+      "catalog_id": 115,
+      "catalog_name": "MBT LAW"
+    },
+    {
+      "screenshot_index": 127,
+      "screenshot_name": "C100",
+      "raw_key": "WARSAW_ID_P_XP4_INAME_KNIFEBIPOD",
+      "catalog_id": 141,
+      "catalog_name": "C100"
+    },
+    {
+      "screenshot_index": 128,
+      "screenshot_name": "M2 SLAM",
+      "raw_key": "WARSAW_ID_P_INAME_M2",
+      "catalog_id": 117,
+      "catalog_name": "M2 SLAM"
+    },
+    {
+      "screenshot_index": 129,
+      "screenshot_name": "TRENCH",
+      "raw_key": "WARSAW_ID_P_INAME_BPKNIFE3",
+      "catalog_id": 139,
+      "catalog_name": "TRENCH"
+    },
+    {
+      "screenshot_index": 130,
+      "screenshot_name": "SEAL",
+      "raw_key": "WARSAW_ID_P_INAME_BPKNIFE8",
+      "catalog_id": 107,
+      "catalog_name": "SEAL"
+    },
+    {
+      "screenshot_index": 131,
+      "screenshot_name": "XM25 DART",
+      "raw_key": "WARSAW_ID_P_INAME_XM25_FLECHETTE",
+      "catalog_id": 137,
+      "catalog_name": "XM25 DART"
+    },
+    {
+      "screenshot_index": 132,
+      "screenshot_name": "IMPROVISED",
+      "raw_key": "WARSAW_ID_P_INAME_BPKNIFE1",
+      "catalog_id": 69,
+      "catalog_name": "IMPROVISED"
+    },
+    {
+      "screenshot_index": 133,
+      "screenshot_name": "PRECISION",
+      "raw_key": "WARSAW_ID_P_INAME_KNIFEPRECISION",
+      "catalog_id": 129,
+      "catalog_name": "PRECISION"
+    },
+    {
+      "screenshot_index": 134,
+      "screenshot_name": "ACB-90",
+      "raw_key": "WARSAW_ID_P_INAME_ACB90",
+      "catalog_id": 162,
+      "catalog_name": "ACB-90"
+    },
+    {
+      "screenshot_index": 135,
+      "screenshot_name": "M320 DART",
+      "raw_key": "WARSAW_ID_P_INAME_40MM_SHG",
+      "catalog_id": 44,
+      "catalog_name": "M320 BUCK"
+    },
+    {
+      "screenshot_index": 136,
+      "screenshot_name": "BJ-2",
+      "raw_key": "WARSAW_ID_P_INAME_KNIFE2142",
+      "catalog_id": 153,
+      "catalog_name": "BJ-2"
+    },
+    {
+      "screenshot_index": 137,
+      "screenshot_name": "SHANK",
+      "raw_key": "WARSAW_ID_P_INAME_SHANK",
+      "catalog_id": 106,
+      "catalog_name": "SHANK"
+    },
+    {
+      "screenshot_index": 138,
+      "screenshot_name": "REPAIR TOOL",
+      "raw_key": "WARSAW_ID_P_INAME_REPAIR",
+      "catalog_id": 47,
+      "catalog_name": "REPAIR TOOL"
+    },
+    {
+      "screenshot_index": 139,
+      "screenshot_name": "CARBON FIBER",
+      "raw_key": "WARSAW_ID_P_INAME_BPKNIFE4",
+      "catalog_id": 113,
+      "catalog_name": "CARBON FIBER"
+    },
+    {
+      "screenshot_index": 140,
+      "screenshot_name": "USAS-12 FLIR",
+      "raw_key": "WARSAW_ID_P_SP_WNAME_USAS12NV",
+      "catalog_id": 15,
+      "catalog_name": "USAS-12 FLIR"
+    },
+    {
+      "screenshot_index": 141,
+      "screenshot_name": "BOWIE",
+      "raw_key": "WARSAW_ID_P_INAME_BPKNIFE6",
+      "catalog_id": 150,
+      "catalog_name": "BOWIE"
+    },
+    {
+      "screenshot_index": 142,
+      "screenshot_name": "TACTICAL",
+      "raw_key": "WARSAW_ID_P_INAME_KNIFE14100BT",
+      "catalog_id": 160,
+      "catalog_name": "TACTICAL"
+    },
+    {
+      "screenshot_index": 143,
+      "screenshot_name": "TANTO",
+      "raw_key": "WARSAW_ID_P_XP4_INAME_KNIFETANTO",
+      "catalog_id": 142,
+      "catalog_name": "TANTO"
+    },
+    {
+      "screenshot_index": 144,
+      "screenshot_name": "M15 AT MINE",
+      "raw_key": "WARSAW_ID_P_INAME_M15",
+      "catalog_id": 92,
+      "catalog_name": "M15 AT MINE"
+    },
+    {
+      "screenshot_index": 145,
+      "screenshot_name": "WEAVER",
+      "raw_key": "WARSAW_ID_P_XP4_INAME_KNIFEWEAVER",
+      "catalog_id": 82,
+      "catalog_name": "WEAVER"
+    },
+    {
+      "screenshot_index": 146,
+      "screenshot_name": "MK153 SMAW",
+      "raw_key": "WARSAW_ID_P_INAME_SMAW",
+      "catalog_id": 127,
+      "catalog_name": "SMAW"
+    },
+    {
+      "screenshot_index": 147,
+      "screenshot_name": "M84 FLASHBANG",
+      "raw_key": "WARSAW_ID_P_INAME_FLASHBANG",
+      "catalog_id": 169,
+      "catalog_name": "FLASHBANG"
+    },
+    {
+      "screenshot_index": 148,
+      "screenshot_name": "SURVIVAL",
+      "raw_key": "WARSAW_ID_P_INAME_BPKNIFE5",
+      "catalog_id": 42,
+      "catalog_name": "SURVIVAL"
+    },
+    {
+      "screenshot_index": 149,
+      "screenshot_name": "AMR-2 MID",
+      "raw_key": "WARSAW_ID_P_WNAME_AMR2MID",
+      "catalog_id": 172,
+      "catalog_name": "AMR-2 MID"
+    },
+    {
+      "screenshot_index": 150,
+      "screenshot_name": "DIVE",
+      "raw_key": "WARSAW_ID_P_INAME_DIVERKNIFE",
+      "catalog_id": 164,
+      "catalog_name": "DIVE"
+    },
+    {
+      "screenshot_index": 151,
+      "screenshot_name": "BOOT",
+      "raw_key": "WARSAW_ID_P_INAME_BPKNIFE7",
+      "catalog_id": 89,
+      "catalog_name": "BOOT"
+    },
+    {
+      "screenshot_index": 152,
+      "screenshot_name": "M82A3",
+      "raw_key": "WARSAW_ID_P_WNAME_M82A3",
+      "catalog_id": 56,
+      "catalog_name": "M82A3"
+    },
+    {
+      "screenshot_index": 153,
+      "screenshot_name": "M320 3GL",
+      "raw_key": "WARSAW_ID_P_XP2_INAME_40MM_3GL",
+      "catalog_id": 62,
+      "catalog_name": "M320 3GL"
+    },
+    {
+      "screenshot_index": 154,
+      "screenshot_name": "SCOUT",
+      "raw_key": "WARSAW_ID_P_INAME_BPKNIFE2",
+      "catalog_id": 48,
+      "catalog_name": "SCOUT"
+    },
+    {
+      "screenshot_index": 155,
+      "screenshot_name": "M320 FB",
+      "raw_key": "WARSAW_ID_P_INAME_40MM_FLASH",
+      "catalog_id": 101,
+      "catalog_name": "M320 FB"
+    },
+    {
+      "screenshot_index": 156,
+      "screenshot_name": "AMR-2",
+      "raw_key": "WARSAW_ID_P_WNAME_AMR2",
+      "catalog_id": 130,
+      "catalog_name": "AMR-2"
+    },
+    {
+      "screenshot_index": 157,
+      "screenshot_name": "SA-18 IGLA",
+      "raw_key": "WARSAW_ID_P_INAME_IGLA",
+      "catalog_id": 36,
+      "catalog_name": "SA-18 IGLA"
+    },
+    {
+      "screenshot_index": 158,
+      "screenshot_name": "AMR-2 CQB",
+      "raw_key": "WARSAW_ID_P_WNAME_AMR2CQB",
+      "catalog_id": 30,
+      "catalog_name": "AMR-2 CQB"
+    },
+    {
+      "screenshot_index": 159,
+      "screenshot_name": "HVM-II",
+      "raw_key": "WARSAW_ID_P_INAME_STARSTREAK",
+      "catalog_id": 11,
+      "catalog_name": "HVM-II"
+    },
+    {
+      "screenshot_index": 160,
+      "screenshot_name": "M26 FRAG",
+      "raw_key": "WARSAW_ID_P_INAME_M26_FRAG",
+      "catalog_id": 99,
+      "catalog_name": "M26 FRAG"
+    },
+    {
+      "screenshot_index": 161,
+      "screenshot_name": "M18 SMOKE",
+      "raw_key": "WARSAW_ID_P_INAME_M18",
+      "catalog_id": 152,
+      "catalog_name": "M18 SMOKE"
+    },
+    {
+      "screenshot_index": 162,
+      "screenshot_name": "FGM-148 JAVELIN",
+      "raw_key": "WARSAW_ID_P_INAME_FGM148",
+      "catalog_id": 151,
+      "catalog_name": "FGM-148 JAVELIN"
+    },
+    {
+      "screenshot_index": 163,
+      "screenshot_name": "XM25 SMOKE",
+      "raw_key": "WARSAW_ID_P_INAME_XM25_SMK",
+      "catalog_id": 90,
+      "catalog_name": "XM25 SMOKE"
+    },
+    {
+      "screenshot_index": 164,
+      "screenshot_name": "BALLISTIC SHIELD",
+      "raw_key": "WARSAW_ID_P_XP3_WNAME_SHIELD",
+      "catalog_id": 81,
+      "catalog_name": "BALLISTIC SHIELD"
+    },
+    {
+      "screenshot_index": 165,
+      "screenshot_name": "M136 CS",
+      "raw_key": "WARSAW_ID_P_INAME_M136",
+      "catalog_id": 31,
+      "catalog_name": "M136 CS"
+    },
+    {
+      "screenshot_index": 166,
+      "screenshot_name": "M320 SMK",
+      "raw_key": "WARSAW_ID_P_INAME_40MM_SMK",
+      "catalog_id": 32,
+      "catalog_name": "M320 SMK"
+    },
+    {
+      "screenshot_index": 167,
+      "screenshot_name": "RORSCH MK-1",
+      "raw_key": "WARSAW_ID_P_XP4_WNAME_RAILGUN",
+      "catalog_id": 10,
+      "catalog_name": "RORSCH MK-1"
+    },
+    {
+      "screenshot_index": 168,
+      "screenshot_name": "HAND FLARE",
+      "raw_key": "WARSAW_ID_P_INAME_FLARE",
+      "catalog_id": 136,
+      "catalog_name": "HAND FLARE"
+    },
+    {
+      "screenshot_index": 169,
+      "screenshot_name": "M60 ULT",
+      "raw_key": "WARSAW_ID_P_XP6_INAME_M60ULT",
+      "catalog_id": 60,
+      "catalog_name": "M60 Ultimate"
+    },
+    {
+      "screenshot_index": 170,
+      "screenshot_name": "M82A3 CQB",
+      "raw_key": "WARSAW_ID_P_WNAME_M82A3CQB",
+      "catalog_id": 76,
+      "catalog_name": "M82A3 CQB"
+    }
+  ]
+}

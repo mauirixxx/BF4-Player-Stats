@@ -1,0 +1,4 @@
+/* Native Battlelog HUD sprite sheet positioning, no PNG extraction */
+.hud-sprite {display:inline-block;flex:none;overflow:hidden;background-repeat:no-repeat;background-color:transparent;image-rendering:auto}
+.hud-sprite.weapon {width:128px;height:52px;background-image:url('/assets/equipment/battlelog-official/hud-v1/weapon/source.png');background-size:1792px 416px}
+.hud-sprite.vehicle {width:208px;height:52px;background-image:url('/assets/equipment/battlelog-official/hud-v1/vehicle/source.png');background-size:1664px 416px}

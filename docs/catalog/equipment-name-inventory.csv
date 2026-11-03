@@ -120,7 +120,7 @@ weapon,63,WARSAW_ID_P_WNAME_QSZ92,QSZ92,QSZ-92,weapon_candidate_unverified_battl
 weapon,15,WARSAW_ID_P_SP_WNAME_USAS12NV,WARSAW ID P SP WNAME USAS12NV,USAS-12 FLIR,operator_approved_display_name,Operator explicitly approved USAS-12 FLIR as website display label; supersedes USAS-12 NV candidate
 weapon,118,WARSAW_ID_P_XP3_WNAME_UN6,UN6,UNICA 6,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Battlefield_4
 weapon,75,WARSAW_ID_P_WNAME_MP443,MP443,MP443,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
-weapon,141,WARSAW_ID_P_XP4_INAME_KNIFEBIPOD,KNIFEBIPOD,C100,needs_manual_review,https://battlefield.fandom.com/wiki/Knife/Battlefield_4; internal key to label association requires verification
+weapon,141,WARSAW_ID_P_XP4_INAME_KNIFEBIPOD,KNIFEBIPOD,C100,operator_verified_battlelog,"Operator corrected IDs 2026-10-17: ID 141 C100 (190 kills), ID 160 TACTICAL (10 kills)"
 weapon,85,WARSAW_ID_P_WNAME_CZ75,CZ75,CZ-75,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,151,WARSAW_ID_P_INAME_FGM148,FGM148,FGM-148 JAVELIN,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,65,WARSAW_ID_P_XP2_WNAME_SW40,SW40,SW40,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
@@ -134,7 +134,7 @@ weapon,47,WARSAW_ID_P_INAME_REPAIR,REPAIR,REPAIR TOOL,weapon_candidate_unverifie
 weapon,80,WARSAW_ID_P_INAME_DEFIB,DEFIB,DEFIBRILLATOR,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,11,WARSAW_ID_P_INAME_STARSTREAK,STARSTREAK,HVM-II,weapon_candidate_unverified_battlelog,BF4 weapon/gadget display-name candidate; Battlelog spelling and variant mapping not yet verified
 weapon,113,WARSAW_ID_P_INAME_BPKNIFE4,BPKNIFE4,CARBON FIBER,operator_battlelog_confirmed,Operator confirmed BPKNIFE4 = CARBON FIBER after comparing second-player Battlelog knife statistics with D3
-weapon,160,WARSAW_ID_P_INAME_KNIFE14100BT,KNIFE14100BT,C100,needs_manual_review,https://battlefield.fandom.com/wiki/Knife/Battlefield_4; internal key to label association requires verification
+weapon,160,WARSAW_ID_P_INAME_KNIFE14100BT,KNIFE14100BT,TACTICAL,operator_verified_battlelog,"Operator corrected IDs 2026-10-17: ID 160 TACTICAL (10 kills), ID 141 C100 (190 kills)"
 weapon,102,WARSAW_ID_P_WNAME_SADDLEGUN,SADDLEGUN,MARE’S LEG,needs_manual_review,https://battlefield.fandom.com/wiki/Battlefield_4; internal key to label association requires verification
 weapon,51,WARSAW_ID_P_INAME_MACHETE,MACHETE,MACHETE,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4
 weapon,82,WARSAW_ID_P_XP4_INAME_KNIFEWEAVER,KNIFEWEAVER,WEAVER,wiki_candidate_unverified_battlelog,https://battlefield.fandom.com/wiki/Knife/Battlefield_4

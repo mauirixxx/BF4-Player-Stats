@@ -111,13 +111,6 @@ def export():
     tmp.write_text(json.dumps(payload,default=str,separators=(',',':')))
     os.chmod(tmp,0o644)
     os.replace(tmp,OUT)
-    # Derived from the same completed snapshot: no extra database queries.
-    # Write atomically so readers never see a partially generated response.
-    compact = homepage_summary(payload)
-    small_tmp = SUMMARY_OUT.with_suffix('.json.tmp')
-    small_tmp.write_text(json.dumps(compact, separators=(',',':')))
-    os.chmod(small_tmp, 0o644)
-    os.replace(small_tmp, SUMMARY_OUT)
 
 if __name__=='__main__':
     while True:

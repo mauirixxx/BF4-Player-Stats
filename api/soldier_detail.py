@@ -22,13 +22,19 @@ SOLDIER_SQL=text("""select s.soldier_id, s.current_name, s.persona_id, s.platfor
 WEAPON_SQL=text("""
 SELECT w.soldier_id,w.weapon_id AS equipment_id,c.name,c.category,w.kills,
        w.headshots,w.shots_fired,w.shots_hit,w.time_equipped_seconds
-FROM soldier_weapon_stats w JOIN weapon_catalog c ON c.weapon_id=w.weapon_id
-WHERE w.soldier_id=:soldier_id ORDER BY w.kills DESC,w.weapon_id LIMIT 15
+FROM (SELECT soldier_id,weapon_id,kills,headshots,shots_fired,shots_hit,time_equipped_seconds
+      FROM soldier_weapon_stats WHERE soldier_id=:soldier_id
+      ORDER BY kills DESC,weapon_id LIMIT 15) w
+JOIN weapon_catalog c ON c.weapon_id=w.weapon_id
+ORDER BY w.kills DESC,w.weapon_id
 """)
 VEHICLE_SQL=text("""
 SELECT v.soldier_id,v.vehicle_id AS equipment_id,c.name,c.category,v.kills,v.time_in_seconds
-FROM soldier_vehicle_stats v JOIN vehicle_catalog c ON c.vehicle_id=v.vehicle_id
-WHERE v.soldier_id=:soldier_id ORDER BY v.kills DESC,v.vehicle_id LIMIT 15
+FROM (SELECT soldier_id,vehicle_id,kills,time_in_seconds
+      FROM soldier_vehicle_stats WHERE soldier_id=:soldier_id
+      ORDER BY kills DESC,vehicle_id LIMIT 15) v
+JOIN vehicle_catalog c ON c.vehicle_id=v.vehicle_id
+ORDER BY v.kills DESC,v.vehicle_id
 """)
 
 def get_soldier_detail(conn,soldier_id):

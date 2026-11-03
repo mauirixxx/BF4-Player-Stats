@@ -1,0 +1,11 @@
+{
+  "source": "BF4PS vehicle CSS HUD review",
+  "verified_by": "operator",
+  "mappings": {
+    "018": "WARSAW_ID_P_VNAME_HJ8",
+    "022": "WARSAW_ID_P_VNAME_KORNET",
+    "025": "WARSAW_ID_P_VNAME_LD2000",
+    "033": "WARSAW_ID_P_VNAME_PANTSIR",
+    "049": "WARSAW_ID_P_VNAME_TOW"
+  }
+}

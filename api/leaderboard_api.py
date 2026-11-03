@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, text
 from general_leaderboard import query_page as get_general_page, METRICS as GENERAL_METRICS
 from global_soldier_search import search_soldiers
 from soldier_detail import get_soldier_detail
+from platoon_read_api import list_platoons, platoon_detail, soldier_platoons
 engine=create_engine(os.environ['BF4PS_DATABASE_URL'],pool_pre_ping=True,pool_size=3,max_overflow=2)
 MAINTENANCE_FILE=Path(os.environ.get('BF4PS_SITE_CONFIG','/etc/bf4ps-website/site.env'))
 def maintenance_enabled():
@@ -473,24 +474,14 @@ def indexed_equipment_search(conn, kind, platform, item, search, sort_metric):
             'total_pages':(int(count)+49)//50,'rows':rows}
 
 def get_page(conn, kind, platform, item, page, page_size, search, division, sort_metric="kills"):
-    # Default OFF. Rank generations are not deployed to the production DB.
-    # The adapter is imported only when explicitly enabled on a migrated
-    # staging database. Any missing/stale generation uses the legacy path.
+    # Opt-in published ranking reader; missing/stale scopes keep live fallback.
     if os.environ.get('BF4PS_PRECOMPUTED_RANK_READS') == '1':
-        # Fail closed to the established query path until migration 0016
-        # and the separate adapter have both been installed.
-        revision = conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
-        if revision == '0016_rank_scope_versions':
-            try:
-                from rank_read_path import get_precomputed_page
-            except ModuleNotFoundError as exc:
-                if exc.name != 'rank_read_path':
-                    raise
-            else:
-                fast = get_precomputed_page(conn, kind, platform, item, page,
-                                            page_size, search, division, sort_metric)
-                if fast is not None:
-                    return fast
+        from rank_read_path_hourly import get_precomputed_page
+        canonical_item = VEHICLE_FAMILIES.get(item, (item, None))[0] if kind == 'vehicle' else item
+        precomputed = get_precomputed_page(conn, kind, platform, canonical_item,
+                                            page, page_size, search, division, sort_metric)
+        if precomputed is not None:
+            return precomputed
     if page == 1 and page_size == 50 and search and division == 0:
         fast = indexed_equipment_search(conn, kind, platform, item, search, sort_metric)
         if fast is not None:
@@ -654,6 +645,33 @@ class Handler(BaseHTTPRequestHandler):
                         ORDER BY other.platform,other.current_name,other.soldier_id LIMIT 30
                     """),{'id':int(raw)}).mappings()]
                 send_json(self,200,{'rows':result});return
+            if u.path=='/soldier-platoons':
+                persona=q.get('persona_id',[''])[0]
+                platform=q.get('platform',[''])[0]
+                if not persona.isdecimal() or len(persona)>19 or platform not in ('pc','ps4','xboxone'):
+                    self.send_error(400);return
+                with engine.connect() as c:
+                    c.execute(text('SET TRANSACTION READ ONLY'))
+                    c.execute(text("SET LOCAL statement_timeout = '8000ms'"))
+                    result=soldier_platoons(c,int(persona),platform)
+                send_json(self,200,result);return
+            if u.path in ('/platoons','/platoon-detail'):
+                with engine.connect() as c:
+                    c.execute(text('SET TRANSACTION READ ONLY'))
+                    c.execute(text("SET LOCAL statement_timeout = '8000ms'"))
+                    if u.path=='/platoons':
+                        search=q.get('search',[''])[0].strip()
+                        raw=q.get('page',['1'])[0]
+                        if len(search)>80 or not raw.isdecimal() or not 1<=int(raw)<=100000:
+                            self.send_error(400);return
+                        result=list_platoons(c,search,int(raw),q.get('sort',['name'])[0],q.get('direction',['asc'])[0])
+                    else:
+                        raw=q.get('id',[''])[0]
+                        if not raw.isdecimal() or len(raw)>19 or not 0<int(raw)<=9223372036854775807:
+                            self.send_error(400);return
+                        result=platoon_detail(c,int(raw))
+                if result is None:send_json(self,404,{'error':'Platoon not found'});return
+                send_json(self,200,result);return
             if u.path=='/soldier-detail':
                 raw=q.get('id',[''])[0]
                 if not raw.isdecimal() or len(raw)>19 or int(raw)<1 or int(raw)>9223372036854775807:
@@ -707,7 +725,6 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_error(400);return
             with engine.connect() as c:
                 if os.environ.get('BF4PS_PRECOMPUTED_RANK_READS') == '1':
-                    # The version check and row read must share one MVCC snapshot.
                     c = c.execution_options(isolation_level='REPEATABLE READ')
                 if c.execute(text('select current_database()')).scalar_one()!='bf4_playerstats':
                     raise RuntimeError('Only D3 scratch database permitted')

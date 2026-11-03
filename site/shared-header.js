@@ -9,7 +9,16 @@
     '<div class="header-add-row"><input id="headerBattlelog" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://battlelog.battlefield.com/bf4/soldier/mauirixxx/stats/236753552/pc/" aria-label="Battlelog BF4 soldier stats URL">' +
     '<button id="headerAddStats" type="button" title="Submit a BF4 soldier">Add Stats</button></div>' +
     '<span class="header-add-hint" role="status" aria-live="polite">Paste a Battlelog BF4 soldier stats URL</span></div>' +
-    '<div class="topnav-stack"><nav class="topnav" aria-label="Main navigation"><a href="/index.html#leaderboards">LEADERBOARDS</a><a href="/equipment.html">EQUIPMENT VIEW</a><a href="/index.html#searchpanel">SOLDIERS</a></nav><nav class="topnav-sub" aria-label="Community navigation"><a href="/community.html">COMMUNITY STATS</a></nav></div></div>';
+    '<div class="topnav-stack"><nav class="topnav" aria-label="Main navigation"><a href="/index.html#leaderboards">LEADERBOARDS</a><a href="/equipment.html">EQUIPMENT VIEW</a><a href="/admin-console.html">ADMIN</a></nav><nav class="topnav-sub" aria-label="Secondary navigation"><a href="/index.html#searchpanel">SOLDIERS</a><a href="/platoons.html">PLATOONS</a><a href="/community.html">COMMUNITY STATS</a></nav></div></div>';
+  const platoonPage=location.pathname.replace(/\/$/,'').endsWith('/platoons.html');
+  if(platoonPage){
+    const area=mount.querySelector('.header-add');
+    area.innerHTML='<label for="headerPlatoon">Have an official Battlelog platoon? Add your platoon!</label>'+
+      '<div class="header-add-row"><input id="headerPlatoon" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://battlelog.battlefield.com/bf4/platoons/members/754443074295858477/" aria-label="Official Battlelog platoon URL">'+
+      '<button id="headerAddPlatoon" type="button" disabled title="Platoon imports are coming soon">Add Platoon</button></div>'+
+      '<span class="header-add-hint" role="status">Platoon imports coming soon — this is a preview, not an active submission.</span>';
+    return;
+  }
   const btn=document.getElementById('headerAddStats'), field=document.getElementById('headerBattlelog'), hint=document.querySelector('.header-add-hint');
   // Acknowledge successful submissions without making bulk entry cumbersome.
   const dialog=document.createElement('dialog');

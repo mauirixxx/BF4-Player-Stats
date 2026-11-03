@@ -203,7 +203,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        if parsed.path not in ('/session', '/search', '/exclusions', '/audit', '/artwork/catalog', '/artwork/history', '/overview', '/database-info', '/queue/players', '/queue/platoons', '/ranking-status'):
+        if parsed.path not in ('/session', '/search', '/exclusions', '/audit', '/artwork/catalog', '/artwork/history', '/overview', '/database-info', '/queue/players', '/queue/platoons', '/ranking-status', '/error-logs'):
             return self.reply(404, {'error': 'Not found'})
         session = self.require_session()
         if session is None:
@@ -219,11 +219,18 @@ class Handler(BaseHTTPRequestHandler):
                         SELECT j.job_id,j.resource,j.priority_class,j.priority_value,
                                j.status,j.eligible_at,j.started_at,s.soldier_id,s.current_name,s.platform
                         FROM collection_jobs j JOIN soldiers s ON s.soldier_id=j.soldier_id
-                        WHERE j.status='running' OR (j.status='pending' AND j.eligible_at<=now())
+                        WHERE (j.status='running' OR (j.status='pending' AND j.eligible_at<=now()))
+                          AND NOT EXISTS (
+                              SELECT 1 FROM player_exclusions e
+                              WHERE e.platform=s.platform AND e.persona_id=s.persona_id AND e.active
+                          )
                         ORDER BY CASE WHEN j.status='running' THEN 0 ELSE 1 END,
                           CASE WHEN j.status='running' THEN j.started_at END DESC NULLS LAST,
-                          CASE WHEN j.status='pending' AND j.priority_class='interactive' THEN 0 ELSE 1 END,
-                          j.priority_class ASC,j.priority_value DESC,j.eligible_at ASC,j.created_at ASC,j.job_id ASC
+                          CASE j.priority_class
+                            WHEN 'interactive' THEN 4 WHEN 'active' THEN 3
+                            WHEN 'recent' THEN 2 WHEN 'bootstrap' THEN 1 ELSE 0
+                          END DESC,
+                          j.priority_value DESC,j.eligible_at ASC,j.created_at ASC,j.job_id ASC
                         LIMIT 10
                     """)).mappings().all()
                 else:
@@ -247,6 +254,19 @@ class Handler(BaseHTTPRequestHandler):
                         ORDER BY q.priority,q.due,q.platoon_id LIMIT 10
                     """)).mappings().all()
             return self.reply(200, {'rows':[dict(r) for r in records], 'kind':parsed.path.rsplit('/',1)[-1], 'observed_at':time.time()})
+        if parsed.path == '/error-logs':
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text("SET TRANSACTION READ ONLY"))
+                    conn.execute(text("SET LOCAL statement_timeout='4000ms'"))
+                    rows = conn.execute(text("SELECT * FROM public.bf4ps_admin_recent_errors()")).mappings().all()
+                return self.reply(200, {'rows':[dict(r) for r in rows],
+                    'coverage':'Player and platoon collector failures, newest first. Platoon operational logging starts with this deployment.',
+                    'observed_at':time.time()})
+            except Exception:
+                import logging
+                logging.exception('Error logs query failed')
+                return self.reply(503, {'error':'Error logs temporarily unavailable'})
         if parsed.path == '/ranking-status':
             try:
                 with engine.connect() as conn:
@@ -306,7 +326,9 @@ class Handler(BaseHTTPRequestHandler):
                                extract(epoch from clock_timestamp()) AS sampled_at
                         FROM pg_stat_database d WHERE d.datname = current_database()
                     """)).mappings().one()
-                return self.reply(200, {**dict(data), 'sampled_at': float(data['sampled_at']), 'stats_reset': str(data['stats_reset']) if data['stats_reset'] else None})
+                with engine.connect() as conn:
+                    storage = conn.execute(text('SELECT public.bf4ps_admin_storage_health()')).scalar_one()
+                return self.reply(200, {**dict(data), 'storage':storage, 'sampled_at': float(data['sampled_at']), 'stats_reset': str(data['stats_reset']) if data['stats_reset'] else None})
             except Exception as exc:
                 import logging
                 logging.exception('Database health metrics failed')
@@ -314,24 +336,31 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == '/overview':
             try:
                 summary_path = Path('/var/www/bf4playerstats.com/homepage-summary.json')
-                platoons_path = Path('/var/www/bf4playerstats.com/platoons-data.json')
                 summary = json.loads(summary_path.read_text())
-                source = json.loads(platoons_path.read_text())
-                platoons = source.get('platoons', [])
-                tracked = set()
-                supported = set()
-                roster_accounts = 0
-                for platoon in platoons:
-                    roster_accounts += int(platoon.get('visible_member_count') or 0)
-                    for member in platoon.get('members', []):
-                        for persona in member.get('personas', []):
-                            if persona.get('platform') in ('pc', 'playstation', 'xbox') and persona.get('soldier_id'):
-                                supported.add(str(persona['soldier_id']))
-                    tracked.update(str(k) for k in platoon.get('soldier_stats', {}))
+                with engine.connect() as conn:
+                    conn.execute(text('SET TRANSACTION READ ONLY'))
+                    conn.execute(text("SET LOCAL statement_timeout = '12000ms'"))
+                    counts = conn.execute(text("""
+                      SELECT
+                      (SELECT count(*) FROM platoons) AS count,
+                      (SELECT count(*) FROM platoon_roster_accounts a WHERE a.is_current
+                       AND EXISTS (SELECT 1 FROM platoon_roster_personas x WHERE
+                       x.platoon_id=a.platoon_id AND x.battlelog_account_id=a.battlelog_account_id
+                       AND x.is_current AND x.battlelog_platform_code IN (1,32,64))) AS visible_roster_accounts,
+                      (SELECT count(DISTINCT s.soldier_id) FROM platoon_roster_personas x
+                       JOIN platoon_roster_accounts a ON a.platoon_id=x.platoon_id AND a.battlelog_account_id=x.battlelog_account_id AND a.is_current
+                       JOIN soldiers s ON s.persona_id=x.persona_id AND s.platform=CASE x.battlelog_platform_code
+                       WHEN 1 THEN 'pc' WHEN 32 THEN 'ps4' WHEN 64 THEN 'xboxone' END
+                       WHERE x.is_current AND x.battlelog_platform_code IN (1,32,64)) AS unique_supported_soldiers,
+                      (SELECT count(DISTINCT d.soldier_id) FROM platoon_roster_personas x
+                       JOIN platoon_roster_accounts a ON a.platoon_id=x.platoon_id AND a.battlelog_account_id=x.battlelog_account_id AND a.is_current
+                       JOIN soldiers s ON s.persona_id=x.persona_id AND s.platform=CASE x.battlelog_platform_code
+                       WHEN 1 THEN 'pc' WHEN 32 THEN 'ps4' WHEN 64 THEN 'xboxone' END
+                       JOIN detailed_stats_current d ON d.soldier_id=s.soldier_id
+                       WHERE x.is_current AND x.battlelog_platform_code IN (1,32,64)) AS unique_tracked_soldiers
+                    """)).mappings().one()
                 return self.reply(200, {'players': summary, 'platoons': {
-                    'count': len(platoons), 'visible_roster_accounts': roster_accounts,
-                    'unique_supported_soldiers': len(supported), 'unique_tracked_soldiers': len(tracked),
-                    'updated': platoons_path.stat().st_mtime}})
+                    **dict(counts), 'updated': time.time()}})
             except (OSError, ValueError, TypeError, KeyError) as exc:
                 return self.reply(503, {'error': 'Collection overview temporarily unavailable'})
         if parsed.path == '/artwork/catalog':
@@ -365,9 +394,12 @@ class Handler(BaseHTTPRequestHandler):
                 """)).mappings().all()
             else:
                 rows = conn.execute(text("""
-                    SELECT audit_id,platform,persona_id,action,actor,reason_code,occurred_at
-                    FROM public.player_exclusion_audit
-                    ORDER BY audit_id DESC LIMIT 100
+                    SELECT a.audit_id,a.platform,a.persona_id,s.current_name AS player_name,
+                           a.action,a.actor,a.reason_code,a.occurred_at
+                    FROM public.player_exclusion_audit a
+                    LEFT JOIN public.soldiers s
+                      ON s.persona_id=a.persona_id AND s.platform=a.platform
+                    ORDER BY a.audit_id DESC LIMIT 100
                 """)).mappings().all()
         self.reply(200, {'rows': [dict(row) for row in rows]})
 

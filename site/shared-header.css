@@ -31,3 +31,8 @@ header.top .topnav-sub a{color:#bac4cf;font-size:14px;font-weight:bold}header.to
 
 /* Align Community Stats with the first primary navigation link. */
 header.top .topnav-stack{align-items:flex-start}
+
+/* Secondary links span the main navigation, with Admin below Soldiers. */
+header.top .topnav-stack{align-items:stretch}
+header.top .topnav-sub{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%}
+@media(max-width:620px){header.top .topnav-stack{align-items:stretch}}

@@ -31,3 +31,11 @@
 ## Historical implementation trail
 
 `6c44762` established the CSV authority; `4d85d95` implemented canonical vehicle leaderboard aggregation; `7f16d92` handled cross-catalog zero-only weapons; `fe30961` hid the redundant unshielded .50 CAL; `0798aca` merged approved website names. The current separate equipment page (`site/equipment.html`) was created later and must be kept consistent with these decisions.
+
+## 2026-10-17 Tactical knife correction
+
+Operator verified against Battlelog kill counts: `WARSAW_ID_P_XP4_INAME_KNIFEBIPOD` (catalog ID 141) is **TACTICAL** (10 kills), while `WARSAW_ID_P_INAME_KNIFE14100BT` (ID 160) remains **C100** (190 kills). The Tactical record uses operator-supplied official `knife_tactical2_fancy@2x.png`. Preserve distinct stats IDs.
+
+### Correction (20261017T110600Z)
+
+The preceding Tactical/C100 ID assignment was **reversed**. Operator corrected: ID **141** `KNIFEBIPOD` is **C100** (190 kills); ID **160** `KNIFE14100BT` is **TACTICAL** (10 kills). Display names and fancy artwork corrected accordingly. This correction supersedes the preceding paragraph.
