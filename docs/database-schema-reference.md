@@ -669,3 +669,10 @@ Recovery verification: RNT-01 isolated `bf4ps_ranking_scratch` upgraded
 Format-1 and format-2 three-row writer dry runs both rolled back successfully;
 16/16 targeted unit tests passed. The original 214,779-row HTTP benchmark has
 not yet been reproduced. Production is unchanged.
+
+Additional recovered real-data fixture check (2026-11-03): the surviving
+RNT-01 `bf4ps_ranking_real_parity` database was upgraded from 0022 to 0023.
+A format-2 PC vehicle canonical-2 kills build processed **214,779** rows in
+**6.22 seconds** and rolled back, without publishing or changing production.
+This validates the reconstructed blocks-only writer against the original
+large fixture, but does **not** reproduce the historical 97 ms HTTP benchmark.
