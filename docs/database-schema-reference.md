@@ -676,3 +676,20 @@ A format-2 PC vehicle canonical-2 kills build processed **214,779** rows in
 **6.22 seconds** and rolled back, without publishing or changing production.
 This validates the reconstructed blocks-only writer against the original
 large fixture, but does **not** reproduce the historical 97 ms HTTP benchmark.
+
+### Real-data format-2 publication and HTTP gate recovery (2026-11-03)
+
+RNT-01 isolated `bf4ps_ranking_real_parity` published **generation 37**
+for PC vehicle canonical family 2 kills: 214,779 rows in **5.20 seconds**.
+Database verification confirmed `status=published`, publication pointer 37,
+`snapshot_format=2`, 215 compressed blocks spanning positions 1..214779,
+**zero** per-player compact lookup rows, and a non-null exclusion fingerprint.
+No production writes or migrations were performed.
+
+The website's compact gate previously sent all multi-variant vehicle families
+through legacy even when canonical family 2/47 had independently verified
+parity. The recovered gate permits only canonical 2 and 47 among multi-variant
+families; unverified families retain legacy fallback. A regression test now
+checks family 2 enters compact and family 41 remains on legacy. **17/17**
+targeted tests pass. HTTP 24-request p95 is still pending measurement; the
+historical 97 ms figure is not yet reproduced. Production compact reads OFF.
