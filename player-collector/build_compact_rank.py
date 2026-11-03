@@ -179,7 +179,7 @@ def main():
             job = conn.execute(text('''SELECT 1 FROM equipment_rank_jobs WHERE
               kind=:kind AND item_id=:item AND platform=:platform AND metric=:metric
               AND claimed_by=CAST(:worker AS uuid) AND claim_token=CAST(:token AS uuid)
-              AND claim_epoch=:epoch AND lease_expires_at>now() FOR UPDATE'''),
+              AND claim_epoch=:epoch AND lease_expires_at>clock_timestamp() FOR UPDATE'''),
               {**params,'worker':args.rank_worker_id,'token':args.rank_claim_token,'epoch':args.rank_claim_epoch}).first()
             if job is None:
                 raise RuntimeError('stale or expired distributed claim: refusing publication')
