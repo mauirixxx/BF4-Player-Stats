@@ -107,5 +107,3 @@ def get_compact_page(conn, kind, platform, item, page, page_size, search, divisi
     return {'population':population,'filtered_count':count,'page':page,'page_size':page_size,
             'total_pages':(count+page_size-1)//page_size,'rows':page_rows,
             'rank_updated_at':published['completed_at']}
-
-[executed on device: rnt-01 (aa6d9aec-0414-4ad7-b824-1d53cc1368b2)]
