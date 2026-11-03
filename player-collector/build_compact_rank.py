@@ -108,10 +108,10 @@ def main():
     started = time.monotonic()
     with engine.connect().execution_options(isolation_level='REPEATABLE READ') as conn:
         revision = conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
-        if revision not in ('0020_compact_rank_snapshots', '0021_reconcile_player_exclusions', '0022_compact_blocks_only_format'):
+        if revision not in ('0020_compact_rank_snapshots', '0021_reconcile_player_exclusions', '0022_compact_blocks_only_format', '0023_compact_exclusion_guard'):
             raise RuntimeError(f'migration 0020 required, found {revision}')
-        if args.snapshot_format == 2 and revision != '0022_compact_blocks_only_format':
-            raise RuntimeError('format-2 requires migration 0022')
+        if args.snapshot_format == 2 and revision != '0023_compact_exclusion_guard':
+            raise RuntimeError('safe format-2 publication requires migration 0023')
         conn.execute(text("SET LOCAL statement_timeout='120s'"))
         conn.execute(text("SET LOCAL work_mem='32MB'"))
         scope_version = conn.execute(text('''SELECT version FROM equipment_rank_scope_versions
@@ -122,7 +122,7 @@ def main():
         generation = conn.execute(text('''INSERT INTO equipment_rank_generations
           (kind,item_id,platform,metric,snapshot_format,exclusion_fingerprint)
           VALUES (:kind,:item,:platform,:metric,:format,:fingerprint) RETURNING generation_id'''),
-          {**params,'format':args.snapshot_format,'fingerprint':fingerprint}).scalar_one() if revision == '0022_compact_blocks_only_format' else conn.execute(text('''INSERT INTO equipment_rank_generations
+          {**params,'format':args.snapshot_format,'fingerprint':fingerprint}).scalar_one() if revision == '0023_compact_exclusion_guard' else conn.execute(text('''INSERT INTO equipment_rank_generations
           (kind,item_id,platform,metric,snapshot_format)
           VALUES (:kind,:item,:platform,:metric,1) RETURNING generation_id'''),params).scalar_one()
         source = f'SELECT m.soldier_id,m.{args.metric} AS score,m.kills,m.kpm,m.accuracy,m.source_fetched_at FROM ({source}) m'
