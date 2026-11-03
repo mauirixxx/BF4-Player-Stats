@@ -629,3 +629,18 @@ UPDATE denied. The transaction was rolled back, leaving no roles or grants.
 This is a permission design rehearsal, not production role provisioning.
 The scratch standby reported streaming with zero replay-byte backlog at the
 sampled instant. This does not establish production WAN replica performance.
+
+### Recovered format-1 ordinary-page reader optimization (2026-11-03)
+
+The persistent feature branch now bounds ordinary, unfiltered page reads by
+`equipment_rank_compact_blocks.first_position`/`last_position`, decoding only
+blocks overlapping the requested page. It retains the existing full-generation
+active-exclusion join against `equipment_rank_compact_lookup` and `soldiers`
+**before** returning any page. Search and division still use the full-scan
+path. The reader's freshness threshold is 72 hours; writer refresh scheduling
+must be reviewed before production. The recovery is format 1 only: it does
+**not** restore lost format-2 migration `0022`, format-2 writer, or its original
+97 ms benchmark, and no production performance claim is made. The targeted
+local tests passed 14/14 after recovery. Production remains disabled.
+
+[executed on device: rnt-01 (aa6d9aec-0414-4ad7-b824-1d53cc1368b2)]
