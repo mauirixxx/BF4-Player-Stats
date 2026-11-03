@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current production Alembic head: `0021_reconcile_player_exclusions` (verified on MAK-DB-02 on 2026-11-02). Earlier 0019 observations are historical. Revisions 0020 and 0021 were recovered from the RNT-01 compact-ranking worktree and committed to main on 2026-11-02.
+Current production Alembic head: `0023_compact_exclusion_guard` (verified on MAK-DB-02 and streaming replicas MAK-DB-01, HNL-DB-01, RNT-DB-01 on 2026-11-03 UTC). KAH-DB-01 is intentionally offline pending storage expansion and its revision is unverified. Previous production revision observations are historical.
 
 ## Mandatory SQL development rule
 
@@ -35,8 +35,10 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0017_rank_immutable_scores` | `0016_rank_scope_versions` | Immutable rank score snapshots |
 | `0018_distributed_rank_queue` | `0017_rank_immutable_scores` | Adds durable equipment ranking jobs, worker registry, and single-row global ranking capacity |
 | `0019_soldier_search_trigrams` | `0018_distributed_rank_queue` | Adds pg_trgm and concurrent GIN lower(name) indexes for soldier current and historical substring search |
-| `0020_compact_rank_snapshots` | `0019_soldier_search_trigrams` | Adds compact ranking blocks, soldier lookup, and published-generation mapping; existing ranking path retained |
-| `0021_reconcile_player_exclusions` | `0020_compact_rank_snapshots` | Reconciles the production player-exclusion table and soldier insert/update guard without replacing existing protections |
+| `0020_compact_rank_snapshots` | `0019_soldier_search_trigrams` | Compact blocks, lookup, and independent publication pointer |
+| `0021_reconcile_player_exclusions` | `0020_compact_rank_snapshots` | Reconciles production exclusions and trigger |
+| `0022_compact_blocks_only_format` | `0021_reconcile_player_exclusions` | Permits snapshot format 2 |
+| `0023_compact_exclusion_guard` | `0022_compact_blocks_only_format` | Adds exclusion fingerprint column |
 
 ### Important migration consequence: Gun Master
 
@@ -411,23 +413,351 @@ Production revision confirmed on MAK-DB-02 (2026-10-22). Migration `0018_distrib
 
 The migration creates scheduling/coordination state; it does not change the existing `soldier_weapon_stats` and `soldier_vehicle_stats` row shapes.
 
+## Migration 0020: compact ranking snapshots (schema deployed; feature not activated)
 
-## Production collector compatibility hotfix (2026-11-01)
+The feature branch `feature/compact-rank-snapshots` introduces additive migration
+`0020_compact_rank_snapshots`, following production head `0019_soldier_search_trigrams`.
+Production schema is at 0023; compact publication remains disabled. Existing
+`equipment_rank_rows` and `equipment_rank_published` remain untouched.
 
-Production Alembic revision `0019_soldier_search_trigrams` is an additive
-search-index migration following `0018_distributed_rank_queue`. The player
-collector's fail-closed startup allowlist previously ended at `0018`, causing
-all nine production player-collector containers to restart without collecting.
-The validated allowlist now includes `0019` without relaxing the existing
-physical-dispatch table checks or accepting unknown future revisions.
-Platoon scheduler processes remained active. This hotfix does not activate
-compact rankings or apply migrations `0020`/`0021`.
+- `equipment_rank_compact_blocks`: PK `(generation_id, block_id)`; FK generation
+  with cascading delete; first/last position and binary immutable payload.
+- `equipment_rank_compact_lookup`: PK `(generation_id, soldier_id)`; block ID and
+  zero-based block offset; FK `(generation_id, block_id)` to compact blocks with
+  cascading delete; secondary `(soldier_id, generation_id)` index.
+- `equipment_rank_compact_published`: scope PK `(kind, item_id, platform, metric)`;
+  generation FK; timestamp. This pointer is independent of legacy publication.
+
+Migration 0020 is **schema only** until the writer, reader, parity, exclusion
+validation, and safe generation retention have been implemented and tested.
+Do not activate compact publication or drop legacy storage from this migration.
+
+The candidate codec `player-collector/bf4ps/compact_rank_codec.py` uses
+`BF4RC1`-prefixed zlib-compressed JSON arrays of up to 1000 immutable rows.
+Each row stores soldier ID, competition rank, kills, KPM, accuracy, and fetched
+at. KPM/accuracy are serialized as decimal strings to avoid precision loss.
+The payload does not include soldier names; these must be read from `soldiers`
+using the same read snapshot and the compact lookup index.
+
+## Compact ranking integration (feature branch, NOT ACTIVE)
+
+`player-collector/build_compact_rank.py` builds immutable blocks and per-soldier
+lookup records. Its default mode rolls back. Publication is restricted to the
+`bf4ps_ranking_scratch` database; production publishing is explicitly rejected
+until distributed lease fencing, retention and parity tests are complete.
+
+`website/api/rank_read_path_compact.py` is a separately gated candidate reader.
+`BF4PS_COMPACT_RANK_READS=1` enables it only when the new schema exists and a
+valid compact pointer is present; do not set this in production yet. The reader
+falls back when no valid generation exists or when an excluded identity remains
+in the generation. It preserves rank ties, immutable scores, names and persona
+search, pagination and division calculations. Current candidate scans all
+compressed blocks for division and filtered counts; performance and search
+parity require measurement before deployment.
+
+No production schema migration, ranking writer, feature flag, or table cleanup
+has been executed as part of this branch. Legacy rankings remain unchanged.
+
+### Candidate test coverage (2026-10-31)
+
+`website/tests/test_compact_rank_reader.py` exercises the gated reader with a
+fake SQL connection: tied ranks, pagination, exact numeric score precision,
+name/persona filtering, divisions, and fallback on exclusion or missing
+publication. These are **unit tests, not a migrated PostgreSQL integration
+harness**. Do not claim the 0020 end-to-end scratch test has passed until the
+migration is applied to a disposable PostgreSQL database and the real builder,
+reader, and cleanup paths are exercised together. The builder currently
+materializes the ranked query result before inserts to avoid interleaving a
+server-side cursor and DML on the same connection. Production writer fencing,
+search performance, generation retention, and complete migration validation
+remain release blockers.
+
+## Migration 0021: reconcile externally provisioned player exclusions
+
+Production inspection on MAK-DB-02 confirmed `public.player_exclusions` exists
+outside Alembic head 0019. Its composite PK is `(platform, persona_id)`;
+fields: `reason_code text NOT NULL`, `private_note text NULL`,
+`created_by text NOT NULL`, `created_at timestamptz NOT NULL DEFAULT now()`,
+`updated_at timestamptz NOT NULL DEFAULT now()`, and
+`active boolean NOT NULL DEFAULT true`. Constraints enforce persona ID > 0
+and platform in `pc`, `ps4`, `xboxone`. A partial btree index
+`ix_player_exclusions_active` covers `(platform, persona_id) WHERE active`.
+The `bf4ps_exclusion_soldiers` trigger runs before soldier insert or
+persona/platform update, calling security-definer
+`public.bf4ps_reject_excluded_soldier()` (fixed pg_catalog/pg_temp search path)
+to reject active exclusions with SQLSTATE 23514.
+
+Additive migration `0021_reconcile_player_exclusions` creates these objects on
+fresh installations and validates the table shape on existing installations.
+It does not drop them on downgrade, to preserve pre-existing production
+moderation safeguards. Migration 0021 and subsequent 0022/0023 are deployed to production.
+
+### Compact candidate stress/retention notes (RNT-01 isolated PostgreSQL)
+
+100,003 synthetic PC weapon soldiers: 6.18 s build/publish, 74 MB peak
+Python RSS, 685 KB compressed payload, about 12.5 MB block + lookup
+relation storage. Page/search/division reads were 0.28–0.48 s locally.
+Synthetic data compressibility and latency are not representative of actual
+player distributions. Reader now requires generation input scope version to
+match the current scope version, failing closed after source invalidation.
+Scratch publication can validate an optional worker/token/epoch lease under
+row lock; production publication remains prohibited. Scratch-only
+`cleanup_compact_rank.py` preserves published and newest two generations per
+scope, and excludes any legacy rank references. No production cleanup enabled.
+
+### RNT-01 end-to-end scratch results (2026-10-31)
+
+On a separate localhost-only PostgreSQL 16.15 cluster (port 55432), applied
+migrations 0001 through 0021, seeded 100,003 synthetic soldiers and published
+multiple compact generations. Real reader returned correct name/persona
+searches, tied ranks, pagination and divisions. Direct PostgreSQL window-rank
+comparison matched soldier IDs, competition ranks and deterministic positions
+on pages 1, 10, 500, 1000 and 2001. After incrementing the source scope
+version inside a transaction, the reader correctly fell back. Publishing with
+an absent worker claim was rejected; a valid worker/token/epoch lease published.
+Scratch retention deleted four unreferenced generations, preserved the newest
+two (including the current publication pointer), and the reader remained
+functional afterward. Targeted Python tests: 11 passed.
+
+**Remaining production blockers:** realistic data and concurrent worker stress;
+complete website route/response parity and error handling; production migration
+review and access grants; an enforced (not optional) distributed claim for any
+future production writer; robust orphan generation cleanup; and testing
+production-size WAL, replica replay and rollback. Feature flag remains off.
+
+### Additional safety review (candidate)
+
+Compact publication now requires worker UUID, claim UUID, and claim epoch
+regardless of database; production publication is still explicitly blocked.
+The website HTTP leaderboard handler now selects REPEATABLE READ and bypasses
+its process-local Top-10 cache when compact reads are enabled, matching the
+precomputed reader's transaction isolation and cache behavior. The compact
+reader is still disabled by default. Full live HTTP response compatibility,
+replica/WAL impact, and production access grants require verification.
+
+### Production privilege reconnaissance (read-only, 2026-10-31)
+
+Current primary `mak-db-02` has application roles including
+`bf4ps_stage9c_d2`, `bf4ps_stage9c_d4`, `bf4ps_admin_moderation`, and
+`bf4_playerstats_test_migrator`. `bf4ps_stage9c_d2` has SELECT on
+`equipment_rank_generations`, `equipment_rank_scope_versions`, and
+`player_exclusions`; it has no observed DML grants on ranking generation
+or job tables in the inspected grants. New compact tables do not yet exist
+in production, so no reader/writer grants have been provisioned. Dedicated
+least-privilege compact reader and writer roles/grants must be designed and
+verified before production activation. No grants changed in this audit.
+
+### Isolated HTTP and concurrency validation (RNT-01)
+
+With `BF4PS_ISOLATED_HTTP_TEST=1` and compact reads enabled, the real
+`leaderboard_api.py` was launched on localhost port 18765 against the scratch
+PostgreSQL cluster. HTTP 200 responses verified page 1 and deep page 2001,
+name search, divisions 1 and 10, and accuracy sort; invalid page/sort returned
+HTTP 400. The isolated HTTP database exception is allowed only when the
+requested database is exactly `bf4ps_ranking_scratch` and PostgreSQL server
+address is loopback; the production database guard is otherwise unchanged.
+
+Two simultaneous 100,003-player builders using a valid versus deliberately
+invalid claim token produced one successful publication (generation 10) and
+one rejected stale-claim publication. An earlier attempt with an expired
+lease correctly rejected both builders. One isolated 100,003-row generation
+and pointer publication produced approximately **47 MB of WAL** as measured
+by `pg_current_wal_lsn()` difference; this is a synthetic-data, local-only
+measurement, not an HA replica replay measurement. Production primary
+read-only check showed three async streaming replicas and 0-byte replay lag
+at observation. No production rank writes or migrations occurred.
+
+TCOU production leaderboard loopback HTTP smoke check returned 200 with the
+existing response envelope (population/filtered_count/page/page_size/
+total_pages/rows). No website service restart or production flag change.
+
+**Unfinished:** complete HTTP parity across vehicle-family aggregation and
+all platform/metric combinations, production grants, real-data WAL/replica
+soak, and production publication rollout. Keep production feature disabled.
+
+### Cross-platform compact verification
+
+RNT-01 scratch HTTP comparison passed 20 of 20 combinations (weapon kills/KPM/accuracy and vehicle kills/KPM, each on PC/PS4/Xbox/ALL). PC population 100003, PS4 2, Xbox 2, ALL 100007. Compared JSON top-10 IDs, ranks, positions, population against direct PostgreSQL window functions. Multi-variant vehicle families use legacy SUM/MAX aggregation from raw stats; compact single-item metric source is not yet proven equivalent. The website now explicitly falls back for these families. Production remains disabled.
+
+### Isolated physical streaming replica check
+
+RNT-01 scratch primary port 55432 was cloned via pg_basebackup to a second PostgreSQL 16 cluster on localhost port 55433 (hot standby). Under repeated 100003-player compact publications, pg_stat_replication showed streaming async replay with 2024 bytes of replay lag at one observation. Direct compact reader against standby returned population 100003 and 50 rows. This tests physical WAL replay locally, not real-data WAN replication or production latency. No production replica changed. Verified audited multi-variant vehicle family request (canonical item 2) bypasses compact reader and uses legacy fallback. Production roles and grants remain a rollout gate.
+
+### Repeated publication standby replay stress
+
+RNT-01 localhost PostgreSQL primary and physical standby replayed a second full 20-scope publication matrix (100003 PC, 100007 ALL for large scopes). Total elapsed 78.48 seconds; WAL LSN advanced approximately 290 MB across the matrix, including PostgreSQL overhead. Standby remained streaming with 2024 bytes replay gap during workload and 0 bytes after completion. Read-only compact reader on standby returned 50 rows and population 100003. Same-host scratch synthetic-data benchmark only: WAN production replica performance and real-data compression remain unverified. Added automated vehicle-family fallback guard test; 12 targeted tests passed.
+
+### Compact builder legacy-source alignment (candidate, not activated)
+
+The compact candidate builder now constructs its cohort from the same raw
+`soldier_weapon_stats` / `soldier_vehicle_stats` and successful
+`collection_state` resource status used by the legacy leaderboard. Weapon
+statistics use per-soldier MAX, minimum 100 shots for accuracy, and minimum
+60 seconds for KPM. Vehicles deduplicate raw IDs before SUM of distinct
+variants or MAX of mirrored variants, including usage seconds; the audited
+28-entry family map is matched to `website/api/leaderboard_api.py`. Active
+`player_exclusions` are excluded. The resulting legacy cohort, not the
+separately maintained metric-table `equipment_population`, determines compact
+row count. This is candidate implementation only: no production activation,
+no demonstrated full live-data parity, and no WAN replication sign-off.
+
+### Nonempty scratch candidate verification
+
+On RNT-01 scratch port 55432, a bounded fixture with three successful
+collector-state soldiers and raw vehicle variants for canonical SUM (2/30)
+and MAX (47/67) families passed seven rolled-back compact builder dry runs:
+vehicle kills/KPM for each family, and weapon kills/KPM/accuracy. A discovered
+`Decimal` JSON serialization failure for aggregated kills was corrected in
+`compact_rank_codec.py` by converting non-null kills to integer before encoding.
+The five targeted reader/fallback tests also passed. This confirms executable
+nonempty source and encoding, but does not yet establish independent row-by-row
+legacy parity or production performance. No production changes were made.
 
 
-## Recovered migrations and current production checkpoint (2026-11-02)
+### Scratch legacy parity and least-privilege verification (2026-10-31)
 
-Production `alembic_version` is `0021_reconcile_player_exclusions`. Migration 0020 adds `equipment_rank_compact_blocks` (composite key `generation_id`, `block_id`; positional bounds and binary payload), `equipment_rank_compact_lookup` (composite key `generation_id`, `soldier_id`; block ID and offset, plus soldier lookup index), and `equipment_rank_compact_published` (composite key `kind`, `item_id`, `platform`, `metric`; generation FK and publication timestamp). Existing ranking tables are not removed.
+An independent nonempty scratch comparison captured the builder's encoded
+rows and queried the legacy `leaderboard_api.get_page` SQL with compact and
+precomputed reads disabled. Seven scopes matched exactly on soldier IDs,
+competition ranks, kills, KPM, accuracy, order, and cohort population:
+vehicle SUM family 2 kills/KPM; vehicle MAX family 47 kills/KPM; weapon 1
+kills/KPM/accuracy. The executable scratch harness is
+`website/tests/compact_rank_scratch_parity.py`; it requires the existing
+scratch database and its bounded fixture, and does not publish generations.
 
-Migration 0021 introduces `player_exclusions` on new installations with key (`platform`, `persona_id`), `reason_code`, nullable `private_note`, `created_by`, timestamps and `active`; validates pre-existing production table shape, and creates `bf4ps_reject_excluded_soldier()` and `bf4ps_exclusion_soldiers` trigger only when absent. Its downgrade intentionally retains these pre-existing moderation protections. Neither migration alters `soldier_names` or `collection_state`.
+A transaction-scoped least-privilege rehearsal created NOLOGIN reader/writer
+roles, granted only required source and compact table privileges, and checked
+`has_table_privilege`: reader SELECT permitted, reader INSERT/raw vehicle
+SELECT denied; writer compact INSERT/raw vehicle SELECT permitted, soldier
+UPDATE denied. The transaction was rolled back, leaving no roles or grants.
+This is a permission design rehearsal, not production role provisioning.
+The scratch standby reported streaming with zero replay-byte backlog at the
+sampled instant. This does not establish production WAN replica performance.
 
-On 2026-11-02, production `soldiers`, `soldier_names`, and `collection_state` were independently introspected. `soldier_names` has PK `soldier_name_id`, FK `soldier_id`, `name`, required `first_seen_at`/`last_seen_at`, unique (`soldier_id`, `name`) and nonempty-name check. `collection_state` has one row per soldier, and four resource state/last-success pairs. Historical Rusty alias import is a data-only operation; no schema migration is needed.
+### Recovered format-1 ordinary-page reader optimization (2026-11-03)
+
+The persistent feature branch now bounds ordinary, unfiltered page reads by
+`equipment_rank_compact_blocks.first_position`/`last_position`, decoding only
+blocks overlapping the requested page. It retains the existing full-generation
+active-exclusion join against `equipment_rank_compact_lookup` and `soldiers`
+**before** returning any page. Search and division still use the full-scan
+path. The reader's freshness threshold is 72 hours; writer refresh scheduling
+must be reviewed before production. The recovery is format 1 only: it does
+**not** restore lost format-2 migration `0022`, format-2 writer, or its original
+97 ms benchmark, and no production performance claim is made. The targeted
+local tests passed 14/14 after recovery. Production remains disabled.
+
+### Recovered migration 0022 and new exclusion safeguard 0023 (2026-11-03)
+
+The surviving RNT-01 scratch databases were already stamped at
+`0022_compact_blocks_only_format`, and direct schema inspection confirmed
+`equipment_rank_generations.snapshot_format` allows `0,1,2`, **without** an
+exclusion fingerprint column. The reconstructed `0022` therefore changes only
+`ck_rank_generation_snapshot_format` from `(0,1)` to `(0,1,2)`.
+
+New additive migration `0023_compact_exclusion_guard` adds nullable
+`equipment_rank_generations.exclusion_fingerprint text`. Existing format-2
+generations are deliberately not trusted until rebuilt with a fingerprint.
+The writer requires 0023 for format-2 builds and emits compressed blocks with
+no `equipment_rank_compact_lookup` rows. Its fingerprint is SHA-256 of the
+sorted active `(platform,persona_id)` set, encoded as `platform:persona_id\n`.
+The writer rechecks the fingerprint before publication; the reader compares
+the active set in its REPEATABLE READ snapshot, falling back to legacy on
+activation or restoration. This avoids timestamp assumptions or new triggers.
+Search and division remain full scans. The opt-in feature stays OFF in
+production. These are reconstructed changes, not a reproduction of the
+historical 97 ms benchmark. Both migrations are pending isolated tests.
+
+Recovery verification: RNT-01 isolated `bf4ps_ranking_scratch` upgraded
+0022 -> 0023, downgraded 0023 -> 0022, and upgraded again successfully.
+Format-1 and format-2 three-row writer dry runs both rolled back successfully;
+16/16 targeted unit tests passed. The original 214,779-row HTTP benchmark has
+not yet been reproduced. Production is unchanged.
+
+Additional recovered real-data fixture check (2026-11-03): the surviving
+RNT-01 `bf4ps_ranking_real_parity` database was upgraded from 0022 to 0023.
+A format-2 PC vehicle canonical-2 kills build processed **214,779** rows in
+**6.22 seconds** and rolled back, without publishing or changing production.
+This validates the reconstructed blocks-only writer against the original
+large fixture, but does **not** reproduce the historical 97 ms HTTP benchmark.
+
+### Real-data format-2 publication and HTTP gate recovery (2026-11-03)
+
+RNT-01 isolated `bf4ps_ranking_real_parity` published **generation 37**
+for PC vehicle canonical family 2 kills: 214,779 rows in **5.20 seconds**.
+Database verification confirmed `status=published`, publication pointer 37,
+`snapshot_format=2`, 215 compressed blocks spanning positions 1..214779,
+**zero** per-player compact lookup rows, and a non-null exclusion fingerprint.
+No production writes or migrations were performed.
+
+The website's compact gate previously sent all multi-variant vehicle families
+through legacy even when canonical family 2/47 had independently verified
+parity. The recovered gate permits only canonical 2 and 47 among multi-variant
+families; unverified families retain legacy fallback. A regression test now
+checks family 2 enters compact and family 41 remains on legacy. **17/17**
+targeted tests pass. HTTP 24-request p95 is still pending measurement; the
+historical 97 ms figure is not yet reproduced. Production compact reads OFF.
+
+### Reproduced isolated HTTP format-2 baseline (user-run, 2026-11-03)
+
+The RNT-01 isolated HTTP endpoint using `bf4ps_ranking_real_parity`
+returned 24/24 successful requests against published generation 37,
+with eight concurrent client workers, 50 rows/page, and pages 1, 100,
+and 1000. The user-run script asserted HTTP 200, population 214779,
+50 returned rows, and a non-null compact `rank_updated_at` on every request.
+After three sequential warmups, measured client-observed wall-clock latency:
+**p50 98.59 ms; interpolated p95 176.10 ms; maximum 184.21 ms**.
+The historical 97 ms p95 has **not** been reproduced (current p95 is
+81.5% higher). These are client-side timings on one isolated host, not
+production/WAN measurements. The endpoint's SQLAlchemy engine has
+`pool_size=3,max_overflow=2`, which may contribute under eight concurrent
+workers; this is a hypothesis, not yet a measured bottleneck. Do not
+attribute the difference without component timing or controlled comparisons.
+The opt-in compact feature remains disabled in production.
+
+### Controlled HTTP pool comparison (2026-11-03)
+
+RNT-01 ran two independent isolated localhost HTTP servers against the
+same published format-2 generation 37 (214779 PC vehicle family-2 kills
+entries). Port 18765 used the original SQLAlchemy pool (size 3 + overflow
+2, at most 5 connections); port 18766 used pool size 8 + overflow 0.
+Three alternating-order rounds per server, each with three warmup requests
+and 24 timed requests from eight client workers, passed HTTP 200, 50 rows,
+correct population and compact `rank_updated_at` assertions.
+
+| Round | 5-connection p50/p95/max (ms) | 8-connection p50/p95/max (ms) |
+| --- | --- | --- |
+| 1 | 68.34 / 83.51 / 103.78 | 71.99 / 123.74 / 131.06 |
+| 2 | 65.78 / 93.59 / 96.36 | 70.42 / 90.89 / 103.02 |
+| 3 | 69.63 / 94.13 / 106.85 | 69.44 / 88.60 / 95.23 |
+
+The historical p95 target (97 ms) was met in 5 of 6 rounds, including
+all three five-connection rounds. Eight connections did not consistently
+improve latency; pool contention is not established as the dominant cost.
+The earlier single-run 176.10 ms p95 remains a valid observed result,
+showing that repeatability/system-load investigation is still needed.
+No ranking algorithm changes or production feature activation were made.
+
+### Sustained isolated format-2 HTTP load test (2026-11-03)
+
+Both RNT-01 localhost servers were exercised for ten alternating-order
+rounds of 100 timed requests per server (2000 total, eight concurrent
+client workers, pages 1/100/1000/4000, four warmups per round). Every
+response passed HTTP 200, population 214779, 50 rows and non-null compact
+`rank_updated_at` assertions; **zero failures**. Total elapsed 19.4 seconds.
+
+| Statistic | Port 18765: max 5 DB connections | Port 18766: max 8 DB connections |
+| --- | ---: | ---: |
+| Timed requests | 1000 | 1000 |
+| p50 | 68.24 ms | 72.12 ms |
+| p95 | 113.14 ms | 106.79 ms |
+| p99 | 150.31 ms | 122.74 ms |
+| Maximum | 198.53 ms | 169.81 ms |
+| Requests above 97 ms | 121 | 113 |
+| Failures | 0 | 0 |
+
+The eight-connection server had lower tail latency in this test, but
+neither configuration sustained the historical 97 ms p95 target. Pool
+contention is not established as the sole cause. These timings are local
+client-observed HTTP results, not production or WAN measurements. Continue
+profiling under repeatable load before production activation.
