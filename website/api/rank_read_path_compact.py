@@ -26,7 +26,7 @@ def get_compact_page(conn, kind, platform, item, page, page_size, search, divisi
       JOIN equipment_rank_generations g ON g.generation_id=p.generation_id
       WHERE p.kind=:kind AND p.item_id=:item AND p.platform=:platform AND p.metric=:metric
       AND g.status='published' AND g.snapshot_format=1 AND g.input_scope_version IS NOT NULL
-      AND g.completed_at >= now() - interval '3 hours'
+      AND g.completed_at >= now() - interval '72 hours'
       AND g.input_scope_version=(SELECT v.version FROM equipment_rank_scope_versions v
         WHERE v.kind=p.kind AND v.item_id=p.item_id AND v.platform=p.platform) '''), params).mappings().first()
     if published is None:
@@ -55,10 +55,20 @@ def get_compact_page(conn, kind, platform, item, page, page_size, search, divisi
         if not selected:
             return {'population':population,'filtered_count':0,'page':page,'page_size':page_size,
                     'total_pages':0,'rows':[],'rank_updated_at':published['completed_at']}
-    blocks = conn.execute(text('''SELECT block_id,first_position,last_position,payload
-      FROM equipment_rank_compact_blocks WHERE generation_id=:g ORDER BY block_id'''),
-      {'g':generation}).mappings()
     offset = (page-1)*page_size
+    # Ordinary pages need only the compressed blocks intersecting their page.
+    # The exclusion join above still guards every soldier in format-1 snapshots.
+    ordinary_page = not search and division == 0
+    if ordinary_page:
+        blocks = conn.execute(text('''SELECT block_id,first_position,last_position,payload
+          FROM equipment_rank_compact_blocks WHERE generation_id=:g
+            AND last_position >= :first AND first_position <= :last
+          ORDER BY block_id'''),
+          {'g':generation,'first':offset+1,'last':offset+page_size}).mappings()
+    else:
+        blocks = conn.execute(text('''SELECT block_id,first_position,last_position,payload
+          FROM equipment_rank_compact_blocks WHERE generation_id=:g ORDER BY block_id'''),
+          {'g':generation}).mappings()
     count = 0
     page_rows = []
     for block in blocks:
@@ -73,7 +83,8 @@ def get_compact_page(conn, kind, platform, item, page, page_size, search, divisi
             band = next((i for i,cutoff in enumerate(CUTOFFS,1) if top_pct <= cutoff),10)
             if division and division != band:
                 continue
-            if offset <= count < offset + page_size:
+            position_index = block['first_position'] + index - 1 if ordinary_page else count
+            if offset <= position_index < offset + page_size:
                 page_rows.append({'soldier_id':soldier,'rank':rank,
                                   'position':block['first_position']+index,
                                   'kills':kills,'kpm':None if kpm is None else Decimal(kpm),
@@ -81,6 +92,10 @@ def get_compact_page(conn, kind, platform, item, page, page_size, search, divisi
                                   'source_fetched_at':None if fetched is None else datetime.fromisoformat(fetched),
                                   'top_pct':top_pct,'division':band})
             count += 1
+    if ordinary_page:
+        count = population
+        if offset < population and len(page_rows) != min(page_size, population-offset):
+            raise ValueError('compact snapshot page has missing rows')
     if page_rows:
         ids = [row['soldier_id'] for row in page_rows]
         identities = {r['soldier_id']:r for r in conn.execute(text('''SELECT soldier_id,current_name,persona_id,platform
@@ -92,3 +107,5 @@ def get_compact_page(conn, kind, platform, item, page, page_size, search, divisi
     return {'population':population,'filtered_count':count,'page':page,'page_size':page_size,
             'total_pages':(count+page_size-1)//page_size,'rows':page_rows,
             'rank_updated_at':published['completed_at']}
+
+[executed on device: rnt-01 (aa6d9aec-0414-4ad7-b824-1d53cc1368b2)]
