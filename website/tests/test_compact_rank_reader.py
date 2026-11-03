@@ -107,5 +107,3 @@ def test_filtered_page_keeps_full_scan():
     c = FakeConnection()
     get(c, division=10)
     assert c.block_queries == [{'g':5}]
-
-[executed on device: rnt-01 (aa6d9aec-0414-4ad7-b824-1d53cc1368b2)]
