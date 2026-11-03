@@ -112,6 +112,18 @@ def main():
             raise RuntimeError(f'migration 0020 required, found {revision}')
         if args.snapshot_format == 2 and revision != '0023_compact_exclusion_guard':
             raise RuntimeError('safe format-2 publication requires migration 0023')
+        if args.publish:
+            owned = conn.execute(text("""SELECT 1 FROM equipment_rank_jobs
+              WHERE kind=:kind AND item_id=:item AND platform=:platform AND metric=:metric
+                AND claimed_by=CAST(:worker AS uuid)
+                AND claim_token=CAST(:token AS uuid)
+                AND claim_epoch=:epoch
+                AND lease_expires_at>clock_timestamp()"""),
+                {**params, 'worker':args.rank_worker_id,
+                 'token':args.rank_claim_token,
+                 'epoch':args.rank_claim_epoch}).first()
+            if owned is None:
+                raise RuntimeError('stale or expired distributed claim: refusing build')
         conn.execute(text("SET LOCAL statement_timeout='120s'"))
         conn.execute(text("SET LOCAL work_mem='32MB'"))
         scope_version = conn.execute(text('''SELECT version FROM equipment_rank_scope_versions
