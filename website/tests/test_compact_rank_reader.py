@@ -39,6 +39,7 @@ class FakeConnection:
              'payload':encode_block([(1,1,100,'1.234567890123456789',None,None),
                                      (2,1,100,'2.0',None,None),
                                      (3,3,50,None,'25.25',None)])}]
+        self.block_queries = []
         self.people = {1:('Alpha',101,'pc'),2:('Bravo',102,'pc'),3:('Charlie',103,'pc')}
     def execute(self, statement, params=None):
         sql = str(statement)
@@ -51,6 +52,9 @@ class FakeConnection:
             return Result([sid for sid,(name,persona,_) in self.people.items()
                            if needle in name.lower() or needle in str(persona)])
         if 'FROM equipment_rank_compact_blocks' in sql:
+            self.block_queries.append(params)
+            if params and 'first' in params:
+                return Result([b for b in self.blocks if b['last_position'] >= params['first'] and b['first_position'] <= params['last']])
             return Result(self.blocks)
         if 'FROM soldiers WHERE soldier_id' in sql:
             return Result([{'soldier_id':sid,'current_name':self.people[sid][0],
@@ -89,3 +93,19 @@ def test_exclusion_and_missing_pointer_fallback():
 def test_division_filter():
     assert get(FakeConnection(),division=10)['filtered_count'] == 1
     assert get(FakeConnection(),division=1)['filtered_count'] == 0
+
+
+def test_ordinary_page_uses_bounded_blocks():
+    c = FakeConnection()
+    assert [r['soldier_id'] for r in get(c, page=2, page_size=2)['rows']] == [3]
+    assert c.block_queries == [{'g':5,'first':3,'last':4}]
+    assert get(c, page=3, page_size=2)['rows'] == []
+    assert get(c, page=3, page_size=2)['filtered_count'] == 3
+
+
+def test_filtered_page_keeps_full_scan():
+    c = FakeConnection()
+    get(c, division=10)
+    assert c.block_queries == [{'g':5}]
+
+[executed on device: rnt-01 (aa6d9aec-0414-4ad7-b824-1d53cc1368b2)]
