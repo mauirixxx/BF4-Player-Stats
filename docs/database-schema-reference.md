@@ -642,5 +642,3 @@ must be reviewed before production. The recovery is format 1 only: it does
 **not** restore lost format-2 migration `0022`, format-2 writer, or its original
 97 ms benchmark, and no production performance claim is made. The targeted
 local tests passed 14/14 after recovery. Production remains disabled.
-
-[executed on device: rnt-01 (aa6d9aec-0414-4ad7-b824-1d53cc1368b2)]
