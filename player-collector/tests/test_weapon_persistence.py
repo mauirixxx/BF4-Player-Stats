@@ -120,7 +120,11 @@ def test_weapon_persistence_serializes_shared_catalog_and_orders_guids() -> None
     assert "pg_advisory_xact_lock" in source
     assert "bf4ps:weapon-catalog-persistence" in source
     assert "sorted(weapons, key=lambda item: item.weapon_guid)" in source
-    lock_pos = source.index("pg_advisory_xact_lock")
+    # Ownership is checked before catalog access; the lock is conditional.
+    # Once acquired, the catalog is rechecked before writing.
     ownership_pos = source.index("SELECT 1")
-    catalog_pos = source.index("INSERT INTO weapon_catalog")
-    assert lock_pos < ownership_pos < catalog_pos
+    initial_read_pos = source.index("FROM weapon_catalog")
+    lock_pos = source.index("pg_advisory_xact_lock")
+    recheck_pos = source.index("FROM weapon_catalog", lock_pos)
+    write_pos = source.index("INSERT INTO weapon_catalog")
+    assert ownership_pos < initial_read_pos < lock_pos < recheck_pos < write_pos
