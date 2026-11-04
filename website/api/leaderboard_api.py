@@ -719,6 +719,40 @@ class Handler(BaseHTTPRequestHandler):
                     else:
                         result=get_general_page(c,metric,platform,page,page_size,search,division)
                 send_json(self,200,result);return
+            if u.path=='/equipment-position':
+                kind=q.get('kind',[''])[0];platform=q.get('platform',[''])[0]
+                raw_item=q.get('item',[''])[0];raw_persona=q.get('persona_id',[''])[0]
+                if (kind not in ('weapon','vehicle') or platform not in PLATFORMS
+                    or not raw_item.isdecimal() or len(raw_item)>12 or not 0<int(raw_item)<=9223372036854775807
+                    or not raw_persona.isdecimal() or len(raw_persona)>19 or not 0<int(raw_persona)<=9223372036854775807):
+                    self.send_error(400);return
+                item=int(raw_item)
+                if kind=='vehicle':item=VEHICLE_FAMILIES.get(item,(item,None))[0]
+                table='weapon_leaderboard_metrics' if kind=='weapon' else 'vehicle_leaderboard_metrics'
+                item_key='weapon_id' if kind=='weapon' else 'vehicle_id'
+                params={'item':item,'platform':platform,'persona':int(raw_persona)}
+                with engine.connect() as c:
+                    c.execute(text('SET TRANSACTION READ ONLY'))
+                    c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
+                    # The indexed page orders by kills DESC, soldier_id ASC.
+                    # Count that exact ordering, not the legacy search rank.
+                    target=c.execute(text(f'''SELECT m.soldier_id,m.kills FROM {table} m
+                        JOIN soldiers s ON s.soldier_id=m.soldier_id
+                        WHERE m.{item_key}=:item AND s.persona_id=:persona
+                          AND (:platform='all' OR s.platform=:platform)
+                          AND NOT EXISTS (SELECT 1 FROM player_exclusions pe
+                            WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)
+                        LIMIT 1'''),params).mappings().first()
+                    if target is None:
+                        send_json(self,200,{'page':None});return
+                    ahead=c.execute(text(f'''SELECT count(*) FROM {table} m
+                        JOIN soldiers s ON s.soldier_id=m.soldier_id
+                        WHERE m.{item_key}=:item AND (:platform='all' OR s.platform=:platform)
+                          AND (m.kills>:score OR (m.kills=:score AND m.soldier_id<:soldier_id))
+                          AND NOT EXISTS (SELECT 1 FROM player_exclusions pe
+                            WHERE pe.platform=s.platform AND pe.persona_id=s.persona_id AND pe.active)'''),
+                        {**params,'score':target['kills'],'soldier_id':target['soldier_id']}).scalar_one()
+                send_json(self,200,{'page':int(ahead)//50+1});return
             if u.path!='/leaderboard':self.send_error(404);return
             kind=q.get('kind',[''])[0];platform=q.get('platform',[''])[0];item=q.get('item',[None])[0]
             if kind not in KINDS or platform not in PLATFORMS or (item is not None and (not item.isdecimal() or len(item)>12)):
