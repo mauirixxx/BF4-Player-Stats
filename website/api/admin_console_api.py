@@ -306,7 +306,7 @@ class Handler(BaseHTTPRequestHandler):
                         SELECT count(*) AS published_scopes,
                           count(*) FILTER (WHERE g.snapshot_format=2) AS format2_scopes,
                           count(*) FILTER (WHERE g.status='published'
-                            AND g.completed_at >= clock_timestamp()-interval '72 hours') AS recent_scopes,
+                            AND g.completed_at >= clock_timestamp()-interval '24 hours') AS recent_scopes,
                           coalesce(sum(g.row_count),0) AS published_rows,
                           max(g.completed_at) AS newest_completed_at
                         FROM equipment_rank_compact_published p
