@@ -5,11 +5,13 @@ Requires=docker.service
 
 [Service]
 Type=simple
+# Override per host with systemd Environment=BF4PS_COMPACT_SCOPE_PARITY=odd/even
+Environment=BF4PS_COMPACT_SCOPE_PARITY=all
 Restart=always
 RestartSec=20
 TimeoutStopSec=60
 ExecStartPre=-/usr/bin/docker rm -f bf4ps-compact-ranking
-ExecStart=/usr/bin/docker run --rm --name bf4ps-compact-ranking --network host --env-file /opt/bf4ps-production/deploy/docker/collector.env -e BF4PS_SITE=mak -v /opt/bf4ps-compact-release/player-collector:/rank:ro -w /rank --entrypoint python bf4-player-stats:collector-ranking-versions-0016-candidate /rank/run_compact_rank_scheduler.py --max-publications 1000000000 --poll-seconds 30 --production-ack
+ExecStart=/usr/bin/docker run --rm --name bf4ps-compact-ranking --network host --env-file /opt/bf4ps-production/deploy/docker/collector.env -e BF4PS_SITE=mak -e BF4PS_COMPACT_SCOPE_PARITY -v /opt/bf4ps-compact-release/player-collector:/rank:ro -w /rank --entrypoint python bf4-player-stats:collector-ranking-versions-0016-candidate /rank/run_compact_rank_scheduler.py --max-publications 1000000000 --poll-seconds 30 --production-ack
 ExecStop=/usr/bin/docker stop -t 45 bf4ps-compact-ranking
 
 [Install]
