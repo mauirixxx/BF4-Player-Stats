@@ -301,11 +301,30 @@ class Handler(BaseHTTPRequestHandler):
                         FROM equipment_rank_jobs WHERE last_success_at IS NOT NULL
                         ORDER BY last_success_at DESC LIMIT 12
                     """)).mappings().all()
+                    # Compact publication is independent of the legacy ranking job queue.
+                    compact = conn.execute(text("""
+                        SELECT count(*) AS published_scopes,
+                          count(*) FILTER (WHERE g.snapshot_format=2) AS format2_scopes,
+                          count(*) FILTER (WHERE g.status='published'
+                            AND g.completed_at >= clock_timestamp()-interval '72 hours') AS recent_scopes,
+                          coalesce(sum(g.row_count),0) AS published_rows,
+                          max(g.completed_at) AS newest_completed_at
+                        FROM equipment_rank_compact_published p
+                        JOIN equipment_rank_generations g ON g.generation_id=p.generation_id
+                    """)).mappings().one()
+                    compact_recent = conn.execute(text("""
+                        SELECT p.kind,p.item_id,p.platform,p.metric,p.generation_id,
+                          p.published_at,g.completed_at,g.row_count,g.snapshot_format,g.status
+                        FROM equipment_rank_compact_published p
+                        JOIN equipment_rank_generations g ON g.generation_id=p.generation_id
+                        ORDER BY p.published_at DESC LIMIT 12
+                    """)).mappings().all()
                     capacity = conn.execute(text('SELECT max_active_builds,lease_seconds FROM equipment_rank_capacity WHERE id=1')).mappings().one()
                     replication = conn.execute(text('SELECT * FROM public.bf4ps_admin_replication_status()')).mappings().one()
                 return self.reply(200,{'summary':dict(summary),'active':[dict(x) for x in active],
                   'workers':[dict(x) for x in workers],'recent':[dict(x) for x in recent],
                   'capacity':dict(capacity),'observed_at':time.time(),
+                  'compact':dict(compact),'compact_recent':[dict(x) for x in compact_recent],
                   'replication':dict(replication)})
             except Exception:
                 import logging
