@@ -32,3 +32,9 @@ Disable `BF4PS_COMPACT_RANK_READS` in the systemd drop-in, run `systemctl daemon
 ## Safe operations
 
 Do not automatically enable broad writer jobs or delete generations based solely on reader activation. The reader is already live and independent of publication scheduling. Keep the existing legacy fallback until compact coverage and retention are proven.
+
+## Admin ranking monitor update (2026-11-03)
+
+The production authenticated `/bf4ps-admin-api/ranking-status` response now includes `compact` aggregates (published scopes, format-2 scopes, published rows, scopes completed within 72 hours, newest completion) and `compact_recent` (up to 12 published generations). These are displayed above the **separately labeled legacy distributed ranking queue** on `/admin-ranking.html`. The admin DB role `bf4ps_admin_moderation` received SELECT-only access to `equipment_rank_compact_published` and `equipment_rank_generations`; no DML grants were added. The private API service restarted successfully and still rejects unauthenticated ranking-status requests with HTTP 401; the public HTML returned HTTP 200.
+
+Initial direct database check found **15 published compact scopes**. This is limited coverage; do not mistake reader activation for continuous, full-fleet compact publication. Writer scheduling and retention are not yet confirmed. The updated page intentionally does not claim writer health from legacy worker heartbeats.
