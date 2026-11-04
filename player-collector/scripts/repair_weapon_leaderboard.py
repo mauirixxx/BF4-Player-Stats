@@ -20,7 +20,7 @@ with engine.begin() as c:
     c.execute(text("SET LOCAL lock_timeout='5s'"))
     c.execute(text("SET LOCAL statement_timeout='120s'"))
     revision=c.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-    if revision!="0018_distributed_rank_queue": raise RuntimeError(f"unexpected schema {revision}")
+    if revision!="0023_compact_exclusion_guard": raise RuntimeError(f"unexpected schema {revision}; expected production 0023")
     # Serialize concurrent repairs of the same weapon.
     c.execute(text("SELECT pg_advisory_xact_lock(640042,:item)"),{"item":a.weapon_id})
     raw=c.execute(text("""SELECT count(*) FROM soldier_weapon_stats w
