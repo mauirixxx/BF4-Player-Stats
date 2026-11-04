@@ -88,7 +88,7 @@ function renderSearch(){
  $('searchRows').innerHTML=searchRows.map(s=>'<tr><td><button class="soldier" data-soldier="'+s.soldier_id+'">'+soldierFlag(s)+safe(s.current_name)+'</button></td><td>'+platformLabel[s.platform]+'</td><td>'+safe(s.battlelog_username||'—')+'</td><td>'+fmt(s.rank)+'</td><td>'+fmt(s.kills)+'</td><td>'+(s.detailed_state==='success'?'Collected':'Pending')+'</td></tr>').join('')||'<tr><td colspan="6">'+(q.length>=2?'No matching soldiers':'Type at least two characters to search all platforms')+'</td></tr>';
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-soldier]');if(b)openSoldier(Number(b.dataset.soldier))});
-$('platformTabs').addEventListener('click',e=>{const b=e.target.closest('[data-platform]');if(!b)return;generalRequest++;unifiedRequest++;platform=b.dataset.platform;leaderPage=0;document.querySelectorAll('[data-platform]').forEach(x=>x.classList.toggle('active',x===b));if(['weapon','vehicle'].includes($('metric').value))loadUnifiedEquipment();else rank()});
+$('platformTabs').addEventListener('click',e=>{const b=e.target.closest('[data-platform]');if(!b)return;generalRequest++;unifiedRequest++;platform=b.dataset.platform;leaderPage=0;if(highlightedPersona&&['weapon','vehicle'].includes($('metric').value)){pendingJump=true;$('filter').value='';}document.querySelectorAll('[data-platform]').forEach(x=>x.classList.toggle('active',x===b));if(['weapon','vehicle'].includes($('metric').value))loadUnifiedEquipment();else rank()});
 $('metric').onchange=()=>{leaderPage=0;generalRequest++;unifiedRequest++;const equipment=['weapon','vehicle'].includes($('metric').value);$('leaderEquipment').style.display=equipment?'':'none';if(equipment)loadUnifiedEquipment();else rank()};$('filter').oninput=()=>{leaderPage=0;clearTimeout(generalDebounce);generalDebounce=setTimeout(()=>{if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()},250)};$('divisionFilter').onchange=()=>{leaderPage=0;if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()};$('globalSearch').oninput=()=>{clearTimeout(searchDebounce);searchDebounce=setTimeout(updateAliasSearch,250)};$('globalSearch').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.isComposing)return;const first=$('searchRows').querySelector('button[data-soldier]');if(!first)return;e.preventDefault();openSoldier(Number(first.dataset.soldier))});$('clearSearch').onclick=()=>{clearTimeout(searchDebounce);$('globalSearch').value='';updateAliasSearch()};$('prevPage').onclick=()=>{leaderPage=Math.max(0,leaderPage-1);if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()};$('nextPage').onclick=()=>{if(equipmentPage&&['weapon','vehicle'].includes($('metric').value)&&leaderPage+1>=equipmentPage.total_pages)return;if(!['weapon','vehicle'].includes($('metric').value)&&generalPage&&leaderPage+1>=generalPage.total_pages)return;leaderPage++;if(['weapon','vehicle'].includes($('metric').value))renderUnifiedEquipment();else renderRanks()};
 for(let i=1;i<=10;i++)$('divisionFilter').insertAdjacentHTML('beforeend','<option value="'+i+'">DIVISION '+i+'</option>');
 async function load(refreshLeaderboard=false){
@@ -114,18 +114,27 @@ async function loadUnifiedEquipment(){
 async function renderUnifiedEquipment(){
  const kind=$('metric').value,item=$('leaderEquipment').value,seq=++unifiedRequest;
  if(!item)return;
- // Dossier deep links must locate the soldier within the same result set
- // displayed on screen. Compact and fallback rank populations can differ,
- // so a rank-derived page jump can land on unrelated players.
+ // One indexed position lookup, followed by one verified 50-player page.
  if(pendingJump&&highlightedPersona&&!$('filter').value){
-   $('filter').value=highlightedPersona;
-   leaderPage=0;
    pendingJump=false;
+   try{
+     const u=new URL('/bf4ps-api/equipment-position',location.origin);
+     for(const [k,v] of Object.entries({kind,platform,item,persona_id:highlightedPersona}))u.searchParams.set(k,v);
+     const response=await fetch(u,{cache:'no-store',signal:AbortSignal.timeout(6000)});
+     if(!response.ok)throw Error('Position lookup unavailable');
+     const located=await response.json();
+     if(seq!==unifiedRequest)return;
+     if(located.page){
+       const nearby=await equipmentFetch({kind,platform,item,page:located.page,page_size:50,search:'',division:0});
+       if(seq!==unifiedRequest)return;
+       if(nearby.rows.some(x=>String(x.persona_id)===highlightedPersona))leaderPage=located.page-1;
+       else{$('filter').value=highlightedPersona;leaderPage=0;}
+     }else{$('filter').value=highlightedPersona;leaderPage=0;}
+   }catch(e){if(seq!==unifiedRequest)return;$('filter').value=highlightedPersona;leaderPage=0;}
  }
  try{
   const result=await equipmentFetch({kind,platform,item,page:leaderPage+1,page_size:50,search:$('filter').value.trim(),division:$('divisionFilter').value});
   if(seq!==unifiedRequest)return;
-  if(pendingJump&&highlightedPersona&&!$('filter').value){const locate=await equipmentFetch({kind,platform,item,page:1,page_size:1,search:highlightedPersona,division:0});if(seq!==unifiedRequest)return;const hit=locate.rows.find(x=>String(x.persona_id)===highlightedPersona);if(hit){const position=Number(hit.position);pendingJump=false;if(Number.isSafeInteger(position)&&position>0){const targetPage=Math.floor((position-1)/50);if(targetPage!==leaderPage){leaderPage=targetPage;return renderUnifiedEquipment()}}}else pendingJump=false}
   equipmentPage=result;
   $('population').textContent=fmt(result.population)+' eligible · '+platformLabel[platform]+' · '+displayName(unifiedItems.find(x=>String(x.id)===item)?.name);
   $('rankInfo').textContent='Live equipment rankings · global ranks and divisions · audited vehicle families consolidated';
