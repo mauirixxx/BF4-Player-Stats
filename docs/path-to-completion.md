@@ -1,3 +1,22 @@
+> **Production status update (2026-11-04):** This is a historical consolidation
+> backlog, not a live assertion that every item below is still unimplemented.
+> The production website has a fast compact format-2 ranking reader and two
+> continuous odd/even equipment ranking builders on MAK-01 and MAK-02.
+> The admin ranking monitor shows published coverage against 2,624 eligible
+> scopes (Nov 4 inventory), and a rolling 24-hour publication count.
+> A global soldier search timeout was reproduced and fixed with bounded
+> trigram-indexed candidate selection; public `wart` search now returns
+> HTTP 200 (2.64 seconds in smoke testing), and 2-character terms are accepted.
+> See `docs/compact-production-cutover.md` and
+> `docs/compact-two-worker-parity.md` for current deployment details.
+>
+> **Still to verify before calling BF4PS complete:** full compact sweep and
+> refresh cadence, sustained WAL/replication and retention behavior, broad
+> ranking parity (including ties, deep pagination and all metrics),
+> clean-checkout/deployed-code parity, full UI/API regression, HA recovery,
+> and remaining feature/security items below. Historical unchecked boxes
+> should be re-audited rather than assumed missing.
+
 > **2026-11-02 schema history recovery:** Restored migrations `0020_compact_rank_snapshots` and `0021_reconcile_player_exclusions` from verified matching RNT-01 worktree copies to GitHub main. Production primary reports revision `0021`. The Rusty historical PC alias candidate export contains 122,326 rows; staging/import into `soldier_names` remains a separate, data-only operation and must revalidate full-collection eligibility, current names and case-insensitive existing aliases.
 
 > **2026-10-26 production recovery:** PostgreSQL WAL replay recovered to zero and nine player collectors, Discord HA, manual refresh API and two platoon schedulers were brought online/verified. The `rnt-01` collector had remained running under the legacy Compose name; naming is now standardized. Ranking builder/GC and several supporting services remain paused; `equipment_rank_rows` autovacuum must be restored safely. See [recovery runbook](production-recovery-2026-10-26.md).
