@@ -20,6 +20,7 @@ LEFT JOIN equipment_rank_compact_published p
 LEFT JOIN equipment_rank_generations g ON g.generation_id=p.generation_id
 WHERE j.next_due_at<=clock_timestamp()
  AND (j.lease_expires_at IS NULL OR j.lease_expires_at<=clock_timestamp())
+ AND (:parity = 'all' OR mod(j.item_id, 2) = CASE WHEN :parity = 'odd' THEN 1 ELSE 0 END)
 ORDER BY CASE WHEN j.kind='vehicle' AND j.item_id=10 THEN 0 ELSE 1 END,
  CASE WHEN g.snapshot_format=2 THEN 1 ELSE 0 END,
  CASE WHEN j.platform='all' THEN 0 ELSE 1 END,
@@ -32,8 +33,9 @@ def main():
     ap.add_argument('--max-publications',type=int,default=1)
     ap.add_argument('--poll-seconds',type=int,default=30)
     ap.add_argument('--production-ack',action='store_true')
+    ap.add_argument('--parity',choices=('all','odd','even'),default=os.environ.get('BF4PS_COMPACT_SCOPE_PARITY','all'))
     args=ap.parse_args()
-    if args.max_publications<1 or args.poll_seconds<5: ap.error('invalid bounds')
+    if args.max_publications<1 or args.poll_seconds<5 or args.parity not in ('all','odd','even'): ap.error('invalid bounds')
     url=os.environ['BF4PS_DATABASE_URL']
     if make_url(url).database!='bf4_playerstats' or not args.production_ack:
         ap.error('requires explicit production acknowledgement and production DB')
@@ -43,12 +45,12 @@ def main():
         with engine.connect() as c:
             revision=c.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
             capacity=c.execute(text('SELECT max_active_builds FROM equipment_rank_capacity WHERE id=1')).scalar_one()
-        if revision!='0023_compact_exclusion_guard' or capacity!=1:
+        if revision!='0023_compact_exclusion_guard' or capacity not in (1,2):
             raise RuntimeError('production revision/capacity mismatch')
         while count<args.max_publications:
             with engine.connect() as c:
                 ready=c.execute(text('SELECT public.bf4ps_rank_gate_ready()')).scalar_one()
-                scope=c.execute(PICK).mappings().first() if ready else None
+                scope=c.execute(PICK,{'parity':args.parity}).mappings().first() if ready else None
             if not scope:
                 print('waiting for WAL replay gate or due scope',flush=True)
                 time.sleep(args.poll_seconds)
@@ -60,7 +62,7 @@ def main():
             cmd=[sys.executable,str(Path(__file__).with_name('run_one_compact_scope.py')),
                  '--kind',scope['kind'],'--item',str(scope['item_id']),
                  '--platform',scope['platform'],'--metric',scope['metric'],'--production-ack']
-            print('starting compact scope',scope_id,flush=True)
+            print('starting compact scope',scope_id,'parity',args.parity,flush=True)
             rc=subprocess.call(cmd,env=env)
             if rc==0:
                 count+=1
