@@ -37,7 +37,7 @@ button.outline{background:transparent;border:1px solid #64778e;color:var(--fg)}
 <div>
 <section class="card">
 <div class="row"><h2>Published compact rankings</h2><button id="refresh">Refresh now</button></div>
-<p>These figures describe available snapshots, not writer scheduling or worker health.</p><p id="writer-status" class="muted">Continuous compact writer: not deployed. Only explicitly authorized single-scope publication is available. Automatic coverage and cleanup are not yet enabled.</p>
+<p>These figures describe available snapshots, not writer scheduling or worker health.</p><p id="writer-status" class="muted">Continuous compact writer: checking publication activity…</p>
 <div class="stats" id="compact-stats"></div>
 <p id="freshness" class="muted"></p>
 </section>
@@ -89,6 +89,8 @@ async function refresh(){
    box.className='stat';number.textContent=fmt(value);caption.textContent=label;box.append(number,caption);return box;
   }));
   $('freshness').textContent=c.newest_completed_at?'Most recent completion: '+when(c.newest_completed_at):'No completed compact generations';
+  const active=(d.active||[])[0],latest=(d.compact_recent||[])[0],due=d.summary?.due;
+  $('writer-status').textContent=active ? 'Publishing now: '+active.kind+' '+active.item_id+' / '+active.platform+' / '+active.metric+' on '+(active.hostname||'worker')+' · '+fmt(due)+' scopes due · WAL-gated, one worker' : 'No active publication · '+fmt(due)+' scopes due · last compact publication '+when(latest?.published_at)+' · waiting for next eligible scope or WAL replay';
   tableRows(d.compact_recent||[]);
   $('updated').textContent='Last checked '+new Date((d.observed_at||Date.now()/1000)*1000).toLocaleTimeString();
   $('state').textContent='● Connected · read-only';$('state').className='ok';
