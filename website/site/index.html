@@ -114,6 +114,14 @@ async function loadUnifiedEquipment(){
 async function renderUnifiedEquipment(){
  const kind=$('metric').value,item=$('leaderEquipment').value,seq=++unifiedRequest;
  if(!item)return;
+ // Dossier deep links must locate the soldier within the same result set
+ // displayed on screen. Compact and fallback rank populations can differ,
+ // so a rank-derived page jump can land on unrelated players.
+ if(pendingJump&&highlightedPersona&&!$('filter').value){
+   $('filter').value=highlightedPersona;
+   leaderPage=0;
+   pendingJump=false;
+ }
  try{
   const result=await equipmentFetch({kind,platform,item,page:leaderPage+1,page_size:50,search:$('filter').value.trim(),division:$('divisionFilter').value});
   if(seq!==unifiedRequest)return;
