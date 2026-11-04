@@ -89,8 +89,9 @@ async function refresh(){
    box.className='stat';number.textContent=fmt(value);caption.textContent=label;box.append(number,caption);return box;
   }));
   $('freshness').textContent=c.newest_completed_at?'Most recent completion: '+when(c.newest_completed_at):'No completed compact generations';
-  const active=(d.active||[])[0],latest=(d.compact_recent||[])[0],due=d.summary?.due;
-  $('writer-status').textContent=active ? 'Publishing now: '+active.kind+' '+active.item_id+' / '+active.platform+' / '+active.metric+' on '+(active.hostname||'worker')+' · '+fmt(due)+' scopes due · WAL-gated, one worker' : 'No active publication · '+fmt(due)+' scopes due · last compact publication '+when(latest?.published_at)+' · waiting for next eligible scope or WAL replay';
+  const active=d.active||[],latest=(d.compact_recent||[])[0],due=d.summary?.due,capacity=d.capacity?.max_active_builds;
+  const claims=active.map(a=>(a.hostname||'Worker')+': '+a.kind+' '+a.item_id+' / '+a.platform+' / '+a.metric).join(' · ');
+  $('writer-status').textContent=(capacity||'?')+' ranking slots · '+active.length+' active database claims · '+fmt(due)+' scopes due · '+(claims||'No active claims')+' · last compact publication '+when(latest?.published_at)+' · WAL-gated (claims may remain until lease expiry after a stop)';
   tableRows(d.compact_recent||[]);
   $('updated').textContent='Last checked '+new Date((d.observed_at||Date.now()/1000)*1000).toLocaleTimeString();
   $('state').textContent='● Connected · read-only';$('state').className='ok';
