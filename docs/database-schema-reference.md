@@ -761,3 +761,11 @@ neither configuration sustained the historical 97 ms p95 target. Pool
 contention is not established as the sole cause. These timings are local
 client-observed HTTP results, not production or WAN measurements. Continue
 profiling under repeatable load before production activation.
+
+## Production compact ranking reader cutover (2026-11-03)
+
+Production Alembic head was reverified on MAK-DB-02 as `0023_compact_exclusion_guard` before the cutover. The existing website PostgreSQL role `bf4ps_stage9c_d2` was granted **SELECT only** on `public.equipment_rank_compact_published`, `public.equipment_rank_compact_blocks`, and `public.equipment_rank_compact_lookup`. Existing SELECT access to `equipment_rank_generations`, `equipment_rank_scope_versions`, `player_exclusions`, and `soldiers` was verified. No schema migration or DML grant was required.
+
+The production leaderboard API on `tcou` now includes `website/api/rank_read_path_compact.py` plus `bf4ps/compact_rank_codec.py` and `bf4ps/compact_exclusions.py`. Its systemd drop-in `/etc/systemd/system/bf4ps-leaderboard-api.service.d/compact-rank-reads.conf` sets `BF4PS_COMPACT_RANK_READS=1`. The precomputed/legacy fallback remains for missing, stale, or unsupported compact scopes. Disable the drop-in flag and restart `bf4ps-leaderboard-api.service` to roll back compact reads.
+
+Production HTTP smoke tests returned 200 for weapon first page (10 rows, population 208,277; ~18.6 ms), page 2 (~12 ms), division filter (~718 ms), name search (~629 ms), and vehicle first page (~14 ms). The leaderboard API was running with zero unexpected restarts. These checks establish **reader activation**, not complete compact coverage or continuous writer/retention verification. The admin ranking monitor still reports legacy queue telemetry until separately upgraded.
