@@ -475,13 +475,10 @@ def indexed_equipment_search(conn, kind, platform, item, search, sort_metric):
 
 def get_page(conn, kind, platform, item, page, page_size, search, division, sort_metric="kills"):
     # Compact reader is independently gated; preserve the legacy fallback.
-    # Multi-variant vehicle families need legacy SUM/MAX consolidation.
-    # Single-item compact metrics are not yet proven equivalent.
-    canonical_vehicle = VEHICLE_FAMILIES.get(item, (item, None))[0] if kind == 'vehicle' else None
-    family_needs_legacy = kind == 'vehicle' and any(
-        raw != canonical and canonical == canonical_vehicle
-        for raw, (canonical, _) in VEHICLE_FAMILIES.items())
-    if os.environ.get('BF4PS_COMPACT_RANK_READS') == '1' and (not family_needs_legacy or canonical_vehicle in (2,10,47)):
+    # Format-2 family SUM/MAX top-10 parity verified against production raw
+    # stats for every consolidated vehicle family (2026-11-04).
+    # Missing/incompatible snapshots continue through the legacy fallback.
+    if os.environ.get('BF4PS_COMPACT_RANK_READS') == '1':
         from rank_read_path_compact import get_compact_page
         canonical_item = VEHICLE_FAMILIES.get(item, (item, None))[0] if kind == 'vehicle' else item
         compact = get_compact_page(conn, kind, platform, canonical_item,
