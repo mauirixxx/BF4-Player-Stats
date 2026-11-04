@@ -83,10 +83,12 @@ async function refresh(){
   if(response.status===401){showAuth(false);return}
   if(!response.ok)throw Error('HTTP '+response.status);
   const d=await response.json(),c=d.compact||{};
-  const metrics=[['Published scopes',c.published_scopes],['Format-2 scopes',c.format2_scopes],['Completed in 72h',c.recent_scopes],['Published ranking rows',c.published_rows]];
+  const total=Number(d.summary?.total||0);
+  const progress=(n)=>total>0?fmt(n)+' / '+fmt(total):fmt(n);
+  const metrics=[['Published scopes',progress(c.published_scopes)],['Format-2 scopes',progress(c.format2_scopes)],['Published in last 24h',progress(c.recent_scopes)],['Published ranking rows',fmt(c.published_rows)]];
   $('compact-stats').replaceChildren(...metrics.map(([label,value])=>{
    const box=document.createElement('div'),number=document.createElement('strong'),caption=document.createElement('small');
-   box.className='stat';number.textContent=fmt(value);caption.textContent=label;box.append(number,caption);return box;
+   box.className='stat';number.textContent=String(value);caption.textContent=label;box.append(number,caption);return box;
   }));
   $('freshness').textContent=c.newest_completed_at?'Most recent completion: '+when(c.newest_completed_at):'No completed compact generations';
   const active=d.active||[],latest=(d.compact_recent||[])[0],due=d.summary?.due,capacity=d.capacity?.max_active_builds;
