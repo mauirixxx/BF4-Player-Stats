@@ -14,3 +14,7 @@ cat /var/lib/bf4ps-vehicle-metrics-sync/last_vehicle_id
 ```
 
 Caveats: eventual consistency (not per-collection synchronous); first full catalog pass not yet observed; stale/deleted/excluded historical rows are not deleted by the upsert. Monitor PostgreSQL query load and leaderboard API responsiveness during the first full pass. The worker requires a review after schema migrations.
+
+## November 4, 2026 production incident
+
+The MAK-01 weapon and MAK-02 vehicle metrics synchronization services were found **failed/stopped** (last activity October 26). Newly collected raw equipment statistics can therefore be absent from legacy indexed metrics. The repair scripts were updated to require production Alembic `0023_compact_exclusion_guard` and installed on their respective hosts with backups. This is a revision compatibility update, not proof of successful continuous reconciliation. The compact rank builder reads raw stats directly; the website equipment-position lookup and legacy leaderboard fallback use indexed metrics, so missing derived records can break dossier deep links. Vehicle 80 audit on November 4: 367,770 eligible raw vs 235,688 indexed, gap 132,082. Before re-enabling unattended services, verify a controlled repair finishes within the configured 120-second statement timeout, check WAL and replica replay, and confirm XBoomSki (persona 947734894) is present in PC and ALL rankings.
