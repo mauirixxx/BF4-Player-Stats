@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly bounded BF4PS compact generation retention
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=300
+Unit=bf4ps-compact-retention.service
+
+[Install]
+WantedBy=timers.target
