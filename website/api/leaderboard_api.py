@@ -481,7 +481,7 @@ def get_page(conn, kind, platform, item, page, page_size, search, division, sort
     family_needs_legacy = kind == 'vehicle' and any(
         raw != canonical and canonical == canonical_vehicle
         for raw, (canonical, _) in VEHICLE_FAMILIES.items())
-    if os.environ.get('BF4PS_COMPACT_RANK_READS') == '1' and (not family_needs_legacy or canonical_vehicle in (2,47)):
+    if os.environ.get('BF4PS_COMPACT_RANK_READS') == '1' and (not family_needs_legacy or canonical_vehicle in (2,10,47)):
         from rank_read_path_compact import get_compact_page
         canonical_item = VEHICLE_FAMILIES.get(item, (item, None))[0] if kind == 'vehicle' else item
         compact = get_compact_page(conn, kind, platform, canonical_item,
