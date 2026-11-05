@@ -65,7 +65,7 @@ def main():
                     break
         if lost:
             raise RuntimeError('claim lost; publication must be rejected')
-        if not finish(engine,job,rc == 0,None if rc == 0 else f'exit {rc}',refresh_seconds=172800):
+        if not finish(engine,job,rc == 0,None if rc == 0 else f'exit {rc}',refresh_seconds=15):
             raise RuntimeError('claim expired before finish')
         if rc != 0:
             raise RuntimeError(f'compact builder exited {rc}')
