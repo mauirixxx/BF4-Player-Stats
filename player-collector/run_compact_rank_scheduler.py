@@ -20,7 +20,8 @@ LEFT JOIN equipment_rank_compact_published p
 LEFT JOIN equipment_rank_generations g ON g.generation_id=p.generation_id
 WHERE j.next_due_at<=clock_timestamp()
  AND (j.lease_expires_at IS NULL OR j.lease_expires_at<=clock_timestamp())
- AND ((:shard_count > 0 AND mod(j.item_id, :shard_count) = :shard_index)\n      OR (:shard_count = 0 AND (:parity = 'all' OR mod(j.item_id, 2) = CASE WHEN :parity = 'odd' THEN 1 ELSE 0 END)))
+ AND ((:shard_count > 0 AND mod(j.item_id, :shard_count) = :shard_index)
+      OR (:shard_count = 0 AND (:parity = 'all' OR mod(j.item_id, 2) = CASE WHEN :parity = 'odd' THEN 1 ELSE 0 END)))
 ORDER BY CASE WHEN j.kind=:priority_kind AND j.item_id=:priority_item AND j.platform=:priority_platform AND j.metric=:priority_metric THEN 0 ELSE 1 END,
  CASE WHEN j.kind='vehicle' AND j.item_id=10 THEN 0 ELSE 1 END,
  CASE WHEN g.snapshot_format=2 THEN 1 ELSE 0 END,
@@ -35,7 +36,11 @@ def main():
     ap.add_argument('--poll-seconds',type=int,default=30)
     ap.add_argument('--production-ack',action='store_true')
     ap.add_argument('--parity',choices=('all','odd','even'),default=os.environ.get('BF4PS_COMPACT_SCOPE_PARITY','all'))
-    ap.add_argument('--shard-count',type=int,default=int(os.environ.get('BF4PS_COMPACT_SHARD_COUNT','0')))\n    ap.add_argument('--shard-index',type=int,default=int(os.environ.get('BF4PS_COMPACT_SHARD_INDEX','0')))\n    args=ap.parse_args()\n    if args.shard_count < 0 or (args.shard_count and not 0 <= args.shard_index < args.shard_count):\n        ap.error('shard index must be within [0, shard count); count 0 selects legacy parity')
+    ap.add_argument('--shard-count',type=int,default=int(os.environ.get('BF4PS_COMPACT_SHARD_COUNT','0')))
+    ap.add_argument('--shard-index',type=int,default=int(os.environ.get('BF4PS_COMPACT_SHARD_INDEX','0')))
+    args=ap.parse_args()
+    if args.shard_count < 0 or (args.shard_count and not 0 <= args.shard_index < args.shard_count):
+        ap.error('shard index must be within [0, shard count); count 0 selects legacy parity')
     if args.max_publications<1 or args.poll_seconds<5 or args.parity not in ('all','odd','even'): ap.error('invalid bounds')
     url=os.environ['BF4PS_DATABASE_URL']
     if make_url(url).database!='bf4_playerstats' or not args.production_ack:
