@@ -485,14 +485,6 @@ def get_page(conn, kind, platform, item, page, page_size, search, division, sort
                                    page, page_size, search, division, sort_metric)
         if compact is not None:
             return compact
-    # Opt-in published ranking reader; missing/stale scopes keep live fallback.
-    if os.environ.get('BF4PS_PRECOMPUTED_RANK_READS') == '1':
-        from rank_read_path_hourly import get_precomputed_page
-        canonical_item = VEHICLE_FAMILIES.get(item, (item, None))[0] if kind == 'vehicle' else item
-        precomputed = get_precomputed_page(conn, kind, platform, canonical_item,
-                                            page, page_size, search, division, sort_metric)
-        if precomputed is not None:
-            return precomputed
     if page == 1 and page_size == 50 and search and division == 0:
         fast = indexed_equipment_search(conn, kind, platform, item, search, sort_metric)
         if fast is not None:
@@ -784,7 +776,7 @@ class Handler(BaseHTTPRequestHandler):
             if not 1<=page<=100000 or not 1<=page_size<=100 or not 0<=division<=10 or len(search)>100:
                 self.send_error(400);return
             with engine.connect() as c:
-                if os.environ.get('BF4PS_PRECOMPUTED_RANK_READS') == '1' or os.environ.get('BF4PS_COMPACT_RANK_READS') == '1':
+                if os.environ.get('BF4PS_COMPACT_RANK_READS') == '1':
                     c = c.execution_options(isolation_level='REPEATABLE READ')
                 if c.execute(text('select current_database()')).scalar_one()!='bf4_playerstats':
                     if not (os.environ.get('BF4PS_ISOLATED_HTTP_TEST') == '1'
@@ -798,7 +790,7 @@ class Handler(BaseHTTPRequestHandler):
                 cache_key=(kind,platform,item,page,page_size,search,division,paging,sort_metric)
                 # Public unfiltered first-page equipment Top 10 / Top 50: 300s.
                 # Catalog: 60s. Searches, divisions, later pages: uncached.
-                if os.environ.get('BF4PS_PRECOMPUTED_RANK_READS') != '1' and os.environ.get('BF4PS_COMPACT_RANK_READS') != '1' and not search and (item is None or (paging and page==1 and page_size in (10,50) and division==0)):
+                if os.environ.get('BF4PS_COMPACT_RANK_READS') != '1' and not search and (item is None or (paging and page==1 and page_size in (10,50) and division==0)):
                     ttl=60 if item is None else 300
                     result=cached_equipment(cache_key,ttl,
                         lambda: (get_page(c,kind,platform,int(item),page,page_size,search,division,sort_metric)
