@@ -1,3 +1,5 @@
+> **Current-state override (2026-11-05):** Older rollout observations below are historical. The website now uses compact rankings with direct live-calculation fallback; hourly legacy reader and workers are retired. Four compact publishers run on MAK-01–04. Legacy ranking rows and pointers were emptied, preserving schema and Alembic 0023, reclaiming about 97 GB. Compact-retention scheduling is paused pending investigation of multi-minute cascading deletes and publisher lock contention. See [compact-production-cutover.md](compact-production-cutover.md) and [database-schema-reference.md](database-schema-reference.md).
+
 ## 2026-10-25 — production ranking resumed with one local replica
 
 - Operator confirmed `hnl-db-01`, `kah-db-01`, and `rnt-db-01` were intentionally stopped because WAN transfer and remote write throughput could not keep up with WAL. They remain offline. Operator authorized changing ranking admission to run with the local `mak-db-01` replica only. The **single-builder** capacity and 32 GiB WAL retention guard remain unchanged.
