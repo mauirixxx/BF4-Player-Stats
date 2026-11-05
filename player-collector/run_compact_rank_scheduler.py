@@ -20,7 +20,7 @@ LEFT JOIN equipment_rank_compact_published p
 LEFT JOIN equipment_rank_generations g ON g.generation_id=p.generation_id
 WHERE j.next_due_at<=clock_timestamp()
  AND (j.lease_expires_at IS NULL OR j.lease_expires_at<=clock_timestamp())
- AND (:parity = 'all' OR mod(j.item_id, 2) = CASE WHEN :parity = 'odd' THEN 1 ELSE 0 END)
+ AND ((:shard_count > 0 AND mod(j.item_id, :shard_count) = :shard_index)\n      OR (:shard_count = 0 AND (:parity = 'all' OR mod(j.item_id, 2) = CASE WHEN :parity = 'odd' THEN 1 ELSE 0 END)))
 ORDER BY CASE WHEN j.kind=:priority_kind AND j.item_id=:priority_item AND j.platform=:priority_platform AND j.metric=:priority_metric THEN 0 ELSE 1 END,
  CASE WHEN j.kind='vehicle' AND j.item_id=10 THEN 0 ELSE 1 END,
  CASE WHEN g.snapshot_format=2 THEN 1 ELSE 0 END,
@@ -35,7 +35,7 @@ def main():
     ap.add_argument('--poll-seconds',type=int,default=30)
     ap.add_argument('--production-ack',action='store_true')
     ap.add_argument('--parity',choices=('all','odd','even'),default=os.environ.get('BF4PS_COMPACT_SCOPE_PARITY','all'))
-    args=ap.parse_args()
+    ap.add_argument('--shard-count',type=int,default=int(os.environ.get('BF4PS_COMPACT_SHARD_COUNT','0')))\n    ap.add_argument('--shard-index',type=int,default=int(os.environ.get('BF4PS_COMPACT_SHARD_INDEX','0')))\n    args=ap.parse_args()\n    if args.shard_count < 0 or (args.shard_count and not 0 <= args.shard_index < args.shard_count):\n        ap.error('shard index must be within [0, shard count); count 0 selects legacy parity')
     if args.max_publications<1 or args.poll_seconds<5 or args.parity not in ('all','odd','even'): ap.error('invalid bounds')
     url=os.environ['BF4PS_DATABASE_URL']
     if make_url(url).database!='bf4_playerstats' or not args.production_ack:
@@ -46,7 +46,7 @@ def main():
         with engine.connect() as c:
             revision=c.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
             capacity=c.execute(text('SELECT max_active_builds FROM equipment_rank_capacity WHERE id=1')).scalar_one()
-        if revision!='0023_compact_exclusion_guard' or capacity not in (1,2):
+        if revision!='0023_compact_exclusion_guard' or not 1 <= capacity <= 16:
             raise RuntimeError('production revision/capacity mismatch')
         while count<args.max_publications:
             with engine.connect() as c:
@@ -55,7 +55,7 @@ def main():
                 priority=priority_file.read_text().strip().split(':') if priority_file.exists() else []
                 if len(priority)!=4 or priority[0] not in ('weapon','vehicle') or not priority[1].isdecimal() or priority[2] not in ('pc','ps4','xboxone','all') or priority[3] not in ('kills','kpm','accuracy'):
                     priority=['', '0', '', '']
-                pick_params={'parity':args.parity,'priority_kind':priority[0],
+                pick_params={'parity':args.parity,'shard_count':args.shard_count,'shard_index':args.shard_index,'priority_kind':priority[0],
                              'priority_item':int(priority[1]),'priority_platform':priority[2],
                              'priority_metric':priority[3]}
                 scope=c.execute(PICK,pick_params).mappings().first() if ready else None
