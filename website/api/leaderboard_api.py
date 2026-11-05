@@ -728,6 +728,21 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_error(400);return
                 item=int(raw_item)
                 if kind=='vehicle':item=VEHICLE_FAMILIES.get(item,(item,None))[0]
+                # Compact format-2 stores ranked positions in compressed blocks, not
+                # equipment_rank_compact_lookup. Resolve a persona against the
+                # same published snapshot that serves the leaderboard page.
+                if os.environ.get('BF4PS_COMPACT_RANK_READS') == '1':
+                    from rank_read_path_compact import get_compact_page
+                    with engine.connect().execution_options(isolation_level='REPEATABLE READ') as c:
+                        c.execute(text('SET TRANSACTION READ ONLY'))
+                        c.execute(text("SET LOCAL statement_timeout = '12000ms'"))
+                        compact = get_compact_page(c,kind,platform,item,1,50,raw_persona,0,'kills')
+                    if compact is not None:
+                        exact = next((r for r in compact['rows']
+                                      if int(r['persona_id']) == int(raw_persona)
+                                      and (platform == 'all' or r['platform'] == platform)),None)
+                        send_json(self,200,{'page':(int(exact['position'])-1)//50+1 if exact else None})
+                        return
                 table='weapon_leaderboard_metrics' if kind=='weapon' else 'vehicle_leaderboard_metrics'
                 item_key='weapon_id' if kind=='weapon' else 'vehicle_id'
                 params={'item':item,'platform':platform,'persona':int(raw_persona)}
