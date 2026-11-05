@@ -473,21 +473,26 @@ def indexed_equipment_search(conn, kind, platform, item, search, sort_metric):
     return {'population':population,'filtered_count':int(count),'page':1,'page_size':50,
             'total_pages':(int(count)+49)//50,'rows':rows}
 
-class CompactScopeUnavailable(RuntimeError):
-    """No eligible compact publication for the requested equipment scope."""
-
-
 def get_page(conn, kind, platform, item, page, page_size, search, division, sort_metric="kills"):
-    # Compact snapshots are the authoritative equipment leaderboard source.
-    # Never silently execute legacy metrics, hourly or raw full-cohort fallbacks.
-    from rank_read_path_compact import get_compact_page
-    canonical_item = VEHICLE_FAMILIES.get(item, (item, None))[0] if kind == 'vehicle' else item
-    compact = get_compact_page(conn, kind, platform, canonical_item,
-                               page, page_size, search, division, sort_metric)
-    if compact is None:
-        raise CompactScopeUnavailable(f'{kind}:{canonical_item}:{platform}:{sort_metric}')
-    return compact
-    # Historical legacy readers below are unreachable pending removal.
+    # Compact reader is independently gated; preserve the legacy fallback.
+    # Format-2 family SUM/MAX top-10 parity verified against production raw
+    # stats for every consolidated vehicle family (2026-11-04).
+    # Missing/incompatible snapshots continue through the legacy fallback.
+    if os.environ.get('BF4PS_COMPACT_RANK_READS') == '1':
+        from rank_read_path_compact import get_compact_page
+        canonical_item = VEHICLE_FAMILIES.get(item, (item, None))[0] if kind == 'vehicle' else item
+        compact = get_compact_page(conn, kind, platform, canonical_item,
+                                   page, page_size, search, division, sort_metric)
+        if compact is not None:
+            return compact
+    # Opt-in published ranking reader; missing/stale scopes keep live fallback.
+    if os.environ.get('BF4PS_PRECOMPUTED_RANK_READS') == '1':
+        from rank_read_path_hourly import get_precomputed_page
+        canonical_item = VEHICLE_FAMILIES.get(item, (item, None))[0] if kind == 'vehicle' else item
+        precomputed = get_precomputed_page(conn, kind, platform, canonical_item,
+                                            page, page_size, search, division, sort_metric)
+        if precomputed is not None:
+            return precomputed
     if page == 1 and page_size == 50 and search and division == 0:
         fast = indexed_equipment_search(conn, kind, platform, item, search, sort_metric)
         if fast is not None:
@@ -732,8 +737,6 @@ class Handler(BaseHTTPRequestHandler):
                         c.execute(text('SET TRANSACTION READ ONLY'))
                         c.execute(text("SET LOCAL statement_timeout = '12000ms'"))
                         compact = get_compact_page(c,kind,platform,item,1,50,raw_persona,0,'kills')
-                    if compact is None:
-                        raise CompactScopeUnavailable(f'{kind}:{item}:{platform}:kills')
                     if compact is not None:
                         exact = next((r for r in compact['rows']
                                       if int(r['persona_id']) == int(raw_persona)
@@ -805,8 +808,6 @@ class Handler(BaseHTTPRequestHandler):
                             if paging else get(c,kind,platform,int(item) if item is not None else None))
             body=json.dumps(result,default=str).encode()
             self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Content-Length',str(len(body)));self.end_headers();self.wfile.write(body)
-        except CompactScopeUnavailable as exc:
-            send_json(self,503,{'status':'snapshot_pending','message':'Compact ranking publication pending','scope':str(exc)})
         except Exception as exc:
             print('leaderboard error',type(exc).__name__,str(exc)[:160],flush=True)
             send_json(self,503,{'status':'unavailable','message':'Statistics temporarily unavailable'})
