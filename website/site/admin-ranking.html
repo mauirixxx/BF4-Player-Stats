@@ -91,21 +91,25 @@ async function refresh(){
    box.className='stat';number.textContent=String(value);caption.textContent=label;box.append(number,caption);return box;
   }));
   const configured=['mak-01','mak-02','mak-03','mak-04','mak-05','hnl-01','hnl-02','hnl-03','kah-01','rnt-01'];
+  const active=d.active||[],latest=(d.compact_recent||[])[0],due=d.summary?.due,capacity=d.capacity?.max_active_builds;
   const live=(d.workers||[]).filter(w=>w.healthy).map(w=>String(w.hostname||'').toLowerCase());
-  const connected=[...new Set(live.filter(n=>configured.includes(n)))].sort();
-  $('worker-names').textContent=connected.length?connected.join(' · '):'No connected workers reported';
   const claimsByHost=new Map();
-  for(const a of (d.active||[])){const name=String(a.hostname||'').toLowerCase();claimsByHost.set(name,(claimsByHost.get(name)||0)+1)}
+  for(const a of active){
+   const name=String(a.hostname||'').toLowerCase();
+   if(!claimsByHost.has(name))claimsByHost.set(name,[]);
+   claimsByHost.get(name).push(a);
+  }
+  const connected=[...new Set([...live,...claimsByHost.keys()].filter(n=>configured.includes(n)))].sort();
+  $('worker-names').textContent=connected.length?connected.join(' · '):'No connected workers reported';
   $('worker-grid').replaceChildren(...configured.map(name=>{
    const card=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('small');
-   const online=connected.includes(name);card.className='worker-box'+(online?'':' offline');
-   title.textContent=name.toUpperCase();detail.textContent=online?'Connected · '+(claimsByHost.get(name)||0)+' active claim(s)':'Not connected · reserved slot';
+   const assignments=claimsByHost.get(name)||[],online=connected.includes(name);
+   card.className='worker-box'+(online?'':' offline');title.textContent=name.toUpperCase();
+   detail.textContent=assignments.length?assignments.map(a=>a.kind+' '+a.item_id+' / '+a.platform+' / '+a.metric).join(' · '):(online?'Connected · no active claim':'Not connected · reserved slot');
    card.append(title,detail);return card;
   }));
   $('freshness').textContent=c.newest_completed_at?'Most recent completion: '+when(c.newest_completed_at):'No completed compact generations';
-  const active=d.active||[],latest=(d.compact_recent||[])[0],due=d.summary?.due,capacity=d.capacity?.max_active_builds;
-  const claims=active.map(a=>(a.hostname||'Worker')+': '+a.kind+' '+a.item_id+' / '+a.platform+' / '+a.metric).join(' · ');
-  $('writer-status').textContent=(capacity||'?')+' ranking slots · '+active.length+' active database claims · '+fmt(due)+' scopes due · '+(claims||'No active claims')+' · last compact publication '+when(latest?.published_at)+' · WAL-gated (claims may remain until lease expiry after a stop)';
+  $('writer-status').textContent=(capacity||'?')+' ranking slots · '+active.length+' active database claims · '+fmt(due)+' scopes due · last compact publication '+when(latest?.published_at)+' · WAL-gated (claims may remain until lease expiry after a stop)';
   tableRows(d.compact_recent||[]);
   $('updated').textContent='Last checked '+new Date((d.observed_at||Date.now()/1000)*1000).toLocaleTimeString();
   $('state').textContent='● Connected · read-only';$('state').className='ok';
