@@ -8,6 +8,7 @@ import os
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
@@ -29,6 +30,19 @@ ORDER BY CASE WHEN g.snapshot_format=2 THEN 1 ELSE 0 END,
 LIMIT 1
 """)
 
+SCOPE_COHORT = text("""SELECT kind,item_id,platform,metric FROM equipment_rank_jobs
+WHERE ((:shard_count>0 AND mod(item_id,:shard_count)=:shard_index)
+ OR (:shard_count=0 AND (:parity='all' OR mod(item_id,2)=CASE WHEN :parity='odd' THEN 1 ELSE 0 END)))""")
+def utc_now():
+    return datetime.now(timezone.utc).isoformat(timespec='seconds')
+def scope_key(row):
+    return (row['kind'],row['item_id'],row['platform'],row['metric'])
+def start_sweep(engine,args,number):
+    with engine.connect() as c:
+        rows=c.execute(SCOPE_COHORT,{'shard_count':args.shard_count,'shard_index':args.shard_index,'parity':args.parity}).mappings().all()
+    cohort={scope_key(r) for r in rows}
+    print(f'SWEEP STARTED number={number} shard={args.shard_index}/{args.shard_count} assigned={len(cohort)} utc={utc_now()}',flush=True)
+    return cohort,set(),time.monotonic()
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--max-publications',type=int,default=1)
@@ -52,6 +66,8 @@ def main():
             capacity=c.execute(text('SELECT max_active_builds FROM equipment_rank_capacity WHERE id=1')).scalar_one()
         if revision!='0023_compact_exclusion_guard' or not 1 <= capacity <= 16:
             raise RuntimeError('production revision/capacity mismatch')
+        sweep_number=1
+        cohort,completed,sweep_start=start_sweep(engine,args,sweep_number)
         while count<args.max_publications:
             with engine.connect() as c:
                 ready=c.execute(text('SELECT public.bf4ps_rank_gate_ready()')).scalar_one()
@@ -79,6 +95,16 @@ def main():
             if rc==0:
                 count+=1
                 print('published',scope_id,'count',count,flush=True)
+                key=scope_key(scope)
+                if key in cohort and key not in completed:
+                    completed.add(key)
+                    total=len(cohort)
+                    print(f'SWEEP PROGRESS number={sweep_number} completed={len(completed)}/{total} percent={100*len(completed)/total:.1f} elapsed_seconds={time.monotonic()-sweep_start:.1f}',flush=True)
+                    if len(completed)==total:
+                        elapsed=time.monotonic()-sweep_start
+                        print(f'SWEEP COMPLETE number={sweep_number} completed={total}/{total} duration_seconds={elapsed:.1f} utc={utc_now()}',flush=True)
+                        sweep_number+=1
+                        cohort,completed,sweep_start=start_sweep(engine,args,sweep_number)
             else:
                 print('scope failed',scope_id,'exit',rc,'cooldown',args.poll_seconds,flush=True)
                 time.sleep(args.poll_seconds)
@@ -87,3 +113,5 @@ def main():
 
 if __name__=='__main__':
     main()
+
+[executed on device: mak-01 (f1b49ec6-2357-417d-bf52-1dcefa503dba)]
