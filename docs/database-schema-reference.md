@@ -413,12 +413,12 @@ Production revision confirmed on MAK-DB-02 (2026-10-22). Migration `0018_distrib
 
 The migration creates scheduling/coordination state; it does not change the existing `soldier_weapon_stats` and `soldier_vehicle_stats` row shapes.
 
-## Migration 0020: compact ranking snapshots (schema deployed; feature not activated)
+## Migration 0020: compact ranking snapshots (historical migration; feature now active)
 
 The feature branch `feature/compact-rank-snapshots` introduces additive migration
 `0020_compact_rank_snapshots`, following production head `0019_soldier_search_trigrams`.
-Production schema is at 0023; compact publication remains disabled. Existing
-`equipment_rank_rows` and `equipment_rank_published` remain untouched.
+Production schema is at 0023; compact publication is active. The legacy
+`equipment_rank_rows` and `equipment_rank_published` tables were emptied on 2026-11-05 while retaining their definitions.
 
 - `equipment_rank_compact_blocks`: PK `(generation_id, block_id)`; FK generation
   with cascading delete; first/last position and binary immutable payload.
@@ -769,3 +769,7 @@ Production Alembic head was reverified on MAK-DB-02 as `0023_compact_exclusion_g
 The production leaderboard API on `tcou` now includes `website/api/rank_read_path_compact.py` plus `bf4ps/compact_rank_codec.py` and `bf4ps/compact_exclusions.py`. Its systemd drop-in `/etc/systemd/system/bf4ps-leaderboard-api.service.d/compact-rank-reads.conf` sets `BF4PS_COMPACT_RANK_READS=1`. The precomputed/legacy fallback remains for missing, stale, or unsupported compact scopes. Disable the drop-in flag and restart `bf4ps-leaderboard-api.service` to roll back compact reads.
 
 Production HTTP smoke tests returned 200 for weapon first page (10 rows, population 208,277; ~18.6 ms), page 2 (~12 ms), division filter (~718 ms), name search (~629 ms), and vehicle first page (~14 ms). The leaderboard API was running with zero unexpected restarts. These checks establish **reader activation**, not complete compact coverage or continuous writer/retention verification. The admin ranking monitor still reports legacy queue telemetry until separately upgraded.
+
+## Production data-only retirement — 2026-11-05 UTC
+
+No schema change or new Alembic revision was made: production remains `0023_compact_exclusion_guard`. Legacy `equipment_rank_rows` was truncated to zero rows and `equipment_rank_published` cleared to zero pointers; both tables and indexes remain for schema compatibility. Legacy row relation measured 32 kB afterward. Do not repopulate them with obsolete workers. The 2,624 `equipment_rank_compact_published` pointers and shared `equipment_rank_generations` were preserved, as were compact blocks and lookup. Database size fell from 212 GB to approximately 115 GB; three replicas were caught up. The active website uses compact ranking with direct live-calculation fallback, not legacy precompute. Four publishers run on MAK-01–04. Compact retention was temporarily paused after multi-minute cascading generation deletes blocked publisher capacity locks. See `docs/compact-production-cutover.md`. Older feature-state descriptions in this file are historical.
