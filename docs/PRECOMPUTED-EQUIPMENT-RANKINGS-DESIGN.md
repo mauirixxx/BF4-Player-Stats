@@ -1,3 +1,5 @@
+> **Historical design / rollout record.** Superseded in production by [compact-production-cutover.md](compact-production-cutover.md). The legacy hourly reader/writers are retired; current compact publishers use four shards. Retained for engineering history.
+
 # Precomputed equipment rankings — design checkpoint (2026-10-19)
 
 ## Verified baseline
