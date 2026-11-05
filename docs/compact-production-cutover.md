@@ -1,12 +1,12 @@
 # Compact ranking production cutover and operations
 
-Status as of 2026-11-03: **website compact reader activated on tcou; full-scope publication/refresh and retention remain to be verified**.
+Status as of 2026-11-05: **four compact publishers active; legacy reader retired; compact retention performance investigation ongoing**. Earlier dated rollout notes below are historical.
 
 ## Architecture and deployed state
 
 The reader uses full-cohort, format-2 compact generations, not top-500 rankings. Alembic production head is `0023_compact_exclusion_guard` on MAK-DB-02, verified during deployment. Compact publication pointers are in `equipment_rank_compact_published`; payloads are in `equipment_rank_compact_blocks`; metadata is in `equipment_rank_generations`. The website uses `rank_read_path_compact.py`, `bf4ps/compact_rank_codec.py`, and `bf4ps/compact_exclusions.py`. All are committed to GitHub main.
 
-On tcou, the systemd drop-in `/etc/systemd/system/bf4ps-leaderboard-api.service.d/compact-rank-reads.conf` sets `BF4PS_COMPACT_RANK_READS=1`. The existing `BF4PS_PRECOMPUTED_RANK_READS=1` remains as a fallback, followed by the legacy query path. The website's existing read-only database role `bf4ps_stage9c_d2` has SELECT on compact published, blocks, and lookup; no write grants were added.
+On tcou, the systemd drop-in `/etc/systemd/system/bf4ps-leaderboard-api.service.d/compact-rank-reads.conf` sets `BF4PS_COMPACT_RANK_READS=1`. The retired `BF4PS_PRECOMPUTED_RANK_READS` path has been removed. The fallback after compact ranking is live calculation, not legacy snapshots. The website's existing read-only database role `bf4ps_stage9c_d2` has SELECT on compact published, blocks, and lookup; no write grants were added.
 
 ## Verified production behavior
 
@@ -19,7 +19,7 @@ On tcou, the systemd drop-in `/etc/systemd/system/bf4ps-leaderboard-api.service.
 
 ## Rollback
 
-Disable `BF4PS_COMPACT_RANK_READS` in the systemd drop-in, run `systemctl daemon-reload`, and restart `bf4ps-leaderboard-api.service`. Leave the old reader and schema in place. Previous leaderboard API backup on tcou: `/opt/bf4ps-website/api/leaderboard_api.py.precompact-20261103`.
+Disable `BF4PS_COMPACT_RANK_READS` in the systemd drop-in, run `systemctl daemon-reload`, and restart `bf4ps-leaderboard-api.service`. The old reader has been removed; keep the schema intact. Previous leaderboard API backup on tcou: `/opt/bf4ps-website/api/leaderboard_api.py.precompact-20261103`.
 
 ## Remaining production gates
 
@@ -31,7 +31,7 @@ Disable `BF4PS_COMPACT_RANK_READS` in the systemd drop-in, run `systemctl daemon
 
 ## Safe operations
 
-Do not automatically enable broad writer jobs or delete generations based solely on reader activation. The reader is already live and independent of publication scheduling. Keep the existing legacy fallback until compact coverage and retention are proven.
+Do not automatically enable broad writer jobs or delete generations based solely on reader activation. The reader is already live and independent of publication scheduling. Keep the direct live-calculation fallback; the legacy reader has been retired.
 
 ## Admin ranking monitor update (2026-11-03)
 
@@ -107,3 +107,13 @@ At a point-in-time check on MAK-DB-02, the compact blocks table occupied
 approximately 60 GB and the database approximately 196 GB; all three
 streaming replicas showed minimal replay backlog. Continue checking
 retention, vacuum and growth before expanding beyond four workers.
+
+## Production reconciliation — 2026-11-05 UTC
+
+This section supersedes earlier reader, writer and retention status statements. The website uses the compact reader first, falling back directly to live calculation if compact is ineligible (including a 72-hour age limit, version or exclusion mismatch). The hourly legacy reader and workers have been retired from the active website and GitHub main.
+
+Four continuous compact publisher services run on MAK-01–04, shard indices 0–3, with claim fencing, WAL gating and a 15-second scope refresh setting. The compact publisher services were restarted and verified active after the legacy cleanup. The leaderboard weapon and vehicle HTTP smoke checks returned 200.
+
+Following a VMware snapshot checkpoint, a single committed transaction on MAK-DB-02 deleted 2,624 legacy publication pointers and truncated legacy ranking rows. Both legacy tables and their indexes remain in the schema for compatibility. The shared generations and compact published pointers (2,624 at verification), blocks and lookup were preserved. The database dropped from approximately 212 GB to 115 GB, reclaiming about 97 GB; all three replicas showed zero replay lag immediately afterward. Production Alembic remains `0023_compact_exclusion_guard`; no migrations or collector upgrades were performed.
+
+Compact retention on MAK-01 uses `cleanup_compact_production.py`, preserving two newest generations per scope and deleting up to 20 obsolete generations per invocation. Deletes cascade into the compact blocks and lookup. Repeated multi-minute transactions were observed holding the shared capacity lock and blocking publishers. The minutely compact-retention timer was **stopped again** pending investigation; the running invocation had not yet completed at last verification. Publishers remained active. The separate legacy-generation GC timer was restarted; recheck its status before changing it. Test smaller batches and lock duration before restoring minutely retention. Historical earlier sections are retained as dated records, not current instructions.
