@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current production Alembic head: `0023_compact_exclusion_guard` (verified on MAK-DB-02 and streaming replicas MAK-DB-01, HNL-DB-01, RNT-DB-01 on 2026-11-03 UTC). KAH-DB-01 is intentionally offline pending storage expansion and its revision is unverified. Previous production revision observations are historical.
+Current production Alembic head: `0024_profile_lookup_idx` (verified on MAK-DB-02 on 2026-11-05 UTC). Previous revision observations are historical; replica revision and replay status should be verified independently.
 
 ## Mandatory SQL development rule
 
@@ -39,6 +39,7 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0021_reconcile_player_exclusions` | `0020_compact_rank_snapshots` | Reconciles production exclusions and trigger |
 | `0022_compact_blocks_only_format` | `0021_reconcile_player_exclusions` | Permits snapshot format 2 |
 | `0023_compact_exclusion_guard` | `0022_compact_blocks_only_format` | Adds exclusion fingerprint column |
+| `0024_profile_lookup_idx` | `0023_compact_exclusion_guard` | Concurrent soldier-first Battlelog profile-link lookup index for homepage search |
 
 ### Important migration consequence: Gun Master
 
@@ -779,3 +780,7 @@ No schema change or new Alembic revision was made: production remains `0023_comp
 Migration `0024_profile_lookup_idx` follows `0023_compact_exclusion_guard`. It creates `ix_profile_soldiers_soldier_last_seen` on `public.profile_soldiers(soldier_id, last_seen_at DESC)` using `CREATE INDEX CONCURRENTLY IF NOT EXISTS` in an Alembic autocommit block; downgrade drops the index concurrently. The index was **already built manually in production** on MAK-DB-02 on 2026-11-05 to restore homepage soldier search performance. The index was built while `alembic_version` remained **0023**; revision reconciliation is a separate operation and must not be mistaken for a second index build. Check the current revision before applying. The original composite primary key (`profile_id`, `soldier_id`) remains unchanged.
 
 The homepage global search uses indexed current-name and historical-alias matching, then enriches at most 100 candidates with the most recently linked Battlelog account and country flag. Before this index, the lateral enrichment repeatedly sequential-scanned `profile_soldiers`; afterward the query plan used the new index, and the full `kitty` search's measured execution dropped from approximately 6.86 seconds to 30 milliseconds in EXPLAIN ANALYZE (point-in-time tests). Live endpoint `kitty` returned HTTP 200 in 0.43 seconds and `stinky_` in 0.017 seconds. No search-result fields were removed.
+
+### 0024 rollout record — 2026-11-05 UTC
+
+The index was created concurrently on the primary before version reconciliation. The first attempt to advance Alembic failed and rolled back because the original proposed revision identifier exceeded the existing `alembic_version.version_num` VARCHAR(32) limit. The canonical revision was shortened to `0024_profile_lookup_idx`; the index was verified valid/ready, and the Alembic version was advanced in a guarded transaction on MAK-DB-02. Production returned `0024_profile_lookup_idx`. A complete clean checkout of GitHub `main` (commit `0c57407` at distribution time), including the Alembic migration chain and documentation, was staged at `/opt/bf4ps-schema-0024` on MAK-01/02/03/04/05, HNL-01/02/03, KAH-01 and RNT-01. This is a **reference checkout**, not a replacement of active worker code or an instruction to run the migration independently on each node. The fleet shares one database schema; no worker restarts are necessary solely for this index. Existing local modified worker checkouts were left untouched.
