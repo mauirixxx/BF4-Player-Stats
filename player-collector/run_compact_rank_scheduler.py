@@ -113,5 +113,3 @@ def main():
 
 if __name__=='__main__':
     main()
-
-[executed on device: mak-01 (f1b49ec6-2357-417d-bf52-1dcefa503dba)]
