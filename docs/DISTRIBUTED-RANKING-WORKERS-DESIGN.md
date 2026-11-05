@@ -1,3 +1,5 @@
+> **Historical design / rollout record.** Superseded in production by [compact-production-cutover.md](compact-production-cutover.md). The legacy hourly reader/writers are retired; current compact publishers use four shards. Retained for engineering history.
+
 # Distributed equipment ranking workers — design v0.1 (2026-10-21)
 
 Status (2026-10-21): PRODUCTION MIGRATED, WORKERS PAUSED FOR REPLICATION BACKPRESSURE. PostgreSQL bf4_playerstats migrated to 0018; legacy hourly timer disabled; distributed worker systemd services disabled/inactive on mak-01 and rnt-01 pending WAL/network throughput investigation; centrally enforced global capacity=1. Scratch PostgreSQL 0018 previously validated on rnt-01. This document is the implementation reference. Verify `database-schema.md`, `operational-schema.md`, and live PostgreSQL catalog before writing migrations or database access code.
