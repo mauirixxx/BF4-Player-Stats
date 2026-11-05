@@ -35,3 +35,9 @@ One-off test harnesses and staging-only pages are excluded from the deployable t
 ## Current production collector release (2026-10-25)
 
 The nine distributed BF4PS statistics collectors run the source from GitHub commit `6589a7e`, with 4-second per-egress spacing and exclusion-aware claims, under the existing shared 4,800/hour physical dispatch budget. See [current state](docs/PROJECT-CURRENT-STATE.md) and [collector release procedure](player-collector/deploy/docker/PRODUCTION-RELEASE.md). The website, Discord bot, platoon and ranking services still require separate deployed-source parity checks; do not assume they share this release.
+
+### Public soldier deep links and battle-report navigation
+
+The production website supports `/soldier.html?id=<internal_soldier_id>` and `/soldier.html?persona=<Battlelog_persona_id>&platform=<pc|ps4|xboxone>`. The latter resolves the exact persona/platform pair through the existing global soldier-search API and opens the matching dossier; ambiguous persona-only matches require a platform. The existing `/search?query=<name>` homepage deep link remains supported. Missing pages use the custom retro `404.html` via Apache `ErrorDocument 404`.
+
+Soldier dossiers include a **Battle Reports** link to `https://reports.bf4playerstats.com/battle-reports.php?persona=<persona_id>&platform=<code>` for all three platforms (PC `1`, PlayStation `32`, Xbox `64`). The frontend changes require no BF4PS schema migration. The production Apache/PHP and HTML sources are tracked under `website/`; deployment from GitHub is not automatic.
