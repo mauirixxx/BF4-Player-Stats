@@ -102,7 +102,7 @@ Battlelog username is uniquely indexed case-insensitively.
 
 Many-to-many link between Battlelog profiles and soldiers.
 
-Composite PK: (`profile_id`, `soldier_id`). Also contains `first_seen_at`, `last_seen_at`.
+Composite PK: (`profile_id`, `soldier_id`). Also contains `first_seen_at`, `last_seen_at`. A soldier-first B-tree index `ix_profile_soldiers_soldier_last_seen` on (`soldier_id`, `last_seen_at DESC`) accelerates the homepage search's latest linked Battlelog profile lookup. It was created concurrently on MAK-DB-02 on 2026-11-05, while production Alembic was still at 0023.
 
 ## Detailed statistics
 
@@ -773,3 +773,9 @@ Production HTTP smoke tests returned 200 for weapon first page (10 rows, populat
 ## Production data-only retirement — 2026-11-05 UTC
 
 No schema change or new Alembic revision was made: production remains `0023_compact_exclusion_guard`. Legacy `equipment_rank_rows` was truncated to zero rows and `equipment_rank_published` cleared to zero pointers; both tables and indexes remain for schema compatibility. Legacy row relation measured 32 kB afterward. Do not repopulate them with obsolete workers. The 2,624 `equipment_rank_compact_published` pointers and shared `equipment_rank_generations` were preserved, as were compact blocks and lookup. Database size fell from 212 GB to approximately 115 GB; three replicas were caught up. The active website uses compact ranking with direct live-calculation fallback, not legacy precompute. Four publishers run on MAK-01–04. Compact retention was temporarily paused after multi-minute cascading generation deletes blocked publisher capacity locks. See `docs/compact-production-cutover.md`. Older feature-state descriptions in this file are historical.
+
+## Migration 0024: soldier-first Battlelog profile lookup index (2026-11-05)
+
+Migration `0024_profile_soldier_search_index` follows `0023_compact_exclusion_guard`. It creates `ix_profile_soldiers_soldier_last_seen` on `public.profile_soldiers(soldier_id, last_seen_at DESC)` using `CREATE INDEX CONCURRENTLY IF NOT EXISTS` in an Alembic autocommit block; downgrade drops the index concurrently. The index was **already built manually in production** on MAK-DB-02 on 2026-11-05 to restore homepage soldier search performance. At the time of the build, `alembic_version` remained **0023**; deploying this migration subsequently reconciles the schema revision and must not be mistaken for a second index build. Check the current revision before applying. The original composite primary key (`profile_id`, `soldier_id`) remains unchanged.
+
+The homepage global search uses indexed current-name and historical-alias matching, then enriches at most 100 candidates with the most recently linked Battlelog account and country flag. Before this index, the lateral enrichment repeatedly sequential-scanned `profile_soldiers`; afterward the query plan used the new index, and the full `kitty` search's measured execution dropped from approximately 6.86 seconds to 30 milliseconds in EXPLAIN ANALYZE (point-in-time tests). Live endpoint `kitty` returned HTTP 200 in 0.43 seconds and `stinky_` in 0.017 seconds. No search-result fields were removed.
