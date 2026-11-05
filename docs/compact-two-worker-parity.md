@@ -1,3 +1,5 @@
+> **Historical design / rollout record.** Superseded in production by [compact-production-cutover.md](compact-production-cutover.md). The legacy hourly reader/writers are retired; current compact publishers use four shards. Retained for engineering history.
+
 # Compact ranking: two parity workers
 
 Production layout (2026-11-04):
