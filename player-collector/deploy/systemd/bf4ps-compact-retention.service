@@ -3,4 +3,4 @@ Description=BF4PS bounded compact generation retention
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/docker run --rm --network host --env-file /opt/bf4ps-production/deploy/docker/collector.env -v /opt/bf4ps-compact-release/player-collector:/rank:ro -w /rank --entrypoint python bf4-player-stats:collector-ranking-versions-0016-candidate /rank/cleanup_compact_production.py --production-ack --execute --keep 2 --limit 10
+ExecStart=/usr/bin/docker run --rm --network host --env-file /opt/bf4ps-production/deploy/docker/collector.env -v /opt/bf4ps-compact-release/player-collector:/rank:ro -w /rank --entrypoint python bf4-player-stats:collector-ranking-versions-0016-candidate /rank/cleanup_compact_production.py --production-ack --execute --keep 2 --limit 20
