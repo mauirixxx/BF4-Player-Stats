@@ -21,7 +21,8 @@ LEFT JOIN equipment_rank_generations g ON g.generation_id=p.generation_id
 WHERE j.next_due_at<=clock_timestamp()
  AND (j.lease_expires_at IS NULL OR j.lease_expires_at<=clock_timestamp())
  AND (:parity = 'all' OR mod(j.item_id, 2) = CASE WHEN :parity = 'odd' THEN 1 ELSE 0 END)
-ORDER BY CASE WHEN j.kind='vehicle' AND j.item_id=10 THEN 0 ELSE 1 END,
+ORDER BY CASE WHEN j.kind=:priority_kind AND j.item_id=:priority_item AND j.platform=:priority_platform AND j.metric=:priority_metric THEN 0 ELSE 1 END,
+ CASE WHEN j.kind='vehicle' AND j.item_id=10 THEN 0 ELSE 1 END,
  CASE WHEN g.snapshot_format=2 THEN 1 ELSE 0 END,
  CASE WHEN j.platform='all' THEN 0 ELSE 1 END,
  j.next_due_at,j.kind,j.item_id,j.platform,j.metric
@@ -50,7 +51,14 @@ def main():
         while count<args.max_publications:
             with engine.connect() as c:
                 ready=c.execute(text('SELECT public.bf4ps_rank_gate_ready()')).scalar_one()
-                scope=c.execute(PICK,{'parity':args.parity}).mappings().first() if ready else None
+                priority_file=Path('/rank/priority-scope.txt')
+                priority=priority_file.read_text().strip().split(':') if priority_file.exists() else []
+                if len(priority)!=4 or priority[0] not in ('weapon','vehicle') or not priority[1].isdecimal() or priority[2] not in ('pc','ps4','xboxone','all') or priority[3] not in ('kills','kpm','accuracy'):
+                    priority=['', '0', '', '']
+                pick_params={'parity':args.parity,'priority_kind':priority[0],
+                             'priority_item':int(priority[1]),'priority_platform':priority[2],
+                             'priority_metric':priority[3]}
+                scope=c.execute(PICK,pick_params).mappings().first() if ready else None
             if not scope:
                 print('waiting for WAL replay gate or due scope',flush=True)
                 time.sleep(args.poll_seconds)
