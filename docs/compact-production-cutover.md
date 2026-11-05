@@ -74,3 +74,36 @@ refresh behavior, retention over multiple cycles, extended HA/failover and
 replica-WAL monitoring, deep pagination/tie/division parity across all metrics,
 and a clean-checkout deploy/build verification. Do not call the entire project
 feature-complete on the strength of these targeted smoke checks alone.
+
+
+## Four-shard publisher and retention update — 2026-11-05 UTC
+
+The earlier two-worker odd/even deployment is historical. Current production compact
+publishers run on MAK-01, MAK-02, MAK-03, and MAK-04, with
+`BF4PS_COMPACT_SHARD_COUNT=4` and respective shard indices 0–3. Work is
+partitioned by equipment `item_id % shard_count`, retaining the 15-second
+scope refresh setting, claim fencing, capacity controls and replication/WAL
+gate. Production `equipment_rank_capacity.max_active_builds` was changed
+from 2 to 4. Expanding to more workers requires a coordinated stop,
+repartition and restart, not an isolated shard-count edit.
+
+On MAK-01, the bounded retention service now runs every minute, deleting
+at most 20 eligible obsolete generations per invocation while preserving
+the two newest generations per scope, published pointers and legacy-backed
+generations. Two initial runs each deleted 20 generations successfully.
+Theoretical capacity is 1,200 deletions/hour; sustained throughput and
+stable storage growth have not yet been established. PostgreSQL generally
+reuses vacuumed space rather than shrinking physical files immediately.
+
+The live ranking monitor is deployed from
+`/var/www/bf4playerstats.com/admin-ranking.html`. Ten visual worker slots
+are MAK-01–MAK-05, HNL-01–HNL-03, KAH-01 and RNT-01. Reserved slots do
+not imply an installed publisher. The UI uses the existing worker heartbeat
+and active-claim API; compact publication node attribution and resettable
+per-node run counters are not implemented. Do not infer node ownership
+of historical generations from the current claims.
+
+At a point-in-time check on MAK-DB-02, the compact blocks table occupied
+approximately 60 GB and the database approximately 196 GB; all three
+streaming replicas showed minimal replay backlog. Continue checking
+retention, vacuum and growth before expanding beyond four workers.
