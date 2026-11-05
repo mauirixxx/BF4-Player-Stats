@@ -16,7 +16,7 @@ p{color:var(--muted);margin:6px 0 16px}.brand{color:var(--gold);letter-spacing:.
 .admin-side-nav a{white-space:nowrap;color:#c8d6e8;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:650}
 .admin-side-nav a:hover,.admin-side-nav a.current,.admin-side-nav a.active{background:#34475b;color:var(--gold)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:22px;margin:0 0 18px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.worker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-top:15px}.worker-box{background:#0e1826;border:1px solid var(--line);border-radius:9px;padding:12px}.worker-box strong{display:block;font-size:17px}.worker-box small{color:var(--muted)}.worker-box.offline{opacity:.58}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
 .stat{background:#0e1826;border:1px solid var(--line);border-radius:9px;padding:16px}.stat strong{display:block;font-size:26px}.stat small{color:var(--muted)}
 table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted)}
 .scroll{overflow:auto}.muted{color:var(--muted)}.ok{color:#80d5a9}.error{color:#ff9a9a}
@@ -38,7 +38,7 @@ button.outline{background:transparent;border:1px solid #64778e;color:var(--fg)}
 <section class="card">
 <div class="row"><h2>Published compact rankings</h2><button id="refresh">Refresh now</button></div>
 <p>These figures describe available snapshots, not writer scheduling or worker health.</p><p id="writer-status" class="muted">Continuous compact writer: checking publication activity…</p>
-<div class="stats" id="compact-stats"></div>
+<div class="stats" id="compact-stats"></div><div class="worker-grid" id="worker-grid" aria-label="Ranking worker slots"></div>
 <p id="freshness" class="muted"></p>
 </section>
 <section class="card"><h2>Latest published generations</h2>
@@ -89,6 +89,18 @@ async function refresh(){
   $('compact-stats').replaceChildren(...metrics.map(([label,value])=>{
    const box=document.createElement('div'),number=document.createElement('strong'),caption=document.createElement('small');
    box.className='stat';number.textContent=String(value);caption.textContent=label;box.append(number,caption);return box;
+  }));
+  const configured=['mak-01','mak-02','mak-03','mak-04','mak-05','hnl-01','hnl-02','hnl-03','kah-01','rnt-01'];
+  const live=(d.workers||[]).filter(w=>w.healthy).map(w=>String(w.hostname||'').toLowerCase());
+  const connected=[...new Set(live.filter(n=>configured.includes(n)))].sort();
+  $('worker-names').textContent=connected.length?connected.join(' · '):'No connected workers reported';
+  const claimsByHost=new Map();
+  for(const a of (d.active||[])){const name=String(a.hostname||'').toLowerCase();claimsByHost.set(name,(claimsByHost.get(name)||0)+1)}
+  $('worker-grid').replaceChildren(...configured.map(name=>{
+   const card=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('small');
+   const online=connected.includes(name);card.className='worker-box'+(online?'':' offline');
+   title.textContent=name.toUpperCase();detail.textContent=online?'Connected · '+(claimsByHost.get(name)||0)+' active claim(s)':'Not connected · reserved slot';
+   card.append(title,detail);return card;
   }));
   $('freshness').textContent=c.newest_completed_at?'Most recent completion: '+when(c.newest_completed_at):'No completed compact generations';
   const active=d.active||[],latest=(d.compact_recent||[])[0],due=d.summary?.due,capacity=d.capacity?.max_active_builds;
