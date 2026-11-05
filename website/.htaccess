@@ -1,0 +1,17 @@
+ErrorDocument 404 /404.html
+# Enable maintenance: touch /etc/bf4ps/maintenance.enabled
+# Disable maintenance: rm -f /etc/bf4ps/maintenance.enabled
+# Only redirect HTML entry points. Keep API and static resources available.
+RewriteEngine On
+RewriteCond /etc/bf4ps/maintenance.enabled -f
+RewriteRule ^(?:index\.html|soldier\.html|temp-stats\.html)?$ /maintenance.html [R=302,L,NE,QSD]
+
+# Server-rendered Open Graph metadata for individual soldier/platoon links.
+# Keep original URLs in the address bar and preserve normal browser rendering.
+RewriteCond %{QUERY_STRING} (?:^|&)id=([1-9][0-9]{0,18})(?:&|$)
+RewriteRule ^soldier\.html$ /share-preview.php?kind=soldier&id=%1 [END]
+RewriteCond %{QUERY_STRING} (?:^|&)id=([1-9][0-9]{0,18})(?:&|$)
+RewriteRule ^platoons\.html$ /share-preview.php?kind=platoon&id=%1 [END]
+
+# External name search: preserve the query and use the homepage search UI.
+RewriteRule ^search/?$ /index.html [L]
