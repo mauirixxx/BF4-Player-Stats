@@ -22,11 +22,10 @@ WHERE j.next_due_at<=clock_timestamp()
  AND (j.lease_expires_at IS NULL OR j.lease_expires_at<=clock_timestamp())
  AND ((:shard_count > 0 AND mod(j.item_id, :shard_count) = :shard_index)
       OR (:shard_count = 0 AND (:parity = 'all' OR mod(j.item_id, 2) = CASE WHEN :parity = 'odd' THEN 1 ELSE 0 END)))
-ORDER BY CASE WHEN j.kind=:priority_kind AND j.item_id=:priority_item AND j.platform=:priority_platform AND j.metric=:priority_metric THEN 0 ELSE 1 END,
- CASE WHEN j.kind='vehicle' AND j.item_id=10 THEN 0 ELSE 1 END,
- CASE WHEN g.snapshot_format=2 THEN 1 ELSE 0 END,
- CASE WHEN j.platform='all' THEN 0 ELSE 1 END,
- j.next_due_at,j.kind,j.item_id,j.platform,j.metric
+ORDER BY CASE WHEN g.snapshot_format=2 THEN 1 ELSE 0 END,
+ p.published_at ASC NULLS FIRST,
+ j.next_due_at ASC,
+ j.kind,j.item_id,j.platform,j.metric
 LIMIT 1
 """)
 
