@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current repository Alembic head: `0025_compact_lookup_fk_idx` (production rollout pending verification). Previous production head: `0024_profile_lookup_idx` (verified on MAK-DB-02 on 2026-11-05 UTC). Previous revision observations are historical; replica revision and replay status should be verified independently.
+Current repository and production Alembic head: `0025_compact_lookup_fk_idx` (verified on MAK-DB-02 and streaming replicas MAK-DB-01, HNL-DB-01, RNT-DB-01 on 2026-11-06 UTC). Previous production head: `0024_profile_lookup_idx`. KAH-DB-01 was not verified in this rollout. Previous revision observations are historical; replica revision and replay status should be verified independently.
 
 ## Production compact-block autovacuum settings (2026-11-06)
 
