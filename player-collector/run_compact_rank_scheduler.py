@@ -64,7 +64,7 @@ def main():
         with engine.connect() as c:
             revision=c.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
             capacity=c.execute(text('SELECT max_active_builds FROM equipment_rank_capacity WHERE id=1')).scalar_one()
-        if revision not in ('0023_compact_exclusion_guard', '0024_profile_lookup_idx') or not 1 <= capacity <= 16:
+        if revision not in ('0023_compact_exclusion_guard', '0024_profile_lookup_idx', '0025_compact_lookup_fk_idx') or not 1 <= capacity <= 16:
             raise RuntimeError('production revision/capacity mismatch')
         sweep_number=1
         cohort,completed,sweep_start=start_sweep(engine,args,sweep_number)
