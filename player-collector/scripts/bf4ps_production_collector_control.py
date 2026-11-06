@@ -52,6 +52,10 @@ def main() -> int:
                     (14, "equipment_populations"), (15, "rank_generations"),
                     (16, "rank_scope_versions"), (17, "rank_immutable_scores"),
                     (18, "distributed_rank_queue"),
+                    (19, "soldier_search_trigrams"), (20, "compact_rank_snapshots"),
+                    (21, "reconcile_player_exclusions"), (22, "compact_blocks_only_format"),
+                    (23, "compact_exclusion_guard"), (24, "profile_lookup_idx"),
+                    (25, "compact_lookup_fk_idx"),
                 )
             )
             allowed_revision = (
