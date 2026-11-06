@@ -37,7 +37,7 @@ def main():
     engine=create_engine(url,pool_pre_ping=True)
     try:
         with engine.begin() as c:
-            if c.execute(text('SELECT version_num FROM alembic_version')).scalar_one()!='0023_compact_exclusion_guard':
+            if c.execute(text('SELECT version_num FROM alembic_version')).scalar_one() not in ('0023_compact_exclusion_guard', '0024_profile_lookup_idx'):
                 raise RuntimeError('unexpected schema revision')
             ids=c.execute(QUERY,{'keep':a.keep,'limit':a.limit}).scalars().all()
             print('eligible compact generations',ids,flush=True)
