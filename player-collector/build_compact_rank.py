@@ -116,9 +116,9 @@ def main():
     started = time.monotonic()
     with engine.connect().execution_options(isolation_level='REPEATABLE READ') as conn:
         revision = conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
-        if revision not in ('0020_compact_rank_snapshots', '0021_reconcile_player_exclusions', '0022_compact_blocks_only_format', '0023_compact_exclusion_guard', '0024_profile_lookup_idx'):
+        if revision not in ('0020_compact_rank_snapshots', '0021_reconcile_player_exclusions', '0022_compact_blocks_only_format', '0023_compact_exclusion_guard', '0024_profile_lookup_idx', '0025_compact_lookup_fk_idx'):
             raise RuntimeError(f'migration 0020 required, found {revision}')
-        if args.snapshot_format == 2 and revision not in ('0023_compact_exclusion_guard', '0024_profile_lookup_idx'):
+        if args.snapshot_format == 2 and revision not in ('0023_compact_exclusion_guard', '0024_profile_lookup_idx', '0025_compact_lookup_fk_idx'):
             raise RuntimeError('safe format-2 publication requires migration 0023')
         if args.publish and db == 'bf4_playerstats':
             if conn.execute(text('SELECT public.bf4ps_rank_gate_ready()')).scalar_one() is not True:
@@ -145,7 +145,7 @@ def main():
         generation = conn.execute(text('''INSERT INTO equipment_rank_generations
           (kind,item_id,platform,metric,snapshot_format,exclusion_fingerprint)
           VALUES (:kind,:item,:platform,:metric,:format,:fingerprint) RETURNING generation_id'''),
-          {**params,'format':args.snapshot_format,'fingerprint':fingerprint}).scalar_one() if revision in ('0023_compact_exclusion_guard', '0024_profile_lookup_idx') else conn.execute(text('''INSERT INTO equipment_rank_generations
+          {**params,'format':args.snapshot_format,'fingerprint':fingerprint}).scalar_one() if revision in ('0023_compact_exclusion_guard', '0024_profile_lookup_idx', '0025_compact_lookup_fk_idx') else conn.execute(text('''INSERT INTO equipment_rank_generations
           (kind,item_id,platform,metric,snapshot_format)
           VALUES (:kind,:item,:platform,:metric,1) RETURNING generation_id'''),params).scalar_one()
         source = f'SELECT m.soldier_id,m.{args.metric} AS score,m.kills,m.kpm,m.accuracy,m.source_fetched_at FROM ({source}) m'
