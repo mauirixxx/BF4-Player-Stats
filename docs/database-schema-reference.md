@@ -4,6 +4,15 @@ Status: **developer reference for the current Alembic head**
 
 Current repository and production Alembic head: `0025_compact_lookup_fk_idx` (verified on MAK-DB-02 and streaming replicas MAK-DB-01, HNL-DB-01, RNT-DB-01 on 2026-11-06 UTC). Previous production head: `0024_profile_lookup_idx`. KAH-DB-01 was not verified in this rollout. Previous revision observations are historical; replica revision and replay status should be verified independently.
 
+## 0025 fleet rollout (2026-11-06 UTC)
+
+- Production Alembic revision `0025_compact_lookup_fk_idx` verified on MAK-DB-02 and replicas MAK-DB-01, HNL-DB-01, RNT-DB-01; KAH-DB-01 not independently verified.
+- Four compact-ranking services MAK-01 through MAK-04 and MAK-01 compact retention updated for revision 0025; verified publication and deletion.
+- All nine standard production collector containers (MAK-01/02/03/04, HNL-01/02/03, KAH-01, RNT-01) rebuilt with updated startup and operator-control revision guards as `bf4-player-stats:collector-schema-0025`, restarted, and verified running with successful collection logs. Previous containers retained as `bf4ps-production-collector-pre0025` for rollback.
+- `repair_weapon_leaderboard.py` and `repair_vehicle_leaderboard.py` revision guards updated in repository; these are maintenance tools, not continuously running services.
+- Platoon and website service code examined for strict 0023/0024 Alembic revision checks; no matching active guard found. The website admin console displays Alembic revision but does not enforce it in the inspected path.
+- This migration is additive; no additional Alembic upgrade is required on collector hosts, which share the production PostgreSQL primary. Ensure future collector images incorporate these guard updates rather than reverting to `collector-cooldown-0023`.
+
 ## Production compact-block autovacuum settings (2026-11-06)
 
 `public.equipment_rank_compact_blocks` uses table-local reloptions: `autovacuum_vacuum_scale_factor=0.01`, `autovacuum_vacuum_threshold=1000`, `autovacuum_analyze_scale_factor=0.02`. Applied on MAK-DB-02 to encourage earlier vacuum during continuous generation turnover. This is a production reloptions setting, not an Alembic migration; verify against `pg_class.reloptions` during future provisioning. Vacuum reuses dead space but does not delete retained ranking generations or necessarily shrink database files.
