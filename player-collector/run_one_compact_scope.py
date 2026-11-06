@@ -34,7 +34,7 @@ def main():
     engine = create_engine(url,pool_pre_ping=True)
     with engine.connect() as c:
         revision = c.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
-        if revision != '0023_compact_exclusion_guard':
+        if revision not in ('0023_compact_exclusion_guard', '0024_profile_lookup_idx'):
             raise RuntimeError(f'expected migration 0023, got {revision}')
     worker = register(engine, socket.gethostname(), os.getenv('BF4PS_SITE'))
     job = claim_scope(engine,worker,a.kind,a.item,a.platform,a.metric)
