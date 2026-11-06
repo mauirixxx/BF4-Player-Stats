@@ -2,7 +2,7 @@
 
 Status: **developer reference for the current Alembic head**
 
-Current production Alembic head: `0024_profile_lookup_idx` (verified on MAK-DB-02 on 2026-11-05 UTC). Previous revision observations are historical; replica revision and replay status should be verified independently.
+Current repository Alembic head: `0025_compact_lookup_fk_idx` (production rollout pending verification). Previous production head: `0024_profile_lookup_idx` (verified on MAK-DB-02 on 2026-11-05 UTC). Previous revision observations are historical; replica revision and replay status should be verified independently.
 
 ## Production compact-block autovacuum settings (2026-11-06)
 
@@ -44,6 +44,7 @@ For live validation, PostgreSQL introspection (`information_schema`, `pg_catalog
 | `0022_compact_blocks_only_format` | `0021_reconcile_player_exclusions` | Permits snapshot format 2 |
 | `0023_compact_exclusion_guard` | `0022_compact_blocks_only_format` | Adds exclusion fingerprint column |
 | `0024_profile_lookup_idx` | `0023_compact_exclusion_guard` | Concurrent soldier-first Battlelog profile-link lookup index for homepage search |
+| `0025_compact_lookup_fk_idx` | `0024_profile_lookup_idx` | Concurrent `(generation_id, block_id)` index on `equipment_rank_compact_lookup` to accelerate cascading deletion from compact blocks |
 
 ### Important migration consequence: Gun Master
 
