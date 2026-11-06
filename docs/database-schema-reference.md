@@ -4,6 +4,10 @@ Status: **developer reference for the current Alembic head**
 
 Current production Alembic head: `0024_profile_lookup_idx` (verified on MAK-DB-02 on 2026-11-05 UTC). Previous revision observations are historical; replica revision and replay status should be verified independently.
 
+## Production compact-block autovacuum settings (2026-11-06)
+
+`public.equipment_rank_compact_blocks` uses table-local reloptions: `autovacuum_vacuum_scale_factor=0.01`, `autovacuum_vacuum_threshold=1000`, `autovacuum_analyze_scale_factor=0.02`. Applied on MAK-DB-02 to encourage earlier vacuum during continuous generation turnover. This is a production reloptions setting, not an Alembic migration; verify against `pg_class.reloptions` during future provisioning. Vacuum reuses dead space but does not delete retained ranking generations or necessarily shrink database files.
+
 ## Mandatory SQL development rule
 
 **Before writing or modifying SQL, persistence code, integration harnesses, or operational queries, consult this document AND the current Alembic migrations. Never infer a table, column, relationship, timestamp name, or row shape from memory or naming conventions.**
