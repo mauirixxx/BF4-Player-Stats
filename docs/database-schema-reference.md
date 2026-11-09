@@ -798,3 +798,26 @@ The homepage global search uses indexed current-name and historical-alias matchi
 ### 0024 rollout record — 2026-11-05 UTC
 
 The index was created concurrently on the primary before version reconciliation. The first attempt to advance Alembic failed and rolled back because the original proposed revision identifier exceeded the existing `alembic_version.version_num` VARCHAR(32) limit. The canonical revision was shortened to `0024_profile_lookup_idx`; the index was verified valid/ready, and the Alembic version was advanced in a guarded transaction on MAK-DB-02. Production returned `0024_profile_lookup_idx`. A complete clean checkout of GitHub `main` (commit `0c57407` at distribution time), including the Alembic migration chain and documentation, was staged at `/opt/bf4ps-schema-0024` on MAK-01/02/03/04/05, HNL-01/02/03, KAH-01 and RNT-01. This is a **reference checkout**, not a replacement of active worker code or an instruction to run the migration independently on each node. The fleet shares one database schema; no worker restarts are necessary solely for this index. Existing local modified worker checkouts were left untouched.
+
+## BF4BR one-way identity import (tcou, 2026-11-08)
+
+The standalone `bf4ps.bf4br_identity_sync` reads BF4BR PostgreSQL 18
+`public.players` and `public.player_name_history` using a dedicated SELECT-only
+role. It writes BF4PS `soldiers`, `soldier_names`, and `collection_state`, and
+stores independent monotonic source-ID cursors in existing `discovery_state`
+rows `bf4br_identities` and `bf4br_names` (`last_alias_id` reused as generic
+source row ID). No Alembic schema change is needed.
+
+BF4BR platform codes 1/32/64 map to BF4PS pc/ps4/xboxone. The importer never
+replaces existing BF4PS `current_name`, never invents report-era name dates,
+and skips active `player_exclusions`. Source observations use BF4BR
+`current_name_observed_at` and `player_name_history.observed_at`, not report
+creation dates. It does not enqueue BF4BR jobs or trigger bulk BF4PS collection.
+
+Service: `bf4ps-bf4br-sync.service`; timer: `bf4ps-bf4br-sync.timer`.
+Credential: `/etc/bf4-player-stats/bf4br-sync.env` (not tracked in Git).
+BF4BR server (`reports`, 192.168.200.49) PostgreSQL 18 pg_hba.conf permits
+read-only role `bf4br_identity_sync` from tcou 192.168.10.71/32 only.
+The existing BF4SW discovery service and its checkpoints are independent.
+
+[executed on device: tcou (720a0073-649a-4660-8c09-00c2e6d0e587)]
