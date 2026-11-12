@@ -44,23 +44,25 @@ def start_sweep(engine,args,number):
     print(f'SWEEP STARTED number={number} shard={args.shard_index}/{args.shard_count} assigned={len(cohort)} utc={utc_now()}',flush=True)
     return cohort,set(),time.monotonic()
 def recover_stale_gate(engine):
-    """Rearm only a stale completion timestamp, never bypassing WAL replay checks.
+    """Conservatively rearm a prolonged idle gate; never bypass WAL replay.
 
-    Serialize concurrent schedulers on the existing gate row. The arm function
-    records a fresh WAL target; bf4ps_rank_gate_ready() must still approve it.
+    The writer role intentionally has no direct access to the private gate row.
+    The existing SECURITY DEFINER arm function records a fresh WAL target.
+    Re-arm at most once per 5 minutes, only with no active leases and no
+    successful publication in the preceding 2 minutes.
     """
     with engine.begin() as c:
-        stale = c.execute(text("""
-            SELECT g.armed_at < (SELECT max(last_success_at) FROM equipment_rank_jobs)
-              AND NOT EXISTS (
-                  SELECT 1 FROM equipment_rank_jobs
-                  WHERE lease_expires_at > clock_timestamp()
-              )
-            FROM bf4ps_rank_wal_gate g WHERE g.id=1 FOR UPDATE
-        """)).scalar_one_or_none()
-        if stale:
+        eligible = c.execute(text("""
+            SELECT NOT EXISTS (
+                SELECT 1 FROM equipment_rank_jobs
+                WHERE lease_expires_at > clock_timestamp()
+            ) AND COALESCE((SELECT max(last_success_at) FROM equipment_rank_jobs),
+                           '-infinity'::timestamptz)
+                  < clock_timestamp() - interval '2 minutes'
+        """)).scalar_one()
+        if eligible:
             c.execute(text('SELECT public.bf4ps_rank_gate_arm()'))
-            print('REARMED stale ranking gate; WAL replay safety still enforced', flush=True)
+            print('REARMED idle ranking gate; WAL replay safety still enforced', flush=True)
             return True
     return False
 
@@ -102,7 +104,7 @@ def main():
                              'priority_metric':priority[3]}
                 scope=c.execute(PICK,pick_params).mappings().first() if ready else None
             if not scope:
-                if not ready and time.monotonic() - last_rearm_check >= 60:
+                if not ready and time.monotonic() - last_rearm_check >= 300:
                     last_rearm_check = time.monotonic()
                     try:
                         recover_stale_gate(engine)
