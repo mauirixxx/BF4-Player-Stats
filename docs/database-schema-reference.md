@@ -13,6 +13,12 @@ Current repository and production Alembic head: `0025_compact_lookup_fk_idx` (ve
 - Platoon and website service code examined for strict 0023/0024 Alembic revision checks; no matching active guard found. The website admin console displays Alembic revision but does not enforce it in the inspected path.
 - This migration is additive; no additional Alembic upgrade is required on collector hosts, which share the production PostgreSQL primary. Ensure future collector images incorporate these guard updates rather than reverting to `collector-cooldown-0023`.
 
+## Ranking gate recovery and storage findings (2026-11-12 UTC)
+
+- Four compact scheduler nodes MAK-01..04 receive a code-only stale/idle gate recovery path. When the existing `bf4ps_rank_gate_ready()` fails, a scheduler checks no active job leases and that no publication succeeded within 2 minutes; no more than once per 5 minutes it invokes the existing SECURITY DEFINER `bf4ps_rank_gate_arm()`. This records a new WAL replay target; the existing replication gate remains authoritative. The scheduler role is intentionally not granted direct access to the private WAL gate table. This is an operational self-healing mitigation, not a proof that the underlying finish/arm race cannot recur.
+- On MAK-DB-02 at 2026-11-12 04:33 UTC: database ~346 GB, compact blocks ~299 GB (of which ~297 GB is TOAST), estimated 12.85 million dead compact block tuples versus 2.15 million live, and ~178 GiB filesystem available. The compact blocks dominate storage growth; discovered soldiers are not the dominant size contributor.
+- Autovacuum was actively scanning `pg_toast.pg_toast_981356`; ordinary VACUUM can reuse space but does not necessarily shrink the on-disk relation. Avoid VACUUM FULL or unplanned rewrites on this active ~299 GB relation; monitor disk, vacuum progress, generation retention, and publication rates before expanding writers.
+
 ## Production compact-block autovacuum settings (2026-11-06)
 
 `public.equipment_rank_compact_blocks` uses table-local reloptions: `autovacuum_vacuum_scale_factor=0.01`, `autovacuum_vacuum_threshold=1000`, `autovacuum_analyze_scale_factor=0.02`. Applied on MAK-DB-02 to encourage earlier vacuum during continuous generation turnover. This is a production reloptions setting, not an Alembic migration; verify against `pg_class.reloptions` during future provisioning. Vacuum reuses dead space but does not delete retained ranking generations or necessarily shrink database files.
