@@ -43,6 +43,27 @@ def start_sweep(engine,args,number):
     cohort={scope_key(r) for r in rows}
     print(f'SWEEP STARTED number={number} shard={args.shard_index}/{args.shard_count} assigned={len(cohort)} utc={utc_now()}',flush=True)
     return cohort,set(),time.monotonic()
+def recover_stale_gate(engine):
+    """Rearm only a stale completion timestamp, never bypassing WAL replay checks.
+
+    Serialize concurrent schedulers on the existing gate row. The arm function
+    records a fresh WAL target; bf4ps_rank_gate_ready() must still approve it.
+    """
+    with engine.begin() as c:
+        stale = c.execute(text("""
+            SELECT g.armed_at < (SELECT max(last_success_at) FROM equipment_rank_jobs)
+              AND NOT EXISTS (
+                  SELECT 1 FROM equipment_rank_jobs
+                  WHERE lease_expires_at > clock_timestamp()
+              )
+            FROM bf4ps_rank_wal_gate g WHERE g.id=1 FOR UPDATE
+        """)).scalar_one_or_none()
+        if stale:
+            c.execute(text('SELECT public.bf4ps_rank_gate_arm()'))
+            print('REARMED stale ranking gate; WAL replay safety still enforced', flush=True)
+            return True
+    return False
+
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--max-publications',type=int,default=1)
@@ -68,6 +89,7 @@ def main():
             raise RuntimeError('production revision/capacity mismatch')
         sweep_number=1
         cohort,completed,sweep_start=start_sweep(engine,args,sweep_number)
+        last_rearm_check = 0.0
         while count<args.max_publications:
             with engine.connect() as c:
                 ready=c.execute(text('SELECT public.bf4ps_rank_gate_ready()')).scalar_one()
@@ -80,6 +102,12 @@ def main():
                              'priority_metric':priority[3]}
                 scope=c.execute(PICK,pick_params).mappings().first() if ready else None
             if not scope:
+                if not ready and time.monotonic() - last_rearm_check >= 60:
+                    last_rearm_check = time.monotonic()
+                    try:
+                        recover_stale_gate(engine)
+                    except Exception as exc:
+                        print(f'stale gate recovery check failed: {exc}',flush=True)
                 print('waiting for WAL replay gate or due scope',flush=True)
                 time.sleep(args.poll_seconds)
                 continue
