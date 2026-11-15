@@ -4,6 +4,16 @@ Status: **developer reference for the current Alembic head**
 
 Current repository and production Alembic head: `0025_compact_lookup_fk_idx` (verified on MAK-DB-02 and streaming replicas MAK-DB-01, HNL-DB-01, RNT-DB-01 on 2026-11-06 UTC). Previous production head: `0024_profile_lookup_idx`. KAH-DB-01 was not verified in this rollout. Previous revision observations are historical; replica revision and replay status should be verified independently.
 
+## Proposed 0026 general ranking snapshot schema (NOT DEPLOYED)
+
+Migration `0026_general_rank_snapshots` extends `0025_compact_lookup_fk_idx` with independent general ranking tables. This migration exists in source only; production remains at 0025 until rollout verification.
+
+- `general_rank_generations`: identity bigint `generation_id` PK, `metric` (14 allowlisted general metrics), `platform` (`all`, `pc`, `ps4`, `xboxone`), nonnegative `population`, `created_at`, nullable `completed_at`.
+- `general_rank_rows`: composite PK (`generation_id`, `position`); generation FK CASCADE; `soldier_id` bigint, `value` bigint, `rank` bigint, `division` smallint 1–10, nullable `hours_source_seconds` bigint. Unique (`generation_id`, `soldier_id`). Index (`generation_id`, `division`, `position`). `soldier_id` deliberately has no FK to mutable `soldiers`: immutable snapshots may retain a deleted identity until next publication; the reader must join current soldiers and exclude missing identities.
+- `general_rank_published`: PK (`metric`, `platform`), generation FK (restrict deletion while published), `published_at`. Publisher must verify generation scope, row count and completion before atomically updating pointer; fencing and refresh/retention are implementation requirements, not provided by migration.
+
+Do not apply this migration until writer/reader parity and capacity testing is complete.
+
 ## 0025 fleet rollout (2026-11-06 UTC)
 
 - Production Alembic revision `0025_compact_lookup_fk_idx` verified on MAK-DB-02 and replicas MAK-DB-01, HNL-DB-01, RNT-DB-01; KAH-DB-01 not independently verified.
