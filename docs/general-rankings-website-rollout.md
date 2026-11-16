@@ -27,3 +27,14 @@ Deployment gates: HTTP integration tests,
 published/legacy fallback tests, full-scope writer timing, WAL/replica
 monitoring, retention policy, and a one-node canary before fleet rollout.
 Do not enable the flag before migration 0026 is deployed and verified.
+
+## Isolated HTTP smoke test (2026-11-16)
+
+RNT-01 PostgreSQL scratch (port 5542; 560,000 synthetic soldiers) passed
+real localhost HTTP requests for the snapshot first page (generation 4,
+10 rows), indexed name search (111 matches), and the legacy path when the
+feature flag was disabled. The test harness changes the production database
+name guard **only in an in-memory copy** of the handler; repository code and
+production safeguards remain unchanged. Run the opt-in scratch harness via
+`website/tests/scratch_general_rank_http_smoke.py` with the scratch database
+URL and website API import path. The harness is not a production test.
