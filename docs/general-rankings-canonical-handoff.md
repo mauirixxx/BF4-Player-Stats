@@ -308,3 +308,19 @@ a safety check on 2026-11-16. Do not claim it ran; proceed with authorized
 tools or provide a controlled operator-run alternative. Then address
 remaining rollout gates. NEVER repeat already completed work without
 evidence that it is broken. NEVER infer schema from this prose alone.
+
+## 11. UPDATE 2026-11-16 — benchmark blocker cleared (supersedes older status)
+
+**New verified result:** The isolated RNT-01 full-scope writer benchmark DID run
+successfully after the original handoff was authored. Earlier sections above
+that say the benchmark was blocked or unmeasured are historical, superseded
+by this update. Full details: docs/general-rankings-publisher-benchmark-20261116.md.
+
+- Database: bf4ps_rank_scratch, port 5542, Alembic 0026.
+- Scope: wins/all; 560,000 synthetic soldiers; generation 8 published.
+- Elapsed: 6.690 seconds including commit.
+- WAL: 205,249,944 bytes (195.74 MiB) during benchmark interval.
+- general_rank_rows relation growth: 115,064,832 bytes (109.73 MiB).
+- Publication pointer and actual inserted row count verified.
+- No production deployment, no replica lag measurement. All other outstanding
+  rollout gates remain, including repeated-cycle retention and 56-scope parity.
