@@ -700,16 +700,30 @@ class Handler(BaseHTTPRequestHandler):
                     or not 1<=page<=100000 or not 1<=page_size<=100
                     or not 0<=division<=10 or len(search)>100):
                     self.send_error(400);return
-                with engine.connect() as c:
+                snapshot_enabled=os.environ.get('BF4PS_GENERAL_RANK_SNAPSHOT_READS')=='1'
+                # All statements for a published generation must share one MVCC view.
+                isolation='REPEATABLE READ' if snapshot_enabled else 'READ COMMITTED'
+                with engine.connect().execution_options(isolation_level=isolation) as c:
                     if c.execute(text('select current_database()')).scalar_one()!='bf4_playerstats':
                         raise RuntimeError('Unexpected database')
                     c.execute(text('SET TRANSACTION READ ONLY'))
                     c.execute(text("SET LOCAL statement_timeout = '5000ms'"))
-                    if not search and division==0 and page==1 and page_size==50:
+                    def load_general():
+                        if snapshot_enabled:
+                            from general_rank_snapshot import query_page as snapshot_page
+                            published=snapshot_page(c,metric,platform,page,page_size,search,division)
+                            if published is not None:
+                                published['rank_updated_at']=published['published_at']
+                                published['rank_source']='published_snapshot'
+                                return published
+                        legacy=get_general_page(c,metric,platform,page,page_size,search,division)
+                        legacy['rank_source']='live'
+                        return legacy
+                    if not snapshot_enabled and not search and division==0 and page==1 and page_size==50:
                         result=cached_equipment(('general',metric,platform,page,page_size),300,
-                            lambda: get_general_page(c,metric,platform,page,page_size,search,division))
+                            load_general)
                     else:
-                        result=get_general_page(c,metric,platform,page,page_size,search,division)
+                        result=load_general()
                 send_json(self,200,result);return
             if u.path=='/equipment-position':
                 kind=q.get('kind',[''])[0];platform=q.get('platform',[''])[0]
