@@ -381,3 +381,17 @@ receiver showed active primary streaming at 192.168.10.78:5432 at 21:10 UTC.
 No production writes, restarts, or configuration changes were performed.
 Prioritize production storage/replica incident resolution before any 0026
 rollout. Full observations and guardrails are in the production-gate report.
+
+## 16. UPDATE 2026-11-17 — one-scope cycle runner (no production activation)
+
+New `player-collector/bf4ps/general_rank_cycle.py` chooses an unpublished
+scope first or the oldest published scope, and with explicit `--execute`
+serializes selection and one publication under the shared advisory lock.
+Dry-run selected kills/all. Scratch execution published kills/all generation
+153, population 560,000, exit 0, runtime 10.96 seconds. Five offline runner
+tests passed; selected suite 21/21. No timer, daemon, fleet rollout, or
+production database changes. See `docs/general-rankings-cycle-runner.md`.
+Production storage/replica incident remains tracked separately; do not enable
+unattended general publication until production readiness is independently
+verified. Next: runner operational safety/monitoring, retention cadence,
+repeat-cycle bounded storage test, and website as-of label.
