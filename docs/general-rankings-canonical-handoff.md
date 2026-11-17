@@ -337,3 +337,17 @@ values. This does NOT establish populated-data parity for the other 11 metrics.
 Generations 9–64 were added to scratch; production was untouched. The
 next gate is a representative populated fixture for all 14 metrics plus
 repeated-cycle retention, missing-pointer HTTP fallback and production health.
+
+## 13. UPDATE — populated parity for all 56 combinations
+
+The earlier 44 empty scopes have now been retested with populated synthetic data.
+The new `player-collector/tests/scratch_general_rank_populated_parity.py`
+seeded 1,200 scratch players across all 11 previously unpopulated metrics
+and verified 44/44 populated scope comparisons against the legacy reader
+(exit code 0, 16.15 seconds). Together with the prior 12 populated scopes,
+all 56 combinations now have populated functional parity coverage. The 44
+additional scopes used smaller cohorts (399–1,200 players) and are NOT
+production-scale performance or replication evidence. See
+`docs/general-rankings-56-scope-parity.md` for details. Remaining gates:
+retention, HTTP missing-pointer fallback, operational scheduler, production
+schema/health checks and a controlled production canary.
