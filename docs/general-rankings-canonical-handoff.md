@@ -364,3 +364,20 @@ pointers. **NOT deployed to production, NO timer.** This is only one deletion;
 cleanup throughput/WAL, repeat-cycle growth and replica impact are unverified.
 See docs/general-rankings-retention.md. The next tasks are measured repeated
 cleanup, HTTP missing-pointer fallback, and production-readiness checks.
+
+## 15. CRITICAL UPDATE 2026-11-17 UTC — production deployment NO-GO
+
+The scratch HTTP missing-publication-pointer fallback passed with flag ON and
+restored generation 9. Three scratch retention deletions passed with measured
+WAL intervals; see `docs/general-rankings-production-gate-20261117.md`.
+
+**Production is NOT safe for general ranking migration/writer activation.**
+MAK-DB-01 replica PostgreSQL is DOWN after disk-full WAL replay failure at
+2026-11-17 16:43 UTC (0 bytes filesystem available). HNL-DB-01 has 6.3 GB
+free and RNT-DB-01 has 2.6 GB free; both are still streaming on Alembic 0025.
+KAH-DB-01 PostgreSQL has been stopped since October 22 and has only a 128 GB
+root filesystem. MAK-DB-02 Desktop Commander agent is offline, but HNL's
+receiver showed active primary streaming at 192.168.10.78:5432 at 21:10 UTC.
+No production writes, restarts, or configuration changes were performed.
+Prioritize production storage/replica incident resolution before any 0026
+rollout. Full observations and guardrails are in the production-gate report.
