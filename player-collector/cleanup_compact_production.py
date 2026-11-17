@@ -11,13 +11,14 @@ from sqlalchemy.engine import make_url
 QUERY=text("""WITH ordered AS (
  SELECT g.generation_id,g.status,g.completed_at,g.kind,g.item_id,g.platform,g.metric,
  row_number() OVER (PARTITION BY g.kind,g.item_id,g.platform,g.metric
- ORDER BY g.created_at DESC,g.generation_id DESC) AS recency
+ ORDER BY g.created_at DESC,g.generation_id DESC) AS recency,
+ count(*) FILTER (WHERE g.status='published') OVER (PARTITION BY g.kind,g.item_id,g.platform,g.metric ORDER BY g.created_at DESC,g.generation_id DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS published_recency
  FROM equipment_rank_generations g
  WHERE g.snapshot_format=2 AND g.status IN ('published','validated')
  AND EXISTS (SELECT 1 FROM equipment_rank_compact_blocks b WHERE b.generation_id=g.generation_id)
 )
 SELECT o.generation_id FROM ordered o
-WHERE o.recency>:keep
+WHERE (o.status='published' AND o.published_recency>:keep OR o.status='validated' AND o.recency>:keep)
  AND (o.status='published' OR (o.status='validated'
       AND o.completed_at < now() - interval '24 hours'
       AND EXISTS (SELECT 1 FROM equipment_rank_compact_published p
