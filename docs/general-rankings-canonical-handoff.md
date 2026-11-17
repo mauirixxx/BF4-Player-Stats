@@ -324,3 +324,16 @@ by this update. Full details: docs/general-rankings-publisher-benchmark-20261116
 - Publication pointer and actual inserted row count verified.
 - No production deployment, no replica lag measurement. All other outstanding
   rollout gates remain, including repeated-cycle retention and 56-scope parity.
+
+## 12. UPDATE 2026-11-16 — 56-scope scratch parity run completed
+
+The guarded harness `player-collector/tests/scratch_general_rank_56_scope_parity.py`
+completed with exit code 0 in 152.31 seconds, comparing all 56 scopes
+against the legacy reader for four cases per scope. **56/56 passed.**
+See `docs/general-rankings-56-scope-parity.md` for exact coverage.
+Only 12 scopes had nonempty cohorts (kills, wins, time_played_seconds across
+four platforms); the other 44 were empty due to missing synthetic metric
+values. This does NOT establish populated-data parity for the other 11 metrics.
+Generations 9–64 were added to scratch; production was untouched. The
+next gate is a representative populated fixture for all 14 metrics plus
+repeated-cycle retention, missing-pointer HTTP fallback and production health.
