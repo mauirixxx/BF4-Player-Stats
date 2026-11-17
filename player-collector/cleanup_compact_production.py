@@ -15,7 +15,6 @@ QUERY=text("""WITH ordered AS (
  count(*) FILTER (WHERE g.status='published') OVER (PARTITION BY g.kind,g.item_id,g.platform,g.metric ORDER BY g.created_at DESC,g.generation_id DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS published_recency
  FROM equipment_rank_generations g
  WHERE g.snapshot_format=2 AND g.status IN ('published','validated')
- AND EXISTS (SELECT 1 FROM equipment_rank_compact_blocks b WHERE b.generation_id=g.generation_id)
 )
 SELECT o.generation_id FROM ordered o
 WHERE (o.status='published' AND o.published_recency>:keep OR o.status='validated' AND o.recency>:keep)
@@ -26,6 +25,7 @@ WHERE (o.status='published' AND o.published_recency>:keep OR o.status='validated
  AND NOT EXISTS (SELECT 1 FROM equipment_rank_jobs j
    WHERE j.kind=o.kind AND j.item_id=o.item_id AND j.platform=o.platform
      AND j.metric=o.metric AND j.lease_expires_at>clock_timestamp())
+ AND EXISTS (SELECT 1 FROM equipment_rank_compact_blocks b WHERE b.generation_id=o.generation_id)
  AND NOT EXISTS (SELECT 1 FROM equipment_rank_compact_published p WHERE p.generation_id=o.generation_id)
  AND NOT EXISTS (SELECT 1 FROM equipment_rank_published p WHERE p.generation_id=o.generation_id)
  AND NOT EXISTS (SELECT 1 FROM equipment_rank_rows r WHERE r.generation_id=o.generation_id)
