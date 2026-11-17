@@ -351,3 +351,16 @@ production-scale performance or replication evidence. See
 `docs/general-rankings-56-scope-parity.md` for details. Remaining gates:
 retention, HTTP missing-pointer fallback, operational scheduler, production
 schema/health checks and a controlled production canary.
+
+## 14. UPDATE 2026-11-17 UTC — bounded retention first scratch deletion
+
+Opt-in `player-collector/bf4ps/general_rank_retention.py` now exists.
+It deletes at most one completed unpublished generation per invocation,
+requires a >=60-minute grace, protects the newest two completed generations
+per scope and every published pointer, and uses the publisher's advisory lock.
+On isolated RNT-01 scratch, one `--execute` call deleted obsolete generation 1.
+Post-check: generation 1 absent, 56 published pointers intact, zero dangling
+pointers. **NOT deployed to production, NO timer.** This is only one deletion;
+cleanup throughput/WAL, repeat-cycle growth and replica impact are unverified.
+See docs/general-rankings-retention.md. The next tasks are measured repeated
+cleanup, HTTP missing-pointer fallback, and production-readiness checks.
