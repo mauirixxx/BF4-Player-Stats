@@ -1,7 +1,7 @@
 """Conservative production compact retention. Dry-run by default.
 
 Never delete a published pointer, a generation with legacy rows, or one of
-the newest two compact generations per scope. Bounded batches limit WAL.
+the newest two compact generations per scope. Validated generations require 24h grace, an existing published pointer, and no active job lease. Bounded batches limit WAL.
 """
 import argparse
 import os
@@ -9,15 +9,22 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 
 QUERY=text("""WITH ordered AS (
- SELECT g.generation_id,
+ SELECT g.generation_id,g.status,g.completed_at,g.kind,g.item_id,g.platform,g.metric,
  row_number() OVER (PARTITION BY g.kind,g.item_id,g.platform,g.metric
  ORDER BY g.created_at DESC,g.generation_id DESC) AS recency
  FROM equipment_rank_generations g
- WHERE g.snapshot_format=2 AND g.status='published'
+ WHERE g.snapshot_format=2 AND g.status IN ('published','validated')
  AND EXISTS (SELECT 1 FROM equipment_rank_compact_blocks b WHERE b.generation_id=g.generation_id)
 )
 SELECT o.generation_id FROM ordered o
 WHERE o.recency>:keep
+ AND (o.status='published' OR (o.status='validated'
+      AND o.completed_at < now() - interval '24 hours'
+      AND EXISTS (SELECT 1 FROM equipment_rank_compact_published p
+        WHERE p.kind=o.kind AND p.item_id=o.item_id AND p.platform=o.platform AND p.metric=o.metric)))
+ AND NOT EXISTS (SELECT 1 FROM equipment_rank_jobs j
+   WHERE j.kind=o.kind AND j.item_id=o.item_id AND j.platform=o.platform
+     AND j.metric=o.metric AND j.lease_expires_at>clock_timestamp())
  AND NOT EXISTS (SELECT 1 FROM equipment_rank_compact_published p WHERE p.generation_id=o.generation_id)
  AND NOT EXISTS (SELECT 1 FROM equipment_rank_published p WHERE p.generation_id=o.generation_id)
  AND NOT EXISTS (SELECT 1 FROM equipment_rank_rows r WHERE r.generation_id=o.generation_id)
