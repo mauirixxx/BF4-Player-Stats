@@ -25,7 +25,6 @@ WHERE (o.status='published' AND o.published_recency>:keep OR o.status='validated
  AND NOT EXISTS (SELECT 1 FROM equipment_rank_jobs j
    WHERE j.kind=o.kind AND j.item_id=o.item_id AND j.platform=o.platform
      AND j.metric=o.metric AND j.lease_expires_at>clock_timestamp())
- AND EXISTS (SELECT 1 FROM equipment_rank_compact_blocks b WHERE b.generation_id=o.generation_id)
  AND NOT EXISTS (SELECT 1 FROM equipment_rank_compact_published p WHERE p.generation_id=o.generation_id)
  AND NOT EXISTS (SELECT 1 FROM equipment_rank_published p WHERE p.generation_id=o.generation_id)
  AND NOT EXISTS (SELECT 1 FROM equipment_rank_rows r WHERE r.generation_id=o.generation_id)
