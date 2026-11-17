@@ -13,7 +13,7 @@ Move the complete **BF4 Player Stats** PostgreSQL database from production prima
 - Current PostgreSQL primary: `mak-db-02`; BF4PS database: `bf4_playerstats`. Streaming replicas include `mak-db-01`, `hnl-db-01`, `kah-db-01`, `rnt-db-01`; verify current roles, health, and BF4SW co-location.
 - Compact ranking uses `equipment_rank_generations`, `equipment_rank_compact_blocks`, `equipment_rank_compact_lookup`, and `equipment_rank_compact_published`. At planning time compact storage ~405 GB and the primary ~66 GiB free; figures change.
 - 2026-11-17 snapshot: 2,624 live published compact scope pointers, 14,425 generations (5,248 format-2 published, 6,476 format-2 validated, 2,640 format-1 published, 60 format-1 retired, 1 failed). This is a diagnostic snapshot, **not** an authorization to delete rows.
-- The TrueNAS MariaDB Docker container's purpose is **unknown**. Inventory its mounts, volumes, networks, databases, owners, and clients before changing it. Do not assume it is unused or remove it. PostgreSQL must be deployed separately; MariaDB cannot directly host this PostgreSQL database.
+- The TrueNAS MariaDB Docker container **was used for BF4CR archival/export work** in October 2026: container `ix-mariadb-mariadb-1` (image `mariadb:13.0.2`), with persistent data mounted under `/mnt/.ix-apps/app_mounts/mariadb/data` and BF4CR downloads under `/mnt/deep-pool/bf4cr-downloads`. It was used to query/export the `brs` database; whether any current clients still use it is **not verified**. Inventory volumes, databases, owners and clients before changing it; do not delete it on an assumption of disuse. PostgreSQL must be deployed separately; MariaDB cannot directly host this PostgreSQL database.
 - Verify TrueNAS CPU performance, 10 GbE throughput, ZFS pool health, usable space, IOPS/latency, ARC memory budget, UPS/power, TrueNAS release, supported PostgreSQL deployment approach, container/VM persistence, dataset properties, snapshot policy, and host security.
 - Verify production PostgreSQL **major version**, extensions, locales/collations, encoding, role definitions, ownership, privileges, replication slots, tablespaces, `pg_hba.conf`, server parameters, and **current Alembic head**. Consult `docs/database-schema-reference.md` and the complete current `player-collector/migrations/versions/` before schema-dependent queries or code. Reconcile documentation vs migrations before proceeding.
 
@@ -78,6 +78,6 @@ Moving to TrueNAS increases headroom but does not inherently shrink PostgreSQL c
 - Is a single DB host acceptable versus one low-cost off-host PostgreSQL replica?
 - Which backup destination, PITR retention, and recovery objectives?
 - Which PostgreSQL deployment model is supported on this TrueNAS release?
-- What is the MariaDB container used for?
+- Does the MariaDB container still serve any clients or retained BF4CR export workflow?
 - Which migration method meets the acceptable downtime?
 - How long to retain the old frozen cluster before destructive cleanup?
