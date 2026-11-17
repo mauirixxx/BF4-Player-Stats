@@ -81,3 +81,58 @@ Moving to TrueNAS increases headroom but does not inherently shrink PostgreSQL c
 - Does the MariaDB container still serve any clients or retained BF4CR export workflow?
 - Which migration method meets the acceptable downtime?
 - How long to retain the old frozen cluster before destructive cleanup?
+
+
+## Appendix A: observed service inventory (live audit, 2026-11-17 22:39–22:42 UTC)
+
+**Evidence standard:** These names were observed through read-only `systemctl list-units`, `systemctl list-timers`, and `docker ps` on the named hosts. They are **not yet a complete dependency graph**: verify each unit's `ExecStart`, `EnvironmentFile`, drop-ins, Docker compose/stack owner, DB target, auto-restart policy, and whether it actually writes BF4PS. Never assume a service can be stopped merely because it contains 'bf4'. Avoid touching shared BF4BR/BF4SW services.
+
+| Host | Observed BF4PS processes, containers, and units | Proposed migration disposition (verify before executing) |
+| --- | --- | --- |
+| mak-01 | Docker `bf4ps-production-collector`, `bf4ps-compact-ranking`, `bf4ps-discord-ha-mak`; systemd `bf4ps-compact-ranking.service`, `bf4ps-compact-retention.service/.timer`, `bf4ps-rank-gc.service/.timer`, `bf4ps-vacuum-watch.service/.timer`, `bf4ps-watchdog.service/.timer`, `bf4ps-weapon-metrics-sync.service` (failed at audit), `bf4ps-compact-ranking-resume.service/.timer` | Drain/stop collector, publisher, Discord write paths, retention/GC, metric sync, watchdog/auto-resume; distinguish read-only vacuum watch; inventory restart policies |
+| mak-02 | Docker `bf4ps-production-collector`, `bf4ps-compact-ranking`, `bf4ps-vehicle-metrics-sync`; systemd `bf4ps-compact-ranking.service`, `bf4ps-vehicle-metrics-sync.service`, `bf4ps-compact-ranking-resume.service/.timer` | Stop collector, publisher, vehicle metric reconciliation, and auto-resume |
+| mak-03 | Docker `bf4ps-production-collector`, `bf4ps-compact-ranking`; systemd `bf4ps-compact-ranking.service`, `bf4ps-compact-ranking-resume.service/.timer` | Stop collector, publisher and auto-resume |
+| mak-04 | Docker `bf4ps-production-collector`, `bf4ps-compact-ranking`; systemd `bf4ps-compact-ranking.service`, `bf4ps-compact-ranking-resume.service/.timer` | Stop collector, publisher and auto-resume |
+| mak-05 | `bf4ps-platoon-alternating.service/.timer` | Drain platoon roster/discovery and disable timer |
+| hnl-01 | Docker `bf4ps-production-collector` | Drain collector and inspect restart policy |
+| hnl-02 | **Inventory unavailable** (remote command failed) | **BLOCKER:** inspect host directly before cutover |
+| hnl-03 | Docker `bf4ps-production-collector`; `bf4ps-platoon-alternating.service/.timer` | Drain collector and platoon timer |
+| kah-01 | Docker `bf4ps-production-collector` | Drain collector |
+| rnt-01 | Docker `bf4ps-production-collector`, `bf4ps-discord-ha-rnt`; PostgreSQL scratch `postgresql@16-bf4psscratch.service` | Drain collector/Discord writes; preserve independent scratch database unless separately approved |
+| tcou | `bf4ps-admin-api.service`, `bf4ps-discovery.service`, `bf4ps-leaderboard-api.service`, `bf4ps-manual-api.service`, `bf4ps-platoon-submit.service`, `bf4ps-bf4br-sync.service/.timer`, `bf4ps-community-export.service/.timer`, `bf4ps-graphs-export.service/.timer`, `bf4ps-homepage-summary.service/.timer`, `bf4ps-platoon-emblem-cache.service/.timer`, `bf4ps-platoon-preview-images.service/.timer`, `bf4ps-share-preview-index.service/.timer`, `bf4ps-clear-ranking-notice.service/.timer`, plus `bf4-status-dashboard.service` and sampler | Maintenance-mode website, pause all write-capable APIs, identity/discovery sync and timed exporters; identify read-only services; inspect Apache/PHP-FPM and cron independently |
+| mak-db-02 | `postgresql@16-main.service`, `bf4ps-disk-sample.service/.timer` | Freeze BF4PS writes only; **do not stop PostgreSQL** while BF4SW or replicas depend on it |
+| mak-db-01 | `postgresql@16-main.service` running | Preserve cluster until cutover and rollback approval |
+| hnl-db-01 | `postgresql@16-main.service` running | Preserve cluster until cutover and rollback approval |
+| kah-db-01 | `postgresql@16-main.service` **inactive** at audit | Investigate actual role and availability; do not count as healthy replica |
+| rnt-db-01 | `postgresql@16-main.service` running | Preserve cluster until cutover and rollback approval |
+| reports | BF4BR scheduler, external API, feeder, deployer and backup services observed; **not BF4PS services** | Preserve BF4BR; check only any direct BF4PS integration/credential usage |
+
+**Important:** The compact ranking `systemd` units and Docker containers on mak-01 through mak-04 were **active/running** at audit time, even though ranking publication had been described as paused. A WAL gate can suppress publication without stopping processes. Before migration, verify actual DB sessions and disable both the process and its auto-resume mechanism. `mak-01` also had an ephemeral test Docker container during the retention test; exclude such one-off containers from the permanent service manifest.
+
+### A.1 Required second-pass audit (mandatory before executing migration)
+
+For **every host** above, collect and commit a timestamped, redacted manifest with:
+
+1. `systemctl list-unit-files`, `systemctl list-units --all`, `systemctl list-timers --all`, `systemctl cat <each BF4PS unit>`, `systemctl show -p FragmentPath,DropInPaths,ExecStart,EnvironmentFiles,Restart,PartOf,WantedBy`; capture enabled/disabled/masked and timer trigger semantics.
+2. `docker ps -a`, `docker inspect` (redact environment secrets), compose project/working directory, bind mounts, named volumes, networks, restart policy, and Docker daemon/compose boot behavior; inspect **stopped** containers too. Do not confuse `bf4br-supervisor.service` or BF4SW containers with BF4PS.
+3. User and root crontabs, `/etc/cron*`, `at` jobs, supervisor processes, custom scripts, and ad-hoc background sessions. Inventory systemd **user** units as well as system units.
+4. PostgreSQL `pg_stat_activity` grouped by client IP, database user, application name and state, including idle sessions; cross-check against every known node. Identify hidden clients by network connection monitoring. Do not log credentials or connection strings.
+5. Apache vhosts, PHP-FPM pools, CLI PHP jobs, website environment/config, private APIs, Discord HA election/leader logic, webhook consumers, remote external workers, BF4SW→BF4PS discovery, BF4BR→BF4PS identity sync, admin manual queues, and monitoring automations.
+6. For each process mark **WRITE / READ / UNKNOWN**, current endpoint source, safe drain procedure, stop command, start command, startup dependencies, data-loss risk, and verification command. Any **UNKNOWN** is a no-go.
+7. Explicitly distinguish BF4PS from BF4SW, BF4BR, BF4CR, ServerWatcher, MapWatcher, PlayerTracker and shared PostgreSQL instances. Maintain a dependency diagram and ordered stop/restart checklist, including services that automatically recreate stopped containers.
+
+### A.2 Pre-cutover shutdown verification
+
+- Disable auto-resume timers and job schedulers **first**, then drain active work; verify leases and checkpoints before stopping writers.
+- Stop services through their **actual supervisors** (systemd, compose, Docker restart policy), not only `docker stop`. Record previous enablement state for restoration.
+- Confirm no BF4PS write-capable sessions on `mak-db-02` across multiple samples; verify all expected nodes checked in as stopped.
+- Keep read-only site maintenance and backup/monitoring functional where safe; do not accidentally shut down BF4SW or BF4BR.
+- Obtain explicit operator approval after reviewing a machine-readable **all-green shutdown manifest**. Do not begin the final transfer if any host remains unverified.
+
+## Appendix B: retention incident and measured fix (2026-11-17)
+
+- The prior cleanup script only considered `published` format-2 generations. Many abandoned `validated` generations remained after publication gates/lease failures.
+- New GitHub cleanup selector protects current pointers, two newest generations per scope, active job leases, legacy references, and validated generations younger than 24 hours. Requires a currently published pointer for the scope before deleting an older validated generation.
+- Initial candidate dry runs timed out at 15 seconds; removing expensive block-existence probes from the selection scan produced a **9.62-second successful dry run**.
+- **Single-generation canary:** generation `5190`, format 2, `validated` since 2026-11-04, 72 compact blocks. A bounded `--limit 1 --execute` test completed in **4.67 seconds**. Independent primary verification confirmed generation count 0, block count 0, and published pointer references 0 afterward. Replica replay backlog was ~22 GiB before and ~21 GiB afterward; this is not proof that deletion caused the reduction.
+- This is a **one-generation validation**, not a validated bulk cleanup rate. Do not raise the production retention timer limit or install the candidate into the running service until additional tests and WAL/replica/TOAST monitoring are completed.
