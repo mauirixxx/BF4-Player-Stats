@@ -4,6 +4,27 @@ Status: **developer reference for the current Alembic head**
 
 Current repository and production Alembic head: `0025_compact_lookup_fk_idx` (verified on MAK-DB-02 and streaming replicas MAK-DB-01, HNL-DB-01, RNT-DB-01 on 2026-11-06 UTC). Previous production head: `0024_profile_lookup_idx`. KAH-DB-01 was not verified in this rollout. Previous revision observations are historical; replica revision and replay status should be verified independently.
 
+## Standalone BF4PS primary ranking admission gate (2026-11-20)
+
+The production database moved to `bf4ps-db` (192.168.10.66) as an intentionally
+standalone PostgreSQL 16 primary. The existing `public.bf4ps_rank_gate_ready()`
+function was deployed outside Alembic and hardcoded a `mak_db_01` physical
+replica. That requirement is impossible on the new primary.
+
+The tracked operational SQL in
+`player-collector/deploy/sql/rank_gate_standalone_primary.sql` replaces only
+that function. It requires: primary (not recovery); gate armed for the current
+postmaster after the last ranking success; the gate's target WAL LSN locally
+flushed; **zero physical replication slots**; and **zero WAL sender replicas**.
+Any future replica or slot causes the gate to fail closed until its topology
+policy is deliberately updated. This protects local WAL durability, **not**
+replica replay or HA. The separate gate arm function and grants remain intact.
+The function is an operational SQL artifact, not an Alembic schema revision:
+the production Alembic head stays at `0025_compact_lookup_fk_idx`; the proposed
+`0026` remains unapplied. Never rerun the historical
+`website/scripts/provision_rank_continuous_gate.sql` on this primary because
+it reinstalls the obsolete four-replica gate.
+
 ## Proposed 0026 general ranking snapshot schema (NOT DEPLOYED)
 
 Migration `0026_general_rank_snapshots` extends `0025_compact_lookup_fk_idx` with independent general ranking tables. This migration exists in source only; production remains at 0025 until rollout verification.
