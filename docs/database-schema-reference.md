@@ -1,8 +1,8 @@
-# BF4 Player Stats database schema reference
+> **Production topology correction — 2026-11-20 UTC:** BF4PS production now runs on the standalone PostgreSQL 16 primary `bf4ps-db` (`192.168.10.66`). **There is no BF4PS streaming-replica fleet.** The former MAK-DB-02 / MAK-DB-01 / HNL-DB-01 / RNT-DB-01 / KAH-DB-01 topology is retired **for BF4PS**. Those hosts may still run PostgreSQL for other purposes; their health, WAL replay and disk headroom are not BF4PS rollout gates. Historical fleet observations below are dated history, not current deployment instructions. The new primary uses `/fast/pgdata` (observed online with ~761 GB free on 2026-11-20); `/fast/pgfast` is a separate filesystem. Current live Alembic revision must be reverified on `bf4ps-db` before applying 0026; the repository records 0025 as the last confirmed deployed revision and 0026 as proposed. The standalone ranking gate must not be replaced with the obsolete replica-dependent gate.\n\n# BF4 Player Stats database schema reference
 
 Status: **developer reference for the current Alembic head**
 
-Current repository and production Alembic head: `0025_compact_lookup_fk_idx` (verified on MAK-DB-02 and streaming replicas MAK-DB-01, HNL-DB-01, RNT-DB-01 on 2026-11-06 UTC). Previous production head: `0024_profile_lookup_idx`. KAH-DB-01 was not verified in this rollout. Previous revision observations are historical; replica revision and replay status should be verified independently.
+Last confirmed deployed Alembic revision: `0025_compact_lookup_fk_idx` on the former primary (2026-11-06); **verify the live revision on the new standalone `bf4ps-db` primary before migration**. Repository includes proposed `0026_general_rank_snapshots`, not yet confirmed deployed. The former replica fleet observations are historical.
 
 ## Standalone BF4PS primary ranking admission gate (2026-11-20)
 
