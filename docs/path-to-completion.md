@@ -1,4 +1,4 @@
-> **Production status update (2026-11-04):** This is a historical consolidation
+> **Production topology correction — 2026-11-20 UTC:** BF4PS production now runs on the standalone PostgreSQL 16 primary `bf4ps-db` (`192.168.10.66`). **There is no BF4PS streaming-replica fleet.** The former MAK-DB-02 / MAK-DB-01 / HNL-DB-01 / RNT-DB-01 / KAH-DB-01 topology is retired **for BF4PS**. Those hosts may still run PostgreSQL for other purposes; their health, WAL replay and disk headroom are not BF4PS rollout gates. Historical fleet observations below are dated history, not current deployment instructions. The new primary uses `/fast/pgdata` (observed online with ~761 GB free on 2026-11-20); `/fast/pgfast` is a separate filesystem. Current live Alembic revision must be reverified on `bf4ps-db` before applying 0026; the repository records 0025 as the last confirmed deployed revision and 0026 as proposed. The standalone ranking gate must not be replaced with the obsolete replica-dependent gate.\n\n> **Production status update (2026-11-04):** This is a historical consolidation
 > backlog, not a live assertion that every item below is still unimplemented.
 > The production website has a fast compact format-2 ranking reader and two
 > continuous odd/even equipment ranking builders on MAK-01 and MAK-02.
@@ -25,7 +25,7 @@
 
 > **2026-10-25 update:** The nine production **player-statistics collectors** were rebuilt from GitHub `main` commit `6589a7e` and their running Git revision labels, 4-second pacing, exclusion-aware claims, module checksums, and successful collections were verified. PostgreSQL Alembic head was observed at `0018_distributed_rank_queue`. Source-parity audit for website, Discord bot, platoon/discovery/ranking services, byte-identical image publication, full integration testing and sustained soak remain open. See [current production checkpoint](PROJECT-CURRENT-STATE.md).
 
-# BF4PS — Path to Completion
+# BF4PS — Path to Completion\n\n**Next live general-ranking experiment (pending, 2026-11-20):** verify live Alembic head and standalone ranking gate on `bf4ps-db`; deploy proposed migration `0026_general_rank_snapshots` only after compatibility review; run a single `kills/all` publication without switching the website reader; measure runtime, WAL volume, database/storage growth, and collector/compact-publisher/retention interference. Repeat publication and bounded obsolete-generation cleanup only after first-run assessment. **Do not require or claim BF4PS replica replay-lag testing:** no BF4PS replicas exist. This canary has not yet been executed.\n
 
 **Consolidation date:** 2026-10-21. **Status:** Working master plan, not a claim that every item is implemented or production validated.
 
