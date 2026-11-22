@@ -150,7 +150,7 @@ def main() -> int:
             "0019_soldier_search_trigrams",
             "0020_compact_rank_snapshots", "0021_reconcile_player_exclusions",
             "0022_compact_blocks_only_format", "0023_compact_exclusion_guard",
-            "0024_profile_lookup_idx", "0025_compact_lookup_fk_idx",
+            "0024_profile_lookup_idx", "0025_compact_lookup_fk_idx", "0026_general_rank_snapshots",
         })
         if revision not in supported_revisions:
             raise SystemExit(f"REFUSING: unverified production schema revision {revision!r}")
