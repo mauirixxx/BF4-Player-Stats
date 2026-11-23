@@ -49,7 +49,7 @@ def main():
     p.add_argument('--apply',action='store_true')
     args=p.parse_args()
     if not 1<=args.limit<=500 or args.delay<0.5:p.error('Invalid bounds')
-    engine=create_engine('postgresql+psycopg:///bf4_playerstats')
+    engine=create_engine('postgresql+psycopg://bf4ps_ban_sync@/bf4_playerstats')
     run(engine,args.limit,args.delay,args.apply)
 
 if __name__=='__main__':main()
