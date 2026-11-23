@@ -1,3 +1,7 @@
+# Alembic 0027 production verification — 2026-11-23 UTC
+
+Standalone `bf4ps-db` upgraded from `0026_general_rank_snapshots` to `0027_soldier_ban_status` and verified with PostgreSQL: nine documented columns, zero initial rows. BA import and BF4DB refresh workers remain inactive.
+
 ## General Ranking Monitor live host telemetry (2026-11-23 UTC)
 
 - Installed `bf4ps-general-rank-telemetry.service` on `bf4ps-db` with `DynamicUser=yes`, no database credentials, read-only system information, and `NoNewPrivileges` / `ProtectSystem=strict`. The HTTP listener binds only `192.168.10.66:8769` and allows requests only from the `tcou` internal IP `192.168.10.71` (or loopback). It exposes no authentication material; never expose this port to the Internet.
@@ -159,7 +163,7 @@ One row per BF4 soldier identity per platform.
 
 Unique: (`persona_id`, `platform`).
 
-### `soldier_ban_status` (Alembic 0027; proposed, not deployed)
+### `soldier_ban_status` (Alembic 0027; deployed 2026-11-23 UTC)
 
 Optional one-to-one PC ban-verification cache. No rows are created by the migration;
 missing row and NULL status both mean **unknown**, never clean. Separate provider
