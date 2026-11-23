@@ -45,7 +45,43 @@ function openSoldier(id){if(!Number.isSafeInteger(id)||id<=0)return;window.locat
 function platoonCell(s){const tag=String(s.platoon_tag||'').trim();if(!tag)return '';const normalized=tag.startsWith('[')&&tag.endsWith(']')?tag:'['+tag+']';const id=String(s.platoon_id||'');if(!/^\d+$/.test(id))return '<span class="platoon-tag">'+safe(normalized)+'</span>';return '<a class="platoon-tag" href="/platoons.html?id='+encodeURIComponent(id)+'">'+safe(normalized)+'</a>'}
 function banBadges(s){if(s.platform!=='pc'||!/^\d+$/.test(String(s.persona_id)))return '';const pid=encodeURIComponent(String(s.persona_id));return '<span class="ban-pair" data-ban-soldier="'+Number(s.soldier_id)+'"><a class="ban-tag" data-provider="agency" target="_blank" rel="noopener noreferrer" href="https://battlefield.agency/player/by-persona_id/bf4/'+pid+'" title="Battlefield Agency: Not checked">BA</a><a class="ban-tag" data-provider="bf4db" target="_blank" rel="noopener noreferrer" href="https://bf4db.com/player/'+pid+'" title="BF4DB: Not checked">BF4DB</a></span>'}
 let banRender=0;
-async function refreshLeaderboardBans(rows){const generation=++banRender;const ids=rows.filter(s=>s.platform==='pc'&&Number.isSafeInteger(Number(s.soldier_id))&&Number(s.soldier_id)>0).map(s=>Number(s.soldier_id));let index=0;async function worker(){while(index<ids.length&&generation===banRender){const id=ids[index++];const el=document.querySelector('[data-ban-soldier="'+id+'"]');if(!el)continue;try{const r=await fetch('/bf4ps-api/ban-status?soldier_id='+id,{cache:'no-store',signal:AbortSignal.timeout(4500)});if(!r.ok)continue;const data=await r.json();if(generation!==banRender)return;for(const provider of ['agency','bf4db']){const tag=el.querySelector('[data-provider="'+provider+'"]');if(!tag)continue;const status=data[provider];tag.classList.toggle('ban-yes',status==='banned');tag.classList.toggle('ban-no',status==='clean');const reason=provider==='agency'?data.ba_reason:data.bf4db_reason;tag.title=(provider==='agency'?'Battlefield Agency':'BF4DB')+': '+(status==='banned'?'Banned':status==='clean'?'Not banned':'Not checked')+(status==='banned'&&reason?' — '+reason:'')}}catch(e){}}}await Promise.all(Array.from({length:4},worker))}
+async function refreshLeaderboardBans(rows){
+  const generation=++banRender;
+  const ids=[...new Set(rows.filter(s=>s.platform==='pc'&&Number.isSafeInteger(Number(s.soldier_id))&&Number(s.soldier_id)>0).map(s=>Number(s.soldier_id)))];
+  if(!ids.length)return;
+  let pending=ids;
+  // Only the currently displayed page is checked. Unknown results are polled
+  // briefly while the single background verifier fills its 24-hour cache.
+  for(let attempt=0;attempt<4&&pending.length&&generation===banRender;attempt++){
+    if(attempt)await new Promise(resolve=>setTimeout(resolve,4000));
+    if(generation!==banRender)return;
+    const unresolved=[];let cursor=0;
+    async function worker(){
+      while(cursor<pending.length&&generation===banRender){
+        const id=pending[cursor++];
+        const el=document.querySelector('[data-ban-soldier="'+id+'"]');
+        if(!el)continue;
+        try{
+          const r=await fetch('/bf4ps-api/ban-status?soldier_id='+id,{cache:'no-store',signal:AbortSignal.timeout(4500)});
+          if(!r.ok){unresolved.push(id);continue}
+          const data=await r.json();
+          if(generation!==banRender)return;
+          for(const provider of ['agency','bf4db']){
+            const tag=el.querySelector('[data-provider="'+provider+'"]');if(!tag)continue;
+            const status=data[provider];
+            tag.classList.toggle('ban-yes',status==='banned');
+            tag.classList.toggle('ban-no',status==='clean');
+            const reason=provider==='agency'?data.ba_reason:data.bf4db_reason;
+            tag.title=(provider==='agency'?'Battlefield Agency':'BF4DB')+': '+(status==='banned'?'Banned':status==='clean'?'Not banned':'Not checked')+(status==='banned'&&reason?' — '+reason:'');
+          }
+          if(data.agency==='unknown'||data.bf4db==='unknown')unresolved.push(id);
+        }catch(e){unresolved.push(id)}
+      }
+    }
+    await Promise.all(Array.from({length:4},worker));
+    pending=unresolved;
+  }
+}
 function rank(){return renderGeneralLeaderboard()}
 async function renderGeneralLeaderboard(){
  const seq=++generalRequest,metric=$('metric').value;
