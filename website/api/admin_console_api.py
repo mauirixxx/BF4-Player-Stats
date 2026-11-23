@@ -203,7 +203,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        if parsed.path not in ('/session', '/search', '/exclusions', '/audit', '/artwork/catalog', '/artwork/history', '/overview', '/database-info', '/queue/players', '/queue/platoons', '/ranking-status', '/error-logs'):
+        if parsed.path not in ('/session', '/search', '/exclusions', '/audit', '/artwork/catalog', '/artwork/history', '/overview', '/database-info', '/queue/players', '/queue/platoons', '/ranking-status', '/general-ranking-status', '/error-logs'):
             return self.reply(404, {'error': 'Not found'})
         session = self.require_session()
         if session is None:
@@ -267,6 +267,45 @@ class Handler(BaseHTTPRequestHandler):
                 import logging
                 logging.exception('Error logs query failed')
                 return self.reply(503, {'error':'Error logs temporarily unavailable'})
+        if parsed.path == '/general-ranking-status':
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text('SET TRANSACTION READ ONLY'))
+                    conn.execute(text("SET LOCAL statement_timeout='4000ms'"))
+                    scopes=conn.execute(text("""
+                        SELECT p.metric,p.platform,p.generation_id,p.published_at,
+                               g.population,g.created_at,g.completed_at
+                        FROM general_rank_published p
+                        JOIN general_rank_generations g ON g.generation_id=p.generation_id
+                        ORDER BY p.metric,p.platform
+                    """)).mappings().all()
+                    recent=conn.execute(text("""
+                        SELECT g.generation_id,g.metric,g.platform,g.population,
+                               g.created_at,g.completed_at
+                        FROM general_rank_generations g
+                        WHERE g.completed_at IS NOT NULL
+                        ORDER BY g.completed_at DESC LIMIT 12
+                    """)).mappings().all()
+                    building=conn.execute(text("""
+                        SELECT g.generation_id,g.metric,g.platform,g.created_at
+                        FROM general_rank_generations g
+                        WHERE g.completed_at IS NULL
+                        ORDER BY g.created_at DESC LIMIT 4
+                    """)).mappings().all()
+                return self.reply(200,{
+                    'total_scopes':56,'published_count':len(scopes),
+                    'published_rows':sum(int(r['population']) for r in scopes),
+                    'fresh_24h':sum(1 for r in scopes if r['published_at'].timestamp()>time.time()-86400),
+                    'scopes':[dict(r) for r in scopes],
+                    'recent':[dict(r) for r in recent],
+                    'building':[dict(r) for r in building],
+                    'observed_at':time.time(),
+                    'refresh_schedule':'00:15 and 12:15 UTC, up to 10m jitter'
+                })
+            except Exception:
+                import logging
+                logging.exception('General ranking monitor failed')
+                return self.reply(503,{'error':'General ranking monitor temporarily unavailable'})
         if parsed.path == '/ranking-status':
             try:
                 with engine.connect() as conn:
