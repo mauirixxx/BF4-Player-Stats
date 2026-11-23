@@ -1,3 +1,11 @@
+## General ranking refresh rollout and filtered reader (2026-11-23 UTC)
+
+- Installed `bf4ps-general-rank-refresh.service` and `bf4ps-general-rank-refresh.timer` on standalone `bf4ps-db`; first sequential run started at 06:57 UTC, with the first refreshed `kills/all` generation 2 successfully published (654,592 rows in 68.76 seconds). All 56 combinations (14 metrics × 4 platforms) are queued sequentially; **do not treat the initial run as complete until the service reports DONE**.
+- Timer runs twice daily at 00:15 and 12:15 UTC, with up to 10 minutes randomized delay. Script installed at `/usr/local/sbin/bf4ps-general-rank-refresh.py`; dedicated code/venv at `/opt/bf4ps-general-rank-0026`. Script source committed to `player-collector/scripts/bf4ps_general_rank_refresh.py`. Publishers use local PostgreSQL peer authentication as the `postgres` OS account and a global advisory lock.
+- After each successful scope publication, retention deletes at most two obsolete generations, retaining the two newest generations per metric/platform and never deleting a currently published generation. Cleanup is executed outside the publication transaction. Monitor total database size and WAL while the initial backfill proceeds.
+- Live `kills/all` name/alias search previously timed out at 20 seconds (HTTP 503); optimized candidate-first snapshot lookup returned HTTP 200 in **0.65 seconds** for `mauirixxx` (one match). Division 1 returned HTTP 200 in **1.63 seconds** (19,637 matching soldiers). This is deployed to `tcou` and committed in `website/api/general_rank_snapshot_reader.py`.
+- Historical pre-0026 text below is retained as historical planning context. Current production Alembic head is 0026; the standalone primary has no physical replicas.
+
 ## Production general leaderboard snapshot reader activation (2026-11-23 UTC)
 
 - The live `bf4ps-leaderboard-api.service` on `tcou` now selects published general-ranking snapshots when available and falls back to the original calculation for unpublished metric/platform scopes.
