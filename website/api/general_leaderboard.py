@@ -13,6 +13,10 @@ def query_page(conn, metric, platform, page=1, page_size=50, search='', division
         raise ValueError('Invalid leaderboard metric/platform')
     if not 1 <= page <= 100000 or not 1 <= page_size <= 100 or not 0 <= division <= 10 or len(search)>100:
         raise ValueError('Invalid pagination/filter')
+    from general_rank_snapshot_reader import query_snapshot_page
+    snapshot=query_snapshot_page(conn,metric,platform,page,page_size,search,division)
+    if snapshot is not None:
+        return snapshot
     # The metric identifier is interpolated only after strict allowlisting.
     # Rank before search/division/page so ties and divisions stay global.
     sql = f'''
