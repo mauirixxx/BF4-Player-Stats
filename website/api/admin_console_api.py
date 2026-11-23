@@ -292,7 +292,18 @@ class Handler(BaseHTTPRequestHandler):
                         WHERE g.completed_at IS NULL
                         ORDER BY g.created_at DESC LIMIT 4
                     """)).mappings().all()
+                host=None
+                try:
+                    from urllib.request import urlopen
+                    import json
+                    with urlopen('http://192.168.10.66:8769/status',timeout=1.5) as response:
+                        host=json.load(response)
+                    if abs(time.time()-host.get('observed_at',0))>15:
+                        host=None
+                except (OSError,ValueError,TimeoutError):
+                    pass
                 return self.reply(200,{
+                    'host':host,
                     'total_scopes':56,'published_count':len(scopes),
                     'published_rows':sum(int(r['population']) for r in scopes),
                     'fresh_24h':sum(1 for r in scopes if r['published_at'].timestamp()>time.time()-86400),
