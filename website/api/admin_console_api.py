@@ -321,7 +321,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 with engine.connect() as conn:
                     conn.execute(text('SET TRANSACTION READ ONLY'))
-                    conn.execute(text("SET LOCAL statement_timeout='2500ms'"))
+                    conn.execute(text("SET LOCAL statement_timeout='10000ms'"))
                     summary = conn.execute(text("""
                         SELECT count(*) AS total,
                           count(*) FILTER (WHERE last_success_at IS NOT NULL) AS completed,
