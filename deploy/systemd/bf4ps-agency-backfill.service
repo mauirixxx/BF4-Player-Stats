@@ -1,0 +1,16 @@
+[Unit]
+Description=BF4PS Battlefield Agency ban backfill (one resumable page)
+After=postgresql.service network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/bf4ps-general-rank-0026/website
+ExecStart=/opt/bf4ps-general-rank-0026/.venv/bin/python scripts/agency_backfill_worker.py --max-pages 1 --delay 0.5
+TimeoutStartSec=900
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/bf4ps-ban-sync

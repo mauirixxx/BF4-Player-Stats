@@ -1,0 +1,8 @@
+[Unit]
+Description=Run bounded BF4PS Agency ban import every five minutes
+[Timer]
+OnBootSec=5min
+OnUnitInactiveSec=5min
+AccuracySec=30s
+[Install]
+WantedBy=timers.target

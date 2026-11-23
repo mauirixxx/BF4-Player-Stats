@@ -1,0 +1,15 @@
+[Unit]
+Description=BF4PS independent BF4DB verification batch
+After=postgresql.service network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/bf4ps-general-rank-0026/website
+ExecStart=/opt/bf4ps-general-rank-0026/.venv/bin/python scripts/verify_bf4db_queue.py --limit 50 --delay 0.5 --apply
+TimeoutStartSec=900
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
