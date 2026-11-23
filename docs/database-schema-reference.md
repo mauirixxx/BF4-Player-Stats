@@ -1,3 +1,11 @@
+## Production general leaderboard snapshot reader activation (2026-11-23 UTC)
+
+- The live `bf4ps-leaderboard-api.service` on `tcou` now selects published general-ranking snapshots when available and falls back to the original calculation for unpublished metric/platform scopes.
+- Production `kills/all` generation 1 is active, population 654,592. Snapshot fast-path for unfiltered pages selects at most the requested page by `(generation_id, position)` and enriches the visible soldiers; live HTTP `/general-leaderboard?metric=kills&platform=all&page=1&page_size=50` returned HTTP 200 in approximately **0.069 s**. Local Python query took approximately **0.20 s**. Other metrics/platforms still require their own publications.
+- Granted `SELECT` on `public.general_rank_generations`, `public.general_rank_rows`, and `public.general_rank_published` to website database role `bf4ps_stage9c_d2` on the standalone primary. This was an operational privilege grant applied after migration; retain it in future provisioning and reconcile grants into migration tooling when planning a fresh installation.
+- Source: `website/api/general_rank_snapshot_reader.py`, `website/api/general_rank_snapshot_fast.py`, and `website/api/general_leaderboard.py`. The original query is preserved as the fallback and on-host backup `general_leaderboard.py.pre-snapshot-0026`.
+- Snapshot refresh scheduling, other 55 scopes, retention, and optimized search/division filtering remain outstanding. The unfiltered fast path reports published population; if a soldier is removed after publication, visible-page enrichment skips the missing soldier until republished.
+
 ## Production 0026 rollout and first general-ranking canary (2026-11-23 UTC)
 
 - **Deployed:** Alembic `0026_general_rank_snapshots` on standalone `bf4ps-db`; verified live head `0026_general_rank_snapshots`.
