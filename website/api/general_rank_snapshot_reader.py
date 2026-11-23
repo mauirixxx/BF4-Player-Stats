@@ -20,19 +20,40 @@ def query_snapshot_page(conn, metric, platform, page=1, page_size=50, search='',
     params={'generation':int(pointer['generation_id']),'division':division,
             'search':search,'pattern':'%'+search.lower()+'%',
             'limit':page_size,'offset':(page-1)*page_size}
-    # Snapshot positions/ranks are global. Filter only after the published ranking.
-    result=conn.execute(text("""
-        WITH filtered AS MATERIALIZED (
+    # Find candidate IDs before touching the 650K-row ranking snapshot.
+    # Indexed trigram name searches and alias searches are unioned separately.
+    candidate_sql = """
+      WITH candidates AS MATERIALIZED (
+        SELECT soldier_id FROM soldiers WHERE lower(current_name) LIKE :pattern
+        UNION
+        SELECT soldier_id FROM soldier_names WHERE lower(name) LIKE :pattern
+      )
+    """
+    if search.isdecimal():
+        candidate_sql = """
+          WITH candidates AS MATERIALIZED (
+            SELECT soldier_id FROM soldiers WHERE lower(current_name) LIKE :pattern
+            UNION
+            SELECT soldier_id FROM soldier_names WHERE lower(name) LIKE :pattern
+            UNION
+            SELECT soldier_id FROM soldiers WHERE persona_id::text LIKE :pattern
+          )
+        """
+    if search:
+        prefix=candidate_sql.rstrip()+", "
+        filtered_source="""JOIN candidates c ON c.soldier_id=r.soldier_id"""
+    else:
+        prefix="WITH "
+        filtered_source=""
+    query=prefix+f"""
+        filtered AS MATERIALIZED (
           SELECT r.position,r.soldier_id,r.value,r.rank,r.division,
                  r.hours_source_seconds,s.current_name,s.persona_id,s.platform
           FROM general_rank_rows r
+          {filtered_source}
           JOIN soldiers s ON s.soldier_id=r.soldier_id
           WHERE r.generation_id=:generation
             AND (:division=0 OR r.division=:division)
-            AND (:search='' OR lower(s.current_name) LIKE :pattern
-              OR s.persona_id::text LIKE :pattern
-              OR EXISTS (SELECT 1 FROM soldier_names n
-                         WHERE n.soldier_id=s.soldier_id AND lower(n.name) LIKE :pattern))
         ), metadata AS (
           SELECT count(*) AS filtered_count FROM filtered
         ), page_rows AS (
@@ -57,7 +78,8 @@ def query_snapshot_page(conn, metric, platform, page=1, page_size=50, search='',
           WHERE d.soldier_id=p.soldier_id AND d.status='complete' AND pl.tag<>'' LIMIT 1
         ) active_platoon ON true
         ORDER BY p.position
-    """),params).mappings().all()
+    """
+    result=conn.execute(text(query),params).mappings().all()
     population=int(pointer['population'])
     filtered=int(result[0]['filtered_count'])
     rows=[]
