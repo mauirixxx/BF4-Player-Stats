@@ -39,12 +39,18 @@ button.outline{background:transparent;border:1px solid #64778e;color:var(--fg)}
 <div class="row"><h2>Published general rankings</h2><button id="refresh">Refresh now</button></div>
 <p>Published snapshots across 14 statistics and 4 platforms. The publisher runs sequentially twice daily.</p><p id="writer-status" class="muted">Checking refresh status…</p>
 <div class="stats" id="general-stats"></div>
+<div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px">
+ <div class="row"><h2>Live publisher &amp; database host</h2><span id="host-state" class="muted">Connecting to bf4ps-db…</span></div>
+ <p id="current-scope" class="muted">Checking current ranking calculation…</p>
+ <div class="stats" id="host-stats"></div>
+ <p id="host-note" class="muted">Live host telemetry is read-only and refreshes every five seconds.</p>
+</div>
 <p id="freshness" class="muted"></p>
 </section>
 <section class="card"><h2>Latest published generations</h2>
 <div class="scroll"><table><thead><tr><th>Metric</th><th>Platform</th><th>Generation</th><th>Players</th><th>Published</th><th>Age</th></tr></thead><tbody id="recent"></tbody></table></div>
 </section>
-<section class="card"><h2>Production notes</h2><p>The general leaderboard uses published snapshots when available. Missing scopes fall back to the slower live calculation. The database publisher refreshes sequentially; this page reports completed publications, not systemd service health.</p><small id="updated" class="muted"></small></section>
+<section class="card"><h2>Production notes</h2><p>The general leaderboard uses published snapshots when available. Missing scopes fall back to the slower live calculation. The database publisher refreshes sequentially; The live host panel reports publisher activity and system load independently of committed snapshots.</p><small id="updated" class="muted"></small></section>
 </div></div></div>
 <p id="signin" class="hidden">Administrator login required. <a href="/admin-console.html" style="color:#f3c860">Open the Moderation Console to sign in</a>.</p>
 </main>
@@ -91,7 +97,28 @@ async function refresh(){
   }));
   const newest=d.recent?.[0];
   $('freshness').textContent=newest?'Most recent completion: '+when(newest.completed_at):'No completed general generations';
-  $('writer-status').textContent='Scheduled: '+d.refresh_schedule+' · '+(d.building?.length?'In-progress generation: '+d.building.map(x=>x.metric+'/'+x.platform).join(', '):'No in-progress generation recorded');
+  $('writer-status').textContent='Scheduled: '+d.refresh_schedule;
+  const h=d.host;
+  $('host-state').textContent=h?'● '+h.hostname+' · publisher '+h.service+' · timer '+h.timer:'Host telemetry unavailable';
+  $('host-state').className=h&&h.service==='active'?'ok':'muted';
+  $('current-scope').textContent=h?.current?
+    'Currently calculating: '+h.current.metric.replaceAll('_',' ').toUpperCase()+' / '+({ps4:'PlayStation',xboxone:'Xbox',pc:'PC',all:'All'}[h.current.platform]||h.current.platform)+' · elapsed '+Math.floor(h.current.elapsed_seconds/60)+'m '+(h.current.elapsed_seconds%60)+'s':
+    h?.service==='active'?'Publisher running between scopes':'No active ranking calculation detected';
+  const gb=v=>(v/1073741824).toFixed(1)+' GiB';
+  const hostMetrics=h?[
+   ['CPU utilization',h.cpu_percent==null?'Sampling…':h.cpu_percent.toFixed(1)+'%'],
+   ['Load average (1 / 5 / 15m)',h.load_1_5_15.map(v=>v.toFixed(1)).join(' / ')],
+   ['CPU cores',h.cpu_count],
+   ['Available RAM',gb(h.memory_available)],
+   ['Swap in use',gb(h.swap_used)],
+   ['Database disk free',gb(h.disk_free)]
+  ]:[['Host status','Unavailable']];
+  $('host-stats').replaceChildren(...hostMetrics.map(([label,value])=>{
+   const box=document.createElement('div'),number=document.createElement('strong'),caption=document.createElement('small');
+   box.className='stat';number.textContent=String(value);caption.textContent=label;box.append(number,caption);return box;
+  }));
+  $('host-note').textContent=h?'Live host sample: '+new Date(h.observed_at*1000).toLocaleTimeString()+' · CPU is host-wide, not publisher-only.':'The ranking snapshots above remain available even if host telemetry cannot be reached.';
+
   tableRows(d.recent||[]);
   $('updated').textContent='Last checked '+new Date(d.observed_at*1000).toLocaleTimeString();
   $('state').textContent='● Connected · read-only';$('state').className='ok';
