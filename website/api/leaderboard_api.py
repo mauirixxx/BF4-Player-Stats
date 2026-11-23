@@ -686,6 +686,11 @@ class Handler(BaseHTTPRequestHandler):
                     result=get_ban_status(c,int(raw))
                 if result is None:
                     send_json(self,404,{'error':'Soldier not found'});return
+                if result['agency']=='unknown' or result['bf4db']=='unknown':
+                    try:
+                        from urllib.request import urlopen
+                        with urlopen('http://192.168.10.66:8770/refresh?soldier_id='+raw,timeout=0.7):pass
+                    except (OSError,TimeoutError):pass
                 send_json(self,200,result);return
             if u.path=='/soldier-detail':
                 raw=q.get('id',[''])[0]

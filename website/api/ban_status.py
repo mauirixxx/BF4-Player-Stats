@@ -1,5 +1,6 @@
 """Read-only provider status for a BF4PS soldier; unknown is never clean."""
 from sqlalchemy import text
+from datetime import datetime,timezone,timedelta
 
 SQL = text('''
 SELECT s.platform, b.ba_banned, b.bf4db_banned,
@@ -17,10 +18,11 @@ def get_status(conn, soldier_id):
     row = conn.execute(SQL, {'soldier_id': soldier_id}).mappings().first()
     if row is None:
         return None
-    def status(value):
-        return 'unknown' if value is None else ('banned' if value else 'clean')
+    cutoff=datetime.now(timezone.utc)-timedelta(hours=24)
+    def status(value,checked):
+        return 'unknown' if value is None or checked is None or checked<cutoff else ('banned' if value else 'clean')
     if row['platform'] != 'pc':
         return {'agency': 'unknown', 'bf4db': 'unknown'}
-    return {'agency': status(row['ba_banned']), 'bf4db': status(row['bf4db_banned']),
+    return {'agency': status(row['ba_banned'],row['ba_checked_at']), 'bf4db': status(row['bf4db_banned'],row['bf4db_checked_at']),
             'ba_checked_at': row['ba_checked_at'], 'bf4db_checked_at': row['bf4db_checked_at'],
             'ba_reason': row['ba_reason'], 'bf4db_reason': row['bf4db_reason']}
