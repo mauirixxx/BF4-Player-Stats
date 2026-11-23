@@ -159,6 +159,33 @@ One row per BF4 soldier identity per platform.
 
 Unique: (`persona_id`, `platform`).
 
+### `soldier_ban_status` (Alembic 0027; proposed, not deployed)
+
+Optional one-to-one PC ban-verification cache. No rows are created by the migration;
+missing row and NULL status both mean **unknown**, never clean. Separate provider
+statuses are deliberately independent (BA and BF4DB can disagree).
+
+| Column | Notes |
+|---|---|
+| `soldier_id` | bigint PK and FK to `soldiers.soldier_id` ON DELETE CASCADE |
+| `ba_banned` | nullable boolean: TRUE banned, FALSE verified not banned, NULL unknown |
+| `bf4db_banned` | nullable boolean with the same independent three-state semantics |
+| `ba_checked_at` | nullable timestamptz; most recent successful authoritative BA status check |
+| `bf4db_checked_at` | nullable timestamptz; most recent successful authoritative BF4DB status check |
+| `agency_player_uuid` | nullable UUID; identity returned by Battlefield Agency for BF4DB lookup |
+| `ba_reason` | nullable text, reported BA reason |
+| `bf4db_reason` | nullable text, reported BF4DB reason |
+| `updated_at` | timestamptz NOT NULL DEFAULT now(); application must update on writes |
+
+**Operational contract:** Do not equate absence from a partial Agency ban-list
+page, a failed API request, or an unresolved Agency identity with FALSE.
+Only set FALSE after an explicit authoritative non-ban response, or after
+verifying a complete, consistent authoritative dataset with matching identities.
+A lifted Agency ban is not an active ban; its state must be interpreted before
+updating `ba_banned`. Preserve prior verified values on transient errors;
+refresh timestamps only after successful checks. The bulk BA import and BF4DB
+API refresh workers are separate follow-up implementations, not part of 0027.
+
 ### `soldier_sources`
 
 Composite PK: (`soldier_id`, `source_type`). `soldier_id` -> `soldiers` CASCADE. Source types: `bf4sw`, `manual`.
