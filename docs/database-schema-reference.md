@@ -1,3 +1,11 @@
+## General Ranking Monitor live host telemetry (2026-11-23 UTC)
+
+- Installed `bf4ps-general-rank-telemetry.service` on `bf4ps-db` with `DynamicUser=yes`, no database credentials, read-only system information, and `NoNewPrivileges` / `ProtectSystem=strict`. The HTTP listener binds only `192.168.10.66:8769` and allows requests only from the `tcou` internal IP `192.168.10.71` (or loopback). It exposes no authentication material; never expose this port to the Internet.
+- The existing authenticated `/bf4ps-admin-api/general-ranking-status` endpoint on `tcou` now retrieves host telemetry with a 1.5-second timeout, while preserving the existing PostgreSQL snapshot data if host telemetry is unavailable.
+- The General Ranking Monitor shows the current publisher metric/platform and elapsed time from `/proc` (the in-progress generation is not visible in a separate DB transaction until commit), the running refresh-script process, timer enablement, host-wide CPU utilization, 1/5/15-minute load averages, core count, available memory, swap use, and database filesystem free space. CPU utilization is measured between successive requests; the first sample may be unavailable.
+- Source: `player-collector/scripts/bf4ps_general_rank_telemetry.py`, `website/api/admin_console_api.py`, `website/site/admin-general-ranking.html`. The deployed telemetry unit file is `/etc/systemd/system/bf4ps-general-rank-telemetry.service`.
+- Validation: internal host endpoint returned active publisher, enabled timer, and live `defuse_score/all` process; monitor page HTTP 200; unauthenticated admin API HTTP 401; JavaScript syntax validated; admin service active.
+
 ## General ranking refresh rollout and filtered reader (2026-11-23 UTC)
 
 - Installed `bf4ps-general-rank-refresh.service` and `bf4ps-general-rank-refresh.timer` on standalone `bf4ps-db`; first sequential run started at 06:57 UTC, with the first refreshed `kills/all` generation 2 successfully published (654,592 rows in 68.76 seconds). All 56 combinations (14 metrics × 4 platforms) are queued sequentially; **do not treat the initial run as complete until the service reports DONE**.
