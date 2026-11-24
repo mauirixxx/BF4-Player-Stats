@@ -43,6 +43,24 @@ def check():
       f'gate={"ready" if ready else "blocked"}, due={due}, active={active}, last success age={age if age is not None else "unknown"}s')
  except (ValueError,IndexError):
   put('ranking:production',False,'ranking queue telemetry unavailable')
+ # Queue starvation: use the running collector's configured database connection,
+ # without copying credentials into the watchdog or making HTTP requests.
+ queue_probe = """from sqlalchemy import create_engine,text
+import os
+engine=create_engine(os.environ['BF4PS_DATABASE_URL'])
+with engine.connect() as c:
+ c.execute(text("SET statement_timeout='12000ms'"))
+ q=c.execute(text("SELECT count(*) FROM collection_jobs WHERE lane='background' AND (status IN ('claimed','running') OR (status='pending' AND eligible_at<=now()))")).scalar_one()
+ age=c.execute(text("SELECT extract(epoch FROM now()-greatest(max(detailed_last_success_at),max(weapons_last_success_at),max(vehicles_last_success_at)))::bigint FROM collection_state")).scalar_one()
+ print(str(q)+'|'+str(age if age is not None else -1))
+"""
+ rc,out=run(['docker','exec','bf4ps-production-collector','python','-c',queue_probe],18)
+ try:
+  queue_depth,age=map(int,out.splitlines()[-1].split('|'))
+  healthy=queue_depth>=5 or age<900
+  put('collection:queue',healthy,f'eligible={queue_depth}, latest stats success age={age}s')
+ except (ValueError,IndexError):
+  put('collection:queue',False,'queue telemetry unavailable')
  # Platoon processing health is measured from committed DB progress, not SSH port status.
  platoon_sql = ("SELECT "
    "(SELECT count(*) FROM platoons WHERE next_refresh_at<=now()), "
@@ -120,7 +138,7 @@ def format_alert(key, val, recovered=False):
  category, _, resource = key.partition(':')
  labels = {'postgres': 'PostgreSQL 16', 'node': 'Node connectivity',
            'disk': 'Filesystem capacity', 'container': 'Docker container',
-           'service': 'Systemd service', 'website': 'Website availability', 'ranking': 'Ranking calculator', 'platoon': 'Platoon collector', 'platoon-service': 'Platoon worker service'}
+           'service': 'Systemd service', 'website': 'Website availability', 'ranking': 'Ranking calculator', 'platoon': 'Platoon collector', 'platoon-service': 'Platoon worker service', 'collection': 'BF4PS stats collection queue'}
  name = labels.get(category, category.title())
  status = 'Recovered' if recovered else 'Offline' if category in ('postgres','node') else 'Unhealthy'
  severity = 'RECOVERED' if recovered else 'CRITICAL'
@@ -133,7 +151,7 @@ def format_alert(key, val, recovered=False):
           f'**{"Recovered" if recovered else "Detected"}:** {when}']
  if category == 'disk':
   lines.append('**Capacity:** ' + val['detail'])
- elif category in ('website','ranking','platoon','platoon-service'):
+ elif category in ('website','ranking','platoon','platoon-service','collection'):
   lines.append('**Check:** ' + val['detail'])
  return '\n'.join(lines)
 

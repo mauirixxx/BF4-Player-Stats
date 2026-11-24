@@ -1,0 +1,14 @@
+[Unit]
+Description=BF4PS bounded production collection queue feeder
+After=network-online.target
+[Service]
+Type=oneshot
+User=bf4ps
+Group=bf4ps
+WorkingDirectory=/opt/bf4ps-discovery-current/player-collector
+EnvironmentFile=/etc/bf4-player-stats/discovery.env
+ExecStart=/opt/bf4ps-discovery-current/.venv/bin/python /opt/bf4ps-discovery-current/player-collector/scripts/bf4ps_queue_feeder.py
+TimeoutStartSec=40
+NoNewPrivileges=true
+ProtectSystem=strict
+PrivateTmp=true
