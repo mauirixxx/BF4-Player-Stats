@@ -1,0 +1,13 @@
+[Unit]
+Description=BF4PS exact fast homepage soldier counts
+After=network-online.target
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/root/.config/bf4ps/website-production.env
+ExecStart=/opt/bf4ps-website/.venv/bin/python /opt/bf4ps-website/api/homepage_live_counts.py
+TimeoutStartSec=30
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/bf4playerstats.com
+PrivateTmp=true

@@ -142,6 +142,7 @@ async function load(refreshLeaderboard=false){
   $('platoonCount').textContent=fmt(summary.summary.platoons);
   $('weaponCount').textContent=fmt(summary.summary.weapons);
   $('vehicleCount').textContent=fmt(summary.summary.vehicles);
+  void refreshLiveCounts();
   $('last').innerHTML='<span class="status">● LIVE PRODUCTION DATA</span>';
   if(refreshLeaderboard){leaderboardInitialized=true;if(['weapon','vehicle'].includes($('metric').value))loadUnifiedEquipment();else rank();}
   $('loadError').textContent='';

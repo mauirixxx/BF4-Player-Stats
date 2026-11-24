@@ -922,3 +922,6 @@ read-only role `bf4br_identity_sync` from tcou 192.168.10.71/32 only.
 The existing BF4SW discovery service and its checkpoints are independent.
 
 [executed on device: tcou (720a0073-649a-4660-8c09-00c2e6d0e587)]
+## Homepage exact counter refresh split (2026-11-24 UTC)
+
+The existing `bf4ps-homepage-summary.timer` on `tcou` runs every 60 seconds **after completion**, but its full exact summary query takes approximately 91 seconds due to the weapon/vehicle totals, resulting in about 150 seconds between publications. This is not Cloudflare caching. The homepage now additionally reads `homepage-live-counts.json` every 30 seconds, produced by `bf4ps-homepage-live-counts.timer` using `website/api/homepage_live_counts.py`. The fast exporter computes exact, exclusion-aware `soldiers` and `full_soldiers` using the existing `soldiers`, `collection_state`, and `player_exclusions` schema; measured completion ~5 seconds. The other metrics remain sourced from the existing slower summary. Both JSON files are atomically replaced. This is a code and systemd deployment only; no Alembic migration or new database table is required.

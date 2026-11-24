@@ -1,0 +1,8 @@
+[Unit]
+Description=Refresh exact BF4PS soldier counts every 30 seconds
+[Timer]
+OnBootSec=10s
+OnUnitInactiveSec=30s
+AccuracySec=3s
+[Install]
+WantedBy=timers.target
