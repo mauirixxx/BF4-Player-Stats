@@ -105,7 +105,7 @@ async function loadOperations(){
  const button=$('refreshOperations');button.disabled=true;
  try{
   const d=await request('operations-status');
-  $('operationsCounts').textContent=`${d.counts.stats_nodes} stats nodes · ${d.counts.platoon_nodes} platoon nodes · ${d.counts.ranking_nodes} ranking publisher nodes (overlapping roles)`;
+  $('operationsCounts').textContent=`${d.counts.stats_nodes} stats nodes · ${d.counts.platoon_nodes} platoon nodes · ${d.counts.ranking_nodes} ranking publisher nodes · ${d.counts.responding}/${d.counts.total} hosts responding (overlapping roles)`;
   for(const [id,rows] of [['operationsServices',d.services],['operationsNodes',d.nodes]]){
    const body=$(id);body.replaceChildren();
    for(const r of rows){const tr=document.createElement('tr');for(const v of [r.name,r.host,r.role])td(tr,v);const c=td(tr,r.status.toUpperCase());c.className=r.status==='healthy'?'ok':r.status==='unknown'?'muted':'error';td(tr,r.detail);body.append(tr)}
