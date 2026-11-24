@@ -16,13 +16,15 @@ SERVICES = (
     'bf4ps-platoon-discovery.timer',
     'bf4ps-platoon-refresh.timer',
     'bf4ps-compact-ranking.service',
+    'bf4ps-watchdog.timer',
+    'bf4ps-watchdog.service',
     'bf4ps-weapon-metrics-sync.service',
     'bf4ps-vehicle-metrics-sync.service',
 )
-CONTAINERS = ('bf4ps-production-collector', 'bf4ps-compact-ranking')
+CONTAINERS = ('bf4ps-production-collector', 'bf4ps-compact-ranking', 'bf4ps-discord-ha-mak', 'bf4ps-discord-ha-rnt')
 
 def snapshot():
-    result = {'host': socket.gethostname(), 'at': time.time(), 'services': {}, 'containers': {}}
+    result = {'host': socket.gethostname(), 'at': time.time(), 'services': {}, 'containers': {}, 'images': {}}
     for unit in SERVICES:
         proc = subprocess.run(['systemctl', 'show', unit, '--property=LoadState,ActiveState,SubState,Result,UnitFileState'],
                               capture_output=True, text=True, timeout=2)
@@ -30,14 +32,14 @@ def snapshot():
         if props.get('LoadState') != 'not-found':
             result['services'][unit] = props
     try:
-        proc = subprocess.run(['docker', 'inspect', '--format', '{{.State.Status}}', *CONTAINERS],
-                              capture_output=True, text=True, timeout=2)
         # Inspect separately to avoid positional ambiguity for absent containers.
         for name in CONTAINERS:
-            p = subprocess.run(['docker', 'inspect', '--format', '{{.State.Status}}', name],
+            p = subprocess.run(['docker', 'inspect', '--format', '{{.State.Status}}|{{.Config.Image}}', name],
                                capture_output=True, text=True, timeout=2)
             if p.returncode == 0:
-                result['containers'][name] = p.stdout.strip()
+                state, image = p.stdout.strip().split('|', 1)
+                result['containers'][name] = state
+                result['images'][name] = image
     except (OSError, subprocess.TimeoutExpired):
         pass
     return result

@@ -65,6 +65,16 @@ def fleet_rows():
             nodes.append(dict(name=host + ' ranking', host=host, role=extra,
                               status='healthy' if rank == 'active' else 'stopped' if rank != 'unknown' else 'unknown',
                               detail='Publisher: ' + rank))
+        if host in ('mak-01', 'rnt-01'):
+            name = 'bf4ps-discord-ha-' + ('mak' if host == 'mak-01' else 'rnt')
+            state = containers.get(name)
+            nodes.append(dict(name=name, host=host, role='Discord HA bot', status='healthy' if state == 'running' else 'stopped' if state else 'unknown', detail='Docker: ' + str(state or 'unknown') + ' · Image: ' + data.get('images', {}).get(name, 'unknown') + ' · HA leadership not measured'))
+        if host == 'mak-01':
+            for unit in ('bf4ps-watchdog.timer', 'bf4ps-watchdog.service'):
+                svc = services.get(unit, {})
+                state = svc.get('ActiveState', 'unknown')
+                ok = state in ('active', 'activating') or (unit.endswith('.service') and state == 'inactive' and svc.get('Result') == 'success')
+                nodes.append(dict(name=unit, host=host, role='Discord alert watchdog', status='healthy' if ok else 'unknown' if state == 'unknown' else 'stopped', detail=state + ' · ' + svc.get('UnitFileState', 'unknown') + ' · ' + svc.get('Result', 'unknown')))
         for unit in ('bf4ps-weapon-metrics-sync.service', 'bf4ps-vehicle-metrics-sync.service'):
             svc = services.get(unit)
             if svc and svc.get('ActiveState') == 'failed':
