@@ -148,6 +148,17 @@ async function load(refreshLeaderboard=false){
  }catch(e){$('last').textContent='Data temporarily unavailable';$('loadError').textContent=String(e);bf4psAvailable=false;showServiceUnavailable()}
 }
 
+async function refreshLiveCounts(){
+ try{
+  const response=await fetch('/homepage-live-counts.json?t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(10000)});
+  if(!response.ok)return;
+  const counts=await response.json();
+  if(!Number.isSafeInteger(counts.soldiers)||!Number.isSafeInteger(counts.full_soldiers))return;
+  $('soldierCount').textContent=fmt(counts.soldiers);
+  $('fullCount').textContent=fmt(counts.full_soldiers);
+  $('fullPct').textContent=counts.soldiers?(100*counts.full_soldiers/counts.soldiers).toFixed(2)+'% of indexed':'0.00% of indexed';
+ }catch(e){}
+}
 let unifiedRequest=0,unifiedItems=[],equipmentPage=null;
 const rememberedEquipment={weapon:deepMetric==='weapon'?deepItem:null,vehicle:deepMetric==='vehicle'?deepItem:null};
 async function loadUnifiedEquipment(){
@@ -209,4 +220,6 @@ checkService();
 setInterval(checkService,15000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkService()});
 setInterval(()=>{if(bf4psAvailable)load()},60000);
+refreshLiveCounts();
+setInterval(refreshLiveCounts,30000);
 </script><script src="/shared-footer.js?v=unified-20261025"></script></body></html>
