@@ -295,7 +295,6 @@ class Handler(BaseHTTPRequestHandler):
                 host=None
                 try:
                     from urllib.request import urlopen
-                    import json
                     with urlopen('http://192.168.10.66:8769/status',timeout=1.5) as response:
                         host=json.load(response)
                     if abs(time.time()-host.get('observed_at',0))>15:
