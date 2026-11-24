@@ -437,8 +437,17 @@ class Handler(BaseHTTPRequestHandler):
                     nodes.append(dict(name=r['collector_name'],host=r['hostname'],role='Player stats collector · '+r['lane'],status=status,detail='Heartbeat '+(str(age)+'s ago' if age is not None else 'unknown')+' · '+str(r['software_version'] or 'version unknown')))
             except Exception:
                 nodes.append(dict(name='Collector registry',host='bf4ps-db',role='Collector heartbeats',status='unknown',detail='Telemetry unavailable'))
-            nodes.extend([dict(name='Platoon roster collector',host='mak-05',role='Platoon roster processing and soldier admission',status='unknown',detail='Remote process heartbeat not yet instrumented'),dict(name='PostgreSQL primary',host='bf4ps-db',role='Production database',status='unknown',detail='See Database Health for live metrics')])
-            return self.reply(200,dict(observed_at=time.time(),services=items,nodes=nodes))
+            verified_stats=('mak-01','mak-02','mak-03','mak-04','mak-06','hnl-01','hnl-02','hnl-03','kah-01','rnt-01')
+            verified_platoons=('mak-05','hnl-03')
+            seen={r['host'].lower() for r in nodes if r['role'].startswith('Player stats collector')}
+            for host in verified_stats:
+                if host not in seen:
+                    nodes.append(dict(name=host,host=host,role='Player stats collector',status='unknown',detail='Verified container running; database heartbeat not matched'))
+            nodes.append(dict(name='mak-05',host='mak-05',role='Platoon roster collection and soldier admission',status='unknown',detail='Host verified; remote service telemetry pending'))
+            nodes.append(dict(name='hnl-03 platoon',host='hnl-03',role='Platoon roster collection (also runs stats)',status='unknown',detail='Host verified; remote service telemetry pending'))
+            nodes.append(dict(name='bf4ps-db',host='bf4ps-db',role='Production database',status='unknown',detail='See Database Health for live metrics'))
+            counts=dict(stats_nodes=len(verified_stats),platoon_nodes=len(verified_platoons),ranking_nodes=4)
+            return self.reply(200,dict(observed_at=time.time(),services=items,nodes=nodes,counts=counts))
         if parsed.path == '/overview':
             try:
                 summary_path = Path('/var/www/bf4playerstats.com/homepage-summary.json')
