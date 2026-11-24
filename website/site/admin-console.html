@@ -95,7 +95,7 @@ async function loadOverview(){
  const btn=$('overviewRefresh');btn.disabled=true;
  try{const data=await request('overview');const p=data.players;const s=p.summary;const q=data.platoons;
  $('overviewPlayers').textContent=`${fmt(s.soldiers)} indexed · ${fmt(p.detailed_soldiers)} detailed (${pct(p.detailed_soldiers,s.soldiers)}) · ${fmt(p.full_soldiers)} full (${pct(p.full_soldiers,p.detailed_soldiers)} of detailed) · ${fmt(s.weapons)} weapon records · ${fmt(s.vehicles)} vehicle records`;
- $('overviewPlatoons').textContent=`${fmt(q.count)} discovered platoons · ${fmt(q.visible_roster_accounts)} supported roster entries · ${fmt(q.unique_supported_soldiers)} unique supported soldiers · ${fmt(q.unique_tracked_soldiers)} soldiers with combat statistics in platoon rosters`;
+ $('overviewPlatoons').textContent=q.roster_metrics_available===false?`${fmt(q.count)} discovered platoons · Detailed roster metrics temporarily unavailable (expensive live aggregation disabled)`: `${fmt(q.count)} discovered platoons · ${fmt(q.visible_roster_accounts)} supported roster entries · ${fmt(q.unique_supported_soldiers)} unique supported soldiers · ${fmt(q.unique_tracked_soldiers)} soldiers with combat statistics in platoon rosters`;
  $('overviewUpdated').textContent=`Player snapshot: ${new Date(p.updated).toLocaleString()} · Platoon snapshot: ${new Date(q.updated*1000).toLocaleString()}`;
  }catch(e){$('overviewUpdated').textContent='Overview unavailable: '+e.message}finally{btn.disabled=false}
 }
