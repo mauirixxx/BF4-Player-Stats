@@ -11,6 +11,7 @@ import hmac
 import json
 import os
 import secrets
+import subprocess
 import time
 from collections import deque
 from threading import Lock
@@ -203,7 +204,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        if parsed.path not in ('/session', '/search', '/exclusions', '/audit', '/artwork/catalog', '/artwork/history', '/overview', '/database-info', '/queue/players', '/queue/platoons', '/ranking-status', '/general-ranking-status', '/error-logs'):
+        if parsed.path not in ('/session', '/search', '/exclusions', '/audit', '/artwork/catalog', '/artwork/history', '/overview', '/database-info', '/queue/players', '/queue/platoons', '/ranking-status', '/general-ranking-status', '/error-logs', '/operations-status'):
             return self.reply(404, {'error': 'Not found'})
         session = self.require_session()
         if session is None:
@@ -401,6 +402,43 @@ class Handler(BaseHTTPRequestHandler):
                 import logging
                 logging.exception('Database health metrics failed')
                 return self.reply(503, {'error': 'Database metrics temporarily unavailable'})
+        if parsed.path == '/operations-status':
+            services = [
+                ('bf4ps-discovery.service','BF4SW name importer','Identity discovery'),
+                ('bf4ps-bf4br-sync.timer','BF4BR name importer','One-way name and persona sync'),
+                ('bf4ps-bf4br-sync.service','BF4BR sync run','Scheduled sync execution'),
+                ('bf4ps-queue-feeder.timer','Collection queue feeder','Backlog replenishment'),
+                ('bf4ps-homepage-summary.timer','Homepage exporter','Full homepage counters'),
+                ('bf4ps-homepage-live-counts.timer','Live counters','Fast soldier counters'),
+                ('bf4ps-leaderboard-api.service','Leaderboard API','Website search and rankings'),
+                ('bf4ps-admin-api.service','Moderation API','Private admin console'),
+                ('bf4ps-platoon-submit.service','Platoon admission','Platoon submission API'),
+                ('bf4ps-manual-api.service','Manual stats API','Manual collection requests')]
+            items=[]
+            for unit,name,role in services:
+                try:
+                    r=subprocess.run(['systemctl','show',unit,'-p','ActiveState,SubState,UnitFileState,Result'],capture_output=True,text=True,timeout=2)
+                    props=dict(x.split('=',1) for x in r.stdout.splitlines() if '=' in x)
+                    state=props.get('ActiveState','unknown');sub=props.get('SubState','unknown')
+                    enabled=props.get('UnitFileState','unknown')
+                    healthy=state in ('active','activating') or (unit=='bf4ps-bf4br-sync.service' and state=='inactive' and props.get('Result')=='success')
+                    if unit.endswith('.timer') and enabled not in ('enabled','enabled-runtime'):healthy=False
+                    items.append(dict(name=name,host='tcou',role=role,status='healthy' if healthy else 'stopped',detail=state+' / '+sub+' · '+enabled))
+                except (OSError,subprocess.TimeoutExpired):
+                    items.append(dict(name=name,host='tcou',role=role,status='unknown',detail='Status check unavailable'))
+            nodes=[]
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text("SET LOCAL statement_timeout='3500ms'"))
+                    rows=conn.execute(text("SELECT collector_name,hostname,lane,enabled,drained,last_heartbeat_at,heartbeat_state,software_version FROM collectors WHERE retired_at IS NULL ORDER BY hostname,collector_name")).mappings().all()
+                for r in rows:
+                    age=round(time.time()-r['last_heartbeat_at'].timestamp()) if r['last_heartbeat_at'] else None
+                    status='stopped' if not r['enabled'] or r['drained'] else 'healthy' if age is not None and age<180 else 'stale'
+                    nodes.append(dict(name=r['collector_name'],host=r['hostname'],role='Player stats collector · '+r['lane'],status=status,detail='Heartbeat '+(str(age)+'s ago' if age is not None else 'unknown')+' · '+str(r['software_version'] or 'version unknown')))
+            except Exception:
+                nodes.append(dict(name='Collector registry',host='bf4ps-db',role='Collector heartbeats',status='unknown',detail='Telemetry unavailable'))
+            nodes.extend([dict(name='Platoon roster collector',host='mak-05',role='Platoon roster processing and soldier admission',status='unknown',detail='Remote process heartbeat not yet instrumented'),dict(name='PostgreSQL primary',host='bf4ps-db',role='Production database',status='unknown',detail='See Database Health for live metrics')])
+            return self.reply(200,dict(observed_at=time.time(),services=items,nodes=nodes))
         if parsed.path == '/overview':
             try:
                 summary_path = Path('/var/www/bf4playerstats.com/homepage-summary.json')

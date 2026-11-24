@@ -2,6 +2,7 @@
 (function(){
  const links = [
   ["Collection Overview", "/admin-console.html#overview", "overview"],
+  ["Operations Monitor", "/admin-console.html#operations", "operations"],
   ["Player Moderation", "/admin-console.html#moderation", "moderation"],
   ["Database Health", "/admin-console.html#database", "database"],
   ["Account Settings", "/admin-console.html#account", "account"],
