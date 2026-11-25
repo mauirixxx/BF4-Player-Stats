@@ -55,7 +55,7 @@ def main() -> int:
                     (19, "soldier_search_trigrams"), (20, "compact_rank_snapshots"),
                     (21, "reconcile_player_exclusions"), (22, "compact_blocks_only_format"),
                     (23, "compact_exclusion_guard"), (24, "profile_lookup_idx"),
-                    (25, "compact_lookup_fk_idx"),
+                    (25, "compact_lookup_fk_idx"), (26, "general_rank_snapshots"), (27, "soldier_ban_status"),
                 )
             )
             allowed_revision = (

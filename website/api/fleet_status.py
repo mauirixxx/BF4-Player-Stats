@@ -11,6 +11,7 @@ HOSTS = {
     'mak-04': ('192.168.10.74', 'stats', 'ranking shard 3/4'),
     'mak-05': ('192.168.10.79', 'platoon', ''),
     'mak-06': ('192.168.10.76', 'stats', ''),
+    'mak-07': ('192.168.10.30', 'stats', ''),
     'hnl-01': ('192.168.5.70', 'stats', ''),
     'hnl-02': ('192.168.5.69', 'stats', ''),
     'hnl-03': ('192.168.5.68', 'stats+platoon', ''),
@@ -80,6 +81,6 @@ def fleet_rows():
             if svc and svc.get('ActiveState') == 'failed':
                 nodes.append(dict(name=unit, host=host, role='Equipment metrics reconciliation',
                                   status='stopped', detail='systemd failed: ' + svc.get('Result', 'unknown')))
-    return nodes, {'stats_nodes': 10, 'platoon_nodes': 2, 'ranking_nodes': 4,
+    return nodes, {'stats_nodes': 11, 'platoon_nodes': 2, 'ranking_nodes': 4,
                    'responding': sum(data is not None for data, err in observations.values()),
                    'total': len(HOSTS)}
