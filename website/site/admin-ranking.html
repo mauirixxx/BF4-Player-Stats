@@ -90,7 +90,7 @@ async function refresh(){
    const box=document.createElement('div'),number=document.createElement('strong'),caption=document.createElement('small');
    box.className='stat';number.textContent=String(value);caption.textContent=label;box.append(number,caption);return box;
   }));
-  const configured=['mak-01','mak-02','mak-03','mak-04','mak-05','hnl-01','hnl-02','hnl-03','kah-01','rnt-01'];
+  const configured=['mak-01','mak-02','mak-03','mak-04','mak-06','mak-07','hnl-01','hnl-02','kah-01','rnt-01'];
   const active=d.active||[],latest=(d.compact_recent||[])[0],due=d.summary?.due,capacity=d.capacity?.max_active_builds;
   const live=(d.workers||[]).filter(w=>w.healthy).map(w=>String(w.hostname||'').toLowerCase());
   const claimsByHost=new Map();
@@ -105,7 +105,7 @@ async function refresh(){
    const card=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('small');
    const assignments=claimsByHost.get(name)||[],online=connected.includes(name);
    card.className='worker-box'+(online?'':' offline');title.textContent=name.toUpperCase();
-   detail.textContent=assignments.length?assignments.map(a=>a.kind+' '+a.item_id+' / '+a.platform+' / '+a.metric).join(' · '):(online?'Connected · no active claim':'Not connected · reserved slot');
+   detail.textContent=assignments.length?assignments.map(a=>a.kind+' '+a.item_id+' / '+a.platform+' / '+a.metric).join(' · '):(online?'Connected · no active claim':'Not connected');
    card.append(title,detail);return card;
   }));
   $('freshness').textContent=c.newest_completed_at?'Most recent completion: '+when(c.newest_completed_at):'No completed compact generations';
