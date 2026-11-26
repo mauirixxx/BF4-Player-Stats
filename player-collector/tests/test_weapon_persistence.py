@@ -123,4 +123,31 @@ def test_weapon_persistence_serializes_shared_catalog_and_orders_guids() -> None
     lock_pos = source.index("pg_advisory_xact_lock")
     ownership_pos = source.index("SELECT 1")
     catalog_pos = source.index("INSERT INTO weapon_catalog")
-    assert lock_pos < ownership_pos < catalog_pos
+    assert ownership_pos < lock_pos < catalog_pos
+
+
+def test_empty_weapon_inventory_preserves_existing_rows():
+    from unittest.mock import MagicMock
+    from bf4ps.battlelog_weapons import WeaponStatsNormalizationError
+    conn = MagicMock()
+    conn.execute.return_value.one_or_none.return_value = (1,)
+    conn.execute.return_value.scalar_one.return_value = True
+    with pytest.raises(WeaponStatsNormalizationError, match="would erase existing statistics"):
+        persist_weapon_success(conn, job=job(), weapons=[],
+            source_fetched_at=datetime.now(timezone.utc), persona_id=1, platform="pc",
+            collector_name="collector", hostname="host", egress_key="egress",
+            duration_ms=1, response_bytes=200)
+    assert conn.execute.call_count == 2
+    assert "SELECT EXISTS" in str(conn.execute.call_args.args[0])
+
+
+def test_empty_weapon_inventory_without_prior_rows_is_allowed():
+    from unittest.mock import MagicMock
+    conn = MagicMock()
+    conn.execute.return_value.one_or_none.return_value = (1,)
+    conn.execute.return_value.scalar_one.return_value = False
+    conn.execute.return_value.rowcount = 1
+    assert persist_weapon_success(conn, job=job(), weapons=[],
+        source_fetched_at=datetime.now(timezone.utc), persona_id=1, platform="pc",
+        collector_name="collector", hostname="host", egress_key="egress",
+        duration_ms=1, response_bytes=200) == 0

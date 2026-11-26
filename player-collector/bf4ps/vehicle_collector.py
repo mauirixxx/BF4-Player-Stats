@@ -289,6 +289,32 @@ def collect_one_vehicle_job(
             expected_persona_id=persona_id,
             expected_platform_int=fetched.platform_int,
         )
+        duration_ms = max(0, int((monotonic() - started) * 1000))
+        source_fetched_at = datetime.now(timezone.utc)
+        try:
+            with engine.begin() as conn:
+                vehicle_rows = persist_vehicle_success(
+                    conn, job=job, vehicles=vehicles, source_fetched_at=source_fetched_at,
+                    persona_id=persona_id, platform=platform,
+                    collector_name=identity.collector_name, hostname=identity.hostname,
+                    egress_key=identity.egress_key, duration_ms=duration_ms,
+                    response_bytes=fetched.response_bytes, http_status=200,
+                )
+        except VehicleStatsError:
+            raise
+        except Exception as exc:
+            _record_vehicle_persistence_failure(
+                engine,
+                job=job,
+                identity=identity,
+                persona_id=persona_id,
+                platform=platform,
+                duration_ms=duration_ms,
+                response_bytes=fetched.response_bytes,
+                exc=exc,
+            )
+            raise
+
     except VehicleStatsError as exc:
         duration_ms = max(0, int((monotonic() - started) * 1000))
         attempted_at = datetime.now(timezone.utc)
@@ -318,29 +344,6 @@ def collect_one_vehicle_job(
             duration_ms=duration_ms,
         )
 
-    duration_ms = max(0, int((monotonic() - started) * 1000))
-    source_fetched_at = datetime.now(timezone.utc)
-    try:
-        with engine.begin() as conn:
-            vehicle_rows = persist_vehicle_success(
-                conn, job=job, vehicles=vehicles, source_fetched_at=source_fetched_at,
-                persona_id=persona_id, platform=platform,
-                collector_name=identity.collector_name, hostname=identity.hostname,
-                egress_key=identity.egress_key, duration_ms=duration_ms,
-                response_bytes=fetched.response_bytes, http_status=200,
-            )
-    except Exception as exc:
-        _record_vehicle_persistence_failure(
-            engine,
-            job=job,
-            identity=identity,
-            persona_id=persona_id,
-            platform=platform,
-            duration_ms=duration_ms,
-            response_bytes=fetched.response_bytes,
-            exc=exc,
-        )
-        raise
 
     return CollectedVehicleJob(
         job_id=job.job_id, soldier_id=job.soldier_id, persona_id=persona_id,

@@ -12,7 +12,7 @@ from bf4ps.bulk_values import bulk_values
 from bf4ps.catalog_refresh import needs_refresh
 from sqlalchemy.engine import Connection
 
-from bf4ps.battlelog_vehicles import NormalizedVehicleStat
+from bf4ps.battlelog_vehicles import NormalizedVehicleStat, VehicleStatsNormalizationError
 from bf4ps.collection_jobs import ClaimedJob
 
 
@@ -89,6 +89,14 @@ def persist_vehicle_success(
     ).one_or_none()
     if ownership is None:
         raise RuntimeError("vehicle success rejected: job lease is no longer owned")
+
+    # An outage can return HTTP 200 with an empty inventory. Never erase
+    # existing equipment on that evidence alone. The owned job is locked.
+    if not vehicles and conn.execute(text(
+        "SELECT EXISTS (SELECT 1 FROM soldier_vehicle_stats WHERE soldier_id=:soldier_id)"
+    ), {"soldier_id": job.soldier_id}).scalar_one():
+        raise VehicleStatsNormalizationError("empty vehicle inventory would erase existing statistics")
+
 
     # The catalog is shared by every soldier. Avoid rewriting unchanged rows
     # for every collection: this previously produced millions of dead tuples

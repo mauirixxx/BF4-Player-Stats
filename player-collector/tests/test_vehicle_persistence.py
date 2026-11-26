@@ -98,3 +98,30 @@ def test_vehicle_persistence_uses_documented_vehicle_state_family():
     assert "vehicles_last_success_at" in source
     assert "vehicles_consecutive_failures" in source
     assert "resource = 'vehicles'" in source
+
+
+def test_empty_vehicle_inventory_preserves_existing_rows():
+    from unittest.mock import MagicMock
+    from bf4ps.battlelog_vehicles import VehicleStatsNormalizationError
+    conn = MagicMock()
+    conn.execute.return_value.one_or_none.return_value = (1,)
+    conn.execute.return_value.scalar_one.return_value = True
+    with pytest.raises(VehicleStatsNormalizationError, match="would erase existing statistics"):
+        persist_vehicle_success(conn, job=job(), vehicles=[],
+            source_fetched_at=datetime.now(timezone.utc), persona_id=1, platform="pc",
+            collector_name="collector", hostname="host", egress_key="egress",
+            duration_ms=1, response_bytes=200)
+    assert conn.execute.call_count == 3
+    assert "SELECT EXISTS" in str(conn.execute.call_args.args[0])
+
+
+def test_empty_vehicle_inventory_without_prior_rows_is_allowed():
+    from unittest.mock import MagicMock
+    conn = MagicMock()
+    conn.execute.return_value.one_or_none.return_value = (1,)
+    conn.execute.return_value.scalar_one.return_value = False
+    conn.execute.return_value.rowcount = 1
+    assert persist_vehicle_success(conn, job=job(), vehicles=[],
+        source_fetched_at=datetime.now(timezone.utc), persona_id=1, platform="pc",
+        collector_name="collector", hostname="host", egress_key="egress",
+        duration_ms=1, response_bytes=200) == 0

@@ -11,7 +11,7 @@ from bf4ps.bulk_values import bulk_values
 from bf4ps.catalog_refresh import needs_refresh
 from sqlalchemy.engine import Connection
 
-from bf4ps.battlelog_weapons import NormalizedWeaponStat
+from bf4ps.battlelog_weapons import NormalizedWeaponStat, WeaponStatsNormalizationError
 from bf4ps.collection_jobs import ClaimedJob
 
 
@@ -81,6 +81,14 @@ def persist_weapon_success(
     ).one_or_none()
     if ownership is None:
         raise RuntimeError("weapon success rejected: job lease is no longer owned")
+
+    # An outage can return HTTP 200 with an empty inventory. Never erase
+    # existing equipment on that evidence alone. The owned job is locked.
+    if not weapons and conn.execute(text(
+        "SELECT EXISTS (SELECT 1 FROM soldier_weapon_stats WHERE soldier_id=:soldier_id)"
+    ), {"soldier_id": job.soldier_id}).scalar_one():
+        raise WeaponStatsNormalizationError("empty weapon inventory would erase existing statistics")
+
 
     # Reconcile the global catalog first. The GUID is the durable Battlelog
     # identity; descriptive fields follow the latest successfully normalized
