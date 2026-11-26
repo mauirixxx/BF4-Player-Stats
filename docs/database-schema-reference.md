@@ -931,3 +931,8 @@ The existing `bf4ps-homepage-summary.timer` on `tcou` runs every 60 seconds **af
 The authenticated Operations Monitor queries a read-only HTTP telemetry service on the 11 verified BF4PS worker hosts. This does not modify the database schema. Source: `player-collector/scripts/bf4ps_fleet_telemetry.py`, systemd unit: `player-collector/systemd/bf4ps-fleet-telemetry.service`, aggregator: `website/api/fleet_status.py`. Each host has `/etc/default/bf4ps-fleet-telemetry` with `BF4PS_TELEMETRY_BIND=<host-private-IP>`. Listener port 8772 accepts `/status` only from tcou (`192.168.10.71`) and loopback. Restrict port 8772 to tcou in host/network firewall rules; do not publish to Internet. Data contains systemd state and Docker container status, not credentials. Service restarts on failure and is enabled at boot. The admin API fetches all 11 hosts concurrently with a 1.8-second per-host timeout, showing `unknown` when unreachable.
 
 Stats collector hosts: mak-01/02/03/04/06, hnl-01/02/03, kah-01, rnt-01. Platoon collection hosts: mak-05 and hnl-03. Compact publishers: mak-01/02/03/04. Total unique worker hosts: 11. A running systemd platoon worker does **not** prove successful Battlelog collection; errors and flapping require separate diagnosis. This monitor intentionally does not restart or modify worker services.
+
+
+## Standalone ranking admission correction (2026-11-26)
+
+Production RNT-02 PostgreSQL 16 port 5433: remove the global last_success_at timestamp comparison from the standalone gate to avoid concurrent publisher finish/arm races. Retain current-postmaster arm, local WAL flush target, writable-primary and no-replica checks. Synchronous commit is on; no database/role override was found. No Alembic revision change.
