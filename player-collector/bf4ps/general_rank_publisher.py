@@ -1,6 +1,6 @@
 """Opt-in general leaderboard snapshot publisher; never started by collector startup.
 
-Requires Alembic 0026. A single transaction builds and publishes one scope;
+Supports Alembic 0026 and 0027. A single transaction builds and publishes one scope;
 transaction-scoped advisory lock prevents competing scope publishers. No scheduler
 or retention worker is installed by this module.
 """
@@ -24,8 +24,8 @@ def build_scope(conn, metric: str, platform: str) -> tuple[int, int]:
     # Lock shared across all publishers, intentionally serializing builds.
     conn.execute(text('SELECT pg_advisory_xact_lock(640041, 260026)'))
     revision = conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
-    if revision != '0026_general_rank_snapshots':
-        raise RuntimeError(f'Expected Alembic 0026, found {revision}')
+    if revision not in ('0026_general_rank_snapshots', '0027_soldier_ban_status'):
+        raise RuntimeError(f'Expected Alembic 0026 or 0027, found {revision}')
     # Prevent a new publisher from replacing the same scope mid-build.
     generation = conn.execute(text('''
         INSERT INTO general_rank_generations(metric,platform,population)
