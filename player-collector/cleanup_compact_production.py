@@ -50,7 +50,7 @@ def main():
         with engine.begin() as c:
             c.execute(text('SET LOCAL statement_timeout = :ms'.replace(':ms', str(a.statement_timeout_ms))))
             c.execute(text('SET LOCAL lock_timeout = :ms'.replace(':ms', str(a.lock_timeout_ms))))
-            if c.execute(text('SELECT version_num FROM alembic_version')).scalar_one() not in ('0023_compact_exclusion_guard', '0024_profile_lookup_idx', '0025_compact_lookup_fk_idx', '0026_general_rank_snapshots'):
+            if c.execute(text('SELECT version_num FROM alembic_version')).scalar_one() not in ('0023_compact_exclusion_guard', '0024_profile_lookup_idx', '0025_compact_lookup_fk_idx', '0026_general_rank_snapshots', '0027_soldier_ban_status'):
                 raise RuntimeError('unexpected schema revision')
             ids=c.execute(QUERY,{'keep':a.keep,'limit':a.limit}).scalars().all()
             print('eligible compact generations',ids,flush=True)
